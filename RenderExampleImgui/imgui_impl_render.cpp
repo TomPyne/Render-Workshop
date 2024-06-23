@@ -353,8 +353,7 @@ static void ImGui_ImplRender_RenderWindow(ImGuiViewport* viewport, void*)
 {
     RenderView* view = (RenderView*)viewport->RendererUserData;
 
-    // TODO: This ise more efficient but reveals a synchronisation issue in the rtv heaps
-    //view->Sync();
+    view->Sync();
 
     Render_BeginFrame();
 
@@ -397,7 +396,7 @@ static void ImGui_ImplRender_RenderWindow(ImGuiViewport* viewport, void*)
 static void ImGui_ImplRender_SwapBuffers(ImGuiViewport* viewport, void*)
 {
     if (RenderView* data = (RenderView*)viewport->RendererUserData)
-        data->Present(true, true);
+        data->Present(true, false);
 }
 
 static void ImGui_ImplRender_InitPlatformInterface()
