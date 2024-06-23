@@ -149,7 +149,11 @@ int main()
 	HWND hwnd = ::CreateWindow(wc.lpszClassName, "Render Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
 	RenderInitParams params;
+#ifdef _DEBUG
 	params.DebugEnabled = true;
+#else
+	params.DebugEnabled = false;
+#endif
 	params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
 	params.RootSigDesc.Slots.resize(2);
 	params.RootSigDesc.Slots[0] = RootSignatureSlot::CBVSlot(0, 0);
