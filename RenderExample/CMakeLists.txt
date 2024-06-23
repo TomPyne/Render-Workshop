@@ -1,5 +1,5 @@
-add_executable(RenderExampleDx11 ${PROJECT_SOURCE_DIR}/RenderExample/main.cpp)
-add_executable(RenderExampleDx12 ${PROJECT_SOURCE_DIR}/RenderExample/main.cpp)
+add_executable(RenderExampleDx11 ${PROJECT_SOURCE_DIR}/RenderExample/RenderExample.cpp)
+add_executable(RenderExampleDx12 ${PROJECT_SOURCE_DIR}/RenderExample/RenderExample.cpp)
 
 target_link_libraries(RenderExampleDx11 RenderDx11)
 target_link_libraries(RenderExampleDx12 RenderDx12)

@@ -290,6 +290,8 @@ int main()
 
 		clGroup.Submit();
 
+		Render_EndFrame();
+
 		view->Present(true);
 	}
 

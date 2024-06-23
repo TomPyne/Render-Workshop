@@ -61,6 +61,10 @@ int main()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplRender_Init(RenderFormat::R8G8B8A8_UNORM);
 
@@ -76,6 +80,9 @@ int main()
 			::DispatchMessage(&msg);
 			continue;
 		}
+
+		// Because we use multiple viewports it is more efficient to sync at the latest possible point
+		view->Sync();
 
 		Render_BeginFrame();
 
@@ -126,7 +133,16 @@ int main()
 
 		clGroup.Submit();
 
-		view->Present(true);
+		Render_EndFrame();
+
+		view->Present(true, false);
+
+		// Update and Render additional Platform Windows
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
 	}
 
 	ImGui_ImplRender_Shutdown();

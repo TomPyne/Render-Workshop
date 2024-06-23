@@ -4,8 +4,6 @@
 
 #include <memory>
 
-#define SUPPORTS_IMGUI_DOCKING 0
-
 using namespace tpr;
 
 static RenderFormat g_TargetFormat;
@@ -31,10 +29,8 @@ struct ImRenderFrameData
 };
 
 // Forward Declarations
-#if SUPPORTS_IMGUI_DOCKING
 static void ImGui_ImplRender_InitPlatformInterface();
 static void ImGui_ImplRender_ShutdownPlatformInterface();
-#endif
 
 static void ImGui_ImplRender_SetupRenderState(ImDrawData* draw_data, tpr::CommandList* cl, DynamicBuffer_t vb, DynamicBuffer_t ib, DynamicBuffer_t cb)
 {
@@ -160,12 +156,18 @@ void ImGui_ImplRender_RenderDrawData(ImRenderFrameData* frame_data, ImDrawData* 
             }
             else
             {
+                // Project scissor/clipping rectangles into framebuffer space
+                ImVec2 clip_min(pcmd->ClipRect.x - clip_off.x, pcmd->ClipRect.y - clip_off.y);
+                ImVec2 clip_max(pcmd->ClipRect.z - clip_off.x, pcmd->ClipRect.w - clip_off.y);
+                if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+                    continue;
+
                 // Apply scissor/clipping rectangle
                 ScissorRect r;
-                r.left = (uint32_t)(pcmd->ClipRect.x - clip_off.x);
-                r.top = (uint32_t)(pcmd->ClipRect.y - clip_off.y);
-                r.right = (uint32_t)(pcmd->ClipRect.z - clip_off.x);
-                r.bottom = (uint32_t)(pcmd->ClipRect.w - clip_off.y);
+                r.left = (uint32_t)(clip_min.x);
+                r.top = (uint32_t)(clip_min.y);
+                r.right = (uint32_t)(clip_max.x);
+                r.bottom = (uint32_t)(clip_max.y);
 
                 cl->SetScissors(&r, 1);
 
@@ -270,8 +272,6 @@ bool ImGui_ImplRender_CreateDeviceObjects()
         g_PSO = CreateGraphicsPipelineState(pipeDesc, local_layout, 3);
     }
 
-
-
     ImGui_ImplRender_CreateFontsTexture();
 
     return true;
@@ -288,13 +288,10 @@ bool ImGui_ImplRender_Init(RenderFormat targetFormat)
     io.BackendRendererName = "imgui_impl_render";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
-#if SUPPORTS_IMGUI_DOCKING
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can create multi-viewports on the Renderer side (optional)
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         ImGui_ImplRender_InitPlatformInterface();
-
-#endif // SUPPORTS_IMGUI_DOCKING
 
     g_TargetFormat = targetFormat;
 
@@ -303,9 +300,7 @@ bool ImGui_ImplRender_Init(RenderFormat targetFormat)
 
 void ImGui_ImplRender_Shutdown()
 {
-#if SUPPORTS_IMGUI_DOCKING
     ImGui_ImplRender_ShutdownPlatformInterface();
-#endif // SUPPORTS_IMGUI_DOCKING
     ImGui_ImplRender_InvalidateDeviceObjects();
 }
 
@@ -325,7 +320,6 @@ void ImGui_ImplRender_InvalidateDeviceObjects()
     RenderRelease(g_PSO); g_PSO = {};
 }
 
-#if SUPPORTS_IMGUI_DOCKING
 static void ImGui_ImplRender_CreateWindow(ImGuiViewport* viewport)
 {
     // PlatformHandleRaw should always be a HWND, whereas PlatformHandle might be a higher-level handle (e.g. GLFWWindow*, SDL_Window*).
@@ -357,28 +351,53 @@ static void ImGui_ImplRender_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 
 static void ImGui_ImplRender_RenderWindow(ImGuiViewport* viewport, void*)
 {
-    RenderView* data = (RenderView*)viewport->RendererUserData;
+    RenderView* view = (RenderView*)viewport->RendererUserData;
 
-    CommandListPtr cl = CommandList::Create();
+    // TODO: This ise more efficient but reveals a synchronisation issue in the rtv heaps
+    //view->Sync();
 
-    data->ClearCurrentBackBufferTarget(cl.get());
-   
-    RenderTargetView_t rtv = data->GetCurrentBackBufferRTV();
-    cl->SetRenderTargets(&rtv, 1, DepthStencilView_t::INVALID);
+    Render_BeginFrame();
 
     ImRenderFrameData* frameData = ImGui_ImplRender_PrepareFrameData(viewport->DrawData);
 
-    ImGui_ImplRender_RenderDrawData(frameData, viewport->DrawData, cl.get());
+    Render_BeginRenderFrame();
+
+    CommandListSubmissionGroup clGroup(CommandListType::GRAPHICS);
+
+    CommandList* cl = clGroup.CreateCommandList();
+
+    UploadBuffers(cl);
+
+    cl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::PRESENT, ResourceTransitionState::RENDER_TARGET);
+
+    // Bind and clear targets
+    {
+        RenderTargetView_t backBufferRtv = view->GetCurrentBackBufferRTV();
+
+        constexpr float DefaultClearCol[4] = { 0.0f, 0.0f, 0.2f, 0.0f };
+
+        cl->ClearRenderTarget(backBufferRtv, DefaultClearCol);
+
+        cl->SetRenderTargets(&backBufferRtv, 1, DepthStencilView_t::INVALID);
+    }
+
+    cl->SetRootSignature(ImGui_ImplRender_GetRootSignature());
+
+    ImGui_ImplRender_RenderDrawData(frameData, viewport->DrawData, cl);
 
     ImGui_ImplRender_ReleaseFrameData(frameData);
 
-    CommandList::Execute(cl);
+    cl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);
+
+    clGroup.Submit();
+
+    Render_EndFrame();
 }
 
 static void ImGui_ImplRender_SwapBuffers(ImGuiViewport* viewport, void*)
 {
     if (RenderView* data = (RenderView*)viewport->RendererUserData)
-        data->Present(false);
+        data->Present(true, true);
 }
 
 static void ImGui_ImplRender_InitPlatformInterface()
@@ -395,4 +414,3 @@ static void ImGui_ImplRender_ShutdownPlatformInterface()
 {
     ImGui::DestroyPlatformWindows();
 }
-#endif // SUPPORTS_IMGUI_DOCKING
