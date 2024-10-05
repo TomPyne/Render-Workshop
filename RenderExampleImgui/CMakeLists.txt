@@ -16,13 +16,13 @@ target_link_libraries(RenderExampleImguiDx12 RenderDx12)
 set_target_properties(RenderExampleImguiDx11
 PROPERTIES
 RUNTIME_OUTPUT_NAME_DEBUG "RenderExampleImGuiDx11_Debug"
-VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/RenderExampleImgui"
 )
 
 set_target_properties(RenderExampleImguiDx12
 PROPERTIES
 RUNTIME_OUTPUT_NAME_DEBUG "RenderExampleImGuiDx12_Debug"
-VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/RenderExampleImgui"
 )
 
 target_include_directories(RenderExampleImguiDx11
