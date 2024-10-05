@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(RenderDemos VERSION 1.0)
+project(RenderWorkshop VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -16,4 +16,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 
 add_subdirectory(RenderExample)
 add_subdirectory(RenderExampleImGui)
+add_subdirectory(ComputeSeminar)
 add_subdirectory(Render)
