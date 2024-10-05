@@ -183,8 +183,8 @@ int main()
 
 		GraphicsPipelineStateDesc psoDesc = {};
 		psoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
-			.DepthDesc(true, ComparisionFunc::LESS_EQUAL, RenderFormat::D16_UNORM)
-			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::Default() })
+			.DepthDesc(true, ComparisionFunc::LESS_EQUAL)
+			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::Default() }, RenderFormat::D16_UNORM)
 			.VertexShader(meshVS)
 			.PixelShader(meshPS);
 
@@ -269,7 +269,7 @@ int main()
 		{
 			cl->SetPipelineState(meshPSO);
 
-			if (Render_BindlessMode())
+			if (Render_IsBindless())
 			{
 				cl->SetGraphicsRootCBV(0, viewCbuf);
 				cl->SetGraphicsRootCBV(1, meshCbuf);
