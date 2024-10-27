@@ -1,3 +1,5 @@
+#include "Samplers.h"
+
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
@@ -20,8 +22,6 @@ Texture2D<float> t_tex2d_float[512] : register(t0, space0);
 #else
 Texture2D<float> NoiseTexture : register(t0);
 #endif
-
-SamplerState TrilinearSampler : register(s0);
 
 #ifdef _VS
 

@@ -1,46 +1,49 @@
+#include "BallData.h"
+#include "Samplers.h"
+#include "Scene.h"
+#include "View.h"
+
+ConstantBuffer<SceneData> c_SceneData : register(b1);
+StructuredBuffer<BallData> t_BallData[512] : register(t0, space0);
+
 struct PS_INPUT
 {
-    float4 pos : SV_POSITION;
-    float3 color : COLOR;
+    float4 SVPosition : SV_POSITION;
+    uint InstanceID : INSTANCEID;
 };
+
+BallData LoadInstanceBallData(uint InstanceID)
+{
+    return t_BallData[c_SceneData.BallDataSRVIndex][InstanceID];
+}
 
 #ifdef _VS
 
-cbuffer viewBuf : register(b0)
-{
-    float4x4 ViewProjectionMatrix;
-};
-
-cbuffer meshBuf : register(b1)
-{
-    row_major float4x4 MeshTransformMatrix;
-}
+ConstantBuffer<ViewData> c_View : register(b0);
 
 struct VS_INPUT
 {
-    float3 pos : POSITION;
-    float3 color : COLOR;
+    float3 Position : POSITION;
 };
 
-PS_INPUT main(VS_INPUT input)
+void main(in VS_INPUT Input, in uint InstanceID : SV_InstanceID, out PS_INPUT Output)
 {
-    PS_INPUT output;
-
-    float4 worldPos = mul(MeshTransformMatrix, float4(input.pos.xyz, 1.f));
+    BallData Ball = LoadInstanceBallData(InstanceID);
+    float3 WorldPos = (Input.Position * Ball.Scale) + Ball.Position;
     
-    output.pos = mul(ViewProjectionMatrix, worldPos);
-    output.color = input.color;
-
-    return output;
+    Output.SVPosition = mul(c_View.ViewProjectionMatrix, float4(WorldPos, 1.0f));
+    Output.InstanceID = InstanceID;
 };
 
 #endif
 
 #ifdef _PS
 
-float4 main(PS_INPUT input) : SV_Target0
+float4 main(in PS_INPUT Input) : SV_Target0
 {
-    return float4(input.color, 1.0f);
+    BallData Ball = LoadInstanceBallData(Input.InstanceID);
+
+    return float4(Ball.Color, 1.0f);
 };
 
 #endif

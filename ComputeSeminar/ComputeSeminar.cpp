@@ -5,6 +5,8 @@
 #include <SurfClock.h>
 #include <SurfMath.h>
 
+#include <cstdlib>
+
 #include "Camera/FlyCamera.h"
 #include "Noise/Perlin.h"
 
@@ -39,7 +41,6 @@ struct BindIndexBuffer
 struct Mesh
 {
 	BindVertexBuffer positionBuf;
-	BindVertexBuffer colorBuf;
 	BindIndexBuffer indexBuf;
 };
 
@@ -106,6 +107,80 @@ TerrainTileMesh CreateTerrainTileMesh(u32 Resolution)
 	return mesh;
 }
 
+Mesh CreateSphereMesh(uint32_t Slices, uint32_t Stacks)
+{
+	Stacks = Max(Stacks, 1u);
+
+	Mesh Outmesh;
+
+	std::vector<float3> Positions;
+
+	Positions.emplace_back(0.0f, 1.0f, 0.0f);
+
+	for (uint32_t i = 0; i < Stacks - 1; i++)
+	{
+		float Phi = K_PI * float(i + 1) / float(Stacks);
+		for (int j = 0; j < Slices; j++)
+		{
+			float Theta = 2.0f * K_PI * float(j) / float(Slices);
+			float x = sinf(Phi) * cosf(Theta);
+			float y = cosf(Phi);
+			float z = sinf(Phi) * sinf(Theta);
+			Positions.emplace_back(x, y, z);
+		}
+	}
+
+	uint32_t v0 = 0;
+	uint32_t v1 = (uint32_t)Positions.size();
+
+	Positions.emplace_back(0.0f, -1.0f, 0.0f);
+
+	std::vector<uint32_t> Indices;
+	for (uint32_t i = 0; i < Slices; i++)
+	{
+		uint32_t i0 = i + 1;
+		uint32_t i1 = (i + 1) % Slices + 1; // 03456 723 723
+		Indices.push_back(v0);
+		Indices.push_back(i1);
+		Indices.push_back(i0);
+		i0 = i + Slices * (Stacks - 2) + 1;
+		i1 = (i + 1) % Slices + Slices * (Stacks - 2) + 1;
+		Indices.push_back(v1);
+		Indices.push_back(i0);
+		Indices.push_back(i1);
+	}
+
+	for (uint32_t j = 0; j < Stacks - 2; j++)
+	{
+		uint32_t j0 = j * Slices + 1;
+		uint32_t j1 = (j + 1) * Slices + 1;
+		for (uint32_t i = 0; i < Slices; i++)
+		{
+			uint32_t i0 = j0 + i;
+			uint32_t i1 = j0 + (i + 1) % Slices;
+			uint32_t i2 = j1 + (i + 1) % Slices;
+			uint32_t i3 = j1 + i;
+			Indices.push_back(i0);
+			Indices.push_back(i1);
+			Indices.push_back(i2);
+			Indices.push_back(i2);
+			Indices.push_back(i3);
+			Indices.push_back(i0);
+		}
+	}
+
+	Outmesh.positionBuf.buf = CreateVertexBuffer(Positions.data(), Positions.size() * sizeof(float3));
+	Outmesh.positionBuf.offset = 0;
+	Outmesh.positionBuf.stride = sizeof(float3);
+
+	Outmesh.indexBuf.buf = CreateIndexBuffer(Indices.data(), Indices.size() * sizeof(uint32_t));
+	Outmesh.indexBuf.count = Indices.size();
+	Outmesh.indexBuf.format = RenderFormat::R32_UINT;
+	Outmesh.indexBuf.offset = 0;
+
+	return Outmesh;
+}
+
 Mesh CreateCubeMesh()
 {
 	Mesh mesh;
@@ -133,30 +208,6 @@ Mesh CreateCubeMesh()
 	mesh.positionBuf.buf = CreateVertexBuffer(posVerts, sizeof(posVerts));
 	mesh.positionBuf.offset = 0;
 	mesh.positionBuf.stride = sizeof(float3);
-
-	constexpr float3 cftl = (pftl + float3(1.0f)) * 0.5f;
-	constexpr float3 cftr = (pftr + float3(1.0f)) * 0.5f;
-	constexpr float3 cfbr = (pfbr + float3(1.0f)) * 0.5f;
-	constexpr float3 cfbl = (pfbl + float3(1.0f)) * 0.5f;
-								 			   	
-	constexpr float3 cbtl = (pbtl + float3(1.0f)) * 0.5f;
-	constexpr float3 cbtr = (pbtr + float3(1.0f)) * 0.5f;
-	constexpr float3 cbbr = (pbbr + float3(1.0f)) * 0.5f;
-	constexpr float3 cbbl = (pbbl + float3(1.0f)) * 0.5f;
-
-	float3 colVerts[6 * 4] =
-	{
-		cftl, cftr, cfbr, cfbl,
-		cbtr, cbtl, cbbl, cbbr,
-		cftr, cbtr, cbbr, cfbr,
-		cbtl, cftl, cfbl, cbbl,
-		cfbl, cfbr, cbbr, cbbl,
-		cftl, cbtl, cbtr, cftr,
-	};
-
-	mesh.colorBuf.buf = CreateVertexBuffer(colVerts, sizeof(colVerts));
-	mesh.colorBuf.offset = 0;
-	mesh.colorBuf.stride = sizeof(float3);
 
 	u16 Indices[6 * 6] =
 	{
@@ -191,7 +242,6 @@ GraphicsPipelineStatePtr CreateMeshPSO()
 	InputElementDesc inputDesc[] =
 	{
 		{"POSITION", 0, RenderFormat::R32G32B32_FLOAT, 0, 0, InputClassification::PER_VERTEX, 0 },
-		{"COLOR", 0, RenderFormat::R32G32B32_FLOAT, 1, 0, InputClassification::PER_VERTEX, 0 },
 	};
 
 	return CreateGraphicsPipelineState(psoDesc, inputDesc, ARRAYSIZE(inputDesc));
@@ -199,8 +249,8 @@ GraphicsPipelineStatePtr CreateMeshPSO()
 
 GraphicsPipelineStatePtr CreateTerrainPSO()
 {
-	VertexShader_t TerrainVS = CreateVertexShader("Shaders/Terrain.hlsl");
-	PixelShader_t TerrainPS = CreatePixelShader("Shaders/Terrain.hlsl");
+	static const VertexShader_t TerrainVS = CreateVertexShader("Shaders/Terrain.hlsl");
+	static const PixelShader_t TerrainPS = CreatePixelShader("Shaders/Terrain.hlsl");
 
 	GraphicsPipelineStateDesc PSODesc = {};
 	PSODesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -217,7 +267,17 @@ GraphicsPipelineStatePtr CreateTerrainPSO()
 	return CreateGraphicsPipelineState(PSODesc, inputDesc, ARRAYSIZE(inputDesc));
 }
 
-void CreateNoiseTexture(u32 Dim, TexturePtr& OutTex, ShaderResourceViewPtr& OutSrv)
+ComputePipelineStatePtr CreateBallComputePSO()
+{
+	static const ComputeShader_t BallCS = CreateComputeShader("Shaders/BallMovementCompute.hlsl");
+	ComputePipelineStateDesc PSODesc = {};
+	PSODesc.Cs = BallCS;
+	PSODesc.DebugName = L"BallMovementComputeCS";
+
+	return CreateComputePipelineState(PSODesc);
+}
+
+std::vector<float> GetNoiseData(u32 Dim)
 {
 	std::vector<float> Data;
 	Data.resize(Dim * Dim);
@@ -230,11 +290,16 @@ void CreateNoiseTexture(u32 Dim, TexturePtr& OutTex, ShaderResourceViewPtr& OutS
 			double Noise = PerlinNoise2D((double)x * rcp, (double)y * rcp, 2.0, 2.0, 4);
 			Noise += 1.0;
 			Noise *= 0.5;
-			Data[y * Dim + x] = Noise;
+			Data[y * Dim + x] = static_cast<float>(Noise);
 		}
 	}
-	
-	MipData Mip(Data.data(), RenderFormat::R32_FLOAT, Dim, Dim);
+
+	return Data;
+}
+
+void CreateNoiseTexture(u32 Dim, const float* const DataPtr, TexturePtr& OutTex, ShaderResourceViewPtr& OutSrv)
+{	
+	MipData Mip(DataPtr, RenderFormat::R32_FLOAT, Dim, Dim);
 	TextureCreateDesc Desc = {};
 	Desc.Data = &Mip;
 	Desc.DebugName = L"NoiseTex";
@@ -245,6 +310,40 @@ void CreateNoiseTexture(u32 Dim, TexturePtr& OutTex, ShaderResourceViewPtr& OutS
 
 	OutTex = CreateTexture(Desc);
 	OutSrv = CreateTextureSRV(OutTex, RenderFormat::R32_FLOAT, TextureDimension::TEX2D, 1u, 1u);
+}
+
+void RandHash(uint32_t& Seed) {
+	Seed ^= 2747636419u;
+	Seed *= 2654435769u;
+	Seed ^= Seed >> 16;
+	Seed *= 2654435769u;
+	Seed ^= Seed >> 16;
+	Seed *= 2654435769u;
+}
+uint32_t InitRandomGenerator(const float3& Position, uint32_t FrameID)
+{
+	return uint32_t(Position.z * 400 + Position.y * 200 + Position.z) + uint32_t(FrameID);
+}
+
+float PseudoRand(uint32_t Seed) {
+	RandHash(Seed);
+	return float(Seed) / 4294967295.0;
+}
+
+float RandFloat()
+{
+	return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+}
+
+float RandFloatInRange(float Min, float Max)
+{
+	float R = RandFloat();
+	return Min + R * (Max - Min);
+}
+
+float3 RandFloat3()
+{
+	return float3{ RandFloat(), RandFloat(), RandFloat() };
 }
 
 void ResizeScreen(uint32_t width, uint32_t height)
@@ -288,6 +387,7 @@ enum RootSigSlots
 	RS_VIEW_BUF,
 	RS_MESH_BUF,
 	RS_SRV_TABLE,
+	RS_UAV_TABLE,
 	RS_COUNT,
 };
 
@@ -309,6 +409,7 @@ int main()
 	params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(0, 0);
 	params.RootSigDesc.Slots[RS_MESH_BUF] = RootSignatureSlot::CBVSlot(1, 0);
 	params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
+	params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
 
 	params.RootSigDesc.GlobalSamplers.resize(1);
 	params.RootSigDesc.GlobalSamplers[0].AddressModeUVW(SamplerAddressMode::WRAP).FilterModeMinMagMip(SamplerFilterMode::LINEAR);
@@ -331,7 +432,7 @@ int main()
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplRender_Init(RenderFormat::R8G8B8A8_UNORM);
 
-	Mesh mesh = CreateCubeMesh();
+	Mesh mesh = CreateSphereMesh(16, 16);
 
 	const u32 TileMeshDim = 128;
 	TerrainTileMesh tile = CreateTerrainTileMesh(TileMeshDim);
@@ -339,17 +440,80 @@ int main()
 	TexturePtr NoiseTex = {};
 	ShaderResourceViewPtr NoiseSrv = {};
 
-	CreateNoiseTexture(512, NoiseTex, NoiseSrv);
+	const uint32_t NoiseDim = 512;
+	std::vector<float> NoiseData = GetNoiseData(NoiseDim);
+	CreateNoiseTexture(NoiseDim, NoiseData.data(), NoiseTex, NoiseSrv);
 
 	matrix viewMatrix = MakeMatrixLookAtLH(float3{ 0.0f, 0.0f, -2.0f }, float3{ 0.0f, 0.0f, 0.0f }, float3(0.0f, 1.0f, 0.0f));
 
 	GraphicsPipelineStatePtr meshPSO = CreateMeshPSO();
-
 	GraphicsPipelineStatePtr terrainPSO = CreateTerrainPSO();
+	ComputePipelineStatePtr ballComputePSO = CreateBallComputePSO();
 
-	float rot = 0.0f;
+	struct Ball
+	{
+		float3 Position;
+		float Scale;
+		float3 Color;
+		float Bounciness;
+		float3 Velocity;
+		float __pad;
+	};
+
+	std::vector<Ball> Balls;
+	for (uint32_t y = 5; y < 100; y += 5)
+	{
+		for (uint32_t x = 5; x < 100; x += 5)
+		{
+			Ball NewBall;
+			NewBall.Position = float3((float)x, 20.0f, (float)y);
+			NewBall.Scale = RandFloatInRange(0.3f, 1.2f);
+			NewBall.Color = RandFloat3();
+			NewBall.Bounciness = RandFloatInRange(0.5f, 0.9f);
+			NewBall.Velocity = float3{ 0 };
+
+			Balls.push_back(std::move(NewBall));
+		}
+	}
+
+	const uint32_t BallCount = (uint32_t)Balls.size();
+	const float TerrainScale = 100.0f;
+	const float TerrainHeight = 10.0f;
+	const float Gravity = -2.0f;
+
+	const bool UseCompute = false;
+
+	struct
+	{
+		uint32_t NoiseTexSRVIndex;
+		uint32_t BallDataUAVIndex;
+		uint32_t BallDataSRVIndex;
+		uint32_t FrameID;
+		float TerrainScale;
+		float DeltaSeconds;
+		float Gravity;
+		uint32_t NumBalls;
+		float DragCoefficient;
+		uint32_t NoiseDim;
+		float2 __pad;
+	} ComputeSceneData;
+
+	StructuredBufferPtr BallDataBuffer = CreateStructuredBuffer(Balls.data(), BallCount * sizeof(Ball), sizeof(Ball), RenderResourceFlags::SRV | RenderResourceFlags::UAV);
+	ShaderResourceViewPtr BallDataSRV = CreateStructuredBufferSRV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball));
+	UnorderedAccessViewPtr BallDataUAV = CreateStructuredBufferUAV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball));
+
+	ComputeSceneData.NoiseTexSRVIndex = GetDescriptorIndex(NoiseSrv);
+	ComputeSceneData.BallDataUAVIndex = GetDescriptorIndex(BallDataUAV);
+	ComputeSceneData.BallDataSRVIndex = GetDescriptorIndex(BallDataSRV);
+	ComputeSceneData.TerrainScale = TerrainScale;
+	ComputeSceneData.Gravity = Gravity;
+	ComputeSceneData.NumBalls = BallCount;
+	ComputeSceneData.DragCoefficient = 0.001f;
+	ComputeSceneData.NoiseDim = NoiseDim;
 
 	SurfClock Clock = {};
+
+	uint32_t FrameID = 0u;
 
 	// Main loop
 	bool bQuit = false;
@@ -364,9 +528,67 @@ int main()
 			continue;
 		}
 
+		FrameID++;
+
 		Clock.Tick();
 
-		GCam.UpdateView(Clock.GetDeltaSeconds());
+		const float DeltaSeconds = Clock.GetDeltaSeconds();
+
+		GCam.UpdateView(DeltaSeconds);
+
+		if (!UseCompute)
+		{
+			for (Ball& ball : Balls)
+			{
+				const float VelocityMagSqr = LengthSqrF3(ball.Velocity);
+
+				ball.Velocity += float3(0, Gravity * DeltaSeconds, 0) + -SignF3(ball.Velocity) * VelocityMagSqr * 0.001f;
+
+				ball.Position += ball.Velocity * DeltaSeconds;
+
+				auto TerrainCoordForPosition = [&](const float3& Pos)
+				{
+					float u = Clamp(Pos.x / TerrainScale, 0.0f, 1.0f);
+					float v = Clamp(Pos.z / TerrainScale, 0.0f, 1.0f);
+
+					uint32_t uCoord = Min(static_cast<uint32_t>(u * NoiseDim), NoiseDim - 1u);
+					uint32_t vCoord = Min(static_cast<uint32_t>(v * NoiseDim), NoiseDim - 1u);
+
+					return uint2(uCoord, vCoord);
+				};
+
+				// Gather pixels directly under ball
+				float radius = ball.Scale;
+
+				uint2 topLeftCoord = TerrainCoordForPosition(float3(ball.Position.x - radius, 0.0f, ball.Position.z - radius));
+				uint2 bottomRightCoord = TerrainCoordForPosition(float3(ball.Position.x + radius, 0.0f, ball.Position.z + radius));
+
+				auto GetHit = [&]()
+				{
+					float3 bounceDir = 0;
+					for (u32 y = topLeftCoord.y; y <= bottomRightCoord.y; y++)
+					{
+						for (u32 x = topLeftCoord.x; x <= bottomRightCoord.x; x++)
+						{
+							float height = NoiseData[y * NoiseDim + x] * TerrainHeight;
+							float3 samplePos = float3(((float)x / (float)NoiseDim) * TerrainScale, height, ((float)y / (float)NoiseDim) * TerrainScale);
+
+							float3 direction = ball.Position - samplePos;
+							float penetration = ball.Scale * ball.Scale - LengthSqrF3(direction);
+							if (penetration > 0.0f)
+							{
+								bounceDir += direction * penetration;
+							}
+						}
+					}
+
+					return NormalizeF3(bounceDir);
+				};
+				ball.Velocity += GetHit() * LengthF3(ball.Velocity) * ball.Bounciness;
+			}
+
+			UpdateStructuredBuffer(BallDataBuffer, Balls.data(), Balls.size() * sizeof(Ball));
+		}
 
 		Render_BeginFrame();
 
@@ -389,18 +611,25 @@ int main()
 
 		DynamicBuffer_t viewCbuf = CreateDynamicConstantBuffer(&viewConsts, sizeof(viewConsts));
 
-		const bool bDrawMesh = false;
+		const bool bDrawMesh = true;
 
-		struct
+		std::vector<DynamicBuffer_t> MeshBuffers;
+		MeshBuffers.reserve(Balls.size());
+
+		for (const Ball& b : Balls)
 		{
-			matrix transform;
-		} meshConsts;
+			struct
+			{
+				matrix transform;
+				float3 Color;
+				float __pad;
+			} meshConsts;
 
-		meshConsts.transform = MakeMatrixRotationAxis(float3(1, 1, 1), rot);
+			meshConsts.transform = MakeMatrixTranslation(b.Position) * MakeMatrixScaling(b.Scale, b.Scale, b.Scale);
+			meshConsts.Color = b.Color;
 
-		DynamicBuffer_t meshCbuf = CreateDynamicConstantBuffer(&meshConsts, sizeof(meshConsts));
-
-		rot += 0.01f;
+			MeshBuffers.push_back(CreateDynamicConstantBuffer(&meshConsts, sizeof(meshConsts)));
+		}
 
 		struct
 		{
@@ -412,15 +641,18 @@ int main()
 			float _Pad;
 		} terrainTileConstants;
 
-		const float Scale = 100.0f;
-
 		terrainTileConstants.Offset = { 0.f };
-		terrainTileConstants.Scale = { Scale };
+		terrainTileConstants.Scale = { TerrainScale };
 		terrainTileConstants.NoiseTex = GetDescriptorIndex(NoiseSrv);
 		terrainTileConstants.Height = 10.0f;
 		terrainTileConstants.CellSize = (1.0f / (float)TileMeshDim);
 
 		DynamicBuffer_t terrainCbuf = CreateDynamicConstantBuffer(&terrainTileConstants, sizeof(terrainTileConstants));
+
+		DynamicBuffer_t sceneCBuf;
+		ComputeSceneData.DeltaSeconds = DeltaSeconds;
+		ComputeSceneData.FrameID = FrameID;
+		sceneCBuf = CreateDynamicConstantBuffer(&ComputeSceneData, sizeof(ComputeSceneData));
 
 		Render_BeginRenderFrame();
 
@@ -433,6 +665,24 @@ int main()
 		cl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::PRESENT, ResourceTransitionState::RENDER_TARGET);
 
 		cl->SetRootSignature();
+
+		// Trigger compute work as early as possible
+		if (UseCompute)
+		{
+			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::PIXEL_SHADER_RESOURCE, ResourceTransitionState::UNORDERED_ACCESS);
+			cl->TransitionResource(NoiseTex, ResourceTransitionState::PIXEL_SHADER_RESOURCE, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+
+			cl->SetComputeRootDescriptorTable(RS_SRV_TABLE);
+			cl->SetComputeRootDescriptorTable(RS_UAV_TABLE);
+			cl->SetComputeRootCBV(RS_VIEW_BUF, sceneCBuf);
+
+			cl->SetPipelineState(ballComputePSO);
+
+			cl->Dispatch(DivideRoundUp(BallCount, 128u), 1u, 1u);
+
+			cl->TransitionResource(NoiseTex, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		}
 
 		// Bind and clear targets
 		{
@@ -458,6 +708,7 @@ int main()
 			if (Render_IsBindless())
 			{
 				cl->SetGraphicsRootCBV(0, viewCbuf);
+				cl->SetGraphicsRootCBV(1, sceneCBuf);
 
 				cl->SetGraphicsRootDescriptorTable(RS_SRV_TABLE);
 			}
@@ -468,24 +719,10 @@ int main()
 		}
 
 		// Draw mesh
-		if(bDrawMesh)
-		{
-			cl->SetPipelineState(meshPSO);
-
-			if (Render_IsBindless())
-			{
-				cl->SetGraphicsRootCBV(1, meshCbuf);
-			}
-			else
-			{
-				cl->BindVertexCBVs(1, 1, &meshCbuf);
-			}
-
-			cl->SetVertexBuffers(0, 1, &mesh.positionBuf.buf, &mesh.positionBuf.stride, &mesh.positionBuf.offset);
-			cl->SetVertexBuffers(1, 1, &mesh.colorBuf.buf, &mesh.colorBuf.stride, &mesh.colorBuf.offset);
-			cl->SetIndexBuffer(mesh.indexBuf.buf, mesh.indexBuf.format, mesh.indexBuf.offset);
-			cl->DrawIndexedInstanced(mesh.indexBuf.count, 1, 0, 0, 0);
-		}
+		cl->SetPipelineState(meshPSO);
+		cl->SetVertexBuffers(0, 1, &mesh.positionBuf.buf, &mesh.positionBuf.stride, &mesh.positionBuf.offset);
+		cl->SetIndexBuffer(mesh.indexBuf.buf, mesh.indexBuf.format, mesh.indexBuf.offset);
+		cl->DrawIndexedInstanced(mesh.indexBuf.count, BallCount, 0, 0, 0);
 
 		// Draw terrain
 		{

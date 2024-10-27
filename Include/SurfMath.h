@@ -688,6 +688,16 @@ inline float DistF3(float3 a, float3 b)
     return LengthF3(b - a);
 }
 
+inline constexpr float Sign(float f) noexcept
+{
+    return f >= 0.0f ? 1.0f : -1.0f;
+}
+
+inline constexpr float3 SignF3(float3 f3) noexcept
+{
+    return float3{ Sign(f3.x), Sign(f3.y), Sign(f3.z) };
+}
+
 inline float3 NormalizeF3(float3 f3) noexcept
 {
     float length = LengthF3(f3);
