@@ -461,9 +461,9 @@ int main()
 	};
 
 	std::vector<Ball> Balls;
-	for (uint32_t y = 5; y < 100; y += 5)
+	for (uint32_t y = 5; y < 100; y += 2)
 	{
-		for (uint32_t x = 5; x < 100; x += 5)
+		for (uint32_t x = 5; x < 100; x += 2)
 		{
 			Ball NewBall;
 			NewBall.Position = float3((float)x, 20.0f, (float)y);
@@ -481,7 +481,7 @@ int main()
 	const float TerrainHeight = 10.0f;
 	const float Gravity = -2.0f;
 
-	const bool UseCompute = false;
+	const bool UseCompute = true;
 
 	struct
 	{
@@ -490,12 +490,13 @@ int main()
 		uint32_t BallDataSRVIndex;
 		uint32_t FrameID;
 		float TerrainScale;
+		float TerrainHeight;
 		float DeltaSeconds;
 		float Gravity;
 		uint32_t NumBalls;
 		float DragCoefficient;
 		uint32_t NoiseDim;
-		float2 __pad;
+		float __pad;
 	} ComputeSceneData;
 
 	StructuredBufferPtr BallDataBuffer = CreateStructuredBuffer(Balls.data(), BallCount * sizeof(Ball), sizeof(Ball), RenderResourceFlags::SRV | RenderResourceFlags::UAV);
@@ -506,6 +507,7 @@ int main()
 	ComputeSceneData.BallDataUAVIndex = GetDescriptorIndex(BallDataUAV);
 	ComputeSceneData.BallDataSRVIndex = GetDescriptorIndex(BallDataSRV);
 	ComputeSceneData.TerrainScale = TerrainScale;
+	ComputeSceneData.TerrainHeight = TerrainHeight;
 	ComputeSceneData.Gravity = Gravity;
 	ComputeSceneData.NumBalls = BallCount;
 	ComputeSceneData.DragCoefficient = 0.001f;
@@ -669,8 +671,8 @@ int main()
 		// Trigger compute work as early as possible
 		if (UseCompute)
 		{
-			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::PIXEL_SHADER_RESOURCE, ResourceTransitionState::UNORDERED_ACCESS);
-			cl->TransitionResource(NoiseTex, ResourceTransitionState::PIXEL_SHADER_RESOURCE, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
+			cl->TransitionResource(NoiseTex, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
 
 			cl->SetComputeRootDescriptorTable(RS_SRV_TABLE);
 			cl->SetComputeRootDescriptorTable(RS_UAV_TABLE);
@@ -680,8 +682,8 @@ int main()
 
 			cl->Dispatch(DivideRoundUp(BallCount, 128u), 1u, 1u);
 
-			cl->TransitionResource(NoiseTex, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+			cl->TransitionResource(NoiseTex, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE, ResourceTransitionState::ALL_SHADER_RESOURCE);
+			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::ALL_SHADER_RESOURCE);
 		}
 
 		// Bind and clear targets
@@ -742,6 +744,11 @@ int main()
 			cl->SetVertexBuffers(0, 1, &tile.UVBuf.buf, &tile.UVBuf.stride, &tile.UVBuf.offset);
 			cl->SetIndexBuffer(tile.IndexBuf.buf, tile.IndexBuf.format, tile.IndexBuf.offset);
 			cl->DrawIndexedInstanced(tile.IndexBuf.count, 1u, 0u, 0u, 0u);
+		}
+
+		if (UseCompute)
+		{
+			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::READ);
 		}
 
 		cl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);

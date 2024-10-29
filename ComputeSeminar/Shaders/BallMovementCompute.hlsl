@@ -9,7 +9,7 @@ Texture2D<float> t_tex2d_float[512] : register(t0, space0);
 [NumThreads(128, 1, 1)]
 void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 {
-    if(DispatchThreadId.x > c_SceneData.NumBalls)
+    if(DispatchThreadId.x >= c_SceneData.NumBalls)
     {
         return;
     }
@@ -47,7 +47,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         [loop]
         for(uint x = MinTerrainCoord.x; x <= MaxTerrainCoord.x; x++)
         {
-            float Height = t_tex2d_float[c_SceneData.NoiseTexSRVIndex].Load(uint3(x, y, 0)).r;
+            float Height = t_tex2d_float[c_SceneData.NoiseTexSRVIndex].Load(uint3(x, y, 0)).r * c_SceneData.TerrainHeight;
             float3 SamplePos = float3((x * NoiseDimRcp) * TerrainScale, Height, (y * NoiseDimRcp) * TerrainScale);
 
             float3 HitDirection = Ball.Position - SamplePos;
@@ -56,8 +56,12 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
             BounceDir += HitDirection * max(PenetrationSqr, 0.0f);
         }
     }
+    if(length(BounceDir) > 0)
+    {
+        BounceDir = normalize(BounceDir);
 
-    BounceDir = normalize(BounceDir);
+        Ball.Velocity = BounceDir * length(Ball.Velocity) * Ball.Bounciness;
+    }
 
-    Ball.Velocity += BounceDir * sqrt(VelocityMagSqr) * Ball.Bounciness;
+    u_BallData[c_SceneData.BallDataUAVIndex][DispatchThreadId.x] = Ball;
 }

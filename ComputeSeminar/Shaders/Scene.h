@@ -8,12 +8,13 @@ struct SceneData
     uint BallDataSRVIndex;
     uint FrameID;
     float TerrainScale;
+    float TerrainHeight;
     float DeltaSeconds;
     float Gravity;
     uint NumBalls;
     float DragCoefficient;
     uint NoiseDim;
-    float2 __pad;
+    float __pad;
 };
 
 #endif
