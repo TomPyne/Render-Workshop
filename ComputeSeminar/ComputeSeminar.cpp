@@ -229,10 +229,15 @@ ComputePipelineStatePtr CreateBallComputePSO()
 	return CreateComputePipelineState(PSODesc);
 }
 
-std::vector<float> GetNoiseData(u32 Dim)
+void GetNoiseData(u32 Dim, float XZScale, float YScale, std::vector<float>& HeightData, std::vector<float3>& NormalData)
 {
-	std::vector<float> Data;
-	Data.resize(Dim * Dim);
+	HeightData.resize(Dim * Dim);
+	NormalData.resize(Dim * Dim);
+
+	auto Height = [&HeightData, Dim](u32 x, u32 y)->float&
+	{
+		return HeightData[y * Dim + x];
+	};
 
 	double rcp = 10.0 / (double)Dim;
 	for (u32 y = 0; y < Dim; y++)
@@ -242,11 +247,25 @@ std::vector<float> GetNoiseData(u32 Dim)
 			double Noise = PerlinNoise2D((double)x * rcp, (double)y * rcp, 2.0, 2.0, 4);
 			Noise += 1.0;
 			Noise *= 0.5;
-			Data[y * Dim + x] = static_cast<float>(Noise);
+			Height(x, y) = powf(static_cast<float>(Noise), 4.0f);
 		}
 	}
 
-	return Data;
+	for (u32 y = 0; y < Dim; y++)
+	{
+		for (u32 x = 0; x < Dim; x++)
+		{
+			float sx = Height(x < Dim - 1 ? x + 1 : x, y) - Height(x > 0 ? x - 1 : x, y);
+			if (x == 0 || x == Dim - 1)
+				sx *= 2;
+
+			float sy = Height(x, y < Dim - 1 ? y + 1 : y) - Height(x, y > 0 ? y - 1 : y);
+			if (y == 0 || y == Dim - 1)
+				sy *= 2;
+
+			NormalData[y * Dim + x] = Normalize(float3(-sx * YScale, 2.0f * 0.01f, sy * YScale));
+		}
+	}
 }
 
 void CreateNoiseTexture(u32 Dim, const float* const DataPtr, TexturePtr& OutTex, ShaderResourceViewPtr& OutSrv)
@@ -262,6 +281,21 @@ void CreateNoiseTexture(u32 Dim, const float* const DataPtr, TexturePtr& OutTex,
 
 	OutTex = CreateTexture(Desc);
 	OutSrv = CreateTextureSRV(OutTex, RenderFormat::R32_FLOAT, TextureDimension::TEX2D, 1u, 1u);
+}
+
+void CreateNoiseNormalTexture(u32 Dim, const float3* const DataPtr, TexturePtr& OutTex, ShaderResourceViewPtr& OutSrv)
+{
+	MipData Mip(DataPtr, RenderFormat::R32G32B32_FLOAT, Dim, Dim);
+	TextureCreateDesc Desc = {};
+	Desc.Data = &Mip;
+	Desc.DebugName = L"NormalTex";
+	Desc.Flags = RenderResourceFlags::SRV;
+	Desc.Format = RenderFormat::R32G32B32_FLOAT;
+	Desc.Height = Dim;
+	Desc.Width = Dim;
+
+	OutTex = CreateTexture(Desc);
+	OutSrv = CreateTextureSRV(OutTex, RenderFormat::R32G32B32_FLOAT, TextureDimension::TEX2D, 1u, 1u);
 }
 
 float RandFloat()
@@ -292,9 +326,6 @@ void ResizeScreen(uint32_t width, uint32_t height)
 
 	G.screenWidth = width;
 	G.screenHeight = height;
-
-	RenderRelease(G.depthTexture);
-	RenderRelease(G.depthDsv);
 
 	TextureCreateDescEx depthDesc = {};
 	depthDesc.DebugName = L"SceneDepth";
@@ -369,12 +400,22 @@ int main()
 	const u32 TileMeshDim = 128;
 	TerrainTileMesh tile = CreateTerrainTileMesh(TileMeshDim);
 
+	const float TerrainScale = 100.0f;
+	const float TerrainHeight = 10.0f;
+	const float Gravity = -2.0f;
+
 	TexturePtr NoiseTex = {};
 	ShaderResourceViewPtr NoiseSrv = {};
 
+	TexturePtr NormalTex = {};
+	ShaderResourceViewPtr NormalSrv = {};
+
 	const uint32_t NoiseDim = 512;
-	std::vector<float> NoiseData = GetNoiseData(NoiseDim);
+	std::vector<float> NoiseData;
+	std::vector<float3> NoiseNormalData;
+	GetNoiseData(NoiseDim, TerrainScale, TerrainHeight, NoiseData, NoiseNormalData);
 	CreateNoiseTexture(NoiseDim, NoiseData.data(), NoiseTex, NoiseSrv);
+	CreateNoiseNormalTexture(NoiseDim, NoiseNormalData.data(), NormalTex, NormalSrv);
 
 	GraphicsPipelineStatePtr meshPSO = CreateMeshPSO();
 	GraphicsPipelineStatePtr terrainPSO = CreateTerrainPSO();
@@ -400,7 +441,7 @@ int main()
 		{
 			Ball NewBall;
 			NewBall.Position = float3((float)x, 20.0f, (float)y);
-			NewBall.Scale = RandFloatInRange(0.3f, 1.2f);
+			NewBall.Scale = RandFloatInRange(0.1f, 0.4f);
 			NewBall.Color = RandFloat3();
 			NewBall.Bounciness = RandFloatInRange(0.5f, 0.9f);
 			NewBall.Velocity = float3{ 0 };
@@ -413,9 +454,6 @@ int main()
 	BallDrawIndices.resize(Balls.size());
 
 	const uint32_t BallCount = (uint32_t)Balls.size();
-	const float TerrainScale = 100.0f;
-	const float TerrainHeight = 10.0f;
-	const float Gravity = -2.0f;
 
 	const bool UseCompute = false;
 
@@ -506,9 +544,9 @@ int main()
 			{
 				Ball& ball = Balls[i];
 
-				const float VelocityMagSqr = LengthSqrF3(ball.Velocity);
+				const float VelocityMagSqr = LengthSqr(ball.Velocity);
 
-				ball.Velocity += float3(0, Gravity * DeltaSeconds, 0);// +-SignF3(ball.Velocity) * VelocityMagSqr * 0.001f;
+				ball.Velocity += float3(0, Gravity * DeltaSeconds, 0) - Sign(ball.Velocity) * VelocityMagSqr * 0.0001f;
 
 				ball.Position += ball.Velocity * DeltaSeconds;
 
@@ -558,6 +596,7 @@ int main()
 				{
 					float penetration = 0.0f;
 					float3 bounceDir = 0;
+					u32 samples = 0;
 					for (u32 y = topLeftCoord.y; y <= bottomRightCoord.y; y++)
 					{
 						for (u32 x = topLeftCoord.x; x <= bottomRightCoord.x; x++)
@@ -566,18 +605,25 @@ int main()
 							float3 samplePos = float3(((float)x / (float)NoiseDim) * TerrainScale, height, ((float)y / (float)NoiseDim) * TerrainScale);
 
 							float3 direction = ball.Position - samplePos;
-							float penetrationTest = ball.Scale * ball.Scale - LengthSqrF3(direction);
+							float penetrationTest = ball.Scale * ball.Scale - LengthSqr(direction);
 							if (penetrationTest > penetration)
 							{
 								penetration = penetrationTest;
 								bounceDir = direction;
 							}
+
+							samples++;
 						}
 					}
 
-					return NormalizeF3(bounceDir);
+					if (!samples)
+					{
+						__debugbreak();
+					}
+
+					return Normalize(bounceDir);
 				};
-				ball.Velocity += GetHit() * LengthF3(ball.Velocity) * ball.Bounciness;
+				ball.Velocity += GetHit() * Length(ball.Velocity) * ball.Bounciness;
 
 				//AABB ballAABB = AABB{ ball.Position - float3{radius}, ball.Position + float3{radius} };
 				BoundingSphere bounds = BoundingSphere(ball.Position, ball.Scale);
@@ -606,9 +652,12 @@ int main()
 		struct
 		{
 			matrix viewProjection;
+			float3 CamPos;
+			float __pad;
 		} viewConsts;
 
 		viewConsts.viewProjection = GCam.GetView() * GCam.GetProjection();
+		viewConsts.CamPos = GCam.GetPosition();
 
 		DynamicBuffer_t viewCbuf = CreateDynamicConstantBuffer(&viewConsts, sizeof(viewConsts));
 
@@ -619,14 +668,15 @@ int main()
 			float2 Offset;
 			float2 Scale;
 			u32 NoiseTex;
+			u32 NormalTex;
 			float Height;
 			float CellSize;
-			float _Pad;
 		} terrainTileConstants;
 
 		terrainTileConstants.Offset = { 0.f };
 		terrainTileConstants.Scale = { TerrainScale };
 		terrainTileConstants.NoiseTex = GetDescriptorIndex(NoiseSrv);
+		terrainTileConstants.NormalTex = GetDescriptorIndex(NormalSrv);
 		terrainTileConstants.Height = TerrainHeight;
 		terrainTileConstants.CellSize = (1.0f / (float)TileMeshDim);
 
@@ -671,7 +721,7 @@ int main()
 		{
 			RenderTargetView_t backBufferRtv = view->GetCurrentBackBufferRTV();
 
-			constexpr float DefaultClearCol[4] = { 0.0f, 0.0f, 0.2f, 0.0f };
+			constexpr float DefaultClearCol[4] = { 0.3f, 0.3f, 0.6f, 0.0f };
 
 			cl->ClearRenderTarget(backBufferRtv, DefaultClearCol);
 			cl->ClearDepth(G.depthDsv, 1.0f);
@@ -764,14 +814,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg)
 	{
-	//case WM_MOVE:
-	//{
-	//	RECT r;
-	//	GetWindowRect(hWnd, &r);
-	//	const int x = (int)(r.left);
-	//	const int y = (int)(r.top);
-	//	break;
-	//}
 	case WM_SIZE:
 		if (wParam != SIZE_MINIMIZED)
 		{

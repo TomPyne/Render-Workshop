@@ -1,10 +1,13 @@
 #include "Samplers.h"
+#include "View.h"
+
+ConstantBuffer<ViewData> c_View : register(b0);
 
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
     float2 UV : TEXCOORD;
-    float3 Normal : NORMAL;
+    float3 WorldPosition : WORLDPOS;
 };
 
 cbuffer meshBuf : register(b1)
@@ -12,23 +15,19 @@ cbuffer meshBuf : register(b1)
     float2 TileWorldPos;
     float2 TileScale;
     uint NoiseTex;
+    uint NormalTex;
     float Height;
     float CellSize;
-    float2 _Pad;
 };
 
 #if _BINDLESS
 Texture2D<float> t_tex2d_float[512] : register(t0, space0);
+Texture2D<float3> t_tex2d_float3[512] : register(t0, space1);
 #else
 Texture2D<float> NoiseTexture : register(t0);
 #endif
 
 #ifdef _VS
-
-cbuffer viewBuf : register(b0)
-{
-    float4x4 ViewProjectionMatrix;
-};
 
 struct VS_INPUT
 {
@@ -50,26 +49,10 @@ PS_INPUT main(VS_INPUT input)
 
     float height = SampleHeight(input.UV);
 
-    float2 uvx0 = float2(input.UV.x < 1.0f ? input.UV.x + CellSize : input.UV.x, input.UV.y); 
-    float2 uvx1 = float2(input.UV.x > 0.0f ? input.UV.x - CellSize : input.UV.x, input.UV.y);
+    output.WorldPosition = float3(input.UV.x * TileScale.x + TileWorldPos.x, height * Height, input.UV.y * TileScale.y + TileWorldPos.y);
 
-    float2 uvy0 = float2(input.UV.x, input.UV.y < 1.0f ? input.UV.y + CellSize : input.UV.y);
-    float2 uvy1 = float2(input.UV.x, input.UV.y > 0.0f ? input.UV.y - CellSize : input.UV.y);
-
-    float sx = SampleHeight(uvx0) - SampleHeight(uvx1);
-    float sy = SampleHeight(uvy0) - SampleHeight(uvy1);
-
-    if(input.UV.x <= 0.0f || input.UV.x >= 1.0f)
-        sx *= 2.0f;
-
-    if(input.UV.y <= 0.0f || input.UV.y >= 1.0f)
-        sy *= 2.0f;
-
-    float4 WorldPos = float4(input.UV.x * TileScale.x + TileWorldPos.x, height * Height, input.UV.y * TileScale.y + TileWorldPos.y, 1.f);
-
-    output.Position = mul(ViewProjectionMatrix, WorldPos);
+    output.Position = mul(c_View.ViewProjectionMatrix, float4(output.WorldPosition, 1.0f));
     output.UV = input.UV;
-    output.Normal = normalize(float3(-sx * Height, 2.0f * TileScale.x, sy * Height));
 
     return output;
 };
@@ -78,17 +61,32 @@ PS_INPUT main(VS_INPUT input)
 
 #ifdef _PS
 
-
-
 float4 main(PS_INPUT input) : SV_Target0
 {
 #if _BINDLESS
-    float Noise = t_tex2d_float[NoiseTex].Sample(TrilinearSampler, input.UV).r;
+    float3 normal = normalize(t_tex2d_float3[NormalTex].Sample(TrilinearSampler, input.UV).rgb);
 #else
     float Noise = NoiseTexture.Sample(TrilinearSampler, input.UV).r;
 #endif
-    return float4(saturate(input.Normal), 1.0f);
-    return float4(Noise.rrr, 1.0f);
+
+    //float3 normal = normalize(input.Normal);
+    float3 lightDir = normalize(float3(0.5f, 1.0f, 0.5f));
+    float3 lightColor = float3(1.0f, 1.0f, 1.0f) * 0.8f;
+    float ambientStrength = 0.5f;
+    float3 viewDir = normalize(c_View.CameraPos - input.WorldPosition);
+    float3 halfDir = normalize(lightDir + viewDir);
+
+    float3 ambient  = ambientStrength * lightColor;
+    float3 diff = max(dot(normal, lightDir), 0.0f) * lightColor;
+    float3 spec = pow(max(dot(normal, halfDir), 0.0f), 0.0f) * lightColor * 0.0f;
+
+    float3 terrainColor = lerp(float3(0.5f, 0.5f, 0.5f), float3(0.0f, 0.5f, 0.0f), normal.y);
+    float3 finalColor = (ambient + diff + spec) * terrainColor;
+    finalColor *= 8;
+    finalColor = floor(finalColor);
+    finalColor *= 0.125f;
+
+    return float4(finalColor, 1.0f);
 };
 
 #endif

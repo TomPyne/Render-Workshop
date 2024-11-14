@@ -4,6 +4,8 @@
 struct ViewData
 {
     float4x4 ViewProjectionMatrix;
+    float3 CameraPos;
+    float __pad;
 };
 
 #endif

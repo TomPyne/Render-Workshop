@@ -26,6 +26,7 @@ constexpr float K_PI = 3.141592654f;
 template <typename T>
 struct Vector2Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -41,6 +42,8 @@ struct Vector2Component
 
     template<typename X>
     Vector2Component(X _xy) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)) {}
+
+    constexpr Vector2Component Sign() const noexcept { return Vector2Component(Sign(x), Sign(y)); }
 
     Vector2Component& operator*=(T rhs)
     {
@@ -129,6 +132,7 @@ constexpr u32 SwzW = 3;
 template <typename T>
 struct Vector3Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -153,7 +157,9 @@ struct Vector3Component
 
     Vector3Component Swizzle(u32 x, u32 y, u32 z) const noexcept { return Vector3Component{ v[x], v[y], v[z] }; }
 
-    constexpr Vector2Component<T> XY() noexcept { return Vector2Component<T>{ x, y }; }
+    constexpr Vector2Component<T> XY() const noexcept { return Vector2Component<T>{ x, y }; }
+
+    constexpr Vector3Component Sign() const noexcept { return Vector3Component(Sign(x), Sign(y), Sign(z)); }
 
     constexpr Vector3Component operator-() const noexcept { return  Vector3Component{ -x, -y, -z }; }
 
@@ -204,6 +210,7 @@ using uint3 = Vector3Component<u32>;
 template<typename T>
 struct Vector4Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -222,6 +229,8 @@ struct Vector4Component
     constexpr Vector4Component(T _xyzw) : x(_xyzw), y(_xyzw), z(_xyzw), w(_xyzw) {}
     constexpr Vector4Component(Vector3Component<T> _f3, T _w = (T)0) : x(_f3.x), y(_f3.y), z(_f3.z), w(_w) {}
     constexpr Vector4Component(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {}
+
+    constexpr Vector4Component Sign() const noexcept { return Vector4Component(Sign(x), Sign(y), Sign(z), Sign(w)); }
 
     constexpr Vector4Component operator-() const noexcept { return  Vector4Component{ -x, -y, -z, -w }; }
 
@@ -603,6 +612,29 @@ inline u32 FloorLog2(u32 n) noexcept
     return ret;
 }
 
+inline constexpr float Sign(float f) noexcept
+{
+    return f >= 0.0f ? 1.0f : -1.0f;
+}
+
+template<typename T>
+inline constexpr Vector2Component<T> Sign(Vector2Component<T> v) noexcept
+{
+    return Vector2Component<T>(Sign(v.x), Sign(v.y));
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> Sign(Vector3Component<T> v) noexcept
+{
+    return Vector3Component<T>(Sign(v.x), Sign(v.y), Sign(v.z));
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> Sign(Vector4Component<T> v) noexcept
+{
+    return Vector4Component<T>(Sign(v.x), Sign(v.y), Sign(v.z), Sign(v.w));
+}
+
 // Vector
 inline constexpr float3 MultiplyAddF3(float3 a, float3 b, float3 c) noexcept
 {
@@ -666,51 +698,56 @@ inline constexpr float3 CrossF3(float3 a, float3 b) noexcept
     );
 }
 
-inline constexpr float DotF3(float3 a, float3 b) noexcept
+inline constexpr float Dot(float2 a, float2 b) noexcept
+{
+    return a.x * b.x + a.y * b.y;
+}
+
+inline constexpr float Dot(float3 a, float3 b) noexcept
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-inline constexpr float DotF4(float4 a, float4 b) noexcept
+inline constexpr float Dot(float4 a, float4 b) noexcept
 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-inline constexpr float LengthSqrF3(float3 f3) noexcept
+template<typename T>
+inline constexpr T::ElementType LengthSqr(T v) noexcept
 {
-    return DotF3(f3, f3);
+    return Dot(v, v);
 }
 
-inline float LengthF3(float3 f3) noexcept
+template<typename T>
+inline T::ElementType Length(T v)
 {
-    return sqrtf(LengthSqrF3(f3));
+    return sqrtf(LengthSqr(v));
 }
 
-inline float DistSqrF3(float3 a, float3 b)
+template<typename T>
+inline T::ElementType DistSqr(T a, T b)
 {
-    return LengthSqrF3(b - a);
+    return LengthSqr(b - a);
 }
 
-inline float DistF3(float3 a, float3 b)
+template<typename T>
+inline T::ElementType Dist(T a, T b)
 {
-    return LengthF3(b - a);
+    return Length(b - a);
 }
 
-inline constexpr float Sign(float f) noexcept
+template<typename T>
+inline T Normalize(T v)
 {
-    return f >= 0.0f ? 1.0f : -1.0f;
-}
+    typename T::ElementType length = Length(v);
 
-inline constexpr float3 SignF3(float3 f3) noexcept
-{
-    return float3{ Sign(f3.x), Sign(f3.y), Sign(f3.z) };
-}
+    if (length > 0.0f)
+    {
+        length = 1.0f / length;
+    }
 
-inline float3 NormalizeF3(float3 f3) noexcept
-{
-    float length = LengthF3(f3);
-    if (length > 0) length = 1.0f / length;
-    return float3(f3.x * length, f3.y * length, f3.z * length);
+    return v * length;
 }
 
 inline float3 TransformF3(float3 v, matrix m) noexcept
@@ -805,7 +842,7 @@ inline matrix MakeMatrixRotationAxis(float3 axis, float angleRadians) noexcept
     assert(axis != k_Vec3Zero);
     assert(!IsAnyInf(axis));
 
-    float3 normal = NormalizeF3(axis);
+    float3 normal = Normalize(axis);
     return MakeMatrixRotationNormal(normal, angleRadians);
 }
 
@@ -991,7 +1028,7 @@ inline matrix InverseMatrix(matrix m, float* outDeterminant = nullptr) noexcept
     r.r[2] = float4(c4.x, c5.y, c4.z, c5.w);
     r.r[3] = float4(c6.x, c7.y, c6.z, c7.w);
 
-    float determinant = DotF4(r.r[0], mt.r[0]);
+    float determinant = Dot(r.r[0], mt.r[0]);
 
     if (outDeterminant)
         *outDeterminant = determinant;
@@ -1014,16 +1051,16 @@ inline matrix MakeMatrixLookToLH(float3 eyePos, float3 eyeDir, float3 up) noexce
     assert(up != k_Vec3Zero);
     assert(!IsAnyInf(up));
 
-    float3 R2 = NormalizeF3(eyeDir);
+    float3 R2 = Normalize(eyeDir);
     float3 R0 = CrossF3(up, R2);
-    R0 = NormalizeF3(R0);
+    R0 = Normalize(R0);
 
     float3 R1 = CrossF3(R2, R0);
     float3 NegEyePos = NegateF3(eyePos);
 
-    float D0 = DotF3(R0, NegEyePos);
-    float D1 = DotF3(R1, NegEyePos);
-    float D2 = DotF3(R2, NegEyePos);
+    float D0 = Dot(R0, NegEyePos);
+    float D1 = Dot(R1, NegEyePos);
+    float D2 = Dot(R2, NegEyePos);
 
     matrix m;
     m.r[0] = float4(R0, D0);
@@ -1119,7 +1156,7 @@ struct Plane
     Plane(float3 normal, float3 origin)
         : Normal(normal)
     {
-        Distance = DotF3(normal, origin);
+        Distance = Dot(normal, origin);
     }
 
     constexpr bool IsValid() const noexcept
@@ -1129,7 +1166,7 @@ struct Plane
 
     constexpr float GetSignedDistance(float3 point) const noexcept
     {
-        return DotF3(Normal, point) - Distance;
+        return Dot(Normal, point) - Distance;
     }
 };
 
@@ -1147,9 +1184,9 @@ inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, floa
 {
     const float halfHeight = tanf(verticalFOVRad * 0.5f) * zFar;
     const float halfWidth = halfHeight * aspectRatio;
-    const float3 right = NormalizeF3(CrossF3(up, forward));
+    const float3 right = Normalize(CrossF3(up, forward));
 
-    up = NormalizeF3(CrossF3(right, forward));
+    up = Normalize(CrossF3(right, forward));
 
     const float3 frontNear = forward * zNear;
     const float3 frontFar = forward * zFar;
@@ -1160,10 +1197,10 @@ inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, floa
 
     frustum.Planes[Frustum::NEAR] = Plane{ forward, position + frontNear };
     frustum.Planes[Frustum::FAR] = Plane{ -forward, position + frontFar };
-    frustum.Planes[Frustum::RIGHT] = Plane{ NormalizeF3(CrossF3(frontFar - halfRight, up)), position };
-    frustum.Planes[Frustum::LEFT] = Plane{ NormalizeF3(CrossF3(up, frontFar + halfRight)), position };
-    frustum.Planes[Frustum::TOP] = Plane{ NormalizeF3(CrossF3(right, frontFar - halfUp)), position };
-    frustum.Planes[Frustum::BOTTOM] = Plane{ NormalizeF3(CrossF3(frontFar + halfUp, right)), position };
+    frustum.Planes[Frustum::RIGHT] = Plane{ Normalize(CrossF3(frontFar - halfRight, up)), position };
+    frustum.Planes[Frustum::LEFT] = Plane{ Normalize(CrossF3(up, frontFar + halfRight)), position };
+    frustum.Planes[Frustum::TOP] = Plane{ Normalize(CrossF3(right, frontFar - halfUp)), position };
+    frustum.Planes[Frustum::BOTTOM] = Plane{ Normalize(CrossF3(frontFar + halfUp, right)), position };
 
     return frustum;
 }
@@ -1354,10 +1391,10 @@ inline bool CullFrustumAABB(const Frustum& frustum, const AABB& aabb) noexcept
     for (u32 fp = 0; fp < Frustum::FrustumPlanes::COUNT; fp++)
     {
         const float4 planeVec = float4{ frustum.Planes[fp].Normal, frustum.Planes[fp].Distance };
-        const float length = LengthF3(frustum.Planes[fp].Normal);
+        const float length = Length(frustum.Planes[fp].Normal);
         for (u32 v = 0; v < 8; v++)
         {
-            if ((DotF4(planeVec, float4{ corners[v], 1.0f }) / length) < 0.0f)
+            if ((Dot(planeVec, float4{ corners[v], 1.0f }) / length) < 0.0f)
             {
                 return false;
             }

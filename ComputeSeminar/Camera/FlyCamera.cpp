@@ -64,7 +64,7 @@ void FlyCamera::UpdateView(float delta)
 		if (io.KeyShift)
 			moveSpeed *= 4.0f;
 
-		translation = NormalizeF3(translateDir) * moveSpeed;
+		translation = Normalize(translateDir) * moveSpeed;
 
 		if (io.KeysDown[ImGuiKey_E]) translation.y += moveSpeed;
 		if (io.KeysDown[ImGuiKey_Q]) translation.y -= moveSpeed;
