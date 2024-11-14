@@ -72,3 +72,8 @@ void FlyCamera::UpdateView(float delta)
 
 	SetView(_position + translation, camPitch, camYaw);
 }
+
+Frustum FlyCamera::GetWorldFrustum() const
+{
+	return MakeWorldFrustum(_position, _lookDir, float3(0, 1, 0), ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+}

@@ -9,6 +9,7 @@ struct Camera
 	void SetFov(float fov);
 
 	const matrix& GetProjection() const noexcept { return _projection; }
+	Frustum CalculateViewFrustum() const noexcept;
 
 protected:
 	u32 _w = 0;

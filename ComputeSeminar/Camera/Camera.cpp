@@ -33,3 +33,8 @@ void Camera::SetFov(float fov)
 
 	_projection = MakeMatrixPerspectiveFovLH(ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
 }
+
+Frustum Camera::CalculateViewFrustum() const noexcept
+{
+	return MakeFrustum(ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+}

@@ -3,6 +3,14 @@
 #include <assert.h>
 #include <memory>
 
+#ifdef NEAR
+#undef NEAR
+#endif
+
+#ifdef FAR
+#undef FAR
+#endif
+
 typedef uint32_t u32;
 typedef int32_t i32;
 typedef uint16_t u16;
@@ -1039,8 +1047,8 @@ inline matrix MakeMatrixPerspectiveFovLH(float fovRadians, float aspectRatio, fl
     assert(!ScalarNearEqual(aspectRatio, 0.0f, 0.00001f));
     assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
 
-    float sinFov = sinf(fovRadians);
-    float cosFov = cosf(fovRadians);
+    float sinFov = sinf(fovRadians * 0.5f);
+    float cosFov = cosf(fovRadians * 0.5f);
 
     float height = cosFov / sinFov;
     float width = height / aspectRatio;
@@ -1093,6 +1101,78 @@ inline matrix makeMatrixOrthographicOffCentreLH(float left, float right, float b
     return m;
 }
 
+struct Plane
+{
+    float3 Normal;
+    float Distance;
+
+    constexpr Plane()
+        : Normal(0.0f)
+        , Distance(0.0f)
+    {}
+
+    constexpr Plane(float3 normal, float distance)
+        : Normal(normal)
+        , Distance(distance)
+    {}
+
+    Plane(float3 normal, float3 origin)
+        : Normal(normal)
+    {
+        Distance = DotF3(normal, origin);
+    }
+
+    constexpr bool IsValid() const noexcept
+    {
+        return Normal.x != 0.0f || Normal.y != 0.0f || Normal.z != 0.0f;
+    }
+
+    constexpr float GetSignedDistance(float3 point) const noexcept
+    {
+        return DotF3(Normal, point) - Distance;
+    }
+};
+
+struct Frustum
+{
+    enum FrustumPlanes
+    {
+        TOP, RIGHT, BOTTOM, LEFT, NEAR, FAR, COUNT
+    };
+
+    Plane Planes[COUNT] = {};
+};
+
+inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, float verticalFOVRad, float aspectRatio, float zNear, float zFar)
+{
+    const float halfHeight = tanf(verticalFOVRad * 0.5f) * zFar;
+    const float halfWidth = halfHeight * aspectRatio;
+    const float3 right = NormalizeF3(CrossF3(up, forward));
+
+    up = NormalizeF3(CrossF3(right, forward));
+
+    const float3 frontNear = forward * zNear;
+    const float3 frontFar = forward * zFar;
+    const float3 halfRight = right * halfWidth;
+    const float3 halfUp = up * halfHeight;
+
+    Frustum frustum;
+
+    frustum.Planes[Frustum::NEAR] = Plane{ forward, position + frontNear };
+    frustum.Planes[Frustum::FAR] = Plane{ -forward, position + frontFar };
+    frustum.Planes[Frustum::RIGHT] = Plane{ NormalizeF3(CrossF3(frontFar - halfRight, up)), position };
+    frustum.Planes[Frustum::LEFT] = Plane{ NormalizeF3(CrossF3(up, frontFar + halfRight)), position };
+    frustum.Planes[Frustum::TOP] = Plane{ NormalizeF3(CrossF3(right, frontFar - halfUp)), position };
+    frustum.Planes[Frustum::BOTTOM] = Plane{ NormalizeF3(CrossF3(frontFar + halfUp, right)), position };
+
+    return frustum;
+}
+
+inline Frustum MakeFrustum(float verticalFOVRad, float aspectRatio, float zNear, float zFar)
+{
+    return MakeWorldFrustum(k_Vec3Zero, float3{ 0, 0, 1 }, float3{ 0, 1, 0 }, verticalFOVRad, aspectRatio, zNear, zFar);
+}
+
 constexpr float3 k_BoxOffsets[8] =
 {
     float3( -1.0f, -1.0f,  1.0f ),
@@ -1112,6 +1192,7 @@ struct AABB
 
     constexpr AABB() : mins(FLT_MAX), maxs(-FLT_MAX) {}
     constexpr AABB(float3 _mins, float3 _maxs) : mins(_mins), maxs(_maxs) {}
+    constexpr AABB(const AABB& aabb) : mins(aabb.mins), maxs(aabb.maxs) {}
 
     constexpr void Grow(float3 p) noexcept
     {
@@ -1137,7 +1218,7 @@ struct AABB
         return (maxs - mins) * 0.5f;
     }
 
-    void Transform(const matrix& mat)
+    void Transform(const matrix& mat) noexcept
     {
         float3 centre = Origin();
         float3 extents = Extents();
@@ -1147,6 +1228,28 @@ struct AABB
 
         for (size_t i = 0; i < 8; i++)
             Grow(TransformF3(MultiplyAddF3(extents, k_BoxOffsets[i], centre), mat));
+    }
+
+    AABB GetTransformed(const matrix& matrix) const noexcept
+    {
+        const float3 centre = Origin();
+        const float3 extents = Extents();
+
+        AABB transformed = *this;
+        transformed.Transform(matrix);
+        
+        return transformed;
+    }
+
+    void GetCorners(float3 corners[8]) const noexcept
+    {
+        const float3 extents = Extents();
+        const float3 origin = Origin();
+
+        for (u32 i = 0; i < 8; i++)
+        {
+            corners[i] = (k_BoxOffsets[i] * extents) + origin;
+        }
     }
 };
 
@@ -1228,8 +1331,64 @@ struct BoundingFrustum
     }
 };
 
+struct BoundingSphere
+{
+    float3 Origin;
+    float Radius;
+
+    constexpr BoundingSphere(const float3& origin, float radius)
+        : Origin(origin)
+        , Radius(radius)
+    {}
+
+    constexpr bool IsForwardOfPlane(const Plane& plane) const noexcept
+    {
+        return plane.GetSignedDistance(Origin) > -Radius;
+    }
+};
+
+inline bool CullFrustumAABB(const Frustum& frustum, const AABB& aabb) noexcept
+{
+    float3 corners[8];
+    aabb.GetCorners(corners);
+    for (u32 fp = 0; fp < Frustum::FrustumPlanes::COUNT; fp++)
+    {
+        const float4 planeVec = float4{ frustum.Planes[fp].Normal, frustum.Planes[fp].Distance };
+        const float length = LengthF3(frustum.Planes[fp].Normal);
+        for (u32 v = 0; v < 8; v++)
+        {
+            if ((DotF4(planeVec, float4{ corners[v], 1.0f }) / length) < 0.0f)
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+inline bool CullFrustumSphere(const Frustum& frustum, const BoundingSphere& sphere) noexcept
+{
+    for (u32 fp = 0u; fp < Frustum::FrustumPlanes::COUNT; fp++)
+    {
+        if (!sphere.IsForwardOfPlane(frustum.Planes[fp]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline bool CullFrustumWorldAABB(const Frustum& frustum, const AABB& aabb, const matrix& view) noexcept
+{
+    const AABB viewAlignedAABB = aabb.GetTransformed(view);
+
+    return CullFrustumAABB(frustum, viewAlignedAABB);
+}
+
 template<typename T>
-static constexpr T AlignUp(T size, T alignment)
+static constexpr T AlignUpPow2(T size, T alignment) noexcept
 {
     const T mask = alignment - 1;
     return (size + mask) & ~mask;

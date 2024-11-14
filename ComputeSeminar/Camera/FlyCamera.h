@@ -10,6 +10,10 @@ struct FlyCamera : public Camera
 	const matrix& GetView() const noexcept { return _view; }
 	const float3& GetPosition() const noexcept { return _position; }
 
+	void SetPosition(const float3& position) noexcept { _position = position; }
+
+	Frustum GetWorldFrustum() const;
+
 protected:
 	float3 _position;
 	float3 _lookDir;

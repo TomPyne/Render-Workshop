@@ -19,8 +19,6 @@ static struct
 
 	TexturePtr depthTexture = Texture_t::INVALID;
 	DepthStencilViewPtr depthDsv = DepthStencilView_t::INVALID;
-
-	matrix projectionMatrix;
 } G;
 
 struct BindVertexBuffer
@@ -120,7 +118,7 @@ Mesh CreateSphereMesh(uint32_t Slices, uint32_t Stacks)
 	for (uint32_t i = 0; i < Stacks - 1; i++)
 	{
 		float Phi = K_PI * float(i + 1) / float(Stacks);
-		for (int j = 0; j < Slices; j++)
+		for (uint32_t j = 0; j < Slices; j++)
 		{
 			float Theta = 2.0f * K_PI * float(j) / float(Slices);
 			float x = sinf(Phi) * cosf(Theta);
@@ -174,57 +172,11 @@ Mesh CreateSphereMesh(uint32_t Slices, uint32_t Stacks)
 	Outmesh.positionBuf.stride = sizeof(float3);
 
 	Outmesh.indexBuf.buf = CreateIndexBuffer(Indices.data(), Indices.size() * sizeof(uint32_t));
-	Outmesh.indexBuf.count = Indices.size();
+	Outmesh.indexBuf.count = (uint32_t)Indices.size();
 	Outmesh.indexBuf.format = RenderFormat::R32_UINT;
 	Outmesh.indexBuf.offset = 0;
 
 	return Outmesh;
-}
-
-Mesh CreateCubeMesh()
-{
-	Mesh mesh;
-
-	constexpr float3 pftl = float3(-0.5f, 0.5f, 0.5f);
-	constexpr float3 pftr = float3(0.5f, 0.5f, 0.5f);
-	constexpr float3 pfbr = float3(0.5f, -0.5f, 0.5f);
-	constexpr float3 pfbl = float3(-0.5f, -0.5f, 0.5f);
-
-	constexpr float3 pbtl = float3(-0.5f, 0.5f, -0.5f);
-	constexpr float3 pbtr = float3(0.5f, 0.5f, -0.5f);
-	constexpr float3 pbbr = float3(0.5f, -0.5f, -0.5f);
-	constexpr float3 pbbl = float3(-0.5f, -0.5f, -0.5f);
-
-	float3 posVerts[6 * 4] =
-	{
-		pftl, pftr, pfbr, pfbl,
-		pbtr, pbtl, pbbl, pbbr,
-		pftr, pbtr, pbbr, pfbr,
-		pbtl, pftl, pfbl, pbbl,
-		pfbl, pfbr, pbbr, pbbl,
-		pftl, pbtl, pbtr, pftr,
-	};
-
-	mesh.positionBuf.buf = CreateVertexBuffer(posVerts, sizeof(posVerts));
-	mesh.positionBuf.offset = 0;
-	mesh.positionBuf.stride = sizeof(float3);
-
-	u16 Indices[6 * 6] =
-	{
-		2, 1, 0, 0, 3, 2,
-		6, 5, 4, 4, 7, 6,
-		10, 9, 8, 8, 11, 10,
-		14, 13, 12, 12, 15, 14,
-		18, 17, 16, 16, 19, 18,
-		22, 21, 20, 20, 23, 22,
-	};
-
-	mesh.indexBuf.buf = CreateIndexBuffer(Indices, sizeof(Indices));
-	mesh.indexBuf.count = ARRAYSIZE(Indices);
-	mesh.indexBuf.offset = 0;
-	mesh.indexBuf.format = RenderFormat::R16_UINT;
-
-	return mesh;
 }
 
 GraphicsPipelineStatePtr CreateMeshPSO()
@@ -312,24 +264,6 @@ void CreateNoiseTexture(u32 Dim, const float* const DataPtr, TexturePtr& OutTex,
 	OutSrv = CreateTextureSRV(OutTex, RenderFormat::R32_FLOAT, TextureDimension::TEX2D, 1u, 1u);
 }
 
-void RandHash(uint32_t& Seed) {
-	Seed ^= 2747636419u;
-	Seed *= 2654435769u;
-	Seed ^= Seed >> 16;
-	Seed *= 2654435769u;
-	Seed ^= Seed >> 16;
-	Seed *= 2654435769u;
-}
-uint32_t InitRandomGenerator(const float3& Position, uint32_t FrameID)
-{
-	return uint32_t(Position.z * 400 + Position.y * 200 + Position.z) + uint32_t(FrameID);
-}
-
-float PseudoRand(uint32_t Seed) {
-	RandHash(Seed);
-	return float(Seed) / 4294967295.0;
-}
-
 float RandFloat()
 {
 	return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
@@ -377,8 +311,6 @@ void ResizeScreen(uint32_t width, uint32_t height)
 
 	float aspectRatio = (float)G.screenWidth / (float)G.screenHeight;
 	
-	G.projectionMatrix = MakeMatrixPerspectiveFovLH(fovRad, aspectRatio, 0.01f, 100.0f);
-
 	GCam.Resize(G.screenWidth, G.screenHeight);
 }
 
@@ -444,8 +376,6 @@ int main()
 	std::vector<float> NoiseData = GetNoiseData(NoiseDim);
 	CreateNoiseTexture(NoiseDim, NoiseData.data(), NoiseTex, NoiseSrv);
 
-	matrix viewMatrix = MakeMatrixLookAtLH(float3{ 0.0f, 0.0f, -2.0f }, float3{ 0.0f, 0.0f, 0.0f }, float3(0.0f, 1.0f, 0.0f));
-
 	GraphicsPipelineStatePtr meshPSO = CreateMeshPSO();
 	GraphicsPipelineStatePtr terrainPSO = CreateTerrainPSO();
 	ComputePipelineStatePtr ballComputePSO = CreateBallComputePSO();
@@ -461,9 +391,12 @@ int main()
 	};
 
 	std::vector<Ball> Balls;
-	for (uint32_t y = 5; y < 100; y += 2)
+
+	const uint32_t StartGrid = 5u;
+	const uint32_t EndGrid = 100u;
+	for (uint32_t y = StartGrid; y < EndGrid; y += 2)
 	{
-		for (uint32_t x = 5; x < 100; x += 2)
+		for (uint32_t x = StartGrid; x < EndGrid; x += 2)
 		{
 			Ball NewBall;
 			NewBall.Position = float3((float)x, 20.0f, (float)y);
@@ -476,42 +409,66 @@ int main()
 		}
 	}
 
+	std::vector<u32> BallDrawIndices;
+	BallDrawIndices.resize(Balls.size());
+
 	const uint32_t BallCount = (uint32_t)Balls.size();
 	const float TerrainScale = 100.0f;
 	const float TerrainHeight = 10.0f;
 	const float Gravity = -2.0f;
 
-	const bool UseCompute = true;
+	const bool UseCompute = false;
 
 	struct
 	{
-		uint32_t NoiseTexSRVIndex;
-		uint32_t BallDataUAVIndex;
-		uint32_t BallDataSRVIndex;
 		uint32_t FrameID;
 		float TerrainScale;
 		float TerrainHeight;
 		float DeltaSeconds;
+
 		float Gravity;
 		uint32_t NumBalls;
 		float DragCoefficient;
 		uint32_t NoiseDim;
-		float __pad;
+
+		uint32_t NoiseTexSRVIndex;
+		uint32_t BallDataUAVIndex;
+		uint32_t BallDataSRVIndex;
+		uint32_t BallIndexUAVIndex;
+
+		uint32_t BallIndexSRVIndex;
+		float __pad[3];
 	} ComputeSceneData;
 
-	StructuredBufferPtr BallDataBuffer = CreateStructuredBuffer(Balls.data(), BallCount * sizeof(Ball), sizeof(Ball), RenderResourceFlags::SRV | RenderResourceFlags::UAV);
-	ShaderResourceViewPtr BallDataSRV = CreateStructuredBufferSRV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball));
-	UnorderedAccessViewPtr BallDataUAV = CreateStructuredBufferUAV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball));
+	RenderResourceFlags StructBufResourceFlags = RenderResourceFlags::SRV;
+	if (UseCompute)
+	{
+		StructBufResourceFlags |= RenderResourceFlags::UAV;
+	}
 
-	ComputeSceneData.NoiseTexSRVIndex = GetDescriptorIndex(NoiseSrv);
-	ComputeSceneData.BallDataUAVIndex = GetDescriptorIndex(BallDataUAV);
-	ComputeSceneData.BallDataSRVIndex = GetDescriptorIndex(BallDataSRV);
+	StructuredBufferPtr BallDataBuffer = CreateStructuredBuffer(Balls.data(), BallCount * sizeof(Ball), sizeof(Ball), StructBufResourceFlags);
+	ShaderResourceViewPtr BallDataSRV = CreateStructuredBufferSRV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball));
+	UnorderedAccessViewPtr BallDataUAV = UseCompute ? CreateStructuredBufferUAV(BallDataBuffer, 0u, BallCount, (uint32_t)sizeof(Ball)) : UnorderedAccessView_t{};
+
+	StructuredBufferPtr BallIndexBuffer = CreateStructuredBuffer(BallDrawIndices.data(), BallDrawIndices.size() * sizeof(u32), sizeof(u32), StructBufResourceFlags);
+	ShaderResourceViewPtr BallIndexSRV = CreateStructuredBufferSRV(BallIndexBuffer, 0u, BallCount, (u32)sizeof(u32));
+	UnorderedAccessViewPtr BallIndexUAV = UseCompute ? CreateStructuredBufferUAV(BallIndexBuffer, 0u, BallCount, (u32)sizeof(u32)) : UnorderedAccessView_t{};
+
 	ComputeSceneData.TerrainScale = TerrainScale;
 	ComputeSceneData.TerrainHeight = TerrainHeight;
 	ComputeSceneData.Gravity = Gravity;
 	ComputeSceneData.NumBalls = BallCount;
 	ComputeSceneData.DragCoefficient = 0.001f;
 	ComputeSceneData.NoiseDim = NoiseDim;
+
+	ComputeSceneData.NoiseTexSRVIndex = GetDescriptorIndex(NoiseSrv);
+	ComputeSceneData.BallDataUAVIndex = GetDescriptorIndex(BallDataUAV);
+	ComputeSceneData.BallDataSRVIndex = GetDescriptorIndex(BallDataSRV);
+	ComputeSceneData.BallIndexUAVIndex = GetDescriptorIndex(BallIndexUAV);
+	ComputeSceneData.BallIndexSRVIndex = GetDescriptorIndex(BallIndexSRV);
+
+	GCam.SetPosition(float3(-5, 20, 25));
+	GCam.SetNearFar(0.1f, 1000.0f);
 
 	SurfClock Clock = {};
 
@@ -538,15 +495,47 @@ int main()
 
 		GCam.UpdateView(DeltaSeconds);
 
+		const Frustum viewFrustum = GCam.GetWorldFrustum();
+		const matrix viewMatrix = GCam.GetView();
+
+		u32 BallsToDraw = 0;
+
 		if (!UseCompute)
 		{
-			for (Ball& ball : Balls)
+			for(u32 i = 0; i < Balls.size(); i++)
 			{
+				Ball& ball = Balls[i];
+
 				const float VelocityMagSqr = LengthSqrF3(ball.Velocity);
 
-				ball.Velocity += float3(0, Gravity * DeltaSeconds, 0) + -SignF3(ball.Velocity) * VelocityMagSqr * 0.001f;
+				ball.Velocity += float3(0, Gravity * DeltaSeconds, 0);// +-SignF3(ball.Velocity) * VelocityMagSqr * 0.001f;
 
 				ball.Position += ball.Velocity * DeltaSeconds;
+
+				if (ball.Position.x < 0.0f)
+				{
+					ball.Position.x += TerrainScale;
+				}
+
+				if (ball.Position.x > TerrainScale)
+				{
+					ball.Position.x -= TerrainScale;
+				}
+
+				if (ball.Position.y < -20.0f)
+				{
+					ball.Position.y += 100.0f;
+				}
+
+				if (ball.Position.z < 0.0f)
+				{
+					ball.Position.z += TerrainScale;
+				}
+
+				if (ball.Position.z > TerrainScale)
+				{
+					ball.Position.z -= TerrainScale;
+				}
 
 				auto TerrainCoordForPosition = [&](const float3& Pos)
 				{
@@ -567,6 +556,7 @@ int main()
 
 				auto GetHit = [&]()
 				{
+					float penetration = 0.0f;
 					float3 bounceDir = 0;
 					for (u32 y = topLeftCoord.y; y <= bottomRightCoord.y; y++)
 					{
@@ -576,10 +566,11 @@ int main()
 							float3 samplePos = float3(((float)x / (float)NoiseDim) * TerrainScale, height, ((float)y / (float)NoiseDim) * TerrainScale);
 
 							float3 direction = ball.Position - samplePos;
-							float penetration = ball.Scale * ball.Scale - LengthSqrF3(direction);
-							if (penetration > 0.0f)
+							float penetrationTest = ball.Scale * ball.Scale - LengthSqrF3(direction);
+							if (penetrationTest > penetration)
 							{
-								bounceDir += direction * penetration;
+								penetration = penetrationTest;
+								bounceDir = direction;
 							}
 						}
 					}
@@ -587,9 +578,17 @@ int main()
 					return NormalizeF3(bounceDir);
 				};
 				ball.Velocity += GetHit() * LengthF3(ball.Velocity) * ball.Bounciness;
+
+				//AABB ballAABB = AABB{ ball.Position - float3{radius}, ball.Position + float3{radius} };
+				BoundingSphere bounds = BoundingSphere(ball.Position, ball.Scale);
+				if (!CullFrustumSphere(viewFrustum, bounds))
+				{
+					BallDrawIndices[BallsToDraw++] = i;
+				}
 			}
 
 			UpdateStructuredBuffer(BallDataBuffer, Balls.data(), Balls.size() * sizeof(Ball));
+			UpdateStructuredBuffer(BallIndexBuffer, BallDrawIndices.data(), BallDrawIndices.size() * sizeof(u32));
 		}
 
 		Render_BeginFrame();
@@ -615,24 +614,6 @@ int main()
 
 		const bool bDrawMesh = true;
 
-		std::vector<DynamicBuffer_t> MeshBuffers;
-		MeshBuffers.reserve(Balls.size());
-
-		for (const Ball& b : Balls)
-		{
-			struct
-			{
-				matrix transform;
-				float3 Color;
-				float __pad;
-			} meshConsts;
-
-			meshConsts.transform = MakeMatrixTranslation(b.Position) * MakeMatrixScaling(b.Scale, b.Scale, b.Scale);
-			meshConsts.Color = b.Color;
-
-			MeshBuffers.push_back(CreateDynamicConstantBuffer(&meshConsts, sizeof(meshConsts)));
-		}
-
 		struct
 		{
 			float2 Offset;
@@ -646,7 +627,7 @@ int main()
 		terrainTileConstants.Offset = { 0.f };
 		terrainTileConstants.Scale = { TerrainScale };
 		terrainTileConstants.NoiseTex = GetDescriptorIndex(NoiseSrv);
-		terrainTileConstants.Height = 10.0f;
+		terrainTileConstants.Height = TerrainHeight;
 		terrainTileConstants.CellSize = (1.0f / (float)TileMeshDim);
 
 		DynamicBuffer_t terrainCbuf = CreateDynamicConstantBuffer(&terrainTileConstants, sizeof(terrainTileConstants));
@@ -724,7 +705,9 @@ int main()
 		cl->SetPipelineState(meshPSO);
 		cl->SetVertexBuffers(0, 1, &mesh.positionBuf.buf, &mesh.positionBuf.stride, &mesh.positionBuf.offset);
 		cl->SetIndexBuffer(mesh.indexBuf.buf, mesh.indexBuf.format, mesh.indexBuf.offset);
-		cl->DrawIndexedInstanced(mesh.indexBuf.count, BallCount, 0, 0, 0);
+		cl->DrawIndexedInstanced(mesh.indexBuf.count, BallsToDraw, 0, 0, 0);
+
+		printf("%d\n", BallsToDraw);
 
 		// Draw terrain
 		{

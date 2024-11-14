@@ -69,7 +69,7 @@ PS_INPUT main(VS_INPUT input)
 
     output.Position = mul(ViewProjectionMatrix, WorldPos);
     output.UV = input.UV;
-    output.Normal = normalize(float3(-sx * TileScale.x, 2.0f * Height, sy * TileScale.y));
+    output.Normal = normalize(float3(-sx * Height, 2.0f * TileScale.x, sy * Height));
 
     return output;
 };
