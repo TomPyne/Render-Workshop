@@ -4,6 +4,7 @@
 
 ConstantBuffer<SceneData> c_SceneData : register(b0, space0);
 RWStructuredBuffer<BallData> u_BallData[512] : register(u0, space0);
+RWStructuredBuffer<uint> u_BallIndices[512] : register(u0, space1);
 Texture2D<float> t_tex2d_float[512] : register(t0, space0);
 
 [NumThreads(128, 1, 1)]
@@ -13,6 +14,8 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     {
         return;
     }
+
+    u_BallIndices[c_SceneData.BallIndexUAVIndex][DispatchThreadId.x]  = DispatchThreadId.x;
 
     BallData Ball = u_BallData[c_SceneData.BallDataUAVIndex][DispatchThreadId.x];
 

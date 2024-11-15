@@ -94,10 +94,10 @@ TerrainTileMesh CreateTerrainTileMesh(u32 Resolution)
 	}
 
 	TerrainTileMesh mesh;
-	mesh.UVBuf.buf = CreateVertexBuffer(UVs.data(), sizeof(float2) * UVs.size());
+	mesh.UVBuf.buf = CreateVertexBufferFromArray(UVs.data(), UVs.size());
 	mesh.UVBuf.offset = 0;
 	mesh.UVBuf.stride = sizeof(float2);
-	mesh.IndexBuf.buf = CreateIndexBuffer(Indices.data(), sizeof(u32) * Indices.size());
+	mesh.IndexBuf.buf = CreateIndexBufferFromArray(Indices.data(), Indices.size());
 	mesh.IndexBuf.count = (u32)Indices.size();
 	mesh.IndexBuf.format = RenderFormat::R32_UINT;
 	mesh.IndexBuf.offset = 0;
@@ -167,11 +167,11 @@ Mesh CreateSphereMesh(uint32_t Slices, uint32_t Stacks)
 		}
 	}
 
-	Outmesh.positionBuf.buf = CreateVertexBuffer(Positions.data(), Positions.size() * sizeof(float3));
+	Outmesh.positionBuf.buf = CreateVertexBufferFromArray(Positions.data(), Positions.size());
 	Outmesh.positionBuf.offset = 0;
 	Outmesh.positionBuf.stride = sizeof(float3);
 
-	Outmesh.indexBuf.buf = CreateIndexBuffer(Indices.data(), Indices.size() * sizeof(uint32_t));
+	Outmesh.indexBuf.buf = CreateIndexBufferFromArray(Indices.data(), Indices.size() * sizeof(uint32_t));
 	Outmesh.indexBuf.count = (uint32_t)Indices.size();
 	Outmesh.indexBuf.format = RenderFormat::R32_UINT;
 	Outmesh.indexBuf.offset = 0;
@@ -455,7 +455,7 @@ int main()
 
 	const uint32_t BallCount = (uint32_t)Balls.size();
 
-	const bool UseCompute = false;
+	const bool UseCompute = true;
 
 	struct
 	{
@@ -633,8 +633,12 @@ int main()
 				}
 			}
 
-			UpdateStructuredBuffer(BallDataBuffer, Balls.data(), Balls.size() * sizeof(Ball));
-			UpdateStructuredBuffer(BallIndexBuffer, BallDrawIndices.data(), BallDrawIndices.size() * sizeof(u32));
+			UpdateStructuredBufferFromArray(BallDataBuffer, Balls.data(), Balls.size());
+			UpdateStructuredBufferFromArray(BallIndexBuffer, BallDrawIndices.data(), BallDrawIndices.size());
+		}
+		else
+		{
+			BallsToDraw = Balls.size();
 		}
 
 		Render_BeginFrame();
@@ -659,9 +663,7 @@ int main()
 		viewConsts.viewProjection = GCam.GetView() * GCam.GetProjection();
 		viewConsts.CamPos = GCam.GetPosition();
 
-		DynamicBuffer_t viewCbuf = CreateDynamicConstantBuffer(&viewConsts, sizeof(viewConsts));
-
-		const bool bDrawMesh = true;
+		DynamicBuffer_t viewCbuf = CreateDynamicConstantBuffer(&viewConsts);
 
 		struct
 		{
@@ -680,12 +682,12 @@ int main()
 		terrainTileConstants.Height = TerrainHeight;
 		terrainTileConstants.CellSize = (1.0f / (float)TileMeshDim);
 
-		DynamicBuffer_t terrainCbuf = CreateDynamicConstantBuffer(&terrainTileConstants, sizeof(terrainTileConstants));
+		DynamicBuffer_t terrainCbuf = CreateDynamicConstantBuffer(&terrainTileConstants);
 
 		DynamicBuffer_t sceneCBuf;
 		ComputeSceneData.DeltaSeconds = DeltaSeconds;
 		ComputeSceneData.FrameID = FrameID;
-		sceneCBuf = CreateDynamicConstantBuffer(&ComputeSceneData, sizeof(ComputeSceneData));
+		sceneCBuf = CreateDynamicConstantBuffer(&ComputeSceneData);
 
 		Render_BeginRenderFrame();
 
@@ -703,6 +705,7 @@ int main()
 		if (UseCompute)
 		{
 			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
+			cl->TransitionResource(BallIndexBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
 			cl->TransitionResource(NoiseTex, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
 
 			cl->SetComputeRootDescriptorTable(RS_SRV_TABLE);
@@ -715,6 +718,7 @@ int main()
 
 			cl->TransitionResource(NoiseTex, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE, ResourceTransitionState::ALL_SHADER_RESOURCE);
 			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::ALL_SHADER_RESOURCE);
+			cl->TransitionResource(BallIndexBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::ALL_SHADER_RESOURCE);
 		}
 
 		// Bind and clear targets
@@ -782,6 +786,7 @@ int main()
 		if (UseCompute)
 		{
 			cl->TransitionResource(BallDataBuffer, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::READ);
+			cl->TransitionResource(BallIndexBuffer, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::READ);
 		}
 
 		cl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);
