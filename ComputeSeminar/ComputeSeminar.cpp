@@ -638,7 +638,7 @@ int main()
 		}
 		else
 		{
-			BallsToDraw = Balls.size();
+			BallsToDraw = (u32)Balls.size();
 		}
 
 		Render_BeginFrame();
