@@ -1,11 +1,43 @@
 #include "BallData.h"
+#include "IndirectArguments.h"
 #include "Samplers.h"
 #include "Scene.h"
 
 ConstantBuffer<SceneData> c_SceneData : register(b0, space0);
 RWStructuredBuffer<BallData> u_BallData[512] : register(u0, space0);
 RWStructuredBuffer<uint> u_BallIndices[512] : register(u0, space1);
+RWStructuredBuffer<IndirectDrawIndexedLayout> u_IndirectDrawIndexedLayouts[512] : register(u0, space2);
 Texture2D<float> t_tex2d_float[512] : register(t0, space0);
+
+float GetSignedDistanceFromPlane(float4 plane, float3 p)
+{
+    return dot(plane.xyz, p) - plane.w;
+}
+
+struct BoundingSphere
+{
+    float3 Position;
+    float Radius;
+
+    bool IsForwardOfPlane(float4 Plane)
+    {
+        return GetSignedDistanceFromPlane(Plane, Position) > -Radius;
+    }
+};
+
+bool CullFrustum(BoundingSphere Sphere)
+{
+    [unroll]
+    for(uint fp = 0u; fp < PLANE_COUNT; fp++)
+    {
+        if(!Sphere.IsForwardOfPlane(c_SceneData.FrustumPlanes[fp]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 [NumThreads(128, 1, 1)]
 void main(uint3 DispatchThreadId : SV_DispatchThreadID)
@@ -14,8 +46,6 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     {
         return;
     }
-
-    u_BallIndices[c_SceneData.BallIndexUAVIndex][DispatchThreadId.x]  = DispatchThreadId.x;
 
     BallData Ball = u_BallData[c_SceneData.BallDataUAVIndex][DispatchThreadId.x];
 
@@ -59,6 +89,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
             BounceDir += HitDirection * max(PenetrationSqr, 0.0f);
         }
     }
+
     if(length(BounceDir) > 0)
     {
         BounceDir = normalize(BounceDir);
@@ -67,4 +98,16 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     }
 
     u_BallData[c_SceneData.BallDataUAVIndex][DispatchThreadId.x] = Ball;
+
+    BoundingSphere Bounds;
+    Bounds.Position = Ball.Position;
+    Bounds.Radius = Ball.Scale;
+
+    if(!CullFrustum(Bounds))
+    {
+        uint BallIndex;
+        InterlockedAdd(u_IndirectDrawIndexedLayouts[c_SceneData.IndirectDrawUAVIndex][0u].NumInstances, 1u, BallIndex);
+
+        u_BallIndices[c_SceneData.BallIndexUAVIndex][BallIndex] = DispatchThreadId.x;
+    }
 }

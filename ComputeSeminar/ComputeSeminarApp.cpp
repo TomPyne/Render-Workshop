@@ -60,6 +60,7 @@ static struct
 	GraphicsPipelineStatePtr MeshPSO;
 	GraphicsPipelineStatePtr TerrainPSO;
 	ComputePipelineStatePtr BallComputePSO;
+	ComputePipelineStatePtr ClearArgsPSO;
 
 	TexturePtr HeightTexture;
 	ShaderResourceViewPtr HeightTextureSRV;
@@ -77,6 +78,8 @@ static struct
 
 	StructuredBuffer_t IndirectDrawBuffer;
 	UnorderedAccessViewPtr IndirectDrawBufferUAV;
+
+	IndirectCommand_t IndirectDrawIndexedCommand;
 
 	uint32_t BallsToDraw;
 
@@ -114,7 +117,10 @@ struct ComputeSceneData
 	uint32_t BallIndexUAVIndex;
 
 	uint32_t BallIndexSRVIndex;
-	float __pad[3];
+	uint32_t IndirectDrawUAVIndex;
+	float __pad[2];
+
+	float4 FrustumPlanes[Frustum::COUNT];
 };
 
 TerrainTileMesh CreateTerrainTileMesh(u32 Resolution)
@@ -295,6 +301,16 @@ ComputePipelineStatePtr CreateBallComputePSO()
 	return CreateComputePipelineState(PSODesc);
 }
 
+ComputePipelineStatePtr CreateClearArgsPSO()
+{
+	static const ComputeShader_t ClearCS = CreateComputeShader("Shaders/ClearIndirectDrawIndexed.hlsl");
+	ComputePipelineStateDesc PSODesc = {};
+	PSODesc.Cs = ClearCS;
+	PSODesc.DebugName = L"ClearIndirectDrawIndexedCS";
+
+	return CreateComputePipelineState(PSODesc);
+}
+
 void GetNoiseData(u32 Dim, float XZScale, float YScale, std::vector<float>& HeightData, std::vector<float3>& NormalData)
 {
 	HeightData.resize(Dim * Dim);
@@ -449,6 +465,7 @@ void InitializeApp()
 	G.MeshPSO = CreateMeshPSO();
 	G.TerrainPSO = CreateTerrainPSO();
 	G.BallComputePSO = CreateBallComputePSO();
+	G.ClearArgsPSO = CreateClearArgsPSO();
 
 	InitBallArray();
 
@@ -465,6 +482,17 @@ void InitializeApp()
 	G.BallIndexBuffer = CreateStructuredBuffer(G.BallIndices.data(), G.BallIndices.size() * sizeof(u32), sizeof(u32), StructBufResourceFlags);
 	G.BallIndexBufferSRV = CreateStructuredBufferSRV(G.BallIndexBuffer, 0u, G.BallCount, (u32)sizeof(u32));
 	G.BallIndexBufferUAV = G.UseCompute ? CreateStructuredBufferUAV(G.BallIndexBuffer, 0u, G.BallCount, (u32)sizeof(u32)) : UnorderedAccessView_t{};
+
+	IndirectDrawIndexedLayout IndirectDrawArgs;
+	IndirectDrawArgs.numIndices = G.SphereMesh.indexBuf.count;
+	IndirectDrawArgs.numInstances = 0u;
+	IndirectDrawArgs.startIndex = 0u;
+	IndirectDrawArgs.startVertex = 0u;
+	IndirectDrawArgs.startInstance = 0u;
+	G.IndirectDrawBuffer = CreateStructuredBuffer(&IndirectDrawArgs, sizeof(IndirectDrawArgs), sizeof(IndirectDrawArgs), RenderResourceFlags::UAV);
+	G.IndirectDrawBufferUAV = CreateStructuredBufferUAV(G.IndirectDrawBuffer, 0u, 1u, sizeof(IndirectDrawArgs));
+
+	G.IndirectDrawIndexedCommand = CreateIndirectDrawIndexedCommand();
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
 	G.Cam.SetNearFar(0.1f, 1000.0f);
@@ -505,12 +533,12 @@ void Update(float deltaSeconds)
 {
 	G.Cam.UpdateView(deltaSeconds);
 
-	const Frustum viewFrustum = G.Cam.GetWorldFrustum();
-
-	G.BallsToDraw = 0u;
-
 	if (!G.UseCompute)
 	{
+		G.BallsToDraw = 0u;
+
+		const Frustum viewFrustum = G.Cam.GetWorldFrustum();
+
 		for (u32 i = 0; i < G.Balls.size(); i++)
 		{
 			Ball& ball = G.Balls[i];
@@ -591,7 +619,6 @@ void Update(float deltaSeconds)
 			};
 			ball.Velocity += GetHit() * Length(ball.Velocity) * ball.Bounciness;
 
-			//AABB ballAABB = AABB{ ball.Position - float3{radius}, ball.Position + float3{radius} };
 			BoundingSphere bounds = BoundingSphere(ball.Position, ball.Scale);
 			if (!CullFrustumSphere(viewFrustum, bounds))
 			{
@@ -650,6 +677,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	sceneData.BallDataUAVIndex = GetDescriptorIndex(G.BallDataBufferUAV);
 	sceneData.BallIndexSRVIndex = GetDescriptorIndex(G.BallIndexBufferSRV);
 	sceneData.BallIndexUAVIndex = GetDescriptorIndex(G.BallDataBufferUAV);
+	sceneData.IndirectDrawUAVIndex = GetDescriptorIndex(G.IndirectDrawBufferUAV);
 	sceneData.DeltaSeconds = deltaSeconds;
 	sceneData.DragCoefficient = 0.001f;
 	sceneData.FrameID = view->GetFrameID();
@@ -659,6 +687,15 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	sceneData.NumBalls = G.BallCount;
 	sceneData.TerrainHeight = G.TerrainHeight;
 	sceneData.TerrainScale = G.TerrainScale;
+
+	if (G.UseCompute)
+	{
+		const Frustum viewFrustum = G.Cam.GetWorldFrustum();
+		for (u32 i = 0; i < Frustum::COUNT; i++)
+		{
+			sceneData.FrustumPlanes[i] = float4(viewFrustum.Planes[i].Normal, viewFrustum.Planes[i].Distance);
+		}
+	}
 
 	DynamicBuffer_t sceneCBuf = CreateDynamicConstantBuffer(&sceneData);
 
@@ -672,10 +709,16 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->TransitionResource(G.BallDataBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
 		cl->TransitionResource(G.BallIndexBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
 		cl->TransitionResource(G.HeightTexture, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.IndirectDrawBuffer, ResourceTransitionState::READ, ResourceTransitionState::UNORDERED_ACCESS);
 
 		cl->SetComputeRootDescriptorTable(RS_SRV_TABLE);
 		cl->SetComputeRootDescriptorTable(RS_UAV_TABLE);
 		cl->SetComputeRootCBV(RS_VIEW_BUF, sceneCBuf);
+
+		cl->SetPipelineState(G.ClearArgsPSO);
+		cl->Dispatch(1u, 1u, 1u);
+
+		cl->UAVBarrier(G.IndirectDrawBuffer);
 
 		cl->SetPipelineState(G.BallComputePSO);
 
@@ -684,6 +727,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->TransitionResource(G.HeightTexture, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE, ResourceTransitionState::ALL_SHADER_RESOURCE);
 		cl->TransitionResource(G.BallDataBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::ALL_SHADER_RESOURCE);
 		cl->TransitionResource(G.BallIndexBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::ALL_SHADER_RESOURCE);
+		cl->TransitionResource(G.IndirectDrawBuffer, ResourceTransitionState::UNORDERED_ACCESS, ResourceTransitionState::INDIRECT_ARGUMENT);
 	}
 
 	// Bind and clear targets
@@ -724,7 +768,14 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	cl->SetPipelineState(G.MeshPSO);
 	cl->SetVertexBuffers(0, 1, &G.SphereMesh.positionBuf.buf, &G.SphereMesh.positionBuf.stride, &G.SphereMesh.positionBuf.offset);
 	cl->SetIndexBuffer(G.SphereMesh.indexBuf.buf, G.SphereMesh.indexBuf.format, G.SphereMesh.indexBuf.offset);
-	cl->DrawIndexedInstanced(G.SphereMesh.indexBuf.count, G.BallsToDraw, 0, 0, 0);
+	if (G.UseCompute)
+	{
+		cl->ExecuteIndirect(G.IndirectDrawIndexedCommand, G.IndirectDrawBuffer);
+	}
+	else
+	{
+		cl->DrawIndexedInstanced(G.SphereMesh.indexBuf.count, G.BallsToDraw, 0, 0, 0);
+	}
 
 	// Draw terrain
 	{
@@ -744,12 +795,14 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->SetVertexBuffers(0, 1, &G.TerrainMesh.UVBuf.buf, &G.TerrainMesh.UVBuf.stride, &G.TerrainMesh.UVBuf.offset);
 		cl->SetIndexBuffer(G.TerrainMesh.IndexBuf.buf, G.TerrainMesh.IndexBuf.format, G.TerrainMesh.IndexBuf.offset);
 		cl->DrawIndexedInstanced(G.TerrainMesh.IndexBuf.count, 1u, 0u, 0u, 0u);
+
 	}
 
 	if (G.UseCompute)
 	{
 		cl->TransitionResource(G.BallDataBuffer, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::READ);
 		cl->TransitionResource(G.BallIndexBuffer, ResourceTransitionState::ALL_SHADER_RESOURCE, ResourceTransitionState::READ);
+		cl->TransitionResource(G.IndirectDrawBuffer, ResourceTransitionState::INDIRECT_ARGUMENT, ResourceTransitionState::READ);
 	}
 }
 
