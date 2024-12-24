@@ -11,23 +11,24 @@ function(create_compute_seminar_proj rapi)
 
 	target_include_directories(ComputeSeminar${rapi}
 	PRIVATE 
+	"${PROJECT_SOURCE_DIR}/imgui"
 	"${PROJECT_SOURCE_DIR}/Include"
 	"${PROJECT_SOURCE_DIR}/Render"
-	"${PROJECT_SOURCE_DIR}/imgui"
+	"${PROJECT_SOURCE_DIR}/Shared"
 	)
 
 	target_sources(ComputeSeminar${rapi}
 	PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/camera/camera.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/camera/camera.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/camera/flycamera.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/camera/flycamera.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_impl_render.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui_impl_render.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Noise/Perlin.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Noise/Perlin.h"
+	"${PROJECT_SOURCE_DIR}/Shared/camera/camera.cpp"
+	"${PROJECT_SOURCE_DIR}/Shared/camera/camera.h"
+	"${PROJECT_SOURCE_DIR}/Shared/camera/flycamera.cpp"
+	"${PROJECT_SOURCE_DIR}/Shared/camera/flycamera.h"
+	"${PROJECT_SOURCE_DIR}/Shared/imgui/imgui_impl_render.cpp"
+	"${PROJECT_SOURCE_DIR}/Shared/imgui/imgui_impl_render.h"
+	"${PROJECT_SOURCE_DIR}/Shared/Noise/Perlin.cpp"
+	"${PROJECT_SOURCE_DIR}/Shared/Noise/Perlin.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
