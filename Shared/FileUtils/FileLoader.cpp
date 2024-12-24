@@ -13,7 +13,7 @@ long GetFileSize(FILE* File)
         return 0u;
     }
 
-    if (fseek(f, 0, SEEK_END) == 0u)
+    if (fseek(File, 0, SEEK_END) == 0u)
     {
         return 0u;
     }
@@ -35,7 +35,12 @@ long GetFileSize(FILE* File)
 
 bool LoadBinaryFile(const char* Path, File_s& OutFile)
 {
-    FILE* File = fopen(Path, "rb");
+    FILE* File = nullptr;
+
+    if (!fopen_s(&File, Path, "rb"))
+    {
+        return false;
+    }
 
     if (!File)
     {
