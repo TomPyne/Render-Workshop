@@ -5,3 +5,7 @@ lib
 
 #imgui
 imgui.ini
+
+#files
+*.exe
+*.pdb

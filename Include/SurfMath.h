@@ -3,6 +3,14 @@
 #include <assert.h>
 #include <memory>
 
+#ifdef NEAR
+#undef NEAR
+#endif
+
+#ifdef FAR
+#undef FAR
+#endif
+
 typedef uint32_t u32;
 typedef int32_t i32;
 typedef uint16_t u16;
@@ -18,6 +26,7 @@ constexpr float K_PI = 3.141592654f;
 template <typename T>
 struct Vector2Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -33,6 +42,8 @@ struct Vector2Component
 
     template<typename X>
     Vector2Component(X _xy) : x(static_cast<T>(_xy.x)), y(static_cast<T>(_xy.y)) {}
+
+    constexpr Vector2Component Sign() const noexcept { return Vector2Component(Sign(x), Sign(y)); }
 
     Vector2Component& operator*=(T rhs)
     {
@@ -121,6 +132,7 @@ constexpr u32 SwzW = 3;
 template <typename T>
 struct Vector3Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -145,7 +157,9 @@ struct Vector3Component
 
     Vector3Component Swizzle(u32 x, u32 y, u32 z) const noexcept { return Vector3Component{ v[x], v[y], v[z] }; }
 
-    constexpr Vector2Component<T> XY() noexcept { return Vector2Component<T>{ x, y }; }
+    constexpr Vector2Component<T> XY() const noexcept { return Vector2Component<T>{ x, y }; }
+
+    constexpr Vector3Component Sign() const noexcept { return Vector3Component(Sign(x), Sign(y), Sign(z)); }
 
     constexpr Vector3Component operator-() const noexcept { return  Vector3Component{ -x, -y, -z }; }
 
@@ -196,6 +210,7 @@ using uint3 = Vector3Component<u32>;
 template<typename T>
 struct Vector4Component
 {
+    using ElementType = T;
     union
     {
         struct
@@ -214,6 +229,8 @@ struct Vector4Component
     constexpr Vector4Component(T _xyzw) : x(_xyzw), y(_xyzw), z(_xyzw), w(_xyzw) {}
     constexpr Vector4Component(Vector3Component<T> _f3, T _w = (T)0) : x(_f3.x), y(_f3.y), z(_f3.z), w(_w) {}
     constexpr Vector4Component(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {}
+
+    constexpr Vector4Component Sign() const noexcept { return Vector4Component(Sign(x), Sign(y), Sign(z), Sign(w)); }
 
     constexpr Vector4Component operator-() const noexcept { return  Vector4Component{ -x, -y, -z, -w }; }
 
@@ -595,6 +612,29 @@ inline u32 FloorLog2(u32 n) noexcept
     return ret;
 }
 
+inline constexpr float Sign(float f) noexcept
+{
+    return f >= 0.0f ? 1.0f : -1.0f;
+}
+
+template<typename T>
+inline constexpr Vector2Component<T> Sign(Vector2Component<T> v) noexcept
+{
+    return Vector2Component<T>(Sign(v.x), Sign(v.y));
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> Sign(Vector3Component<T> v) noexcept
+{
+    return Vector3Component<T>(Sign(v.x), Sign(v.y), Sign(v.z));
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> Sign(Vector4Component<T> v) noexcept
+{
+    return Vector4Component<T>(Sign(v.x), Sign(v.y), Sign(v.z), Sign(v.w));
+}
+
 // Vector
 inline constexpr float3 MultiplyAddF3(float3 a, float3 b, float3 c) noexcept
 {
@@ -658,41 +698,56 @@ inline constexpr float3 CrossF3(float3 a, float3 b) noexcept
     );
 }
 
-inline constexpr float DotF3(float3 a, float3 b) noexcept
+inline constexpr float Dot(float2 a, float2 b) noexcept
+{
+    return a.x * b.x + a.y * b.y;
+}
+
+inline constexpr float Dot(float3 a, float3 b) noexcept
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-inline constexpr float DotF4(float4 a, float4 b) noexcept
+inline constexpr float Dot(float4 a, float4 b) noexcept
 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-inline constexpr float LengthSqrF3(float3 f3) noexcept
+template<typename T>
+inline constexpr T::ElementType LengthSqr(T v) noexcept
 {
-    return DotF3(f3, f3);
+    return Dot(v, v);
 }
 
-inline float LengthF3(float3 f3) noexcept
+template<typename T>
+inline T::ElementType Length(T v)
 {
-    return sqrtf(LengthSqrF3(f3));
+    return sqrtf(LengthSqr(v));
 }
 
-inline float DistSqrF3(float3 a, float3 b)
+template<typename T>
+inline T::ElementType DistSqr(T a, T b)
 {
-    return LengthSqrF3(b - a);
+    return LengthSqr(b - a);
 }
 
-inline float DistF3(float3 a, float3 b)
+template<typename T>
+inline T::ElementType Dist(T a, T b)
 {
-    return LengthF3(b - a);
+    return Length(b - a);
 }
 
-inline float3 NormalizeF3(float3 f3) noexcept
+template<typename T>
+inline T Normalize(T v)
 {
-    float length = LengthF3(f3);
-    if (length > 0) length = 1.0f / length;
-    return float3(f3.x * length, f3.y * length, f3.z * length);
+    typename T::ElementType length = Length(v);
+
+    if (length > 0.0f)
+    {
+        length = 1.0f / length;
+    }
+
+    return v * length;
 }
 
 inline float3 TransformF3(float3 v, matrix m) noexcept
@@ -787,7 +842,7 @@ inline matrix MakeMatrixRotationAxis(float3 axis, float angleRadians) noexcept
     assert(axis != k_Vec3Zero);
     assert(!IsAnyInf(axis));
 
-    float3 normal = NormalizeF3(axis);
+    float3 normal = Normalize(axis);
     return MakeMatrixRotationNormal(normal, angleRadians);
 }
 
@@ -973,7 +1028,7 @@ inline matrix InverseMatrix(matrix m, float* outDeterminant = nullptr) noexcept
     r.r[2] = float4(c4.x, c5.y, c4.z, c5.w);
     r.r[3] = float4(c6.x, c7.y, c6.z, c7.w);
 
-    float determinant = DotF4(r.r[0], mt.r[0]);
+    float determinant = Dot(r.r[0], mt.r[0]);
 
     if (outDeterminant)
         *outDeterminant = determinant;
@@ -996,16 +1051,16 @@ inline matrix MakeMatrixLookToLH(float3 eyePos, float3 eyeDir, float3 up) noexce
     assert(up != k_Vec3Zero);
     assert(!IsAnyInf(up));
 
-    float3 R2 = NormalizeF3(eyeDir);
+    float3 R2 = Normalize(eyeDir);
     float3 R0 = CrossF3(up, R2);
-    R0 = NormalizeF3(R0);
+    R0 = Normalize(R0);
 
     float3 R1 = CrossF3(R2, R0);
     float3 NegEyePos = NegateF3(eyePos);
 
-    float D0 = DotF3(R0, NegEyePos);
-    float D1 = DotF3(R1, NegEyePos);
-    float D2 = DotF3(R2, NegEyePos);
+    float D0 = Dot(R0, NegEyePos);
+    float D1 = Dot(R1, NegEyePos);
+    float D2 = Dot(R2, NegEyePos);
 
     matrix m;
     m.r[0] = float4(R0, D0);
@@ -1029,8 +1084,8 @@ inline matrix MakeMatrixPerspectiveFovLH(float fovRadians, float aspectRatio, fl
     assert(!ScalarNearEqual(aspectRatio, 0.0f, 0.00001f));
     assert(!ScalarNearEqual(farZ, nearZ, 0.00001f));
 
-    float sinFov = sinf(fovRadians);
-    float cosFov = cosf(fovRadians);
+    float sinFov = sinf(fovRadians * 0.5f);
+    float cosFov = cosf(fovRadians * 0.5f);
 
     float height = cosFov / sinFov;
     float width = height / aspectRatio;
@@ -1083,6 +1138,78 @@ inline matrix makeMatrixOrthographicOffCentreLH(float left, float right, float b
     return m;
 }
 
+struct Plane
+{
+    float3 Normal;
+    float Distance;
+
+    constexpr Plane()
+        : Normal(0.0f)
+        , Distance(0.0f)
+    {}
+
+    constexpr Plane(float3 normal, float distance)
+        : Normal(normal)
+        , Distance(distance)
+    {}
+
+    Plane(float3 normal, float3 origin)
+        : Normal(normal)
+    {
+        Distance = Dot(normal, origin);
+    }
+
+    constexpr bool IsValid() const noexcept
+    {
+        return Normal.x != 0.0f || Normal.y != 0.0f || Normal.z != 0.0f;
+    }
+
+    constexpr float GetSignedDistance(float3 point) const noexcept
+    {
+        return Dot(Normal, point) - Distance;
+    }
+};
+
+struct Frustum
+{
+    enum FrustumPlanes
+    {
+        TOP, RIGHT, BOTTOM, LEFT, NEAR, FAR, COUNT
+    };
+
+    Plane Planes[COUNT] = {};
+};
+
+inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, float verticalFOVRad, float aspectRatio, float zNear, float zFar)
+{
+    const float halfHeight = tanf(verticalFOVRad * 0.5f) * zFar;
+    const float halfWidth = halfHeight * aspectRatio;
+    const float3 right = Normalize(CrossF3(up, forward));
+
+    up = Normalize(CrossF3(right, forward));
+
+    const float3 frontNear = forward * zNear;
+    const float3 frontFar = forward * zFar;
+    const float3 halfRight = right * halfWidth;
+    const float3 halfUp = up * halfHeight;
+
+    Frustum frustum;
+
+    frustum.Planes[Frustum::NEAR] = Plane{ forward, position + frontNear };
+    frustum.Planes[Frustum::FAR] = Plane{ -forward, position + frontFar };
+    frustum.Planes[Frustum::RIGHT] = Plane{ Normalize(CrossF3(frontFar - halfRight, up)), position };
+    frustum.Planes[Frustum::LEFT] = Plane{ Normalize(CrossF3(up, frontFar + halfRight)), position };
+    frustum.Planes[Frustum::TOP] = Plane{ Normalize(CrossF3(right, frontFar - halfUp)), position };
+    frustum.Planes[Frustum::BOTTOM] = Plane{ Normalize(CrossF3(frontFar + halfUp, right)), position };
+
+    return frustum;
+}
+
+inline Frustum MakeFrustum(float verticalFOVRad, float aspectRatio, float zNear, float zFar)
+{
+    return MakeWorldFrustum(k_Vec3Zero, float3{ 0, 0, 1 }, float3{ 0, 1, 0 }, verticalFOVRad, aspectRatio, zNear, zFar);
+}
+
 constexpr float3 k_BoxOffsets[8] =
 {
     float3( -1.0f, -1.0f,  1.0f ),
@@ -1102,6 +1229,7 @@ struct AABB
 
     constexpr AABB() : mins(FLT_MAX), maxs(-FLT_MAX) {}
     constexpr AABB(float3 _mins, float3 _maxs) : mins(_mins), maxs(_maxs) {}
+    constexpr AABB(const AABB& aabb) : mins(aabb.mins), maxs(aabb.maxs) {}
 
     constexpr void Grow(float3 p) noexcept
     {
@@ -1127,7 +1255,7 @@ struct AABB
         return (maxs - mins) * 0.5f;
     }
 
-    void Transform(const matrix& mat)
+    void Transform(const matrix& mat) noexcept
     {
         float3 centre = Origin();
         float3 extents = Extents();
@@ -1137,6 +1265,28 @@ struct AABB
 
         for (size_t i = 0; i < 8; i++)
             Grow(TransformF3(MultiplyAddF3(extents, k_BoxOffsets[i], centre), mat));
+    }
+
+    AABB GetTransformed(const matrix& matrix) const noexcept
+    {
+        const float3 centre = Origin();
+        const float3 extents = Extents();
+
+        AABB transformed = *this;
+        transformed.Transform(matrix);
+        
+        return transformed;
+    }
+
+    void GetCorners(float3 corners[8]) const noexcept
+    {
+        const float3 extents = Extents();
+        const float3 origin = Origin();
+
+        for (u32 i = 0; i < 8; i++)
+        {
+            corners[i] = (k_BoxOffsets[i] * extents) + origin;
+        }
     }
 };
 
@@ -1218,8 +1368,64 @@ struct BoundingFrustum
     }
 };
 
+struct BoundingSphere
+{
+    float3 Origin;
+    float Radius;
+
+    constexpr BoundingSphere(const float3& origin, float radius)
+        : Origin(origin)
+        , Radius(radius)
+    {}
+
+    constexpr bool IsForwardOfPlane(const Plane& plane) const noexcept
+    {
+        return plane.GetSignedDistance(Origin) > -Radius;
+    }
+};
+
+inline bool CullFrustumAABB(const Frustum& frustum, const AABB& aabb) noexcept
+{
+    float3 corners[8];
+    aabb.GetCorners(corners);
+    for (u32 fp = 0; fp < Frustum::FrustumPlanes::COUNT; fp++)
+    {
+        const float4 planeVec = float4{ frustum.Planes[fp].Normal, frustum.Planes[fp].Distance };
+        const float length = Length(frustum.Planes[fp].Normal);
+        for (u32 v = 0; v < 8; v++)
+        {
+            if ((Dot(planeVec, float4{ corners[v], 1.0f }) / length) < 0.0f)
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+inline bool CullFrustumSphere(const Frustum& frustum, const BoundingSphere& sphere) noexcept
+{
+    for (u32 fp = 0u; fp < Frustum::FrustumPlanes::COUNT; fp++)
+    {
+        if (!sphere.IsForwardOfPlane(frustum.Planes[fp]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+inline bool CullFrustumWorldAABB(const Frustum& frustum, const AABB& aabb, const matrix& view) noexcept
+{
+    const AABB viewAlignedAABB = aabb.GetTransformed(view);
+
+    return CullFrustumAABB(frustum, viewAlignedAABB);
+}
+
 template<typename T>
-static constexpr T AlignUp(T size, T alignment)
+static constexpr T AlignUpPow2(T size, T alignment) noexcept
 {
     const T mask = alignment - 1;
     return (size + mask) & ~mask;
