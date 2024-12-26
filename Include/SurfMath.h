@@ -23,7 +23,7 @@ typedef int8_t i8;
 
 constexpr float K_PI = 3.141592654f;
 
-template <typename T>
+template<typename T>
 struct Vector2Component
 {
     using ElementType = T;
@@ -1301,6 +1301,23 @@ struct BoundingBox
     {
         centre = aabb.Origin();
         extents = aabb.Extents();
+    }
+
+    void InitFromPoints(float3* points, size_t num)
+    {
+        assert(points && num > 0);
+
+        float3 min = points[0];
+        float3 max = points[0];
+
+        for (size_t i = 1; i < num; i++)
+        {
+            min = MinF3(min, points[i]);
+            max = MaxF3(max, points[i]);
+        }
+
+        centre = (min + max) * 0.5f;
+        extents = (max - min) * 0.5f;
     }
 
     void GetCorners(float3 corners[8]) const noexcept

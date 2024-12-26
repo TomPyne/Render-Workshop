@@ -522,10 +522,6 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.DepthTexture = CreateTextureEx(depthDesc);
 	G.DepthDSV = CreateTextureDSV(G.DepthTexture, RenderFormat::D16_UNORM, TextureDimension::TEX2D, 1u);
 
-	constexpr float fovRad = ConvertToRadians(45.0f);
-
-	float aspectRatio = (float)G.ScreenWidth / (float)G.ScreenHeight;
-
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
 
@@ -680,7 +676,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	sceneData.IndirectDrawUAVIndex = GetDescriptorIndex(G.IndirectDrawBufferUAV);
 	sceneData.DeltaSeconds = deltaSeconds;
 	sceneData.DragCoefficient = 0.001f;
-	sceneData.FrameID = view->GetFrameID();
+	sceneData.FrameID = (uint32_t)view->GetFrameID();
 	sceneData.Gravity = G.Gravity;
 	sceneData.NoiseDim = G.NoiseDim;
 	sceneData.NoiseTexSRVIndex = GetDescriptorIndex(G.HeightTextureSRV);

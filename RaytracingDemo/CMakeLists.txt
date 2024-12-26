@@ -1,38 +1,27 @@
-function(create_proj rapi)
-	add_executable(RaytracingDemo${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemo.cpp)
+function(create_proj projname rapi)
+	add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
 
-	target_link_libraries(RaytracingDemo${rapi} Render${rapi})
+	target_link_libraries(${projname}${rapi} Render${rapi})
+	target_link_libraries(${projname}${rapi} Shared)
 
-	set_target_properties(RaytracingDemo${rapi}
+	set_target_properties(${projname}${rapi}
 						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "RaytracingDemo${rapi}_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/RaytracingDemo"
+						RUNTIME_OUTPUT_NAME_DEBUG "${projname}${rapi}_Debug"
+						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/${projname}"
 	)
 
-	target_include_directories(RaytracingDemo${rapi}
+	target_include_directories(${projname}${rapi}
 	PRIVATE 
 	"${PROJECT_SOURCE_DIR}/imgui"
-	"${PROJECT_SOURCE_DIR}/Include"
+	"${PROJECT_SOURCE_DIR}/Include"	
 	"${PROJECT_SOURCE_DIR}/Render"
 	"${PROJECT_SOURCE_DIR}/Shared"
 	)
 
-	target_sources(RaytracingDemo${rapi}
+	target_sources(${projname}${rapi}
 	PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.h"
-	"${PROJECT_SOURCE_DIR}/Shared/camera/camera.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/camera/camera.h"
-	"${PROJECT_SOURCE_DIR}/Shared/camera/flycamera.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/camera/flycamera.h"
-	"${PROJECT_SOURCE_DIR}/Shared/FileUtils/FileLoader.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/FileUtils/FileLoader.h"
-	"${PROJECT_SOURCE_DIR}/Shared/imgui/imgui_impl_render.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/imgui/imgui_impl_render.h"
-	"${PROJECT_SOURCE_DIR}/Shared/ModelUtils/ModelLoader.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/ModelUtils/ModelLoader.h"
-	"${PROJECT_SOURCE_DIR}/Shared/Noise/Perlin.cpp"
-	"${PROJECT_SOURCE_DIR}/Shared/Noise/Perlin.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
@@ -46,4 +35,4 @@ function(create_proj rapi)
 	)
 endfunction()
 
-create_proj(Dx12)
+create_proj(RaytracingDemo Dx12)
