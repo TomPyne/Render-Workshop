@@ -12,9 +12,12 @@ add_library(Shared
             "MeshProcessing/WaveFrontReader.cpp"
             "MeshProcessing/WaveFrontReader.h"
             "ModelUtils/ModelLoader.cpp"
-            "ModelUtils/ModelLoader.h"
+            "ModelUtils/Model.cpp"
+            "ModelUtils/Model.h"
             "Noise/Perlin.cpp"
             "Noise/Perlin.h"
+            "TextureUtils/TextureManager.cpp"
+            "TextureUtils/TextureManager.h"
 )
 
 set_target_properties(Shared PROPERTIES OUTPUT_NAME_DEBUG Shared_Debug)

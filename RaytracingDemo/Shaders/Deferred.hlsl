@@ -51,7 +51,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
 
     float4 Color = t_tex2d[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgba;
 
-    Output.Color = float4((float3(0.1, 0.1, 0.1) * Color.a) + (Color.rgb * Radiance), 1.0f);
+    Output.Color = float4((float3(0.1, 0.1, 0.1) * Color.rgb) + (Color.rgb * Radiance), 1.0f);
 }
 
 #endif

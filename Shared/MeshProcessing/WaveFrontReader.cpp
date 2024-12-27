@@ -3,6 +3,25 @@
 
 #include <cstring>
 
+// Get a path relative to the base objects path
+std::wstring GetFileRelativePath(const std::wstring& BasePath, const std::wstring& InPath)
+{
+    wchar_t FName[_MAX_FNAME] = {};
+    _wsplitpath_s(BasePath.c_str(), nullptr, 0, nullptr, 0, FName, _MAX_FNAME, nullptr, 0);
+
+    wchar_t ext[_MAX_EXT] = {};
+    _wsplitpath_s(InPath.c_str(), nullptr, 0, nullptr, 0, FName, _MAX_FNAME, ext, _MAX_EXT);
+
+    wchar_t drive[_MAX_DRIVE] = {};
+    wchar_t dir[_MAX_DIR] = {};
+    _wsplitpath_s(BasePath.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, nullptr, 0, nullptr, 0);
+
+    wchar_t szPath[260] = {};
+    _wmakepath_s(szPath, 260, drive, dir, FName, ext);
+
+    return szPath;
+}
+
 bool WaveFrontReader_c::Load(const wchar_t* FileName)
 {
     Clear();
@@ -305,16 +324,8 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
     // If an associated material file was found, read that in as well.
     if (!MaterialFilename.empty())
     {
-        wchar_t ext[_MAX_EXT] = {};
-        _wsplitpath_s(MaterialFilename.c_str(), nullptr, 0, nullptr, 0, FName, _MAX_FNAME, ext, _MAX_EXT);
-
-        wchar_t drive[_MAX_DRIVE] = {};
-        wchar_t dir[_MAX_DIR] = {};
-        _wsplitpath_s(FileName, drive, _MAX_DRIVE, dir, _MAX_DIR, nullptr, 0, nullptr, 0);
-
-        wchar_t szPath[260] = {};
-        _wmakepath_s(szPath, 260, drive, dir, FName, ext);
-        return LoadMTL(szPath);
+        std::wstring MtlPath = GetFileRelativePath(FileName, MaterialFilename);
+        return LoadMTL(MtlPath.c_str());
     }
 
     return true;
@@ -329,6 +340,8 @@ bool WaveFrontReader_c::LoadMTL(const wchar_t* FileName)
         LOGERROR("File not found");
         return false;
     }
+
+    std::wstring BasePath(FileName);
 
     auto CurMaterial = Materials.end();
 
@@ -427,31 +440,31 @@ bool WaveFrontReader_c::LoadMTL(const wchar_t* FileName)
         else if (0 == wcscmp(Command.c_str(), L"map_Kd"))
         {
             // Diffuse texture
-            LoadTexturePath(InFile, CurMaterial->Texture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->Texture);
         }
         else if (0 == wcscmp(Command.c_str(), L"map_Ks"))
         {
             // Specular texture
-            LoadTexturePath(InFile, CurMaterial->SpecularTexture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->SpecularTexture);
         }
         else if (0 == wcscmp(Command.c_str(), L"map_Kn")
             || 0 == wcscmp(Command.c_str(), L"norm"))
         {
             // Normal texture
-            LoadTexturePath(InFile, CurMaterial->NormalTexture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->NormalTexture);
         }
         else if (0 == wcscmp(Command.c_str(), L"map_Ke")
             || 0 == wcscmp(Command.c_str(), L"map_emissive"))
         {
             // Emissive texture
-            LoadTexturePath(InFile, CurMaterial->EmissiveTexture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->EmissiveTexture);
             CurMaterial->Emissive = true;
         }
         else if (0 == wcscmp(Command.c_str(), L"map_RMA")
             || 0 == wcscmp(Command.c_str(), L"map_ORM"))
         {
             // RMA texture
-            LoadTexturePath(InFile, CurMaterial->RMATexture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->RMATexture);
         }
         else
         {
@@ -502,7 +515,7 @@ uint32_t WaveFrontReader_c::AddVertex(uint32_t Hash, const Vertex_s* Vertex, Ver
     return Index;
 }
 
-void WaveFrontReader_c::LoadTexturePath(std::wifstream& InFile, std::wstring& Texture)
+void WaveFrontReader_c::LoadTexturePath(std::wifstream& InFile, const std::wstring& BasePath, std::wstring& Texture)
 {
     wchar_t Buff[1024] = {};
     InFile.getline(Buff, 1024, L'\n');
@@ -533,6 +546,6 @@ void WaveFrontReader_c::LoadTexturePath(std::wifstream& InFile, std::wstring& Te
 
     if (!Path.empty())
     {
-        Texture = Path;
+        Texture = GetFileRelativePath(BasePath, Path);
     }
 }

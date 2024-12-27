@@ -81,5 +81,5 @@ private:
 	using VertexCache_t = std::unordered_multimap<uint32_t, uint32_t>;
 
 	uint32_t AddVertex(uint32_t Hash, const Vertex_s* Vertex, VertexCache_t& Cache);
-	void LoadTexturePath(std::wifstream& InFile, std::wstring& Texture);
+	void LoadTexturePath(std::wifstream& InFile, const std::wstring& BasePath, std::wstring& Texture);
 };

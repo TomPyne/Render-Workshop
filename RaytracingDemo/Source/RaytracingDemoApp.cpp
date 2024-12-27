@@ -4,6 +4,7 @@
 
 #include <Camera/FlyCamera.h>
 #include <Logging/Logging.h>
+#include <ModelUtils/Model.h>
 #include <ModelUtils/ModelLoader.h>
 
 using namespace tpr;
@@ -11,6 +12,7 @@ using namespace tpr;
 enum RootSigSlots
 {
 	RS_VIEW_BUF,
+	RS_MAT_BUF,
 	RS_SRV_TABLE,
 	RS_UAV_TABLE,
 	RS_COUNT,
@@ -55,6 +57,7 @@ tpr::RenderInitParams GetAppRenderParams()
 	Params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
 	Params.RootSigDesc.Slots.resize(RS_COUNT);
 	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(0, 0);
+	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(1, 0);
 	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
 	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
 
@@ -72,7 +75,7 @@ bool InitializeApp()
 		return false;
 	}
 
-	if (!LoadModelFromWavefront(L"Assets/house.obj", G.Model))
+	if (!LoadModelFromWavefront(L"Assets/Rungholt.obj", G.Model))
 	{
 		LOGERROR("Failed to load model");
 		return false;
@@ -238,6 +241,8 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	cl->SetPipelineState(G.MeshPSO);
 	for (const Mesh_s& Mesh : G.Model.Meshes)
 	{
+		cl->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material.MaterialBuffer);
+
 		cl->SetVertexBuffers(0u, Mesh.BoundBufferCount, Mesh.BindBuffers, Mesh.BindStrides, Mesh.BindOffsets);
 		cl->SetIndexBuffer(Mesh.Index.Buffer, Mesh.Index.Format, Mesh.Index.Offset);
 

@@ -1,5 +1,8 @@
 #include "ModelLoader.h"
 
+#include "Model.h"
+#include "TextureUtils/TextureManager.h"
+
 #include <MeshProcessing/WaveFrontReader.h>
 
 #include <SurfMath.h>
@@ -7,7 +10,7 @@
 bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
 {
     WaveFrontReader_c Reader;
-    if (!Reader.Load(L"Assets/house.obj"))
+    if (!Reader.Load(WavefrontPath))
     {
         return false;
     }
@@ -37,6 +40,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
             for (size_t Vert = 0u; Vert < Reader.Vertices.size(); Vert++)
             {
                 Texcoords[Vert] = Reader.Vertices[Vert].Texcoord;
+                Texcoords[Vert].y = 1.0f - Texcoords[Vert].y;
             }
         }
         else
@@ -95,8 +99,29 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
         AttributeIndices[Attr].push_back(Reader.Indices[IndexIt + 2]);
     }
 
-    for (const std::vector<uint32_t>& Indices : AttributeIndices)
+    std::vector<ModelMaterial_s> LoadedMaterials;
+    LoadedMaterials.reserve(Reader.Attributes.size());
+
+    for (const WaveFrontReader_c::Material_s& Mtl : Reader.Materials)
     {
+        ModelMaterial_s NewMaterial = {};
+        NewMaterial.Params.Albedo = Mtl.Diffuse;
+
+        if (!Mtl.Texture.empty())
+        {
+            NewMaterial.AlbedoTexture = LoadTexture(Mtl.Texture, false);
+            NewMaterial.Params.AlbedoTextureIndex = tpr::GetDescriptorIndex(NewMaterial.AlbedoTexture.SRV);
+        }
+
+        NewMaterial.MaterialBuffer = tpr::CreateConstantBuffer(&NewMaterial.Params);
+
+        LoadedMaterials.push_back(NewMaterial);
+    }
+
+    for (uint32_t AttrIt = 0u; AttrIt < AttributeIndices.size(); AttrIt++)
+    {
+        const std::vector<uint32_t>& Indices = AttributeIndices[AttrIt];
+
         if (Indices.empty())
             continue;
 
@@ -107,9 +132,9 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
         Mesh.Texcoord = SharedTexcoordBuffer;
         Mesh.Normal = SharedNormalBuffer;
 
-        Mesh.InputDesc.emplace_back("POSITION", 0u, tpr::RenderFormat::R32G32B32_FLOAT, 0u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
-        Mesh.InputDesc.emplace_back("TEXCOORD", 0u, tpr::RenderFormat::R32G32_FLOAT, 1u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
-        Mesh.InputDesc.emplace_back("NORMAL", 0u, tpr::RenderFormat::R32G32B32_FLOAT, 2u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
+        Mesh.InputDesc[0] = tpr::InputElementDesc("POSITION", 0u, tpr::RenderFormat::R32G32B32_FLOAT, 0u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
+        Mesh.InputDesc[1] = tpr::InputElementDesc("TEXCOORD", 0u, tpr::RenderFormat::R32G32_FLOAT, 1u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
+        Mesh.InputDesc[2] = tpr::InputElementDesc("NORMAL", 0u, tpr::RenderFormat::R32G32B32_FLOAT, 2u, 0u, tpr::InputClassification::PER_VERTEX, 0u);
 
         Mesh.BindBuffers[0] = SharedPositionBuffer.Buffer;
         Mesh.BindBuffers[1] = SharedTexcoordBuffer.Buffer;
@@ -124,6 +149,8 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
         Mesh.BindOffsets[2] = 0u;
 
         Mesh.BoundBufferCount = 3u;
+
+        Mesh.Material = LoadedMaterials[AttrIt];
 
         OutModel.Meshes.push_back(Mesh);
     }

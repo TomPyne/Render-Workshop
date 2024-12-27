@@ -34,15 +34,30 @@ void main(in VS_INPUT Input, out PS_INPUT Output)
 
 #ifdef _PS
 
+struct MaterialData
+{
+    float3 Albedo;
+    uint AlbedoTextureIndex;
+};
+
 struct PS_OUTPUT
 {
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
 };
 
+ConstantBuffer<MaterialData> c_Material : register(b1);
+Texture2D<float4> t_Tex2d[1024] : register(t0, space0);
+SamplerState s_ClampedSampler : register(s1);
+
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
-    Output.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    float3 Albedo = c_Material.Albedo;
+    if(c_Material.AlbedoTextureIndex != 0)
+    {
+        Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_ClampedSampler, Input.UV).rgb;
+    }
+    Output.Color = float4(Albedo, 1.0f);
     Output.Normal = float4(Input.Normal, 0.0f);
 }
 
