@@ -19,6 +19,7 @@ bool _FailMsg(const char* fmt, ...);
 
 #define ASSERTMSG(x, ...)	_AssertMsg(x, __VA_ARGS__)
 #define ASSERT0MSG(...)		_AssertMsg(false, __VA_ARGS__)
+#define CHECK(x)			_AssertMsg(x, #x)
 
 #define LOGERROR(...) 		_LogErrorfLF(__VA_ARGS__)
 #define LOGWARNING(...) 	_LogWarningfLF(__VA_ARGS__)

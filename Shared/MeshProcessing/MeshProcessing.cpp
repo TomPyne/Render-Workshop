@@ -6,9 +6,10 @@
 #include <memory>
 #include <mutex>
 
-constexpr uint32_t UNUSED32 = uint32_t(-1);
+namespace MeshProcessing
+{
 
-using index_t = uint32_t;
+constexpr uint32_t UNUSED32 = uint32_t(-1);
 
 bool ValidateIndices(const index_t* Indices, size_t NumFaces, size_t NumVerts)
 {
@@ -211,6 +212,38 @@ bool CleanMesh(index_t* Indices, size_t NumFaces, size_t NumVerts, const uint32_
     if (!DupedVerts.empty())
     {
         memcpy(Indices, IndicesNew, sizeof(index_t) * NumFaces * 3);
+    }
+
+    return true;
+}
+
+bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
+{
+    if (!NumFaces || !Attributes || !FaceRemap)
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    using intpair_t = std::pair<uint32_t, uint32_t>;
+
+    std::vector<intpair_t> List;
+    List.reserve(NumFaces);
+    for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt)
+    {
+        List.emplace_back(intpair_t(Attributes[FaceIt], static_cast<uint32_t>(FaceIt)));
+    }
+
+    std::stable_sort(List.begin(), List.end(), [](const intpair_t& A, const intpair_t& B) noexcept -> bool
+        {
+            return (A.first < B.first);
+        });
+
+    auto It = List.begin();
+    for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt, ++It)
+    {
+        Attributes[FaceIt] = It->first;
+        FaceRemap[FaceIt] = It->second;
     }
 
     return true;
@@ -627,7 +660,7 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
                     }
                 }
             }
-            assert(BestScore >= 0.f);
+            CHECK(BestScore >= 0.f);
         }
 
         ProcessedFaceList[BestFace / 3] = 1;
@@ -637,9 +670,9 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
         CurFace++;
 
         // add bestFace to LRU cache
-        assert(VertexRemap[BestFace] != UNUSED32);
-        assert(VertexRemap[size_t(BestFace) + 1] != UNUSED32);
-        assert(VertexRemap[size_t(BestFace) + 2] != UNUSED32);
+        CHECK(VertexRemap[BestFace] != UNUSED32);
+        CHECK(VertexRemap[size_t(BestFace) + 1] != UNUSED32);
+        CHECK(VertexRemap[size_t(BestFace) + 2] != UNUSED32);
 
         for (size_t VertIt = 0; VertIt < 3; ++VertIt)
         {
@@ -657,12 +690,12 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
                 }
             }
 
-            assert(VertexData.activeFaceListSize > 0);
+            CHECK(VertexData.ActiveFaceListSize > 0);
             uint32_t* Begin = ActiveFaceList.get() + VertexData.ActiveFaceListStart;
             uint32_t* End = ActiveFaceList.get() + (size_t(VertexData.ActiveFaceListStart) + VertexData.ActiveFaceListSize);
             uint32_t* It = std::find(Begin, End, BestFace);
 
-            assert(It != End);
+            CHECK(It != End);
 
             std::swap(*It, *(End - 1));
 
@@ -674,7 +707,7 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
             {
                 const uint32_t FaceIndex = *FaceIt / 3;
                 uint32_t N = FaceReverseLookup[FaceIndex];
-                assert(FaceSorted[N] == FaceIndex);
+                CHECK(FaceSorted[N] == FaceIndex);
 
                 // found it, now move it up
                 while (N > 0)
@@ -748,4 +781,5 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
     }
 
     return true;
+}
 }
