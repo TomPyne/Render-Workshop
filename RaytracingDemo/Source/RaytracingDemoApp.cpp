@@ -75,7 +75,7 @@ bool InitializeApp()
 		return false;
 	}
 
-	if (!LoadModelFromWavefront(L"Assets/Rungholt.obj", G.Model))
+	if (!LoadModelFromWavefront(L"Assets/House.obj", G.Model))
 	{
 		LOGERROR("Failed to load model");
 		return false;

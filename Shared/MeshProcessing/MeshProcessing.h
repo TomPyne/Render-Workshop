@@ -17,6 +17,7 @@ namespace MeshProcessing
 	bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap) noexcept;
 	bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices) noexcept;
 	bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept;
+	bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* DupedVerts, size_t NumDupedVerts, const uint32_t* VertexRemap, void* OutVertices) noexcept;
 
 	std::vector<Subset_t> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces);
 
@@ -33,9 +34,9 @@ namespace MeshProcessing
 
 	struct MeshletTriangle_s
 	{
-		uint32_t i0 : 10;
-		uint32_t i1 : 10;
-		uint32_t i2 : 10;
+		uint32_t I0 : 10;
+		uint32_t I1 : 10;
+		uint32_t I2 : 10;
 	};
 
 	bool ComputeMeshlets(

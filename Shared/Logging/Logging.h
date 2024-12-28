@@ -33,4 +33,5 @@ bool _FailMsg(const char* fmt, ...);
 #define RET_INVALID_ARGS		FAILMSG("Invalid args");
 #define RET_ARITHMETIC_OVERFLOW	FAILMSG("Arithmetic overflow");
 #define RET_UNEXPECTED			FAILMSG("Unexpected condition");
+#define RET_UNSUPPORTED			FAILMSG("Unsupported condition");
 

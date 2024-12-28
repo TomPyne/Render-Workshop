@@ -986,6 +986,73 @@ bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint
     return SwapVertices(Vertices, Stride, NumVerts, VertexRemap);
 }
 
+bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* DupedVerts, size_t NumDupedVerts, const uint32_t* VertexRemap, void* OutVertices) noexcept
+{
+    if (!Vertices || !Stride || !NumVerts || !OutVertices)
+        return RET_INVALID_ARGS;
+
+    if (!DupedVerts && !VertexRemap)
+        return RET_INVALID_ARGS;
+
+    if (DupedVerts && !NumDupedVerts)
+        return RET_INVALID_ARGS;
+
+    if (!DupedVerts && NumDupedVerts > 0)
+        return RET_INVALID_ARGS;
+
+    if (NumVerts >= UINT32_MAX)
+        return RET_INVALID_ARGS;
+
+    if (Stride > kMaxStride)
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumVerts) + uint64_t(NumDupedVerts)) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    if (Vertices == OutVertices)
+        return RET_UNSUPPORTED;
+
+    const size_t NewVerts = NumVerts + NumDupedVerts;
+    if (!NewVerts)
+        return RET_INVALID_ARGS;
+
+    auto SrcPtr = static_cast<const uint8_t*>(Vertices);
+    auto DstPtr = static_cast<uint8_t*>(OutVertices);
+
+#ifdef _DEBUG
+    memset(OutVertices, 0, NewVerts * Stride);
+#endif
+
+    for (size_t VertIt = 0; VertIt < NewVerts; ++VertIt)
+    {
+        const uint32_t Src = (VertexRemap) ? VertexRemap[VertIt] : uint32_t(VertIt);
+
+        if (Src == UNUSED32)
+        {
+            // remap entry is unused
+        }
+        else if (Src >= NewVerts)
+        {
+            return false;
+        }
+        else if (Src < NumVerts)
+        {
+            memcpy(DstPtr, SrcPtr + Src * Stride, Stride);
+        }
+        else if (DupedVerts)
+        {
+            const uint32_t Dupe = DupedVerts[Src - NumVerts];
+            memcpy(DstPtr, SrcPtr + Dupe * Stride, Stride);
+        }
+        else
+            return false;
+
+        DstPtr += Stride;
+    }
+
+    return true;
+}
+
 std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces)
 {
     std::vector<std::pair<size_t, size_t>> Subsets;

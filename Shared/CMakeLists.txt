@@ -18,6 +18,8 @@ add_library(Shared
             "ModelUtils/Model.h"
             "Noise/Perlin.cpp"
             "Noise/Perlin.h"
+            "Profiling/ScopeTimer.cpp"
+            "Profiling/ScopeTimer.h"
             "TextureUtils/TextureManager.cpp"
             "TextureUtils/TextureManager.h"
 )
