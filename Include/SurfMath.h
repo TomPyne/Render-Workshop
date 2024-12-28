@@ -679,23 +679,39 @@ inline constexpr float3 NegateF3(float3 f3) noexcept
     return float3(-f3.x, -f3.y, -f3.z);
 }
 
-inline constexpr float4 MergeXYF4(float4 a, float4 b) noexcept
+inline constexpr float4 MergeXY(float2 a, float2 b) noexcept
 {
     return float4(a.x, b.x, a.y, b.y);
 }
 
-inline constexpr float4 MergeZWF4(float4 a, float4 b) noexcept
+inline constexpr float4 MergeXY(float3 a, float3 b) noexcept
+{
+    return float4(a.x, b.x, a.y, b.y);
+}
+
+inline constexpr float4 MergeXY(float4 a, float4 b) noexcept
+{
+    return float4(a.x, b.x, a.y, b.y);
+}
+
+inline constexpr float4 MergeZW(float4 a, float4 b) noexcept
 {
     return float4(a.z, b.z, a.w, b.w);
 }
 
-inline constexpr float3 CrossF3(float3 a, float3 b) noexcept
+inline constexpr float3 Cross(float3 a, float3 b) noexcept
 {
     return float3(
         (a.y * b.z) - (a.z * b.y),
         (a.z * b.x) - (a.x * b.z),
         (a.x * b.y) - (a.y * b.x)
     );
+}
+
+template<typename T>
+inline constexpr T Cross3(T a, T b) noexcept
+{
+    return Cross(a.xyz, b.xyz);
 }
 
 inline constexpr float Dot(float2 a, float2 b) noexcept
@@ -711,6 +727,12 @@ inline constexpr float Dot(float3 a, float3 b) noexcept
 inline constexpr float Dot(float4 a, float4 b) noexcept
 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+template<typename T>
+inline constexpr float Dot3(T a, T b) noexcept
+{
+    return Dot(a.xyz, b.xyz);
 }
 
 template<typename T>
@@ -750,24 +772,39 @@ inline T Normalize(T v)
     return v * length;
 }
 
-float ACos(float F)
+inline float ACos(float F)
 {
     return acosf(F);
 }
 
-float2 ACos(float2 V)
+inline float2 ACos(float2 V)
 {
     return float2{ acosf(V.x), acosf(V.y) };
 }
 
-float3 ACos(float3 V)
+inline float3 ACos(float3 V)
 {
     return float3{ acosf(V.x), acosf(V.y), acosf(V.z) };
 }
 
-float4 ACos(float4 V)
+inline float4 ACos(float4 V)
 {
     return float4{ acosf(V.x), acosf(V.y), acosf(V.z), acosf(V.w) };
+}
+
+inline constexpr bool AllLess(float2 A, float2 B) noexcept
+{
+    return A.x < B.x && A.y < B.y;
+}
+
+inline constexpr bool AllLess(float3 A, float3 B) noexcept
+{
+    return A.x < B.x && A.y < B.y && A.z < B.z;
+}
+
+inline constexpr bool AllLess(float4 A, float4 B) noexcept
+{
+    return A.x < B.x && A.y < B.y && A.z < B.z && A.w < B.w;
 }
 
 inline float3 TransformF3(float3 v, matrix m) noexcept
@@ -934,16 +971,16 @@ inline matrix MakeMatrixRotationFromQuaternion(float4 quaternion)
 inline constexpr matrix TransposeMatrix(matrix m) noexcept
 {
     matrix p;
-    p.r[0] = MergeXYF4(m.r[0], m.r[2]);
-    p.r[1] = MergeXYF4(m.r[1], m.r[3]);
-    p.r[2] = MergeZWF4(m.r[0], m.r[2]);
-    p.r[3] = MergeZWF4(m.r[1], m.r[3]);
+    p.r[0] = MergeXY(m.r[0], m.r[2]);
+    p.r[1] = MergeXY(m.r[1], m.r[3]);
+    p.r[2] = MergeZW(m.r[0], m.r[2]);
+    p.r[3] = MergeZW(m.r[1], m.r[3]);
 
     matrix mt;
-    mt.r[0] = MergeXYF4(p.r[0], p.r[1]);
-    mt.r[1] = MergeZWF4(p.r[0], p.r[1]);
-    mt.r[2] = MergeXYF4(p.r[2], p.r[3]);
-    mt.r[3] = MergeZWF4(p.r[2], p.r[3]);
+    mt.r[0] = MergeXY(p.r[0], p.r[1]);
+    mt.r[1] = MergeZW(p.r[0], p.r[1]);
+    mt.r[2] = MergeXY(p.r[2], p.r[3]);
+    mt.r[3] = MergeZW(p.r[2], p.r[3]);
 
     return mt;
 }
@@ -1072,10 +1109,10 @@ inline matrix MakeMatrixLookToLH(float3 eyePos, float3 eyeDir, float3 up) noexce
     assert(!IsAnyInf(up));
 
     float3 R2 = Normalize(eyeDir);
-    float3 R0 = CrossF3(up, R2);
+    float3 R0 = Cross(up, R2);
     R0 = Normalize(R0);
 
-    float3 R1 = CrossF3(R2, R0);
+    float3 R1 = Cross(R2, R0);
     float3 NegEyePos = NegateF3(eyePos);
 
     float D0 = Dot(R0, NegEyePos);
@@ -1204,9 +1241,9 @@ inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, floa
 {
     const float halfHeight = tanf(verticalFOVRad * 0.5f) * zFar;
     const float halfWidth = halfHeight * aspectRatio;
-    const float3 right = Normalize(CrossF3(up, forward));
+    const float3 right = Normalize(Cross(up, forward));
 
-    up = Normalize(CrossF3(right, forward));
+    up = Normalize(Cross(right, forward));
 
     const float3 frontNear = forward * zNear;
     const float3 frontFar = forward * zFar;
@@ -1217,10 +1254,10 @@ inline Frustum MakeWorldFrustum(float3 position, float3 forward, float3 up, floa
 
     frustum.Planes[Frustum::NEAR] = Plane{ forward, position + frontNear };
     frustum.Planes[Frustum::FAR] = Plane{ -forward, position + frontFar };
-    frustum.Planes[Frustum::RIGHT] = Plane{ Normalize(CrossF3(frontFar - halfRight, up)), position };
-    frustum.Planes[Frustum::LEFT] = Plane{ Normalize(CrossF3(up, frontFar + halfRight)), position };
-    frustum.Planes[Frustum::TOP] = Plane{ Normalize(CrossF3(right, frontFar - halfUp)), position };
-    frustum.Planes[Frustum::BOTTOM] = Plane{ Normalize(CrossF3(frontFar + halfUp, right)), position };
+    frustum.Planes[Frustum::RIGHT] = Plane{ Normalize(Cross(frontFar - halfRight, up)), position };
+    frustum.Planes[Frustum::LEFT] = Plane{ Normalize(Cross(up, frontFar + halfRight)), position };
+    frustum.Planes[Frustum::TOP] = Plane{ Normalize(Cross(right, frontFar - halfUp)), position };
+    frustum.Planes[Frustum::BOTTOM] = Plane{ Normalize(Cross(frontFar + halfUp, right)), position };
 
     return frustum;
 }

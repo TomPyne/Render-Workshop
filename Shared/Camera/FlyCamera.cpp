@@ -47,7 +47,7 @@ void FlyCamera::UpdateView(float delta)
 	if (!io.WantCaptureKeyboard)
 	{
 		float3 fwd = _lookDir;
-		float3 rgt = CrossF3(float3{ 0, 1, 0 }, _lookDir);
+		float3 rgt = Cross(float3{ 0, 1, 0 }, _lookDir);
 
 		constexpr float speed = 5.0f;
 

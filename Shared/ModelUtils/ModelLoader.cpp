@@ -77,7 +77,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
 
                 const float3 V10 = P1 - P0;
                 const float3 V20 = P2 - P0;
-                Normals[I0] = Normals[I1] = Normals[I2] = Normalize(CrossF3(V10, V20));
+                Normals[I0] = Normals[I1] = Normals[I2] = Normalize(Cross(V10, V20));
             }
         }
 

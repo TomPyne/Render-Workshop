@@ -1024,21 +1024,22 @@ std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes
     return Subsets;
 }
 
+struct AlignedDeleter_s { void operator()(void* p) noexcept { _aligned_free(p); } };
+using AlignedArray_float4 = std::unique_ptr<float4[], AlignedDeleter_s>;
+AlignedArray_float4 MakeAlignedArray_float4(uint64_t Count)
+{
+    const uint64_t Size = sizeof(float4) * Count;
+    if (Size > static_cast<uint64_t>(UINT32_MAX))
+        return nullptr;
+
+    auto Ptr = _aligned_malloc(static_cast<size_t>(Size), 16);
+
+    return AlignedArray_float4(static_cast<float4*>(Ptr));
+}
+
 bool ComputeNormalsWeightedByAngle(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts,float3* Normals) noexcept
 {
-    auto Temp = [NumVerts]()
-    {
-        struct aligned_deleter { void operator()(void* p) noexcept { _aligned_free(p); } };
-
-        const uint64_t Size = sizeof(float4) * NumVerts;
-        if (Size > static_cast<uint64_t>(UINT32_MAX))
-            return std::unique_ptr<float4[], aligned_deleter>(nullptr);
-
-        auto Ptr = _aligned_malloc(static_cast<size_t>(Size), 16);
-
-        return std::unique_ptr<float4[], aligned_deleter>(static_cast<float4*>(Ptr));
-    }();
-
+    auto Temp = MakeAlignedArray_float4(NumVerts);
     if (!Temp)
         return RET_OUT_OF_MEM;
 
@@ -1068,7 +1069,7 @@ bool ComputeNormalsWeightedByAngle(const index_t* Indices, size_t NumFaces, cons
         const float3 U = P1 - P0;
         const float3 V = P2 - P0;
 
-        const float3 FaceNormal = Normalize(CrossF3(U, V));
+        const float3 FaceNormal = Normalize(Cross(U, V));
 
         // Corner 0 -> 1 - 0, 2 - 0
         const float3 A = Normalize(U);
@@ -1117,6 +1118,162 @@ bool ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Posit
         return RET_ARITHMETIC_OVERFLOW;
 
     return ComputeNormalsWeightedByAngle(Indices, NumFaces, Positions, NumVerts, Normals);
+}
+
+bool ComputeTangents(const index_t* Indices, size_t NumFaces, const float3* Positions, const float3* Normals, const float2* Texcoords, size_t NumVerts, float4* Tangents4, float3* Bitangents) noexcept
+{
+    if (!Tangents4 && !Bitangents)
+        return RET_INVALID_ARGS;
+
+    if (!Indices || !NumFaces || !Positions || !Normals || !Texcoords || !NumVerts)
+        return RET_INVALID_ARGS;
+
+    if (NumVerts >= index_t(-1))
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    static constexpr float EPSILON = 0.0001f;
+    static constexpr float4 kFlips = { 1.f, -1.f, -1.f, 1.f };
+
+    auto Temp = MakeAlignedArray_float4(uint64_t(NumVerts) * 2);
+    if (!Temp)
+        return RET_OUT_OF_MEM;
+
+    memset(Temp.get(), 0, sizeof(float4) * NumVerts * 2);
+
+    float4* Tangent1 = Temp.get();
+    float4* Tangent2 = Temp.get() + NumVerts;
+
+    for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt)
+    {
+        index_t I0 = Indices[FaceIt * 3];
+        index_t I1 = Indices[FaceIt * 3 + 1];
+        index_t I2 = Indices[FaceIt * 3 + 2];
+
+        if (I0 == index_t(-1)
+            || I1 == index_t(-1)
+            || I2 == index_t(-1))
+            continue;
+
+        if (I0 >= NumVerts
+            || I1 >= NumVerts
+            || I2 >= NumVerts)
+            return RET_UNEXPECTED;
+
+        const float2 T0 = Texcoords[I0];
+        const float2 T1 = Texcoords[I1];
+        const float2 T2 = Texcoords[I2];
+
+        float4 S = MergeXY(T1 - T0, T2 - T0);
+
+        float4 Tmp = S;
+
+        float D = Tmp.x * Tmp.w - Tmp.z * Tmp.y;
+        D = (fabsf(D) <= EPSILON) ? 1.f : (1.f / D);
+        S = S * D;
+        S = S * kFlips;
+
+        matrix M0;
+        M0.r[0] = float4{ S.w, S.z, 0.0f, 0.0f };
+        M0.r[1] = float4{ S.y, S.x, 0.0f, 0.0f };
+
+        M0.r[2] = M0.r[3] = float4{ 0.0f };
+
+        const float3 P0 = Positions[I0];
+        const float3 P1 = Positions[I1];
+        float3 P2 = Positions[I2];
+
+        matrix M1;
+        M1.r[0] = P1 - P0;
+        M1.r[1] = P2 - P0;
+        M1.r[2] = M1.r[3] = float4{ 0.0f };
+
+        const matrix UV = M0 * M1;
+
+        Tangent1[I0] = Tangent1[I0] + UV.r[0];
+        Tangent1[I1] = Tangent1[I1] + UV.r[0];
+        Tangent1[I2] = Tangent1[I2] + UV.r[0];
+                                    
+        Tangent2[I0] = Tangent2[I0] + UV.r[1];
+        Tangent2[I1] = Tangent2[I1] + UV.r[1];
+        Tangent2[I2] = Tangent2[I2] + UV.r[1];
+    }
+
+    for (size_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        // Gram-Schmidt orthonormalization
+        float4 B0 = Normals[VertIt];
+        B0 = Normalize(B0.xyz);
+
+        const float4 Tan1 = Tangent1[VertIt];
+        float4 B1 = Tan1 - (Dot3(B0, Tan1) * B0);
+        B1 = Normalize(B1.xyz);
+
+        const float4 Tan2 = Tangent2[VertIt];
+
+        float4 B2 = ((Tan2 - (Dot3(B0, Tan2) * B0)) - (Dot3(B1, Tan2) * B1));
+
+        B2 = Normalize(B2.xyz);
+
+        // handle degenerate vectors
+        const float Len1 = Length(B1);
+        const float Len2 = Length(B2);
+
+        if ((Len1 <= EPSILON) || (Len2 <= EPSILON))
+        {
+            if (Len1 > 0.5f)
+            {
+                // Reset bi-tangent from tangent and normal
+                B2 = Cross3(B0, B1);
+            }
+            else if (Len2 > 0.5f)
+            {
+                // Reset tangent from bi-tangent and normal
+                B1 = Cross3(B2, B0);
+            }
+            else
+            {
+                // Reset both tangent and bi-tangent from normal
+                float4 Axis;
+
+                const float D0 = fabsf(Dot3(K_IdentityR0, B0));
+                const float D1 = fabsf(Dot3(K_IdentityR1, B0));
+                const float D2 = fabsf(Dot3(K_IdentityR2, B0));
+                if (D0 < D1)
+                {
+                    Axis = (D0 < D2) ? K_IdentityR0 : K_IdentityR2;
+                }
+                else if (D1 < D2)
+                {
+                    Axis = K_IdentityR1;
+                }
+                else
+                {
+                    Axis = K_IdentityR2;
+                }
+
+                B1 = Cross3(B0, Axis);
+                B2 = Cross3(B0, B1);
+            }
+        }
+
+        if (Tangents4)
+        {
+            float4 Bi = Cross3(B0, Tan1);
+            const float W = AllLess(Dot3(Bi, Tan2), k_Vec3Zero) ? -1.f : 1.f;
+
+            Tangents4[VertIt] = float4{ Bi.xyz, W };
+        }
+
+        if (Bitangents)
+        {
+            Bitangents[VertIt] = B2.xyz;
+        }
+    }
+
+    return true;
 }
 
 }
