@@ -32,4 +32,5 @@ bool _FailMsg(const char* fmt, ...);
 #define RET_OUT_OF_MEM			FAILMSG("Out of memory!")
 #define RET_INVALID_ARGS		FAILMSG("Invalid args");
 #define RET_ARITHMETIC_OVERFLOW	FAILMSG("Arithmetic overflow");
+#define RET_UNEXPTECTED			FAILMSG("Unexpected condition");
 

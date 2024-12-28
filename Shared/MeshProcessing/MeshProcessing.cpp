@@ -235,9 +235,9 @@ bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
     }
 
     std::stable_sort(List.begin(), List.end(), [](const intpair_t& A, const intpair_t& B) noexcept -> bool
-        {
-            return (A.first < B.first);
-        });
+    {
+        return (A.first < B.first);
+    });
 
     auto It = List.begin();
     for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt, ++It)
@@ -249,7 +249,7 @@ bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
     return true;
 }
 
-bool ReorderIndices(uint32_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, uint32_t* OutIndices)
+bool ReorderIndices(index_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, index_t* OutIndices)
 {
     if (!Indices || !NumFaces || !FaceRemap || !OutIndices)
     {
@@ -449,7 +449,7 @@ struct FaceValenceSort_s
 
 constexpr uint32_t kDefaultLRUCacheSize = 32;
 
-bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
+bool OptimizeFacesLRU(index_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
 {
     if (!Indices || !NumFaces || !FaceRemap)
     {
@@ -778,6 +778,63 @@ bool OptimizeFacesLRU(uint32_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
     for (; CurFace < FaceCount; ++CurFace)
     {
         FaceRemap[CurFace] = UNUSED32;
+    }
+
+    return true;
+}
+bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap)
+{
+    if (!Indices || !NumFaces || !NumVerts || !VertexRemap)
+        return RET_INVALID_ARGS;
+
+    if (NumVerts >= index_t(-1))
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    std::unique_ptr<uint32_t[]> TempRemap(new (std::nothrow) uint32_t[NumVerts]);
+    if (!TempRemap)
+        return RET_OUT_OF_MEM;
+
+    memset(TempRemap.get(), 0xff, sizeof(uint32_t) * NumVerts);
+
+    uint32_t CurVertex = 0;
+    for (size_t IndexIt = 0; IndexIt < (NumFaces * 3); ++IndexIt)
+    {
+        index_t CurIndex = Indices[IndexIt];
+        if (CurIndex == index_t(-1))
+            continue;
+
+        if (CurIndex >= NumVerts)
+            return RET_UNEXPECTED;
+
+        if (TempRemap[CurIndex] == UNUSED32)
+        {
+            TempRemap[CurIndex] = CurVertex;
+            ++CurVertex;
+        }
+    }
+
+    // inverse lookup
+    memset(VertexRemap, 0xff, sizeof(uint32_t) * NumVerts);
+
+    size_t Unused = 0;
+
+    for (uint32_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        uint32_t Vertindex = TempRemap[VertIt];
+        if (Vertindex == UNUSED32)
+        {
+            ++Unused;
+        }
+        else
+        {
+            if (Vertindex >= NumVerts)
+                return RET_UNEXPECTED;
+
+            VertexRemap[Vertindex] = VertIt;
+        }
     }
 
     return true;
