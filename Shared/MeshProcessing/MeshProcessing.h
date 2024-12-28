@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <SurfMath.h>
 #include <vector>
 
 namespace MeshProcessing
@@ -15,4 +16,5 @@ namespace MeshProcessing
 	bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices) noexcept;
 	bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept;
 	std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces);
+	bool ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, float3* Normals) noexcept;
 }

@@ -160,7 +160,7 @@ bool CleanMesh(index_t* Indices, size_t NumFaces, size_t NumVerts, const uint32_
                     auto It = Range.first;
                     for (; It != Range.second; ++It)
                     {
-                        const uint32_t M = (It->second >= NumVerts) ? DupAttr[It->second - nVerts] : ids[It->second];
+                        const uint32_t M = (It->second >= NumVerts) ? DupAttr[It->second - NumVerts] : IDs[It->second];
                         if (M == Attr)
                         {
                             IndicesNew[FaceIt * 3 + PointIt] = index_t(It->second);
@@ -249,7 +249,7 @@ bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
     return true;
 }
 
-bool ReorderIndices(index_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, index_t* OutIndices)
+bool ReorderIndices(index_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, index_t* OutIndices) noexcept
 {
     if (!Indices || !NumFaces || !FaceRemap || !OutIndices)
     {
@@ -782,7 +782,7 @@ bool OptimizeFacesLRU(index_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
 
     return true;
 }
-bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap)
+bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap) noexcept
 {
     if (!Indices || !NumFaces || !NumVerts || !VertexRemap)
         return RET_INVALID_ARGS;
@@ -840,7 +840,7 @@ bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32
     return true;
 }
 
-bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices)
+bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices) noexcept
 {
     if (!Indices || !NumFaces || !VertexRemap || !NumVerts || !OutIndices)
         return RET_INVALID_ARGS;
@@ -986,42 +986,137 @@ bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint
 
 std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces)
 {
-    std::vector<std::pair<size_t, size_t>> subsets;
+    std::vector<std::pair<size_t, size_t>> Subsets;
 
-    if (!nFaces)
-        return subsets;
+    if (!NumFaces)
+        return Subsets;
 
-    if (!attributes)
+    if (!Attributes)
     {
-        subsets.emplace_back(std::pair<size_t, size_t>(0u, nFaces));
-        return subsets;
+        Subsets.emplace_back(std::pair<size_t, size_t>(0u, NumFaces));
+        return Subsets;
     }
 
-    uint32_t lastAttr = attributes[0];
-    size_t offset = 0;
-    size_t count = 1;
+    uint32_t LastAttr = Attributes[0];
+    size_t Offset = 0;
+    size_t Count = 1;
 
-    for (size_t j = 1; j < nFaces; ++j)
+    for (size_t FaceIt = 1; FaceIt < NumFaces; ++FaceIt)
     {
-        if (attributes[j] != lastAttr)
+        if (Attributes[FaceIt] != LastAttr)
         {
-            subsets.emplace_back(std::pair<size_t, size_t>(offset, count));
-            lastAttr = attributes[j];
-            offset = j;
-            count = 1;
+            Subsets.emplace_back(std::pair<size_t, size_t>(Offset, Count));
+            LastAttr = Attributes[FaceIt];
+            Offset = FaceIt;
+            Count = 1;
         }
         else
         {
-            count += 1;
+            Count += 1;
         }
     }
 
-    if (count > 0)
+    if (Count > 0)
     {
-        subsets.emplace_back(std::pair<size_t, size_t>(offset, count));
+        Subsets.emplace_back(std::pair<size_t, size_t>(Offset, Count));
     }
 
-    return subsets;
+    return Subsets;
+}
+
+bool ComputeNormalsWeightedByAngle(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts,float3* Normals) noexcept
+{
+    auto Temp = [NumVerts]()
+    {
+        struct aligned_deleter { void operator()(void* p) noexcept { _aligned_free(p); } };
+
+        const uint64_t Size = sizeof(float4) * NumVerts;
+        if (Size > static_cast<uint64_t>(UINT32_MAX))
+            return std::unique_ptr<float4[], aligned_deleter>(nullptr);
+
+        auto Ptr = _aligned_malloc(static_cast<size_t>(Size), 16);
+
+        return std::unique_ptr<float4[], aligned_deleter>(static_cast<float4*>(Ptr));
+    }();
+
+    if (!Temp)
+        return RET_OUT_OF_MEM;
+
+    float4* VertNormals = Temp.get();
+    memset(VertNormals, 0, sizeof(float4) * NumVerts);
+
+    for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt)
+    {
+        index_t I0 = Indices[FaceIt * 3];
+        index_t I1 = Indices[FaceIt * 3 + 1];
+        index_t I2 = Indices[FaceIt * 3 + 2];
+
+        if (I0 == index_t(-1)
+            || I1 == index_t(-1)
+            || I2 == index_t(-1))
+            continue;
+
+        if (I0 >= NumVerts
+            || I1 >= NumVerts
+            || I2 >= NumVerts)
+            return RET_UNEXPECTED;
+
+        const float3 P0 = Positions[I0];
+        const float3 P1 = Positions[I1];
+        const float3 P2 = Positions[I2];
+
+        const float3 U = P1 - P0;
+        const float3 V = P2 - P0;
+
+        const float3 FaceNormal = Normalize(CrossF3(U, V));
+
+        // Corner 0 -> 1 - 0, 2 - 0
+        const float3 A = Normalize(U);
+        const float3 B = Normalize(V);
+        float W0 = Dot(A, B);
+        W0 = Clamp(W0, -1.0f, 1.0f);
+        W0 = ACos(W0);
+
+        // Corner 1 -> 2 - 1, 0 - 1
+        const float3 C = Normalize(P2 - P1);
+        const float3 D = Normalize(P0 - P1);
+        float W1 = Dot(C, D);
+        W1 = Clamp(W1, -1.0f, 1.0f);
+        W1 = ACos(W1);
+
+        // Corner 2 -> 0 - 2, 1 - 2
+        const float3 E = Normalize(P0 - P2);
+        const float3 F = Normalize(P1 - P2);
+        float W2 = Dot(E, F);
+        W2 = Clamp(W2, -1.0f, 1.0f);
+        W2 = ACos(W2);
+
+        VertNormals[I0] = MultiplyAdd(FaceNormal, W0, VertNormals[I0].xyz);
+        VertNormals[I1] = MultiplyAdd(FaceNormal, W1, VertNormals[I1].xyz);
+        VertNormals[I2] = MultiplyAdd(FaceNormal, W2, VertNormals[I2].xyz);
+    }
+
+    // Store results
+    for (size_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        Normals[VertIt] = Normalize(VertNormals[VertIt].xyz);
+    }
+
+    return true;
+}
+
+bool ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, float3* Normals) noexcept
+{
+    if (!Indices || !Positions || !NumFaces || !NumVerts || !Normals)
+        return RET_INVALID_ARGS;
+
+    if (NumVerts >= UINT16_MAX)
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    return ComputeNormalsWeightedByAngle(Indices, NumFaces, Positions, NumVerts, Normals);
 }
 
 }

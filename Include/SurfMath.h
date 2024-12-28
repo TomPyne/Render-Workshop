@@ -636,7 +636,7 @@ inline constexpr Vector4Component<T> Sign(Vector4Component<T> v) noexcept
 }
 
 // Vector
-inline constexpr float3 MultiplyAddF3(float3 a, float3 b, float3 c) noexcept
+inline constexpr float3 MultiplyAdd(float3 a, float3 b, float3 c) noexcept
 {
     return float3(
         a.x * b.x + c.x,
@@ -645,7 +645,7 @@ inline constexpr float3 MultiplyAddF3(float3 a, float3 b, float3 c) noexcept
     );
 }
 
-inline constexpr float4 MultiplyAddF4(float4 a, float4 b, float4 c) noexcept
+inline constexpr float4 MultiplyAdd(float4 a, float4 b, float4 c) noexcept
 {
     return float4(
         a.x * b.x + c.x,
@@ -655,7 +655,7 @@ inline constexpr float4 MultiplyAddF4(float4 a, float4 b, float4 c) noexcept
     );
 }
 
-inline constexpr float3 NegativeMultiplaySubtractF3(float3 a, float3 b, float3 c) noexcept
+inline constexpr float3 NegativeMultiplaySubtract(float3 a, float3 b, float3 c) noexcept
 {
     return float3(
         c.x - (a.x * b.x),
@@ -664,7 +664,7 @@ inline constexpr float3 NegativeMultiplaySubtractF3(float3 a, float3 b, float3 c
     );
 }
 
-inline constexpr float4 NegativeMultiplaySubtractF4(float4 a, float4 b, float4 c) noexcept
+inline constexpr float4 NegativeMultiplaySubtract(float4 a, float4 b, float4 c) noexcept
 {
     return float4(
         c.x - (a.x * b.x),
@@ -750,6 +750,26 @@ inline T Normalize(T v)
     return v * length;
 }
 
+float ACos(float F)
+{
+    return acosf(F);
+}
+
+float2 ACos(float2 V)
+{
+    return float2{ acosf(V.x), acosf(V.y) };
+}
+
+float3 ACos(float3 V)
+{
+    return float3{ acosf(V.x), acosf(V.y), acosf(V.z) };
+}
+
+float4 ACos(float4 V)
+{
+    return float4{ acosf(V.x), acosf(V.y), acosf(V.z), acosf(V.w) };
+}
+
 inline float3 TransformF3(float3 v, matrix m) noexcept
 {
     float4 z(v.z);
@@ -757,9 +777,9 @@ inline float3 TransformF3(float3 v, matrix m) noexcept
     float4 x(v.x);
 
     float4 result;
-    result = MultiplyAddF4(z, m.r[2], m.r[3]);
-    result = MultiplyAddF4(y, m.r[1], result);
-    result = MultiplyAddF4(x, m.r[0], result);
+    result = MultiplyAdd(z, m.r[2], m.r[3]);
+    result = MultiplyAdd(y, m.r[1], result);
+    result = MultiplyAdd(x, m.r[0], result);
 
     return result.xyz;
 }
@@ -819,10 +839,10 @@ inline matrix MakeMatrixRotationNormal(float3 normal, float angleRadians) noexce
     float3 N1(normal.z, normal.x, normal.y);
 
     float3 V0 = (C2 * N0) * N1;
-    float3 R0 = MultiplyAddF3(C2 * normal, normal, C1);
+    float3 R0 = MultiplyAdd(C2 * normal, normal, C1);
 
-    float3 R1 = MultiplyAddF3(C0, normal, V0);
-    float3 R2 = NegativeMultiplaySubtractF3(C0, normal, V0);
+    float3 R1 = MultiplyAdd(C0, normal, V0);
+    float3 R2 = NegativeMultiplaySubtract(C0, normal, V0);
 
     V0 = R0;
     float4 V1(R1.z, R2.y, R2.z, R1.x);
@@ -971,9 +991,9 @@ inline matrix InverseMatrix(matrix m, float* outDeterminant = nullptr) noexcept
     v0[2] = float4(mt.r[2].y, mt.r[2].w, mt.r[0].y, mt.r[0].w);
     v1[2] = float4(mt.r[3].x, mt.r[3].z, mt.r[1].x, mt.r[1].z);
 
-    d0 = NegativeMultiplaySubtractF4(v0[0], v1[0], d0);
-    d1 = NegativeMultiplaySubtractF4(v0[1], v1[1], d1);
-    d2 = NegativeMultiplaySubtractF4(v0[2], v1[2], d2);
+    d0 = NegativeMultiplaySubtract(v0[0], v1[0], d0);
+    d1 = NegativeMultiplaySubtract(v0[1], v1[1], d1);
+    d2 = NegativeMultiplaySubtract(v0[2], v1[2], d2);
 
     v0[0] = SWIZZLEF4(mt.r[1], y, z, x, y);
     v1[0] = float4(d2.y, d0.y, d0.w, d0.x);
@@ -998,10 +1018,10 @@ inline matrix InverseMatrix(matrix m, float* outDeterminant = nullptr) noexcept
     v0[3] = SWIZZLEF4(mt.r[2], w, z, w, y);
     v1[3] = float4(d1.z, d1.y, d2.z, d1.x);
 
-    c0 = NegativeMultiplaySubtractF4(v0[0], v1[0], c0);
-    c2 = NegativeMultiplaySubtractF4(v0[1], v1[1], c2);
-    c4 = NegativeMultiplaySubtractF4(v0[2], v1[2], c4);
-    c6 = NegativeMultiplaySubtractF4(v0[3], v1[3], c6);
+    c0 = NegativeMultiplaySubtract(v0[0], v1[0], c0);
+    c2 = NegativeMultiplaySubtract(v0[1], v1[1], c2);
+    c4 = NegativeMultiplaySubtract(v0[2], v1[2], c4);
+    c6 = NegativeMultiplaySubtract(v0[3], v1[3], c6);
 
     v0[0] = SWIZZLEF4(mt.r[1], w, x, w, x);
     v1[0] = float4(d0.z, d2.y, d2.x, d0.z);
@@ -1012,15 +1032,15 @@ inline matrix InverseMatrix(matrix m, float* outDeterminant = nullptr) noexcept
     v0[3] = SWIZZLEF4(mt.r[2], y, w, x, z);
     v1[3] = float4(d2.w, d1.x, d1.w, d2.z);
 
-    float4 c1 = NegativeMultiplaySubtractF4(v0[0], v1[0], c0);
-    float4 c3 = MultiplyAddF4(v0[1], v1[1], c2);
-    float4 c5 = NegativeMultiplaySubtractF4(v0[2], v1[2], c4);
-    float4 c7 = MultiplyAddF4(v0[3], v1[3], c6);
+    float4 c1 = NegativeMultiplaySubtract(v0[0], v1[0], c0);
+    float4 c3 = MultiplyAdd(v0[1], v1[1], c2);
+    float4 c5 = NegativeMultiplaySubtract(v0[2], v1[2], c4);
+    float4 c7 = MultiplyAdd(v0[3], v1[3], c6);
 
-    c0 = MultiplyAddF4(v0[0], v1[0], c0);
-    c2 = NegativeMultiplaySubtractF4(v0[1], v1[1], c2);
-    c4 = MultiplyAddF4(v0[2], v1[2], c4);
-    c6 = NegativeMultiplaySubtractF4(v0[3], v1[3], c6);
+    c0 = MultiplyAdd(v0[0], v1[0], c0);
+    c2 = NegativeMultiplaySubtract(v0[1], v1[1], c2);
+    c4 = MultiplyAdd(v0[2], v1[2], c4);
+    c6 = NegativeMultiplaySubtract(v0[3], v1[3], c6);
 
     matrix r;
     r.r[0] = float4(c0.x, c1.y, c0.z, c1.w);
@@ -1264,7 +1284,7 @@ struct AABB
         mins = FLT_MAX;
 
         for (size_t i = 0; i < 8; i++)
-            Grow(TransformF3(MultiplyAddF3(extents, k_BoxOffsets[i], centre), mat));
+            Grow(TransformF3(MultiplyAdd(extents, k_BoxOffsets[i], centre), mat));
     }
 
     AABB GetTransformed(const matrix& matrix) const noexcept
@@ -1323,7 +1343,7 @@ struct BoundingBox
     void GetCorners(float3 corners[8]) const noexcept
     {
         for (size_t i = 0; i < 8; i++)
-            corners[i] = MultiplyAddF3(extents, k_BoxOffsets[i], centre);
+            corners[i] = MultiplyAdd(extents, k_BoxOffsets[i], centre);
     }
 };
 
