@@ -807,6 +807,28 @@ inline constexpr bool AllLess(float4 A, float4 B) noexcept
     return A.x < B.x && A.y < B.y && A.z < B.z && A.w < B.w;
 }
 
+inline constexpr bool AllGreater(float2 A, float2 B) noexcept
+{
+    return A.x > B.x && A.y > B.y;
+}
+
+inline constexpr bool AllGreater(float3 A, float3 B) noexcept
+{
+    return A.x > B.x && A.y > B.y && A.z > B.z;
+}
+
+inline constexpr bool AllGreater(float4 A, float4 B) noexcept
+{
+    return A.x > B.x && A.y > B.y && A.z > B.z && A.w > B.w;
+}
+
+template<typename T>
+inline constexpr T Lerp(T A, T B, float Alpha) noexcept
+{
+    T Length = B - A;
+    return MultiplyAdd(Length, T(Alpha), A);
+}
+
 inline float3 TransformF3(float3 v, matrix m) noexcept
 {
     float4 z(v.z);
@@ -1447,6 +1469,12 @@ struct BoundingSphere
     float3 Origin;
     float Radius;
 
+    constexpr BoundingSphere()
+        : Origin(0.0f)
+        , Radius(0.0f)
+    {
+    }
+
     constexpr BoundingSphere(const float3& origin, float radius)
         : Origin(origin)
         , Radius(radius)
@@ -1455,6 +1483,84 @@ struct BoundingSphere
     constexpr bool IsForwardOfPlane(const Plane& plane) const noexcept
     {
         return plane.GetSignedDistance(Origin) > -Radius;
+    }
+
+    void InitFromPoints(size_t Count, const float3* Points) noexcept
+    {
+        assert(Count > 0);
+        assert(Points);
+
+        float3 MinX, MaxX, MinY, MaxY, MinZ, MaxZ;
+
+        MinX = MaxX = MinY = MaxY = MinZ = MaxZ = *Points;
+
+        for (size_t PointIt = 1; PointIt < Count; PointIt++)
+        {
+            float3 Point = Points[PointIt];
+
+            if (Point.x < MinX.x)
+                MinX = Point;
+
+            if (Point.x > MaxX.x)
+                MaxX = Point;
+
+            if (Point.y < MinY.y)
+                MinY = Point;
+
+            if (Point.y > MaxY.y)
+                MaxY = Point;
+
+            if (Point.z < MinZ.z)
+                MinZ = Point;
+
+            if (Point.z > MaxZ.z)
+                MaxZ = Point;
+        }
+
+        float DistX = Length(MaxX - MinX);
+        float DistY = Length(MaxY - MinY);
+        float DistZ = Length(MaxZ - MinZ);
+
+        if (DistX > DistY)
+        {
+            if (DistX > DistZ)
+            {
+                Origin = Lerp(MaxX, MinX, 0.5f);
+                Radius = DistX * 0.5f;
+            }
+            else
+            {
+                Origin = Lerp(MaxZ, MinZ, 0.5f);
+                Radius = DistZ * 0.5f;
+            }
+        }
+        else
+        {
+            if (DistY > DistZ)
+            {
+                Origin = Lerp(MaxY, MinY, 0.5f);
+                Radius = DistY * 0.5f;
+            }
+            else
+            {
+                Origin = Lerp(MaxZ, MinZ, 0.5f);
+                Radius = DistZ * 0.5f;
+            }
+        }
+
+        for (size_t PointIt = 0; PointIt < Count; PointIt++)
+        {
+            float3 Point = Points[PointIt];
+            float3 Delta = Point - Origin;
+
+            float Dist = Length(Delta);
+
+            if (Dist > Radius)
+            {
+                Radius = (Radius + Dist) * 0.5f;
+                Origin = Origin + (Delta * ( 1.0f - (Radius / Dist)));
+            }
+        }
     }
 };
 
