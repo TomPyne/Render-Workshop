@@ -839,4 +839,63 @@ bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32
 
     return true;
 }
+
+bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices)
+{
+    if (!Indices || !NumFaces || !VertexRemap || !NumVerts || !OutIndices)
+        return RET_INVALID_ARGS;
+
+    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
+        return RET_ARITHMETIC_OVERFLOW;
+
+    if (NumVerts >= index_t(-1))
+        return RET_INVALID_ARGS;
+
+    std::unique_ptr<uint32_t[]> VertexRemapInverse(new (std::nothrow) uint32_t[NumVerts]);
+    if (!VertexRemapInverse)
+        return RET_OUT_OF_MEM;
+
+    memset(VertexRemapInverse.get(), 0xff, sizeof(uint32_t) * NumVerts);
+
+    for (uint32_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        if (VertexRemap[VertIt] != UNUSED32)
+        {
+            if (VertexRemap[VertIt] >= NumVerts)
+                return RET_UNEXPECTED;
+
+            VertexRemapInverse[VertexRemap[VertIt]] = VertIt;
+        }
+    }
+
+    for (size_t IndexIt = 0; IndexIt < (NumFaces * 3); ++IndexIt)
+    {
+        index_t Index = Indices[IndexIt];
+        if (Index == index_t(-1))
+        {
+            OutIndices[IndexIt] = index_t(-1);
+            continue;
+        }
+
+        if (Index >= NumVerts)
+            return RET_UNEXPECTED;
+
+        const uint32_t Dest = VertexRemapInverse[Index];
+        if (Dest == UNUSED32)
+        {
+            OutIndices[IndexIt] = Index;
+            continue;
+        }
+
+        if (Dest < NumVerts)
+        {
+            OutIndices[IndexIt] = index_t(Dest);
+        }
+        else
+            return false;
+    }
+
+    return true;
+}
+
 }
