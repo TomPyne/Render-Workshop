@@ -898,4 +898,90 @@ bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRe
     return true;
 }
 
+constexpr size_t kMaxStride = 2048;
+bool SwapVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept
+{
+    if (!Vertices || !Stride || !NumVerts || !VertexRemap)
+        return RET_INVALID_ARGS;
+
+    if (Stride > kMaxStride)
+        return RET_INVALID_ARGS;
+
+    std::unique_ptr<uint8_t[]> Temp(new (std::nothrow) uint8_t[((sizeof(bool) + sizeof(uint32_t)) * NumVerts) + Stride]);
+    if (!Temp)
+        return RET_OUT_OF_MEM;
+
+    auto VertexRemapInverse = reinterpret_cast<uint32_t*>(Temp.get());
+
+    memset(VertexRemapInverse, 0xff, sizeof(uint32_t) * NumVerts);
+
+    for (uint32_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        if (VertexRemap[VertIt] != UNUSED32)
+        {
+            if (VertexRemap[VertIt] >= NumVerts)
+                return RET_UNEXPECTED;
+
+            VertexRemapInverse[VertexRemap[VertIt]] = VertIt;
+        }
+    }
+
+    auto Moved = reinterpret_cast<bool*>(Temp.get() + sizeof(uint32_t) * NumVerts);
+    memset(Moved, 0, sizeof(bool) * NumVerts);
+
+    auto VBTemp = Temp.get() + ((sizeof(bool) + sizeof(uint32_t)) * NumVerts);
+
+    auto Ptr = static_cast<uint8_t*>(Vertices);
+
+    for (size_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    {
+        if (Moved[VertIt])
+            continue;
+
+        uint32_t Dest = VertexRemapInverse[VertIt];
+
+        if (Dest == UNUSED32)
+            continue;
+
+        if (Dest >= NumVerts)
+            return RET_UNEXPECTED;
+
+        bool Next = false;
+
+        while (Dest != VertIt)
+        {
+            // Swap vertex
+            memcpy(VBTemp, Ptr + Dest * Stride, Stride);
+            memcpy(Ptr + Dest * Stride, Ptr + VertIt * Stride, Stride);
+            memcpy(Ptr + VertIt * Stride, VBTemp, Stride);
+
+            Moved[Dest] = true;
+
+            Dest = VertexRemapInverse[Dest];
+
+            if (Dest == UNUSED32 || Moved[Dest])
+            {
+                Next = true;
+                break;
+            }
+
+            if (Dest >= NumVerts)
+                return false;
+        }
+
+        if (Next)
+            continue;
+    }
+
+    return true;
+}
+
+bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept
+{
+    if (NumVerts >= UINT32_MAX)
+        return RET_INVALID_ARGS;
+
+    return SwapVertices(Vertices, Stride, NumVerts, VertexRemap);
+}
+
 }
