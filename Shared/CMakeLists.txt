@@ -9,6 +9,8 @@ add_library(Shared
             "ImGui/Imgui_Impl_Render.h"
             "Logging/Logging.cpp"
             "Logging/Logging.h"
+            "MeshProcessing/MeshProcessing.cpp"
+            "MeshProcessing/MeshProcessing.h"
             "MeshProcessing/WaveFrontReader.cpp"
             "MeshProcessing/WaveFrontReader.h"
             "ModelUtils/ModelLoader.cpp"

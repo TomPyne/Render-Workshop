@@ -87,3 +87,9 @@ void _AssertMsg(bool condition, const char* fmt, ...)
 		PlatformFormatLogMessageLf(LogFatal);
 	}
 }
+
+bool _FailMsg(const char* fmt, ...)
+{
+	PlatformFormatLogMessageLf(LogError);
+	return false;
+}
