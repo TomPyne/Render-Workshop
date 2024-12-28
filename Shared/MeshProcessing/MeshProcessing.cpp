@@ -984,4 +984,44 @@ bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint
     return SwapVertices(Vertices, Stride, NumVerts, VertexRemap);
 }
 
+std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces)
+{
+    std::vector<std::pair<size_t, size_t>> subsets;
+
+    if (!nFaces)
+        return subsets;
+
+    if (!attributes)
+    {
+        subsets.emplace_back(std::pair<size_t, size_t>(0u, nFaces));
+        return subsets;
+    }
+
+    uint32_t lastAttr = attributes[0];
+    size_t offset = 0;
+    size_t count = 1;
+
+    for (size_t j = 1; j < nFaces; ++j)
+    {
+        if (attributes[j] != lastAttr)
+        {
+            subsets.emplace_back(std::pair<size_t, size_t>(offset, count));
+            lastAttr = attributes[j];
+            offset = j;
+            count = 1;
+        }
+        else
+        {
+            count += 1;
+        }
+    }
+
+    if (count > 0)
+    {
+        subsets.emplace_back(std::pair<size_t, size_t>(offset, count));
+    }
+
+    return subsets;
+}
+
 }
