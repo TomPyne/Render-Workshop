@@ -261,15 +261,15 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
             {
                 uint32_t Index = FaceIndex[j];
                 Indices.emplace_back(static_cast<index_t>(I0));
-                Indices.emplace_back(static_cast<index_t>(I1));
                 Indices.emplace_back(static_cast<index_t>(Index));
+                Indices.emplace_back(static_cast<index_t>(I1));
 
                 Attributes.emplace_back(CurSubset);
 
                 I1 = Index;
             }
 
-            assert(Attributes.size() * 3 == Indices.size());
+            CHECK(Attributes.size() * 3 == Indices.size());
         }
         else if (0 == wcscmp(Command.c_str(), L"mtllib"))
         {

@@ -8,10 +8,10 @@
 #include <mutex>
 #include <unordered_set>
 
-namespace MeshProcessing
-{
-
 constexpr uint32_t UNUSED32 = uint32_t(-1);
+
+using index_t = MeshProcessing::index_t;
+using Subset_s = MeshProcessing::Subset_s;
 
 bool ValidateIndices(const index_t* Indices, size_t NumFaces, size_t NumVerts)
 {
@@ -74,7 +74,7 @@ bool Validate(const index_t* Indices, size_t NumFaces, size_t NumVerts)
     return ValidateIndices(Indices, NumFaces, NumVerts);
 }
 
-bool CleanMesh(index_t* Indices, size_t NumFaces, size_t NumVerts, const uint32_t* Attributes, std::vector<uint32_t>& DupedVerts, bool BreakBowTies)
+bool MeshProcessing::CleanMesh(index_t* Indices, size_t NumFaces, size_t NumVerts, const uint32_t* Attributes, std::vector<uint32_t>& DupedVerts, bool BreakBowTies)
 {
     if (!Validate(Indices, NumFaces, NumVerts))
     {
@@ -219,7 +219,7 @@ bool CleanMesh(index_t* Indices, size_t NumFaces, size_t NumVerts, const uint32_
     return true;
 }
 
-bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
+bool MeshProcessing::AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
 {
     if (!NumFaces || !Attributes || !FaceRemap)
         return RET_INVALID_ARGS;
@@ -251,7 +251,7 @@ bool AttributeSort(size_t NumFaces, uint32_t* Attributes, uint32_t* FaceRemap)
     return true;
 }
 
-bool ReorderIndices(index_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, index_t* OutIndices) noexcept
+bool MeshProcessing::ReorderIndices(index_t* Indices, size_t NumFaces, const uint32_t* FaceRemap, index_t* OutIndices) noexcept
 {
     if (!Indices || !NumFaces || !FaceRemap || !OutIndices)
     {
@@ -451,7 +451,7 @@ struct FaceValenceSort_s
 
 constexpr uint32_t kDefaultLRUCacheSize = 32;
 
-bool OptimizeFacesLRU(index_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
+bool MeshProcessing::OptimizeFacesLRU(index_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
 {
     if (!Indices || !NumFaces || !FaceRemap)
     {
@@ -784,7 +784,7 @@ bool OptimizeFacesLRU(index_t* Indices, size_t NumFaces, uint32_t* FaceRemap)
 
     return true;
 }
-bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap) noexcept
+bool MeshProcessing::OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32_t* VertexRemap) noexcept
 {
     if (!Indices || !NumFaces || !NumVerts || !VertexRemap)
         return RET_INVALID_ARGS;
@@ -842,7 +842,7 @@ bool OptimizeVertices(index_t* Indices, size_t NumFaces, size_t NumVerts, uint32
     return true;
 }
 
-bool FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices) noexcept
+bool MeshProcessing::FinalizeIndices(index_t* Indices, size_t NumFaces, const uint32_t* VertexRemap, size_t NumVerts, index_t* OutIndices) noexcept
 {
     if (!Indices || !NumFaces || !VertexRemap || !NumVerts || !OutIndices)
         return RET_INVALID_ARGS;
@@ -978,7 +978,7 @@ bool SwapVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t
     return true;
 }
 
-bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept
+bool MeshProcessing::FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* VertexRemap) noexcept
 {
     if (NumVerts >= UINT32_MAX)
         return RET_INVALID_ARGS;
@@ -986,7 +986,7 @@ bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint
     return SwapVertices(Vertices, Stride, NumVerts, VertexRemap);
 }
 
-bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* DupedVerts, size_t NumDupedVerts, const uint32_t* VertexRemap, void* OutVertices) noexcept
+bool MeshProcessing::FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint32_t* DupedVerts, size_t NumDupedVerts, const uint32_t* VertexRemap, void* OutVertices) noexcept
 {
     if (!Vertices || !Stride || !NumVerts || !OutVertices)
         return RET_INVALID_ARGS;
@@ -1053,16 +1053,16 @@ bool FinalizeVertices(void* Vertices, size_t Stride, size_t NumVerts, const uint
     return true;
 }
 
-std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes, size_t NumFaces)
+std::vector<Subset_s> MeshProcessing::ComputeSubsets(const uint32_t* Attributes, size_t NumFaces)
 {
-    std::vector<std::pair<size_t, size_t>> Subsets;
+    std::vector<Subset_s> Subsets;
 
     if (!NumFaces)
         return Subsets;
 
     if (!Attributes)
     {
-        Subsets.emplace_back(std::pair<size_t, size_t>(0u, NumFaces));
+        Subsets.emplace_back(0u, static_cast<uint32_t>(NumFaces));
         return Subsets;
     }
 
@@ -1074,7 +1074,7 @@ std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes
     {
         if (Attributes[FaceIt] != LastAttr)
         {
-            Subsets.emplace_back(std::pair<size_t, size_t>(Offset, Count));
+            Subsets.emplace_back(static_cast<uint32_t>(Offset), static_cast<uint32_t>(Count));
             LastAttr = Attributes[FaceIt];
             Offset = FaceIt;
             Count = 1;
@@ -1087,7 +1087,7 @@ std::vector<std::pair<size_t, size_t>> ComputeSubsets(const uint32_t* Attributes
 
     if (Count > 0)
     {
-        Subsets.emplace_back(std::pair<size_t, size_t>(Offset, Count));
+        Subsets.emplace_back(static_cast<uint32_t>(Offset), static_cast<uint32_t>(Count));
     }
 
     return Subsets;
@@ -1175,7 +1175,7 @@ bool ComputeNormalsWeightedByAngle(const index_t* Indices, size_t NumFaces, cons
     return true;
 }
 
-bool ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, float3* Normals) noexcept
+bool MeshProcessing::ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, float3* Normals) noexcept
 {
     if (!Indices || !Positions || !NumFaces || !NumVerts || !Normals)
         return RET_INVALID_ARGS;
@@ -1189,7 +1189,7 @@ bool ComputeNormals(const index_t* Indices, size_t NumFaces, const float3* Posit
     return ComputeNormalsWeightedByAngle(Indices, NumFaces, Positions, NumVerts, Normals);
 }
 
-bool ComputeTangents(const index_t* Indices, size_t NumFaces, const float3* Positions, const float3* Normals, const float2* Texcoords, size_t NumVerts, float4* Tangents4, float3* Bitangents) noexcept
+bool MeshProcessing::ComputeTangents(const index_t* Indices, size_t NumFaces, const float3* Positions, const float3* Normals, const float2* Texcoords, size_t NumVerts, float4* Tangents4, float3* Bitangents) noexcept
 {
     if (!Tangents4 && !Bitangents)
         return RET_INVALID_ARGS;
@@ -1345,515 +1345,276 @@ bool ComputeTangents(const index_t* Indices, size_t NumFaces, const float3* Posi
     return true;
 }
 
-struct VertexHashEntry_s
+namespace
 {
-    float3              V;
-    uint32_t            Index;
-    VertexHashEntry_s*  Next;
-};
-
-struct EdgeHashEntry_s
-{
-    uint32_t            V1;
-    uint32_t            V2;
-    uint32_t            VOther;
-    uint32_t            Face;
-    EdgeHashEntry_s*    Next;
-};
-
-bool GeneratePointReps(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, uint32_t* OutPointRep) noexcept
-{
-    std::unique_ptr<uint32_t[]> Temp(new (std::nothrow) uint32_t[NumVerts + NumFaces * 3]);
-    if (!Temp)
-        return RET_OUT_OF_MEM;
-
-    uint32_t* VertexToCorner = Temp.get();
-    uint32_t* VertexCornerList = Temp.get() + NumVerts;
-
-    memset(VertexToCorner, 0xff, sizeof(uint32_t) * NumVerts);
-    memset(VertexCornerList, 0xff, sizeof(uint32_t) * NumFaces * 3);
-
-    // build initial lists and validate indices
-    for (size_t IndexIt = 0; IndexIt < (NumFaces * 3); ++IndexIt)
+    struct EdgeEntry_s
     {
-        index_t Index = Indices[IndexIt];
-        if (Index == index_t(-1))
-            continue;
+        uint32_t   I0;
+        uint32_t   I1;
+        uint32_t   I2;
 
-        if (Index >= NumVerts)
-            return RET_UNEXPECTED;
+        uint32_t   Face;
+        EdgeEntry_s* Next;
+    };
 
-        VertexCornerList[IndexIt] = VertexToCorner[Index];
-        VertexToCorner[Index] = uint32_t(IndexIt);
-    }
-
-    auto HashSize = std::max<size_t>(NumVerts / 3, 1);
-
-    std::unique_ptr<VertexHashEntry_s* []> HashTable(new (std::nothrow) VertexHashEntry_s * [HashSize]);
-    if (!HashTable)
-        return RET_OUT_OF_MEM;
-
-    memset(HashTable.get(), 0, sizeof(VertexHashEntry_s*) * HashSize);
-
-    std::unique_ptr<VertexHashEntry_s[]> HashEntries(new (std::nothrow) VertexHashEntry_s[NumVerts]);
-    if (!HashEntries)
-        return RET_OUT_OF_MEM;
-
-    uint32_t FreeEntry = 0;
-
-    for (size_t VertIt = 0; VertIt < NumVerts; ++VertIt)
+    size_t CRCHash(const uint32_t* DWords, uint32_t DWordCount)
     {
-        auto PX = reinterpret_cast<const uint32_t*>(&Positions[VertIt].x);
-        auto PY = reinterpret_cast<const uint32_t*>(&Positions[VertIt].y);
-        auto PZ = reinterpret_cast<const uint32_t*>(&Positions[VertIt].z);
-        const uint32_t HashKey = (*PX + *PY + *PZ) % uint32_t(HashSize);
+        size_t H = 0;
 
-        uint32_t Found = UNUSED32;
-
-        for (auto Current = HashTable[HashKey]; Current != nullptr; Current = Current->Next)
+        for (uint32_t DWordIt = 0; DWordIt < DWordCount; ++DWordIt)
         {
-            if (Current->V.x == Positions[VertIt].x
-                && Current->V.y == Positions[VertIt].y
-                && Current->V.z == Positions[VertIt].z)
-            {
-                uint32_t Head = VertexToCorner[VertIt];
-
-                bool IsPresent = false;
-
-                while (Head != UNUSED32)
-                {
-                    const uint32_t Face = Head / 3;
-                    CHECK(Face < NumFaces);
-
-                    CHECK((Indices[Face * 3] == VertIt) || (Indices[Face * 3 + 1] == VertIt) || (Indices[Face * 3 + 2] == VertIt));
-
-                    if ((Indices[Face * 3] == Current->Index) || (Indices[Face * 3 + 1] == Current->Index) || (Indices[Face * 3 + 2] == Current->Index))
-                    {
-                        IsPresent = true;
-                        break;
-                    }
-
-                    Head = VertexCornerList[Head];
-                }
-
-                if (!IsPresent)
-                {
-                    Found = Current->Index;
-                    break;
-                }
-            }
+            uint32_t HighOrd = H & 0xf8000000;
+            H = H << 5;
+            H = H ^ (HighOrd >> 27);
+            H = H ^ size_t(DWords[DWordIt]);
         }
 
-        if (Found != UNUSED32)
+        return H;
+    }
+
+    template <typename T>
+    inline size_t Hash(const T& Value)
+    {
+        return std::hash<T>()(Value);
+    }
+}
+
+namespace std
+{
+    template <> struct hash<float3> { size_t operator()(const float3& Value) const { return CRCHash(reinterpret_cast<const uint32_t*>(&Value), sizeof(Value) / 4); } };
+}
+
+void BuildAdjacencyList(
+    const index_t* Indices, uint32_t IndexCount,
+    const float3* Positions, uint32_t VertexCount,
+    uint32_t* Adjacency
+)
+{
+    const uint32_t TriCount = IndexCount / 3;
+    // Find point reps (unique positions) in the position stream
+    // Create a mapping of non-unique vertex indices to point reps
+    std::vector<index_t> PointRep;
+    PointRep.resize(VertexCount);
+
+    std::unordered_map<size_t, index_t> UniquePositionMap;
+    UniquePositionMap.reserve(VertexCount);
+
+    for (uint32_t VertexIt = 0; VertexIt < VertexCount; ++VertexIt)
+    {
+        float3 Position = *(Positions + VertexIt);
+        size_t H = Hash(Position);
+
+        auto It = UniquePositionMap.find(H);
+        if (It != UniquePositionMap.end())
         {
-            OutPointRep[VertIt] = Found;
+            // Position already encountered - reference previous index
+            PointRep[VertexIt] = It->second;
         }
         else
         {
-            CHECK(FreeEntry < NumVerts);
-
-            auto NewEntry = &HashEntries[FreeEntry];
-            ++FreeEntry;
-
-            NewEntry->V = Positions[VertIt];
-            NewEntry->Index = uint32_t(VertIt);
-            NewEntry->Next = HashTable[HashKey];
-            HashTable[HashKey] = NewEntry;
-
-            OutPointRep[VertIt] = uint32_t(VertIt);
+            // New position found - add to hash table and LUT
+            UniquePositionMap.insert(std::make_pair(H, static_cast<index_t>(VertexIt)));
+            PointRep[VertexIt] = static_cast<index_t>(VertexIt);
         }
     }
 
-    CHECK(FreeEntry <= NumVerts);
+    // Create a linked list of edges for each vertex to determine adjacency
+    const uint32_t HashSize = VertexCount / 3;
 
-    return true;
-}
+    std::unique_ptr<EdgeEntry_s* []> HashTable(new EdgeEntry_s * [HashSize]);
+    std::unique_ptr<EdgeEntry_s[]> Entries(new EdgeEntry_s[TriCount * 3]);
 
-bool ConvertPointRepsToAdjacencyImpl(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, const uint32_t* PointRep, uint32_t* OutAdjacency) noexcept
-{
-    auto HashSize = std::max<size_t>(NumVerts / 3, 1);
+    std::memset(HashTable.get(), 0, sizeof(EdgeEntry_s*) * HashSize);
+    uint32_t EntryIndex = 0;
 
-    std::unique_ptr<EdgeHashEntry_s* []> HashTable(new (std::nothrow) EdgeHashEntry_s * [HashSize]);
-    if (!HashTable)
-        return RET_OUT_OF_MEM;
-
-    memset(HashTable.get(), 0, sizeof(EdgeHashEntry_s*) * HashSize);
-
-    std::unique_ptr<EdgeHashEntry_s[]> HashEntries(new (std::nothrow) EdgeHashEntry_s[3 * NumFaces]);
-    if (!HashEntries)
-        return RET_OUT_OF_MEM;
-
-    uint32_t FreeEntry = 0;
-
-    // add face edges to hash table and validate indices
-    for (size_t Face = 0; Face < NumFaces; ++Face)
+    for (uint32_t FaceIt = 0; FaceIt < TriCount; ++FaceIt)
     {
-        index_t I0 = Indices[Face * 3];
-        index_t I1 = Indices[Face * 3 + 1];
-        index_t I2 = Indices[Face * 3 + 2];
+        uint32_t Index = FaceIt * 3;
 
-        if (I0 == index_t(-1)
-            || I1 == index_t(-1)
-            || I2 == index_t(-1))
-            continue;
-
-        if (I0 >= NumVerts
-            || I1 >= NumVerts
-            || I2 >= NumVerts)
-            return RET_UNEXPECTED;
-
-        const uint32_t V1 = PointRep[I0];
-        const uint32_t V2 = PointRep[I1];
-        const uint32_t V3 = PointRep[I2];
-
-        // filter out degenerate triangles
-        if (V1 == V2 || V1 == V3 || V2 == V3)
-            continue;
-
-        for (uint32_t PointIt = 0; PointIt < 3; ++PointIt)
+        // Create a hash entry in the hash table for each each.
+        for (uint32_t EdgeIt = 0; EdgeIt < 3; ++EdgeIt)
         {
-            const uint32_t VA = PointRep[Indices[Face * 3 + PointIt]];
-            const uint32_t VB = PointRep[Indices[Face * 3 + ((PointIt + 1) % 3)]];
-            const uint32_t VOther = PointRep[Indices[Face * 3 + ((PointIt + 2) % 3)]];
+            index_t I0 = PointRep[Indices[Index + (EdgeIt % 3)]];
+            index_t I1 = PointRep[Indices[Index + ((EdgeIt + 1) % 3)]];
+            index_t I2 = PointRep[Indices[Index + ((EdgeIt + 2) % 3)]];
 
-            const uint32_t HashKey = VA % HashSize;
+            auto& Entry = Entries[EntryIndex++];
+            Entry.I0 = I0;
+            Entry.I1 = I1;
+            Entry.I2 = I2;
 
-            CHECK(FreeEntry < (3 * NumFaces));
+            uint32_t Key = Entry.I0 % HashSize;
 
-            auto NewEntry = &HashEntries[FreeEntry];
-            ++FreeEntry;
+            Entry.Next = HashTable[Key];
+            Entry.Face = FaceIt;
 
-            NewEntry->V1 = VA;
-            NewEntry->V2 = VB;
-            NewEntry->VOther = VOther;
-            NewEntry->Face = uint32_t(Face);
-            NewEntry->Next = HashTable[HashKey];
-            HashTable[HashKey] = NewEntry;
+            HashTable[Key] = &Entry;
         }
     }
 
-    CHECK(FreeEntry <= (3 * NumFaces));
+    // Initialize the adjacency list
+    std::memset(Adjacency, uint32_t(-1), IndexCount * sizeof(uint32_t));
 
-    memset(OutAdjacency, 0xff, sizeof(uint32_t) * NumFaces * 3);
-
-    for (size_t FaceIt = 0; FaceIt < NumFaces; ++FaceIt)
+    for (uint32_t FaceIt = 0; FaceIt < TriCount; ++FaceIt)
     {
-        index_t I0 = Indices[FaceIt * 3];
-        index_t I1 = Indices[FaceIt * 3 + 1];
-        index_t I2 = Indices[FaceIt * 3 + 2];
-
-        // filter out unused triangles
-        if (I0 == index_t(-1)
-            || I1 == index_t(-1)
-            || I2 == index_t(-1))
-            continue;
-
-        CHECK(I0 < NumVerts);
-        CHECK(I1 < NumVerts);
-        CHECK(I2 < NumVerts);
-
-        const uint32_t V1 = PointRep[I0];
-        const uint32_t V2 = PointRep[I1];
-        const uint32_t V3 = PointRep[I2];
-
-        // filter out degenerate triangles
-        if (V1 == V2 || V1 == V3 || V2 == V3)
-            continue;
+        uint32_t Index = FaceIt * 3;
 
         for (uint32_t PointIt = 0; PointIt < 3; ++PointIt)
         {
-            if (OutAdjacency[FaceIt * 3 + PointIt] != UNUSED32)
+            if (Adjacency[FaceIt * 3 + PointIt] != uint32_t(-1))
                 continue;
 
-            // see if edge already entered, if not then enter it
-            const uint32_t VA = PointRep[Indices[FaceIt * 3 + ((PointIt + 1) % 3)]];
-            const uint32_t VB = PointRep[Indices[FaceIt * 3 + PointIt]];
-            const uint32_t VOther = PointRep[Indices[FaceIt * 3 + ((PointIt + 2) % 3)]];
+            // Look for edges directed in the opposite direction.
+            index_t I0 = PointRep[Indices[Index + ((PointIt + 1) % 3)]];
+            index_t I1 = PointRep[Indices[Index + (PointIt % 3)]];
+            index_t I2 = PointRep[Indices[Index + ((PointIt + 2) % 3)]];
 
-            const uint32_t HashKey = VA % HashSize;
+            // Find a face sharing this edge
+            uint32_t Key = I0 % HashSize;
 
-            EdgeHashEntry_s* Current = HashTable[HashKey];
-            EdgeHashEntry_s* Prev = nullptr;
+            EdgeEntry_s* Found = nullptr;
+            EdgeEntry_s* FoundPrev = nullptr;
 
-            uint32_t FoundFace = UNUSED32;
-
-            while (Current != nullptr)
+            for (EdgeEntry_s* Current = HashTable[Key], *Prev = nullptr; Current != nullptr; Prev = Current, Current = Current->Next)
             {
-                if ((Current->V2 == VB) && (Current->V1 == VA))
+                if (Current->I1 == I1 && Current->I0 == I0)
                 {
-                    FoundFace = Current->Face;
+                    Found = Current;
+                    FoundPrev = Prev;
                     break;
                 }
-
-                Prev = Current;
-                Current = Current->Next;
             }
 
-            EdgeHashEntry_s* Found = Current;
-            EdgeHashEntry_s* FoundPrev = Prev;
-
-            float BestDiff = -2.f;
-
-            // Scan for additional matches
-            if (Current)
+            // Cache this face's normal
+            float3 N0;
             {
-                Prev = Current;
-                Current = Current->Next;
+                float3 P0 = Positions[I1];
+                float3 P1 = Positions[I0];
+                float3 P2 = Positions[I2];
 
-                // find 'better' match
-                while (Current != nullptr)
+                float3 E0 = P0 - P1;
+                float3 E1 = P1 - P2;
+
+                N0 = Normalize(Cross(E0, E1));
+            }
+
+            // Use face normal dot product to determine best edge-sharing candidate.
+            float BestDot = -2.0f;
+            for (EdgeEntry_s* Current = Found, *Prev = FoundPrev; Current != nullptr; Prev = Current, Current = Current->Next)
+            {
+                if (BestDot == -2.0f || (Current->I1 == I1 && Current->I0 == I0))
                 {
-                    if ((Current->V2 == VB) && (Current->V1 == VA))
+                    float3 P0 = Positions[Current->I0];
+                    float3 P1 = Positions[Current->I1];
+                    float3 P2 = Positions[Current->I2];
+
+                    float3 E0 = P0 - P1;
+                    float3 E1 = P1 - P2;
+
+                    float3 N1 = Normalize(Cross(E0, E1));
+
+                    float D = Dot(N0, N1);
+
+                    if (D > BestDot)
                     {
-                        const float3 PB1 = Positions[VB];
-                        const float3 PB2 = Positions[VA];
-                        const float3 PB3 = Positions[VOther];
-
-                        float3 V12 = PB1 - PB2;
-                        float3 V13 = PB1 - PB3;
-
-                        const float3 BNormal = Normalize(Cross(V12, V13));
-
-                        if (BestDiff == -2.f)
-                        {
-                            const float3 PA1 = Positions[Found->V1];
-                            const float3 PA2 = Positions[Found->V2];
-                            const float3 PA3 = Positions[Found->VOther];
-
-                            V12 = PA1 - PA2;
-                            V13 = PA1 - PA3;
-
-                            const float3 ANormal = Normalize(Cross(V12, V13));
-
-                            BestDiff = Dot(ANormal, BNormal);
-                        }
-
-                        const float3 PA1 = Positions[Current->V1];
-                        const float3 PA2 = Positions[Current->V2];
-                        const float3 PA3 = Positions[Current->VOther];
-
-                        V12 = PA1 - PA2;
-                        V13 = PA1 - PA3;
-
-                        const float3 ANormal = Normalize(Cross(V12, V13));
-
-                        const float Diff = Dot(ANormal, BNormal);
-
-                        // if face normals are closer, use new match
-                        if (Diff > BestDiff)
-                        {
-                            Found = Current;
-                            FoundPrev = Prev;
-                            FoundFace = Current->Face;
-                            BestDiff = Diff;
-                        }
+                        Found = Current;
+                        FoundPrev = Prev;
+                        BestDot = D;
                     }
-
-                    Prev = Current;
-                    Current = Current->Next;
                 }
             }
 
-            if (FoundFace != UNUSED32)
+            // Update hash table and adjacency list
+            if (Found && Found->Face != uint32_t(-1))
             {
-                CHECK(Found != nullptr);
-
-                // remove found face from hash table
+                // Erase the found from the hash table linked list.
                 if (FoundPrev != nullptr)
                 {
                     FoundPrev->Next = Found->Next;
                 }
                 else
                 {
-                    HashTable[HashKey] = Found->Next;
+                    HashTable[Key] = Found->Next;
                 }
 
-                CHECK(OutAdjacency[FaceIt * 3 + PointIt] == UNUSED32);
-                OutAdjacency[FaceIt * 3 + PointIt] = FoundFace;
+                // Update adjacency information
+                Adjacency[FaceIt * 3 + PointIt] = Found->Face;
 
-                // Check for other edge
-                const uint32_t HashKey2 = VB % HashSize;
+                // Search & remove this face from the table linked list
+                uint32_t Key2 = I1 % HashSize;
 
-                Current = HashTable[HashKey2];
-                Prev = nullptr;
-
-                while (Current != nullptr)
+                for (EdgeEntry_s* Current = HashTable[Key2], *Prev = nullptr; Current != nullptr; Prev = Current, Current = Current->Next)
                 {
-                    if ((Current->Face == uint32_t(FaceIt)) && (Current->V2 == VA) && (Current->V1 == VB))
+                    if (Current->Face == FaceIt && Current->I1 == I0 && Current->I0 == I1)
                     {
-                        // trim edge from hash table
                         if (Prev != nullptr)
                         {
                             Prev->Next = Current->Next;
                         }
                         else
                         {
-                            HashTable[HashKey2] = Current->Next;
+                            HashTable[Key2] = Current->Next;
                         }
+
                         break;
                     }
-
-                    Prev = Current;
-                    Current = Current->Next;
                 }
 
-                // mark neighbor to point back
                 bool Linked = false;
-
                 for (uint32_t Point2It = 0; Point2It < PointIt; ++Point2It)
                 {
-                    if (FoundFace == OutAdjacency[FaceIt * 3 + Point2It])
+                    if (Found->Face == Adjacency[FaceIt * 3 + Point2It])
                     {
                         Linked = true;
-                        OutAdjacency[FaceIt * 3 + PointIt] = UNUSED32;
+                        Adjacency[FaceIt * 3 + PointIt] = uint32_t(-1);
                         break;
                     }
                 }
 
                 if (!Linked)
                 {
-                    uint32_t Point2 = 0;
-                    for (; Point2 < 3; ++Point2)
+                    uint32_t Edge2 = 0;
+                    for (; Edge2 < 3; ++Edge2)
                     {
-                        index_t Index = Indices[FoundFace * 3 + Point2];
-                        if (Index == index_t(-1))
+                        index_t K = Indices[Found->Face * 3 + Edge2];
+                        if (K == uint32_t(-1))
                             continue;
 
-                        CHECK(Index < NumVerts);
-
-                        if (PointRep[Index] == VA)
+                        if (PointRep[K] == I0)
                             break;
                     }
 
-                    if (Point2 < 3)
+                    if (Edge2 < 3)
                     {
-#ifndef NDEBUG
-                        uint32_t TestPoint = Indices[FoundFace * 3 + ((Point2 + 1) % 3)];
-                        TestPoint = PointRep[TestPoint];
-                        CHECK(TestPoint == VB);
-#endif
-                        CHECK(OutAdjacency[FoundFace * 3 + Point2] == UNUSED32);
-
-                        // update neighbor to point back to this face match edge
-                        OutAdjacency[FoundFace * 3 + Point2] = uint32_t(FaceIt);
+                        Adjacency[Found->Face * 3 + Edge2] = FaceIt;
                     }
                 }
             }
         }
     }
-
-    return true;
 }
 
-bool GenerateAdjacencyAndPointReps(const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, float Epsilon, uint32_t* PointRep, uint32_t* Adjacency)
-{
-    if (!Indices || !NumFaces || !Positions || !NumVerts)
-        return RET_INVALID_ARGS;
-
-    if (!PointRep && !Adjacency)
-        return RET_INVALID_ARGS;
-
-    if (NumVerts >= UINT32_MAX)
-        return RET_INVALID_ARGS;
-
-    if ((uint64_t(NumFaces) * 3) >= UINT32_MAX)
-        return RET_ARITHMETIC_OVERFLOW;
-
-    std::unique_ptr<uint32_t[]> Temp;
-    if (!PointRep)
-    {
-        Temp.reset(new (std::nothrow) uint32_t[NumVerts]);
-        if (!Temp)
-            return RET_OUT_OF_MEM;
-
-        PointRep = Temp.get();
-    }
-
-    if (!GeneratePointReps(Indices, NumFaces, Positions, NumVerts, PointRep))
-        return false;
-
-    if (!Adjacency)
-        return true;
-
-    return ConvertPointRepsToAdjacencyImpl(Indices, NumFaces, Positions, NumVerts, PointRep, Adjacency);
-}
-
-constexpr size_t MESHLET_DEFAULT_MAX_VERTS = 128u;
-constexpr size_t MESHLET_DEFAULT_MAX_PRIMS = 128u;
-
-constexpr size_t MESHLET_MINIMUM_SIZE = 32u;
-constexpr size_t MESHLET_MAXIMUM_SIZE = 256u;
-
-template <typename T, size_t N>
-class StaticVector_c
-{
-public:
-    StaticVector_c() noexcept
-        : Data{}, Size(0)
-    {
-    }
-    ~StaticVector_c() = default;
-
-    StaticVector_c(StaticVector_c&&) = default;
-    StaticVector_c& operator= (StaticVector_c&&) = default;
-
-    StaticVector_c(StaticVector_c const&) = default;
-    StaticVector_c& operator= (StaticVector_c const&) = default;
-
-    void push_back(const T& value) noexcept
-    {
-        assert(Size < N);
-        Data[Size++] = value;
-    }
-
-    void push_back(T&& value) noexcept
-    {
-        assert(Size < N);
-        Data[Size++] = std::move(value);
-    }
-
-    template <typename... Args>
-    void emplace_back(Args&&... args) noexcept
-    {
-        assert(Size < N);
-        Data[Size++] = T(std::forward<Args>(args)...);
-    }
-
-    size_t size() const noexcept { return Size; }
-    bool empty() const noexcept { return Size == 0; }
-
-    T* data() noexcept { return Data.data(); }
-    const T* data() const noexcept { return Data.data(); }
-
-    T& operator[](size_t index) noexcept { assert(index < Size); return Data[index]; }
-    const T& operator[](size_t index) const noexcept { assert(index < Size); return Data[index]; }
-
-private:
-    std::array<T, N> Data;
-    size_t           Size;
-};
-
-struct InlineMeshlet_s
-{
-    StaticVector_c<index_t, MESHLET_MAXIMUM_SIZE>           UniqueVertexIndices;
-    StaticVector_c<MeshletTriangle_s, MESHLET_MAXIMUM_SIZE> PrimitiveIndices;
-};
-
-inline float3 ComputeNormal(const float3* Tri) noexcept
+float3 ComputeNormal(float3* Tri)
 {
     return Normalize(Cross(Tri[0] - Tri[1], Tri[0] - Tri[2]));
 }
 
-uint8_t ComputeReuse(const InlineMeshlet_s& Meshlet, const index_t* TriIndices) noexcept
+struct InlineMeshlet
 {
-    uint8_t Count = 0;
-    for (size_t UniqueVertexIndexIt = 0; UniqueVertexIndexIt < Meshlet.UniqueVertexIndices.size(); ++UniqueVertexIndexIt)
+    std::vector<index_t>                                UniqueVertexIndices;
+    std::vector<MeshProcessing::PackedTriangle_s>       PrimitiveIndices;
+};      
+
+uint32_t ComputeReuse(const InlineMeshlet& Meshlet, index_t(&triIndices)[3])
+{
+    uint32_t Count = 0;
+
+    for (uint32_t UniqueVertexIndexIt = 0; UniqueVertexIndexIt < static_cast<uint32_t>(Meshlet.UniqueVertexIndices.size()); ++UniqueVertexIndexIt)
     {
-        for (size_t TriIndexIt = 0; TriIndexIt < 3u; ++TriIndexIt)
+        for (uint32_t TriIndexIt = 0; TriIndexIt < 3u; ++TriIndexIt)
         {
-            if (Meshlet.UniqueVertexIndices[UniqueVertexIndexIt] == TriIndices[TriIndexIt])
+            if (Meshlet.UniqueVertexIndices[UniqueVertexIndexIt] == triIndices[TriIndexIt])
             {
-                CHECK(Count < 255);
                 ++Count;
             }
         }
@@ -1862,66 +1623,58 @@ uint8_t ComputeReuse(const InlineMeshlet_s& Meshlet, const index_t* TriIndices) 
     return Count;
 }
 
-float ComputeScore(const InlineMeshlet_s& Meshlet, BoundingSphere Sphere, float3 Normal,const index_t* TriIndices, const float3* TriVerts) noexcept
+float ComputeScore(const InlineMeshlet& Meshlet, float4 Sphere, float4 Normal, index_t(&TriIndices)[3], float3* TriVerts)
 {
-    // Configurable weighted sum parameters
-    constexpr float kWeightReuse = 0.334f;
-    constexpr float kWeightLocation = 0.333f;
-    constexpr float kWeightOrientation = 1.0f - (kWeightReuse + kWeightLocation);
+    const float ReuseWeight = 0.334f;
+    const float LocWeight = 0.333f;
+    const float OriWeight = 0.333f;
 
-    // Vertex reuse -
-    const uint8_t Reuse = ComputeReuse(Meshlet, TriIndices);
-    const float ScrReuse = 1.0f - (float(Reuse) / 3.0f);
+    // Vertex reuse
+    uint32_t Reuse = ComputeReuse(Meshlet, TriIndices);
+    float4 ReuseScore = float4(1.0f) - (float4(float(Reuse)) / 3.0f);
 
-    // Distance from center point - log falloff to preserve normalization where it needs it
-    float MaxSq = 0;
-    for (size_t It = 0; It < 3u; ++It)
+    // Distance from center point
+    float4 MaxSq = float4{0.0f};
+    for (uint32_t VertIt = 0; VertIt < 3u; ++VertIt)
     {
-        const float3 Pos = TriVerts[It];
-        const float3 V = Sphere.Origin - Pos;
-
-        const float DistSq = LengthSqr(V);
-        MaxSq = std::max(MaxSq, DistSq);
+        float4 V = Sphere - float4(TriVerts[VertIt]);
+        MaxSq = MaxVector(MaxSq, float4(Dot(V.xyz, V.xyz)));
     }
+    float4 Radius = float4(Sphere.w);
+    float4 Radius2 = Radius * Radius;
+    float4 LocScore = Log2(MaxSq / Radius2 + float4(1.0f));
 
-    const float R = Sphere.Radius;
-    const float R2 = R * R;
-    const float ScrLocation = std::max(0.0f, log2f(MaxSq / (R2 + FLT_EPSILON) + FLT_EPSILON));
+    // Angle between normal and meshlet cone axis
+    float4 N = ComputeNormal(TriVerts);
+    float4 D = Dot(N.xyz, Normal.xyz);
+    float4 OriScore = (-D + float4(1.0f)) / 2.0f;
 
-    // Angle between normal and meshlet cone axis - cosine falloff
-    const float3 N = ComputeNormal(TriVerts);
-    const float D = Dot(N, Normal);
-    const float ScrOrientation = (1.0f - D) * 0.5f;
+    float4 B = ReuseWeight * ReuseScore + LocWeight * LocScore + OriWeight * OriScore;
 
-    // Weighted sum of scores
-    return kWeightReuse * ScrReuse + kWeightLocation * ScrLocation + kWeightOrientation * ScrOrientation;
+    return B.x;
 }
 
-bool TryAddToMeshlet(size_t MaxVerts, size_t MaxPrims,const index_t* Tri, InlineMeshlet_s& Meshlet)
+bool AddToMeshlet(uint32_t MaxVerts, uint32_t MaxPrims, InlineMeshlet& Meshlet, index_t(&Tri)[3])
 {
-    // Cull degenerate triangle and return success
-    // newCount calculation will break if such triangle is passed
-    if (Tri[0] == Tri[1] || Tri[1] == Tri[2] || Tri[0] == Tri[2])
-        return true;
-
     // Are we already full of vertices?
-    if (Meshlet.UniqueVertexIndices.size() >= MaxVerts)
+    if (Meshlet.UniqueVertexIndices.size() == MaxVerts)
         return false;
 
     // Are we full, or can we store an additional primitive?
-    if (Meshlet.PrimitiveIndices.size() >= MaxPrims)
+    if (Meshlet.PrimitiveIndices.size() == MaxPrims)
         return false;
 
-    uint32_t Indices[3] = { uint32_t(-1), uint32_t(-1), uint32_t(-1) };
-    uint8_t NewCount = 3;
+    static const uint32_t Undef = uint32_t(-1);
+    uint32_t Indices[3] = { Undef, Undef, Undef };
+    uint32_t NewCount = 3;
 
-    for (size_t UniqueVertexIndexIt = 0; UniqueVertexIndexIt < Meshlet.UniqueVertexIndices.size(); ++UniqueVertexIndexIt)
+    for (uint32_t UniqueVertexIndexIt = 0; UniqueVertexIndexIt < Meshlet.UniqueVertexIndices.size(); ++UniqueVertexIndexIt)
     {
-        for (size_t IndexIt = 0; IndexIt < 3; ++IndexIt)
+        for (uint32_t IndexIt = 0; IndexIt < 3; ++IndexIt)
         {
             if (Meshlet.UniqueVertexIndices[UniqueVertexIndexIt] == Tri[IndexIt])
             {
-                Indices[IndexIt] = static_cast<uint32_t>(UniqueVertexIndexIt);
+                Indices[IndexIt] = UniqueVertexIndexIt;
                 --NewCount;
             }
         }
@@ -1932,64 +1685,72 @@ bool TryAddToMeshlet(size_t MaxVerts, size_t MaxPrims,const index_t* Tri, Inline
         return false;
 
     // Add unique vertex indices to unique vertex index list
-    for (size_t IndexIt = 0; IndexIt < 3; ++IndexIt)
+    for (uint32_t IndexIt = 0; IndexIt < 3; ++IndexIt)
     {
-        if (Indices[IndexIt] == uint32_t(-1))
+        if (Indices[IndexIt] == Undef)
         {
             Indices[IndexIt] = static_cast<uint32_t>(Meshlet.UniqueVertexIndices.size());
             Meshlet.UniqueVertexIndices.push_back(Tri[IndexIt]);
         }
     }
 
-    // Add the new primitive
-    MeshletTriangle_s MeshletTri = { Indices[0], Indices[1], Indices[2] };
-    Meshlet.PrimitiveIndices.emplace_back(MeshletTri);
+    // Add the new primitive 
+    typename MeshProcessing::PackedTriangle_s Prim = {};
+    Prim.Indices.I0 = Indices[0];
+    Prim.Indices.I1 = Indices[1];
+    Prim.Indices.I2 = Indices[2];
+
+    Meshlet.PrimitiveIndices.push_back(Prim);
 
     return true;
 }
 
-inline bool IsMeshletFull(size_t MaxVerts, size_t MaxPrims, const InlineMeshlet_s& Meshlet) noexcept
+bool IsMeshletFull(uint32_t MaxVerts, uint32_t MaxPrims, const InlineMeshlet& Meshlet)
 {
-    CHECK(Meshlet.UniqueVertexIndices.size() <= MaxVerts);
-    CHECK(Meshlet.PrimitiveIndices.size() <= MaxPrims);
+    assert(Meshlet.UniqueVertexIndices.size() <= MaxVerts);
+    assert(Meshlet.PrimitiveIndices.size() <= MaxPrims);
 
-    return Meshlet.UniqueVertexIndices.size() >= MaxVerts || Meshlet.PrimitiveIndices.size() >= MaxPrims;
+    return Meshlet.UniqueVertexIndices.size() == MaxVerts
+        || Meshlet.PrimitiveIndices.size() == MaxPrims;
 }
 
-bool Meshletize(size_t MaxVerts, size_t MaxPrims, const index_t* Indices, size_t NumFaces, const float3* Positions, size_t NumVerts, const Subset_t& Subset, const uint32_t* Adjacency, std::vector<InlineMeshlet_s>& Meshlets)
+void Meshletize(
+    uint32_t MaxVerts, uint32_t MaxPrims,
+    const index_t* Indices, uint32_t IndexCount,
+    const float3* Positions, uint32_t VertexCount,
+    std::vector<InlineMeshlet>& Output
+)
 {
-    if (!Indices || !Positions || !Adjacency)
-        return RET_INVALID_ARGS;
+    const uint32_t TriCount = IndexCount / 3;
 
-    if (Subset.first + Subset.second > NumFaces)
-        return RET_UNEXPECTED;
+    // Build a primitive adjacency list
+    std::vector<uint32_t> Adjacency;
+    Adjacency.resize(IndexCount);
 
-    Meshlets.clear();
+    BuildAdjacencyList(Indices, IndexCount, Positions, VertexCount, Adjacency.data());
 
-    // Bitmask of all triangles in mesh to determine whether a specific one has been added
+    // Rest our outputs
+    Output.clear();
+    Output.emplace_back();
+    auto* Curr = &Output.back();
+
+    // Bitmask of all triangles in mesh to determine whether a specific one has been added.
     std::vector<bool> Checklist;
-    Checklist.resize(Subset.second);
+    Checklist.resize(TriCount);
 
-    // Cache to maintain scores for each candidate triangle
+    std::vector<float3> TrackedPositions;
+    std::vector<float3> TrackedNormals;
     std::vector<std::pair<uint32_t, float>> Candidates;
     std::unordered_set<uint32_t> CandidateCheck;
 
-    // Positions and normals of the current primitive
-    std::vector<float3> Vertices;
-    std::vector<float3> Normals;
+    float4 Sphere, Normal;
 
-    // Seed the candidate list with the first triangle of the subset
-    const uint32_t StartIndex = static_cast<uint32_t>(Subset.first);
-    const uint32_t EndIndex = static_cast<uint32_t>(Subset.first + Subset.second);
-
-    uint32_t TriIndex = static_cast<uint32_t>(Subset.first);
-
+    // Arbitrarily start at triangle zero.
+    uint32_t TriIndex = 0;
     Candidates.push_back(std::make_pair(TriIndex, 0.0f));
     CandidateCheck.insert(TriIndex);
 
-    // Continue adding triangles until triangle list is exhausted.
-    InlineMeshlet_s* Curr = nullptr;
-
+    // Continue adding triangles until 
     while (!Candidates.empty())
     {
         uint32_t Index = Candidates.back().first;
@@ -2002,49 +1763,40 @@ bool Meshletize(size_t MaxVerts, size_t MaxPrims, const index_t* Indices, size_t
             Indices[Index * 3 + 2],
         };
 
-        if (Tri[0] >= NumVerts ||
-            Tri[1] >= NumVerts ||
-            Tri[2] >= NumVerts)
-        {
-            return RET_UNEXPECTED;
-        }
-
-        // Create a new meshlet if necessary
-        if (Curr == nullptr)
-        {
-            Vertices.clear();
-            Normals.clear();
-
-            Meshlets.emplace_back();
-            Curr = &Meshlets.back();
-        }
+        CHECK(Tri[0] < VertexCount);
+        CHECK(Tri[1] < VertexCount);
+        CHECK(Tri[2] < VertexCount);
 
         // Try to add triangle to meshlet
-        if (TryAddToMeshlet(MaxVerts, MaxPrims, Tri, *Curr))
+        if (AddToMeshlet(MaxVerts, MaxPrims, *Curr, Tri))
         {
             // Success! Mark as added.
-            Checklist[Index - StartIndex] = true;
+            Checklist[Index] = true;
 
-            // Add positions & normal to list
-            const float3 points[3] =
+            // Add m_positions & normal to list
+            float3 Points[3] =
             {
                 Positions[Tri[0]],
                 Positions[Tri[1]],
                 Positions[Tri[2]],
             };
 
-            Vertices.push_back(points[0]);
-            Vertices.push_back(points[1]);
-            Vertices.push_back(points[2]);
+            TrackedPositions.push_back(Points[0]);
+            TrackedPositions.push_back(Points[1]);
+            TrackedPositions.push_back(Points[2]);
 
-            Normals.push_back(ComputeNormal(points));
+            float3 Normal = ComputeNormal(Points);
+            TrackedNormals.push_back(Normal);
 
             // Compute new bounding sphere & normal axis
-            BoundingSphere PositionBounds, NormalBounds;
-            PositionBounds.InitFromPoints(Vertices.size(), Vertices.data());
-            NormalBounds.InitFromPoints(Normals.size(), Normals.data());
 
-            NormalBounds.Origin = Normalize(NormalBounds.Origin);
+            BoundingSphere BSpherePos;
+            BSpherePos.InitFromPoints(TrackedPositions.size(), TrackedPositions.data());
+
+            BoundingSphere BSphereNorm;
+            BSphereNorm.InitFromPoints(TrackedNormals.size(), TrackedNormals.data());
+            Sphere = float4(BSpherePos.Origin, BSpherePos.Radius);
+            Normal = Normalize(BSphereNorm.Origin);
 
             // Find and add all applicable adjacent triangles to candidate list
             const uint32_t AdjIndex = Index * 3;
@@ -2056,95 +1808,96 @@ bool Meshletize(size_t MaxVerts, size_t MaxPrims, const index_t* Indices, size_t
                 Adjacency[AdjIndex + 2],
             };
 
-            for (size_t AdjIt = 0; AdjIt < 3u; ++AdjIt)
+            for (uint32_t It = 0; It < 3u; ++It)
             {
                 // Invalid triangle in adjacency slot
-                if (Adj[AdjIt] == uint32_t(-1))
-                    continue;
-
-                // Primitive is outside the subset
-                if (Adj[AdjIt] < Subset.first || Adj[AdjIt] > EndIndex)
+                if (Adj[It] == -1)
                     continue;
 
                 // Already processed triangle
-                if (Checklist[Adj[AdjIt] - StartIndex])
+                if (Checklist[Adj[It]])
                     continue;
 
                 // Triangle already in the candidate list
-                if (CandidateCheck.count(Adj[AdjIt]))
+                if (CandidateCheck.count(Adj[It]))
                     continue;
 
-                Candidates.push_back(std::make_pair(Adj[AdjIt], FLT_MAX));
-                CandidateCheck.insert(Adj[AdjIt]);
+                Candidates.push_back(std::make_pair(Adj[It], FLT_MAX));
+                CandidateCheck.insert(Adj[It]);
             }
 
             // Re-score remaining candidate triangles
-            for (size_t CandidateIt = 0; CandidateIt < Candidates.size(); ++CandidateIt)
+            for (uint32_t CandidateIt = 0; CandidateIt < static_cast<uint32_t>(Candidates.size()); ++CandidateIt)
             {
-                uint32_t candidate = Candidates[CandidateIt].first;
+                uint32_t Candidate = Candidates[CandidateIt].first;
 
                 index_t TriIndices[3] =
                 {
-                    Indices[candidate * 3],
-                    Indices[candidate * 3 + 1],
-                    Indices[candidate * 3 + 2],
+                    Indices[Candidate * 3],
+                    Indices[Candidate * 3 + 1],
+                    Indices[Candidate * 3 + 2],
                 };
 
-                if (TriIndices[0] >= NumVerts ||
-                    TriIndices[1] >= NumVerts ||
-                    TriIndices[2] >= NumVerts)
-                {
-                    return RET_UNEXPECTED;
-                }
+                CHECK(TriIndices[0] < VertexCount);
+                CHECK(TriIndices[1] < VertexCount);
+                CHECK(TriIndices[2] < VertexCount);
 
-                const float3 TriVerts[3] =
+                float3 TriVerts[3] =
                 {
                     Positions[TriIndices[0]],
                     Positions[TriIndices[1]],
                     Positions[TriIndices[2]],
                 };
 
-                Candidates[CandidateIt].second = ComputeScore(*Curr, PositionBounds, NormalBounds.Origin, TriIndices, TriVerts);
+                Candidates[CandidateIt].second = ComputeScore(*Curr, Sphere, Normal, TriIndices, TriVerts);
             }
 
             // Determine whether we need to move to the next meshlet.
             if (IsMeshletFull(MaxVerts, MaxPrims, *Curr))
             {
+                TrackedPositions.clear();
+                TrackedNormals.clear();
                 CandidateCheck.clear();
-                Curr = nullptr;
 
-                // Discard candidates -  one of our existing candidates as the next meshlet seed.
+                // Use one of our existing candidates as the next meshlet seed.
                 if (!Candidates.empty())
                 {
                     Candidates[0] = Candidates.back();
                     Candidates.resize(1);
                     CandidateCheck.insert(Candidates[0].first);
                 }
+
+                Output.emplace_back();
+                Curr = &Output.back();
             }
             else
             {
-                // Sort in reverse order to use vector as a queue with pop_back
-                std::stable_sort(Candidates.begin(), Candidates.end(), [](auto& a, auto& b) { return a.second > b.second; });
+                std::sort(Candidates.begin(), Candidates.end(), [](const std::pair<uint32_t, float>& a, const std::pair<uint32_t, float>& b)
+                {
+                    return a.second > b.second;
+                });
             }
         }
         else
         {
-            // Ran out of candidates while attempting to fill the last bits of a meshlet.
             if (Candidates.empty())
             {
+                TrackedPositions.clear();
+                TrackedNormals.clear();
                 CandidateCheck.clear();
-                Curr = nullptr;
 
+                Output.emplace_back();
+                Curr = &Output.back();
             }
         }
 
         // Ran out of candidates; add a new seed candidate to start the next meshlet.
         if (Candidates.empty())
         {
-            while (TriIndex < EndIndex && Checklist[TriIndex - StartIndex])
+            while (TriIndex < TriCount && Checklist[TriIndex])
                 ++TriIndex;
 
-            if (TriIndex == EndIndex)
+            if (TriIndex == TriCount)
                 break;
 
             Candidates.push_back(std::make_pair(TriIndex, 0.0f));
@@ -2152,88 +1905,57 @@ bool Meshletize(size_t MaxVerts, size_t MaxPrims, const index_t* Indices, size_t
         }
     }
 
-    return true;
+    // The last meshlet may have never had any primitives added to it - in which case we want to remove it.
+    if (Output.back().PrimitiveIndices.empty())
+    {
+        Output.pop_back();
+    }
 }
 
-bool ComputeMeshlets(
-    const index_t* Indices, size_t NumFaces, 
-    const float3* Positions, size_t NumVerts, 
-    const Subset_t* Subsets, size_t NumSubsets, 
-    std::vector<Meshlet_s>& Meshlets, std::vector<uint8_t>& UniqueVertexIndices, std::vector<MeshletTriangle_s>& PrimitiveIndices,
-    Subset_t* OutMeshletSubsets, 
-    size_t MaxVerts, size_t MaxPrims)
+bool MeshProcessing::ComputeMeshlets(
+    uint32_t MaxVerts, uint32_t MaxPrims, 
+    const index_t* Indices, uint32_t indexCount, 
+    const Subset_s* IndexSubsets, uint32_t SubsetCount, 
+    const float3* Positions, uint32_t VertexCount, 
+    std::vector<Subset_s>& MeshletSubsets, 
+    std::vector<Meshlet_s>& Meshlets, 
+    std::vector<uint8_t>& UniqueVertexIndices, 
+    std::vector<PackedTriangle_s>& PrimitiveIndices)
 {
-    if (!Indices || !Positions || !Subsets || !OutMeshletSubsets)
-        return RET_INVALID_ARGS;
-
-    // Validate the meshlet vertex & primitive sizes
-    if (MaxVerts < MESHLET_MINIMUM_SIZE || MaxVerts > MESHLET_MAXIMUM_SIZE)
-        return RET_INVALID_ARGS;
-
-    if (MaxPrims < MESHLET_MINIMUM_SIZE || MaxPrims > MESHLET_MAXIMUM_SIZE)
-        return RET_INVALID_ARGS;
-
-    if (NumFaces == 0 || NumVerts == 0 || NumSubsets == 0)
-        return RET_INVALID_ARGS;
-
-    // Auto-generate adjacency data if not provided.
-    const uint32_t* Adjacency;
-    std::unique_ptr<uint32_t[]> GeneratedAdj;
+    for (uint32_t SubsetIt = 0; SubsetIt < SubsetCount; ++SubsetIt)
     {
-        GeneratedAdj.reset(new (std::nothrow) uint32_t[NumFaces * 3]);
-        if (!GeneratedAdj)
-            return RET_OUT_OF_MEM;
+        Subset_s Subset = IndexSubsets[SubsetIt];
 
-        if (!GenerateAdjacencyAndPointReps(Indices, NumFaces, Positions, NumVerts, 0.0f, nullptr, GeneratedAdj.get()))
-        {
-            return false;
-        }
+        assert(Subset.Offset + Subset.Count <= indexCount);
 
-        Adjacency = GeneratedAdj.get();
-    }
+        std::vector<InlineMeshlet> BuiltMeshlets;
+        Meshletize(MaxVerts, MaxPrims, Indices + Subset.Offset, Subset.Count, Positions, VertexCount, BuiltMeshlets);
 
-    // Now start generating meshlets
-    for (size_t SubsetIt = 0; SubsetIt < NumSubsets; ++SubsetIt)
-    {
-        auto& Subset = Subsets[SubsetIt];
-
-        if ((Subset.first + Subset.second) > NumFaces)
-        {
-            return RET_UNEXPECTED;
-        }
-
-        std::vector<InlineMeshlet_s> NewMeshlets;
-        if (!Meshletize(MaxVerts, MaxPrims, Indices, NumFaces, Positions, NumVerts, Subset, Adjacency, NewMeshlets))
-        {
-            return false;
-        }
-
-        OutMeshletSubsets[SubsetIt] = std::make_pair(Meshlets.size(), NewMeshlets.size());
+        Subset_s MeshletSubset;
+        MeshletSubset.Offset = static_cast<uint32_t>(Meshlets.size());
+        MeshletSubset.Count = static_cast<uint32_t>(BuiltMeshlets.size());
+        MeshletSubsets.push_back(MeshletSubset);
 
         // Determine final unique vertex index and primitive index counts & offsets.
-        size_t StartVertCount = UniqueVertexIndices.size() / sizeof(index_t);
-        size_t StartPrimCount = PrimitiveIndices.size();
+        uint32_t StartVertCount = static_cast<uint32_t>(UniqueVertexIndices.size()) / sizeof(index_t);
+        uint32_t StartPrimCount = static_cast<uint32_t>(PrimitiveIndices.size());
 
-        size_t UniqueVertexIndexCount = StartVertCount;
-        size_t PrimitiveIndexCount = StartPrimCount;
+        uint32_t UniqueVertexIndexCount = StartVertCount;
+        uint32_t PrimitiveIndexCount = StartPrimCount;
 
         // Resize the meshlet output array to hold the newly formed meshlets.
-        const size_t MeshletCount = Meshlets.size();
-        Meshlets.resize(MeshletCount + NewMeshlets.size());
+        uint32_t MeshletCount = static_cast<uint32_t>(Meshlets.size());
+        Meshlets.resize(MeshletCount + BuiltMeshlets.size());
 
-        Meshlet_s* Dest = &Meshlets[MeshletCount];
-        for (auto& Meshlet : NewMeshlets)
+        for (uint32_t BuiltMeshletIt = 0, Dest = MeshletCount; BuiltMeshletIt < static_cast<uint32_t>(BuiltMeshlets.size()); ++BuiltMeshletIt, ++Dest)
         {
-            Dest->VertOffset = static_cast<uint32_t>(UniqueVertexIndexCount);
-            Dest->VertCount = static_cast<uint32_t>(Meshlet.UniqueVertexIndices.size());
+            Meshlets[Dest].VertOffset = UniqueVertexIndexCount;
+            Meshlets[Dest].VertCount = static_cast<uint32_t>(BuiltMeshlets[BuiltMeshletIt].UniqueVertexIndices.size());
+            UniqueVertexIndexCount += static_cast<uint32_t>(BuiltMeshlets[BuiltMeshletIt].UniqueVertexIndices.size());
 
-            Dest->PrimOffset = static_cast<uint32_t>(PrimitiveIndexCount);
-            Dest->PrimCount = static_cast<uint32_t>(Meshlet.PrimitiveIndices.size());
-
-            UniqueVertexIndexCount += Meshlet.UniqueVertexIndices.size();
-            PrimitiveIndexCount += Meshlet.PrimitiveIndices.size();
-
-            ++Dest;
+            Meshlets[Dest].PrimOffset = PrimitiveIndexCount;
+            Meshlets[Dest].PrimCount = static_cast<uint32_t>(BuiltMeshlets[BuiltMeshletIt].PrimitiveIndices.size());
+            PrimitiveIndexCount += static_cast<uint32_t>(BuiltMeshlets[BuiltMeshletIt].PrimitiveIndices.size());
         }
 
         // Allocate space for the new data.
@@ -2244,17 +1966,15 @@ bool ComputeMeshlets(
         auto VertDest = reinterpret_cast<index_t*>(UniqueVertexIndices.data()) + StartVertCount;
         auto PrimDest = reinterpret_cast<uint32_t*>(PrimitiveIndices.data()) + StartPrimCount;
 
-        for (auto& Meshlet : NewMeshlets)
+        for (uint32_t BuiltMeshletIt = 0; BuiltMeshletIt < static_cast<uint32_t>(BuiltMeshlets.size()); ++BuiltMeshletIt)
         {
-            memcpy(VertDest, Meshlet.UniqueVertexIndices.data(), Meshlet.UniqueVertexIndices.size() * sizeof(index_t));
-            memcpy(PrimDest, Meshlet.PrimitiveIndices.data(), Meshlet.PrimitiveIndices.size() * sizeof(uint32_t));
+            std::memcpy(VertDest, BuiltMeshlets[BuiltMeshletIt].UniqueVertexIndices.data(), BuiltMeshlets[BuiltMeshletIt].UniqueVertexIndices.size() * sizeof(index_t));
+            std::memcpy(PrimDest, BuiltMeshlets[BuiltMeshletIt].PrimitiveIndices.data(), BuiltMeshlets[BuiltMeshletIt].PrimitiveIndices.size() * sizeof(uint32_t));
 
-            VertDest += Meshlet.UniqueVertexIndices.size();
-            PrimDest += Meshlet.PrimitiveIndices.size();
+            VertDest += BuiltMeshlets[BuiltMeshletIt].UniqueVertexIndices.size();
+            PrimDest += BuiltMeshlets[BuiltMeshletIt].PrimitiveIndices.size();
         }
     }
 
     return true;
-}
-
 }

@@ -9,12 +9,6 @@
 
 #include <SurfMath.h>
 
-struct Subset_s
-{
-    uint32_t Offset;
-    uint32_t Count;
-};
-
 bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
 {
     WaveFrontReader_c Reader;
@@ -154,22 +148,21 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
         }
     }
 
-    std::vector<MeshProcessing::Subset_t> Subsets;
+    std::vector<MeshProcessing::Subset_s> Subsets;
 
     {
         ScopeTimer_s ScopeTimer("Compute mesh subsets");
 
         Subsets = MeshProcessing::ComputeSubsets(Attributes.data(), Attributes.size());
-    }
-    
+    }    
 
-    //std::vector<Subset_s> IndexSubsets;
-    //IndexSubsets.resize(Subsets.size());
-    //for (uint32_t SubsetIt = 0; SubsetIt < Subsets.size(); SubsetIt++)
-    //{
-    //    IndexSubsets[SubsetIt].Offset = static_cast<uint32_t>(Subsets[SubsetIt].first) * 3;
-    //    IndexSubsets[SubsetIt].Count = static_cast<uint32_t>(Subsets[SubsetIt].second) * 3;
-    //}
+    std::vector<MeshProcessing::Subset_s> IndexSubsets;
+    IndexSubsets.resize(Subsets.size());
+    for (uint32_t SubsetIt = 0; SubsetIt < Subsets.size(); SubsetIt++)
+    {
+        IndexSubsets[SubsetIt].Offset = static_cast<uint32_t>(Subsets[SubsetIt].Offset) * 3;
+        IndexSubsets[SubsetIt].Count = static_cast<uint32_t>(Subsets[SubsetIt].Count) * 3;
+    }
 
     if (!Reader.HasNormals)
     {
@@ -196,19 +189,24 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
 
     std::vector<MeshProcessing::Meshlet_s> Meshlets;
     std::vector<uint8_t> UniqueVertexIndices;
-    std::vector<MeshProcessing::MeshletTriangle_s> PrimitiveIndices;
-    std::vector<MeshProcessing::Subset_t> MeshletSubsets;
-    MeshletSubsets.resize(Subsets.size());
+    std::vector<MeshProcessing::PackedTriangle_s> PrimitiveIndices;
+    std::vector<MeshProcessing::Subset_s> MeshletSubsets;
 
     {
         ScopeTimer_s ScopeTimer("Meshletize mesh");
 
+        constexpr uint32_t MeshletMaxVerts = 64;
+        constexpr uint32_t MeshletMaxPrims = 126;
+
         if (!ENSUREMSG(MeshProcessing::ComputeMeshlets(
-            reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount,
-            Positions.data(), VertexCount,
-            Subsets.data(), static_cast<uint32_t>(Subsets.size()),
-            Meshlets, UniqueVertexIndices, PrimitiveIndices,
-            MeshletSubsets.data()
+            MeshletMaxVerts, MeshletMaxPrims,
+            reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), IndexCount,
+            IndexSubsets.data(), static_cast<uint32_t>(IndexSubsets.size()),
+            Positions.data(), static_cast<uint32_t>(Positions.size()),
+            MeshletSubsets,
+            Meshlets,
+            UniqueVertexIndices,
+            PrimitiveIndices
         ), "ComputeMeshlets failed"))
             return false;
     }

@@ -67,6 +67,12 @@ inline constexpr Vector2Component<T> operator+(Vector2Component<T> lhs, Vector2C
 }
 
 template<typename T>
+inline constexpr Vector2Component<T> operator+(Vector2Component<T> lhs, T rhs) noexcept
+{
+    return Vector2Component<T>(lhs.x + rhs, lhs.y + rhs);
+}
+
+template<typename T>
 inline constexpr Vector2Component<T> operator-(Vector2Component<T> lhs, Vector2Component<T> rhs) noexcept
 {
     return Vector2Component<T>(lhs.x - rhs.x, lhs.y - rhs.y);
@@ -91,6 +97,12 @@ inline constexpr Vector2Component<T> operator*(Vector2Component<T> lhs, T rhs) n
 }
 
 template<typename T>
+inline constexpr Vector2Component<T> operator*(T lhs, Vector2Component<T> rhs) noexcept
+{
+    return Vector2Component<T>(lhs * rhs.x, lhs * rhs.y);
+}
+
+template<typename T>
 inline constexpr Vector2Component<T> operator/(Vector2Component<T> lhs, Vector2Component<T> rhs) noexcept
 {
     return Vector2Component<T>(lhs.x / rhs.x, lhs.y / rhs.y);
@@ -103,21 +115,39 @@ inline constexpr Vector2Component<T> operator/(Vector2Component<T> lhs, T rhs) n
 }
 
 template<typename T>
-inline constexpr Vector2Component<T> operator/(T lhs, Vector2Component<T> rhs) noexcept
-{
-    return Vector2Component<T>(lhs / rhs.x, lhs / rhs.y);
-}
-
-template<typename T>
 inline constexpr bool operator<(Vector2Component<T> lhs, Vector2Component<T> rhs) noexcept
 {
     return lhs.x < rhs.x || lhs.y < rhs.y;
 }
 
 template<typename T>
+inline constexpr bool operator<(Vector2Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x < rhs || lhs.y < rhs;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector2Component<T> lhs, Vector2Component<T> rhs) noexcept
+{
+    return lhs.x > rhs.x || lhs.y > rhs.y;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector2Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x > rhs || lhs.y > rhs;
+}
+
+template<typename T>
 inline constexpr bool operator==(Vector2Component<T> lhs, Vector2Component<T> rhs) noexcept
 {
     return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+template<typename T>
+inline constexpr bool operator==(Vector2Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x == rhs && lhs.y == rhs;
 }
 
 using float2 = Vector2Component<float>;
@@ -204,6 +234,96 @@ struct Vector3Component
     }
 };
 
+template<typename T>
+inline constexpr Vector3Component<T> operator+(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator+(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator-(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator-(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator*(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator*(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator*(T lhs, Vector3Component<T> rhs) noexcept
+{
+    return Vector3Component<T>(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator/(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z);
+}
+
+template<typename T>
+inline constexpr Vector3Component<T> operator/(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return Vector3Component<T>(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs);
+}
+
+template<typename T>
+inline constexpr bool operator<(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return lhs.x < rhs.x || lhs.y < rhs.y || lhs.z < rhs.z;
+}
+
+template<typename T>
+inline constexpr bool operator<(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x < rhs || lhs.y < rhs || lhs.z < rhs;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return lhs.x > rhs.x || lhs.y > rhs.y || lhs.z > rhs.z;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x > rhs || lhs.y > rhs || lhs.z > rhs;
+}
+
+template<typename T>
+inline constexpr bool operator==(Vector3Component<T> lhs, Vector3Component<T> rhs) noexcept
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
+
+template<typename T>
+inline constexpr bool operator==(Vector3Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x == rhs && lhs.y == rhs && lhs.z == rhs;
+}
+
 using float3 = Vector3Component<float>;
 using uint3 = Vector3Component<u32>;
 
@@ -279,6 +399,96 @@ struct Vector4Component
         return *this;
     }
 };
+
+template<typename T>
+inline constexpr Vector4Component<T> operator+(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator+(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs, lhs.w + rhs);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator-(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator-(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs, lhs.w - rhs);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator*(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator*(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator*(T lhs, Vector4Component<T> rhs) noexcept
+{
+    return Vector4Component<T>(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator/(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w);
+}
+
+template<typename T>
+inline constexpr Vector4Component<T> operator/(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return Vector4Component<T>(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs);
+}
+
+template<typename T>
+inline constexpr bool operator<(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return lhs.x < rhs.x || lhs.y < rhs.y || lhs.z < rhs.z || lhs.w < rhs.w;
+}
+
+template<typename T>
+inline constexpr bool operator<(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x < rhs || lhs.y < rhs || lhs.z < rhs || lhs.w < rhs;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return lhs.x > rhs.x || lhs.y > rhs.y || lhs.z > rhs.z || lhs.w > rhs.w;
+}
+
+template<typename T>
+inline constexpr bool operator>(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x > rhs || lhs.y > rhs || lhs.z > rhs || lhs.w > rhs;
+}
+
+template<typename T>
+inline constexpr bool operator==(Vector4Component<T> lhs, Vector4Component<T> rhs) noexcept
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
+}
+
+template<typename T>
+inline constexpr bool operator==(Vector4Component<T> lhs, T rhs) noexcept
+{
+    return lhs.x == rhs && lhs.y == rhs && lhs.z == rhs && lhs.w == rhs;
+}
 
 using float4 = Vector4Component<float>;
 using u32_4 = Vector4Component<u32>;
@@ -417,86 +627,6 @@ constexpr float4 k_FLTMAXF4 = float4(FLT_MAX);
 constexpr float4 k_FLTMINF4 = float4(-FLT_MAX);
 constexpr float4 k_HalfF4 = float4(0.5f);
 
-inline constexpr bool operator==(float3 lhs, float3 rhs) noexcept
-{
-    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
-}
-
-inline constexpr float3 operator*(float3 lhs, float rhs) noexcept
-{
-    return float3(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs);
-}
-
-inline constexpr float3 operator*(float3 lhs, float3 rhs) noexcept
-{
-    return float3(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z);
-}
-
-inline constexpr float4 operator*(float4 lhs, float rhs) noexcept
-{
-    return float4(lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs);
-}
-
-inline constexpr float4 operator*(float4 lhs, float4 rhs) noexcept
-{
-    return float4(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w);
-}
-
-inline constexpr float3 operator+(float3 lhs, float3 rhs) noexcept
-{
-    return float3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
-}
-
-inline constexpr float4 operator+(float4 lhs, float4 rhs) noexcept
-{
-    return float4(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
-}
-
-inline constexpr float2 operator-(float2 lhs, float2 rhs) noexcept
-{
-    return float2(lhs.x - rhs.x, lhs.y - rhs.y);
-}
-
-inline constexpr float3 operator-(float3 lhs, float3 rhs) noexcept
-{
-    return float3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z);
-}
-
-inline constexpr float4 operator-(float4 lhs, float4 rhs) noexcept
-{
-    return float4(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
-}
-
-inline constexpr bool operator!=(float4 lhs, float4 rhs) noexcept
-{
-    return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z || lhs.w != rhs.w;
-}
-
-inline constexpr bool operator!=(float3 lhs, float3 rhs) noexcept
-{
-    return lhs.x != rhs.x || lhs.y != rhs.y || lhs.z != rhs.z;
-}
-
-inline constexpr bool operator<(float2 lhs, float2 rhs) noexcept
-{
-    return lhs.x < rhs.x || lhs.y < rhs.y;
-}
-
-inline constexpr bool operator<(float3 lhs, float3 rhs) noexcept
-{
-    return lhs.x < rhs.x || lhs.y < rhs.y || lhs.z < rhs.z;
-}
-
-inline constexpr bool operator>(float2 lhs, float2 rhs) noexcept
-{
-    return lhs.x > rhs.x || lhs.y > rhs.y;
-}
-
-inline constexpr bool operator>(float3 lhs, float3 rhs) noexcept
-{
-    return lhs.x > rhs.x || lhs.y > rhs.y || lhs.z > rhs.z;
-}
-
 inline constexpr matrix2 operator*(matrix2 lhs, float rhs) noexcept
 {
     matrix2 m;
@@ -584,19 +714,29 @@ inline constexpr float ConvertToRadians(float angle) noexcept { return angle * (
 inline constexpr bool IsAnyInf(float3 f3) noexcept { return ISINF(f3.x) || ISINF(f3.y) || ISINF(f3.z); }
 inline bool ScalarNearEqual(float s1, float s2, float e) noexcept { return fabsf(s1 - s2) <= e; }
 
+
 template<typename T> inline constexpr T Max(T a, T b) noexcept { return a > b ? a : b; }
 template<typename T> inline constexpr T Min(T a, T b) noexcept { return a < b ? a : b; }
+
 template<typename T> inline constexpr T Clamp(T v, T min, T max) noexcept { return Max(Min(v, max), min); }
 
-inline constexpr float2 MaxF2(float2 a, float2 b) noexcept { return float2(Max(a.x, b.x), Max(a.y, b.y)); }
-inline constexpr float2 MinF2(float2 a, float2 b) noexcept { return float2(Min(a.x, b.x), Min(a.y, b.y)); }
-inline constexpr float2 ClampF2(float2 a, float2 l, float2 u) { return MinF2(MaxF2(a, l), u); }
+template<typename T> 
+inline constexpr Vector2Component<T> MaxVector(Vector2Component<T> A, Vector2Component<T> B) noexcept { return Vector2Component<T>(Max(A.x, B.x), Max(A.y, B.y)); }
 
-inline constexpr float3 MaxF3(float3 a, float3 b) noexcept { return float3(Max(a.x, b.x), Max(a.y, b.y), Max(a.z, b.z)); }
-inline constexpr float3 MinF3(float3 a, float3 b) noexcept { return float3(Min(a.x, b.x), Min(a.y, b.y), Min(a.z, b.z)); }
+template<typename T>
+inline constexpr Vector3Component<T> MaxVector(Vector3Component<T> A, Vector3Component<T> B) noexcept { return Vector3Component<T>(Max(A.x, B.x), Max(A.y, B.y), Max(A.z, B.z)); }
 
-inline constexpr float4 MaxF4(float4 a, float4 b) noexcept { return float4(Max(a.x, b.x), Max(a.y, b.y), Max(a.z, b.z), Max(a.w, b.w)); }
-inline constexpr float4 MinF4(float4 a, float4 b) noexcept { return float4(Min(a.x, b.x), Min(a.y, b.y), Min(a.z, b.z), Min(a.w, b.w)); }
+template<typename T>
+inline constexpr Vector4Component<T> MaxVector(Vector4Component<T> A, Vector4Component<T> B) noexcept { return Vector4Component<T>(Max(A.x, B.x), Max(A.y, B.y), Max(A.z, B.z), Max(A.w, B.w)); }
+
+template<typename T>
+inline constexpr Vector2Component<T> MinVector(Vector2Component<T> A, Vector2Component<T> B) noexcept { return Vector2Component<T>(Min(A.x, B.x), Min(A.y, B.y)); }
+
+template<typename T>
+inline constexpr Vector3Component<T> MinVector(Vector3Component<T> A, Vector3Component<T> B) noexcept { return Vector3Component<T>(Min(A.x, B.x), Min(A.y, B.y), Min(A.z, B.z)); }
+
+template<typename T>
+inline constexpr Vector4Component<T> MinVector(Vector4Component<T> A, Vector4Component<T> B) noexcept { return Vector4Component<T>(Min(A.x, B.x), Min(A.y, B.y), Min(A.z, B.z), Min(A.w, B.w)); }
 
 inline constexpr float MinElemF4(float4 v) noexcept { return Min(v.x, Min(v.y, Min(v.z, v.w))); }
 
@@ -611,6 +751,17 @@ inline u32 FloorLog2(u32 n) noexcept
     while (n >>= 1) ++ret;
     return ret;
 }
+
+inline float Log2(float Value) noexcept
+{
+    constexpr float Scale = 1.4426950f; // (1.0f / logf(2.0f))
+
+    return logf(Value) * Scale;
+}
+
+inline float2 Log2(float2 Value) noexcept { return float2(Log2(Value.x), Log2(Value.y)); }
+inline float3 Log2(float3 Value) noexcept { return float3(Log2(Value.x), Log2(Value.y), Log2(Value.z)); }
+inline float4 Log2(float4 Value) noexcept { return float4(Log2(Value.x), Log2(Value.y), Log2(Value.z), Log2(Value.w)); }
 
 inline constexpr float Sign(float f) noexcept
 {
@@ -1312,14 +1463,14 @@ struct AABB
 
     constexpr void Grow(float3 p) noexcept
     {
-        mins = MinF3(p, mins);
-        maxs = MaxF3(p, maxs);
+        mins = MinVector(p, mins);
+        maxs = MaxVector(p, maxs);
     }
 
     constexpr void Grow(AABB a) noexcept
     {
-        mins = MinF3(mins, a.mins);
-        maxs = MaxF3(maxs, a.maxs);
+        mins = MinVector(mins, a.mins);
+        maxs = MaxVector(maxs, a.maxs);
     }
 
     constexpr bool Invalid() noexcept { return mins > maxs; }
@@ -1391,8 +1542,8 @@ struct BoundingBox
 
         for (size_t i = 1; i < num; i++)
         {
-            min = MinF3(min, points[i]);
-            max = MaxF3(max, points[i]);
+            min = MinVector(min, points[i]);
+            max = MaxVector(max, points[i]);
         }
 
         centre = (min + max) * 0.5f;
@@ -1493,6 +1644,7 @@ struct BoundingSphere
         float3 MinX, MaxX, MinY, MaxY, MinZ, MaxZ;
 
         MinX = MaxX = MinY = MaxY = MinZ = MaxZ = *Points;
+        //MinX = MaxX = MinY = MaxY = MinZ = MaxZ = float3(0.0f, 0.0f, 0.0f);
 
         for (size_t PointIt = 1; PointIt < Count; PointIt++)
         {
