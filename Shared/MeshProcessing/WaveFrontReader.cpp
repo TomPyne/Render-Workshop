@@ -260,9 +260,9 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
             for (size_t j = 2; j < Face; ++j)
             {
                 uint32_t Index = FaceIndex[j];
-                Indices.emplace_back(static_cast<index_t>(I0));
-                Indices.emplace_back(static_cast<index_t>(Index));
+                Indices.emplace_back(static_cast<index_t>(I0));                
                 Indices.emplace_back(static_cast<index_t>(I1));
+                Indices.emplace_back(static_cast<index_t>(Index));
 
                 Attributes.emplace_back(CurSubset);
 

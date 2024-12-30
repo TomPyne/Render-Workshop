@@ -76,6 +76,32 @@ struct Mesh_s
 	uint32_t BindOffsets[5] = { 0 };
 };
 
+struct SubMeshlet_s
+{
+	uint32_t IndexOffset;
+	uint32_t IndexCount;
+};
+
+struct SubMesh_s
+{
+	uint32_t IndexOffset;
+	uint32_t IndexCount;
+
+	std::vector<SubMeshlet_s> Meshlets;
+
+	ModelMaterial_s Material;
+};
+
+struct SubModel_s
+{
+	ModelVertexBuffer_s Position;
+	ModelVertexBuffer_s Normal;
+	ModelVertexBuffer_s Texcoord;
+	ModelIndexBuffer_t Index;
+
+	std::vector<SubMesh_s> Meshes;
+};
+
 struct Model_s
 {
 	std::vector<Mesh_s> Meshes;

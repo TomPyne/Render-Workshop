@@ -27,7 +27,7 @@ void main(in VS_INPUT Input, out PS_INPUT Output)
 {
     Output.SVPosition = mul(c_View.ViewProjectionMatrix, float4(Input.Position, 1.0f));
     Output.Normal = Input.Normal;
-    Output.UV = Input.Texcoord;
+    Output.UV = float2(Input.Texcoord.x, 1.0f - Input.Texcoord.y);
 }
 
 #endif // _VS

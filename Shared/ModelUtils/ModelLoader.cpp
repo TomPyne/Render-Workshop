@@ -9,7 +9,7 @@
 
 #include <SurfMath.h>
 
-bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
+bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
 {
     WaveFrontReader_c Reader;
     {
@@ -211,8 +211,43 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
             return false;
     }
 
-    return true;
+    OutModel.Position.Init(Positions.data(), Positions.size());
+    OutModel.Normal.Init(Normals.data(), Normals.size());
+    OutModel.Texcoord.Init(UVs.data(), UVs.size());
+    OutModel.Index.Init(reinterpret_cast<uint32_t*>(Indices.data()), Indices.size() / sizeof(uint32_t));
 
+    std::vector<ModelMaterial_s> LoadedMaterials;
+    LoadedMaterials.reserve(Reader.Attributes.size());
+
+    for (const WaveFrontReader_c::Material_s& Mtl : Reader.Materials)
+    {
+        ModelMaterial_s NewMaterial = {};
+        NewMaterial.Params.Albedo = Mtl.Diffuse;
+
+        if (!Mtl.Texture.empty())
+        {
+            NewMaterial.AlbedoTexture = LoadTexture(Mtl.Texture, false);
+            NewMaterial.Params.AlbedoTextureIndex = tpr::GetDescriptorIndex(NewMaterial.AlbedoTexture.SRV);
+        }
+
+        NewMaterial.MaterialBuffer = tpr::CreateConstantBuffer(&NewMaterial.Params);
+
+        LoadedMaterials.push_back(NewMaterial);
+    }
+
+    CHECK(IndexSubsets.size() <= LoadedMaterials.size() - 1);
+
+    for (uint32_t SubsetIt = 0; SubsetIt < IndexSubsets.size(); SubsetIt++)
+    {
+        SubMesh_s Mesh;
+        Mesh.IndexOffset = IndexSubsets[SubsetIt].Offset;
+        Mesh.IndexCount = IndexSubsets[SubsetIt].Count;
+        Mesh.Material = LoadedMaterials[SubsetIt + 1];
+        OutModel.Meshes.push_back(Mesh);
+    }
+
+    return true;
+#if 0
     // Multiple meshes share one vertex buffer, break up the index buffers by attribute
     ModelVertexBuffer_s SharedPositionBuffer = {};
     {
@@ -354,4 +389,5 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, Model_s& OutModel)
     }
 
     return true;
+#endif
 }

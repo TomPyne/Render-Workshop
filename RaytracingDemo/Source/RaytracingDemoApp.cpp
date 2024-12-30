@@ -20,7 +20,7 @@ enum RootSigSlots
 
 struct Globals_s
 {
-	Model_s Model;
+	SubModel_s Model;
 
 	// Targets
 	uint32_t ScreenWidth = 0;
@@ -239,14 +239,17 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	}
 
 	cl->SetPipelineState(G.MeshPSO);
-	for (const Mesh_s& Mesh : G.Model.Meshes)
+
+	cl->SetVertexBuffers(0u, 1u, &G.Model.Position.Buffer, &G.Model.Position.Stride, &G.Model.Position.Offset);
+	cl->SetVertexBuffers(1u, 1u, &G.Model.Texcoord.Buffer, &G.Model.Texcoord.Stride, &G.Model.Texcoord.Offset);
+	cl->SetVertexBuffers(2u, 1u, &G.Model.Normal.Buffer, &G.Model.Normal.Stride, &G.Model.Normal.Offset);
+	cl->SetIndexBuffer(G.Model.Index.Buffer, G.Model.Index.Format, G.Model.Index.Offset);
+
+	for (const SubMesh_s& Mesh : G.Model.Meshes)
 	{
 		cl->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material.MaterialBuffer);
 
-		cl->SetVertexBuffers(0u, Mesh.BoundBufferCount, Mesh.BindBuffers, Mesh.BindStrides, Mesh.BindOffsets);
-		cl->SetIndexBuffer(Mesh.Index.Buffer, Mesh.Index.Format, Mesh.Index.Offset);
-
-		cl->DrawIndexedInstanced(Mesh.Index.Count, 1u, 0u, 0u, 0u);
+		cl->DrawIndexedInstanced(Mesh.IndexCount, 1u, Mesh.IndexOffset, 0u, 0u);
 	}
 
 	// Transition for deferred pass
