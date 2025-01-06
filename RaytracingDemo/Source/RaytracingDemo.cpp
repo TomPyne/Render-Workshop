@@ -69,8 +69,12 @@ int main()
 
 			ImGui::NewFrame();
 
+			ImguiUpdate();
+
 			ImGui::Render();
 		}
+
+		ImRenderFrameData* frameData = ImGui_ImplRender_PrepareFrameData(ImGui::GetDrawData());
 
 		Render_BeginRenderFrame();
 
@@ -83,10 +87,24 @@ int main()
 		initialCl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::PRESENT, ResourceTransitionState::RENDER_TARGET);
 
 		Render(view.get(), &clGroup, deltaSeconds);
+		
+		// Final cl writes imgui and transitions for present
+		{
+			CommandList* finalCl = clGroup.CreateCommandList();
 
-		CommandList* finalCl = clGroup.CreateCommandList();
+			RenderTargetView_t backBufferRtv = view->GetCurrentBackBufferRTV();
 
-		finalCl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);
+			finalCl->SetRenderTargets(&backBufferRtv, 1, DepthStencilView_t::INVALID);
+
+			finalCl->SetRootSignature(ImGui_ImplRender_GetRootSignature());
+
+			ImGui_ImplRender_RenderDrawData(frameData, ImGui::GetDrawData(), finalCl);
+
+			ImGui_ImplRender_ReleaseFrameData(frameData);
+
+			finalCl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);
+
+		}
 
 		clGroup.Submit();
 
