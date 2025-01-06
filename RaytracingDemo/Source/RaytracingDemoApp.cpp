@@ -9,9 +9,84 @@
 
 using namespace tpr;
 
+struct RTDMaterialParams_s
+{
+	float3 Albedo;
+	uint32_t AlbedoTextureIndex;
+};
+
+struct RTDMaterial_s
+{
+	RTDMaterialParams_s Params;
+
+	tpr::ConstantBuffer_t MaterialConstantBuffer;
+};
+
+struct RTDBuffer_s
+{
+	tpr::StructuredBufferPtr StructuredBuffer = {};
+	tpr::ShaderResourceViewPtr BufferSRV = {};
+
+	template<typename T>
+	void Init(const T* const Data, size_t Count)
+	{
+		if (Count)
+		{
+			CHECK(Data != nullptr);
+			StructuredBuffer = tpr::CreateStructuredBuffer(Data, Count);
+			CHECK(StructuredBuffer);
+			BufferSRV = tpr::CreateStructuredBufferSRV(StructuredBuffer, 0u, static_cast<uint32_t>(Count), static_cast<uint32_t>(sizeof(T)));
+			CHECK(BufferSRV);
+		}
+	}
+};
+
+struct RTDMeshConstants_s
+{
+	uint32_t PositionBufSRVIndex = 0;
+	uint32_t NormalBufSRVIndex = 0;
+	uint32_t TangentBufSRVIndex = 0;
+	uint32_t BitangentBufSRVIndex = 0;
+	uint32_t TexcoordBufSRVIndex = 0;
+	uint32_t IndexBufSRVIndex = 0;
+};
+
+struct RTDMesh_s
+{
+	uint32_t IndexOffset;
+	uint32_t IndexCount;
+
+	void Init(uint32_t InIndexOffset, uint32_t InIndexCount)
+	{
+		IndexOffset = InIndexOffset;
+		IndexCount = InIndexCount;
+	}
+};
+
+struct RTDModel_s
+{
+	RTDBuffer_s PositionBuffer;
+	RTDBuffer_s NormalBuffer;
+	RTDBuffer_s TangentBuffer;
+	RTDBuffer_s BitangentBuffer;
+	RTDBuffer_s TexcoordBuffer;
+	RTDBuffer_s IndexBuffer;
+
+	tpr::ConstantBufferPtr ModelConstantBuffer;
+
+	std::vector<RTDMesh_s> Meshes;
+
+	RTDMaterial_s ModelMaterial;
+
+	void Init(const ModelAsset_s* Asset);
+
+	void Draw(tpr::CommandList* CL);
+};
+
 enum RootSigSlots
 {
 	RS_VIEW_BUF,
+	RS_MODEL_BUF,
 	RS_MAT_BUF,
 	RS_SRV_TABLE,
 	RS_UAV_TABLE,
@@ -20,7 +95,7 @@ enum RootSigSlots
 
 struct Globals_s
 {
-	SubModel_s Model;
+	RTDModel_s Model;
 
 	// Targets
 	uint32_t ScreenWidth = 0;
@@ -45,6 +120,72 @@ struct Globals_s
 	GraphicsPipelineStatePtr DeferredPSO;
 } G;
 
+void RTDModel_s::Init(const ModelAsset_s* Asset)
+{
+	{
+		CHECK(Asset != nullptr);
+
+		CHECK(!Asset->Positions.empty());
+		PositionBuffer.Init(Asset->Positions.data(), Asset->Positions.size());
+
+		if (Asset->HasNormals)
+		{
+			CHECK(!Asset->Normals.empty());
+			NormalBuffer.Init(Asset->Normals.data(), Asset->Normals.size());
+		}
+
+		if (Asset->HasTangents)
+		{
+			CHECK(!Asset->Tangents.empty());
+			TangentBuffer.Init(Asset->Tangents.data(), Asset->Tangents.size());
+		}
+
+		if (Asset->HasBitangents)
+		{
+			CHECK(!Asset->Bitangents.empty());
+			BitangentBuffer.Init(Asset->Bitangents.data(), Asset->Bitangents.size());
+		}
+
+		if (Asset->HasTexcoords)
+		{
+			CHECK(!Asset->Texcoords.empty());
+			TexcoordBuffer.Init(Asset->Texcoords.data(), Asset->Texcoords.size());
+		}
+
+		RTDMeshConstants_s MeshConstants = {};
+		MeshConstants.PositionBufSRVIndex = tpr::GetDescriptorIndex(PositionBuffer.BufferSRV);
+		MeshConstants.NormalBufSRVIndex = tpr::GetDescriptorIndex(NormalBuffer.BufferSRV);
+		MeshConstants.TangentBufSRVIndex = tpr::GetDescriptorIndex(TangentBuffer.BufferSRV);
+		MeshConstants.BitangentBufSRVIndex = tpr::GetDescriptorIndex(BitangentBuffer.BufferSRV);
+		MeshConstants.TexcoordBufSRVIndex = tpr::GetDescriptorIndex(TexcoordBuffer.BufferSRV);
+		MeshConstants.IndexBufSRVIndex = tpr::GetDescriptorIndex(IndexBuffer.BufferSRV);
+
+		ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
+
+		Meshes.reserve(Asset->MeshCount);
+		for (const MeshAsset_s& MeshAsset : Asset->Meshes)
+		{
+			RTDMesh_s Mesh = {};
+			Mesh.Init(MeshAsset.IndexOffset, MeshAsset.IndexCount);
+
+			Meshes.push_back(Mesh);
+		}
+	}
+}
+
+void RTDModel_s::Draw(tpr::CommandList* CL)
+{
+	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
+
+	// Temp basic material for all meshes
+	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
+
+	for (const RTDMesh_s& Mesh : Meshes)
+	{
+		CL->DrawInstanced(Mesh.IndexCount, 1u, Mesh.IndexOffset, 0u);
+	}
+}
+
 tpr::RenderInitParams GetAppRenderParams()
 {
 	tpr::RenderInitParams Params;
@@ -57,7 +198,8 @@ tpr::RenderInitParams GetAppRenderParams()
 	Params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
 	Params.RootSigDesc.Slots.resize(RS_COUNT);
 	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(0, 0);
-	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(1, 0);
+	Params.RootSigDesc.Slots[RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(1, 0);
+	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(2, 0);
 	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
 	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
 
@@ -75,11 +217,15 @@ bool InitializeApp()
 		return false;
 	}
 
-	if (!LoadModelFromWavefront(L"Assets/House.obj", G.Model))
+	ModelAsset_s* ModelAsset = LoadModel(L"Assets/House.obj");
+
+	if (!ModelAsset)
 	{
 		LOGERROR("Failed to load model");
 		return false;
 	}
+
+	G.Model.Init(ModelAsset);
 
 	// Mesh PSO
 	{
@@ -240,17 +386,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	cl->SetPipelineState(G.MeshPSO);
 
-	cl->SetVertexBuffers(0u, 1u, &G.Model.Position.Buffer, &G.Model.Position.Stride, &G.Model.Position.Offset);
-	cl->SetVertexBuffers(1u, 1u, &G.Model.Texcoord.Buffer, &G.Model.Texcoord.Stride, &G.Model.Texcoord.Offset);
-	cl->SetVertexBuffers(2u, 1u, &G.Model.Normal.Buffer, &G.Model.Normal.Stride, &G.Model.Normal.Offset);
-	cl->SetIndexBuffer(G.Model.Index.Buffer, G.Model.Index.Format, G.Model.Index.Offset);
-
-	for (const SubMesh_s& Mesh : G.Model.Meshes)
-	{
-		cl->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material.MaterialBuffer);
-
-		cl->DrawIndexedInstanced(Mesh.IndexCount, 1u, Mesh.IndexOffset, 0u, 0u);
-	}
+	G.Model.Draw(cl);
 
 	// Transition for deferred pass
 	{
@@ -289,3 +425,5 @@ void ShutdownApp()
 {
 
 }
+
+

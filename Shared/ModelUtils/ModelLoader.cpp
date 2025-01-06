@@ -1,6 +1,7 @@
 #include "ModelLoader.h"
 
 #include "Logging/Logging.h"
+#include "Materials/Materials.h"
 #include "Model.h"
 #include "MeshProcessing/MeshProcessing.h"
 #include "MeshProcessing/WaveFrontReader.h"
@@ -9,7 +10,7 @@
 
 #include <SurfMath.h>
 
-bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
+bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel)
 {
     WaveFrontReader_c Reader;
     {
@@ -21,130 +22,127 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
         }
     }
 
-    std::vector<float3> Positions;
-    std::vector<float3> Normals;
-    std::vector<float2> UVs;
-    std::vector<uint8_t> Indices;
     std::vector<uint32_t> Attributes;
 
-    Positions.resize(Reader.Vertices.size());
+    OutModel.Positions.resize(Reader.Vertices.size());
 
     if (Reader.HasNormals)
     {
-        Normals.resize(Reader.Vertices.size());
+        OutModel.HasNormals = true;
+        OutModel.Normals.resize(Reader.Vertices.size());
     }
 
     if (Reader.HasTexcoords)
     {
-        UVs.resize(Reader.Vertices.size());
+        OutModel.HasTexcoords = true;
+        OutModel.Texcoords.resize(Reader.Vertices.size());
     }
 
     for (uint32_t VertIt = 0; VertIt < Reader.Vertices.size(); VertIt++)
     {
-        Positions[VertIt] = Reader.Vertices[VertIt].Position;
+        OutModel.Positions[VertIt] = Reader.Vertices[VertIt].Position;
 
         if (Reader.HasNormals)
         {
-            Normals[VertIt] = Reader.Vertices[VertIt].Normal;
+            OutModel.Normals[VertIt] = Reader.Vertices[VertIt].Normal;
         }
 
         if (Reader.HasTexcoords)
         {
-            UVs[VertIt] = Reader.Vertices[VertIt].Texcoord;
+            OutModel.Texcoords[VertIt] = Reader.Vertices[VertIt].Texcoord;
         }
     }
 
-    Indices.resize(Reader.Indices.size() * sizeof(uint32_t));
-    std::memcpy(Indices.data(), Reader.Indices.data(), Reader.Indices.size() * sizeof(uint32_t));
+    OutModel.Indices.resize(Reader.Indices.size() * sizeof(uint32_t));
+    std::memcpy(OutModel.Indices.data(), Reader.Indices.data(), Reader.Indices.size() * sizeof(uint32_t));
 
     Attributes = Reader.Attributes;
 
-    const uint32_t IndexCount = static_cast<uint32_t>(Reader.Indices.size());
-    const uint32_t VertexCount = static_cast<uint32_t>(Positions.size());
-    const uint32_t TriCount = IndexCount / 3;
+    OutModel.IndexCount = static_cast<uint32_t>(Reader.Indices.size());
+    OutModel.VertexCount = static_cast<uint32_t>(OutModel.Positions.size());
+    OutModel.IndexFormat = tpr::RenderFormat::R32_UINT;
+    const uint32_t TriCount = OutModel.IndexCount / 3;
 
     std::vector<float3> PositionReorder;
-    PositionReorder.resize(VertexCount);
+    PositionReorder.resize(OutModel.VertexCount);
 
     std::vector<uint8_t> IndexReorder;
-    IndexReorder.resize(IndexCount * sizeof(uint32_t));
+    IndexReorder.resize(OutModel.IndexCount * sizeof(uint32_t));
 
     std::vector<uint32_t> FaceRemap;
     FaceRemap.resize(TriCount);
 
     std::vector<uint32_t> VertexRemap;
-    VertexRemap.resize(VertexCount);
+    VertexRemap.resize(OutModel.VertexCount);
 
     std::vector<uint32_t> DupedVerts;
 
     {
         ScopeTimer_s ScopeTimer("Clean and sort mesh by attributes");
 
-        if (!ENSUREMSG(MeshProcessing::CleanMesh(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, VertexCount, Attributes.data(), DupedVerts, true), "CleanMesh failed"))
+        if (!ENSUREMSG(MeshProcessing::CleanMesh(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.VertexCount, Attributes.data(), DupedVerts, true), "CleanMesh failed"))
             return false;
 
         if (!ENSUREMSG(MeshProcessing::AttributeSort(TriCount, Attributes.data(), FaceRemap.data()), "AttributeSort failed"))
             return false;
 
-        if (!ENSUREMSG(MeshProcessing::ReorderIndices(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, FaceRemap.data(), reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "ReorderIndices failed"))
+        if (!ENSUREMSG(MeshProcessing::ReorderIndices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, FaceRemap.data(), reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "ReorderIndices failed"))
             return false;
 
-        std::swap(Indices, IndexReorder);
+        std::swap(OutModel.Indices, IndexReorder);
     }
 
     {
         ScopeTimer_s ScopeTimer("Optimise mesh faces");
 
-        if (!ENSUREMSG(MeshProcessing::OptimizeFacesLRU(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, FaceRemap.data()), "OptimizeFacesLRU failed"))
+        if (!ENSUREMSG(MeshProcessing::OptimizeFacesLRU(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, FaceRemap.data()), "OptimizeFacesLRU failed"))
             return false;
 
-        if (!ENSUREMSG(MeshProcessing::ReorderIndices(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, FaceRemap.data(), reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "ReorderIndices failed"))
+        if (!ENSUREMSG(MeshProcessing::ReorderIndices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, FaceRemap.data(), reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "ReorderIndices failed"))
             return false;
 
-        std::swap(Indices, IndexReorder);
+        std::swap(OutModel.Indices, IndexReorder);
     }
-
 
     {
         ScopeTimer_s ScopeTimer("Optimise mesh vertices");
 
-        if (!ENSUREMSG(MeshProcessing::OptimizeVertices(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, VertexCount, VertexRemap.data()), "OptimizeVertices failed"))
+        if (!ENSUREMSG(MeshProcessing::OptimizeVertices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.VertexCount, VertexRemap.data()), "OptimizeVertices failed"))
             return false;
     }
-
 
     {
         ScopeTimer_s ScopeTimer("Finalise mesh buffers");
 
-        if (!ENSUREMSG(MeshProcessing::FinalizeIndices(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, VertexRemap.data(), VertexCount, reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "FinalizeIndices failed"))
+        if (!ENSUREMSG(MeshProcessing::FinalizeIndices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, VertexRemap.data(), OutModel.VertexCount, reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "FinalizeIndices failed"))
             return false;
 
-        if (!ENSUREMSG(MeshProcessing::FinalizeVertices(Positions.data(), sizeof(float3), VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), PositionReorder.data()), "FinalizeVertices(Position) failed"))
+        if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Positions.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), PositionReorder.data()), "FinalizeVertices(Position) failed"))
             return false;
 
-        std::swap(Indices, IndexReorder);
-        std::swap(Positions, PositionReorder);
+        std::swap(OutModel.Indices, IndexReorder);
+        std::swap(OutModel.Positions, PositionReorder);
 
         if (Reader.HasNormals)
         {
             std::vector<float3> NormalReorder;
-            NormalReorder.resize(VertexCount);
+            NormalReorder.resize(OutModel.VertexCount);
 
-            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(Normals.data(), sizeof(float3), VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), NormalReorder.data()), "FinalizeVertices(Normal) failed"))
+            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Normals.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), NormalReorder.data()), "FinalizeVertices(Normal) failed"))
                 return false;
 
-            std::swap(Normals, NormalReorder);
+            std::swap(OutModel.Normals, NormalReorder);
         }
 
         if (Reader.HasTexcoords)
         {
             std::vector<float2> UVReorder;
-            UVReorder.resize(VertexCount);
+            UVReorder.resize(OutModel.VertexCount);
 
-            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(UVs.data(), sizeof(float2), VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), UVReorder.data()), "FinalizeVertices(UV) failed"))
+            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Texcoords.data(), sizeof(float2), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), UVReorder.data()), "FinalizeVertices(UV) failed"))
                 return false;
 
-            std::swap(UVs, UVReorder);
+            std::swap(OutModel.Texcoords, UVReorder);
         }
     }
 
@@ -168,23 +166,26 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
     {
         ScopeTimer_s ScopeTimer("Compute mesh normals");
 
-        Normals.resize(VertexCount);
+        OutModel.Normals.resize(OutModel.VertexCount);
 
-        if (!ENSUREMSG(MeshProcessing::ComputeNormals(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, Positions.data(), VertexCount, Normals.data()), "ComputeNormals failed"))
+        if (!ENSUREMSG(MeshProcessing::ComputeNormals(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.Positions.data(), OutModel.VertexCount, OutModel.Normals.data()), "ComputeNormals failed"))
             return false;
+
+        OutModel.HasNormals = true;
     }
 
-    std::vector<float4> Tangents;
-    std::vector<float3> Bitangents;
     if (Reader.HasNormals && Reader.HasTexcoords)
     {
         ScopeTimer_s ScopeTimer("Compute mesh tangents");
 
-        Tangents.resize(VertexCount);
-        Bitangents.resize(VertexCount);
+        OutModel.Tangents.resize(OutModel.VertexCount);
+        OutModel.Bitangents.resize(OutModel.VertexCount);
 
-        if (!ENSUREMSG(MeshProcessing::ComputeTangents(reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), TriCount, Positions.data(), Normals.data(), UVs.data(), VertexCount, Tangents.data(), Bitangents.data()), "ComputeTangents failed"))
+        if (!ENSUREMSG(MeshProcessing::ComputeTangents(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.Positions.data(), OutModel.Normals.data(), OutModel.Texcoords.data(), OutModel.VertexCount, OutModel.Tangents.data(), OutModel.Bitangents.data()), "ComputeTangents failed"))
             return false;
+
+        OutModel.HasTangents = true;
+        OutModel.HasBitangents = true;
     }
 
     std::vector<MeshProcessing::Meshlet_s> Meshlets;
@@ -200,9 +201,9 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
 
         if (!ENSUREMSG(MeshProcessing::ComputeMeshlets(
             MeshletMaxVerts, MeshletMaxPrims,
-            reinterpret_cast<MeshProcessing::index_t*>(Indices.data()), IndexCount,
+            reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), OutModel.IndexCount,
             IndexSubsets.data(), static_cast<uint32_t>(IndexSubsets.size()),
-            Positions.data(), static_cast<uint32_t>(Positions.size()),
+            OutModel.Positions.data(), static_cast<uint32_t>(OutModel.Positions.size()),
             MeshletSubsets,
             Meshlets,
             UniqueVertexIndices,
@@ -211,10 +212,51 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
             return false;
     }
 
-    OutModel.Position.Init(Positions.data(), Positions.size());
-    OutModel.Normal.Init(Normals.data(), Normals.size());
-    OutModel.Texcoord.Init(UVs.data(), UVs.size());
-    OutModel.Index.Init(reinterpret_cast<uint32_t*>(Indices.data()), Indices.size() / sizeof(uint32_t));
+    std::vector<std::wstring> MaterialPaths;
+
+    for (uint32_t MaterialIt = 1; MaterialIt < Reader.Materials.size(); MaterialIt++)
+    {
+        MaterialAsset_s MaterialAsset;
+        MaterialAsset.Albedo = Reader.Materials[MaterialIt].Diffuse;
+        wcscpy_s(MaterialAsset.AlbedoTexturePath, Reader.Materials[MaterialIt].Texture.c_str());
+
+        std::wstring MaterialPath = L"Assets/" + Reader.Materials[MaterialIt].Name + L".rmat";
+        WriteMaterialAsset(MaterialPath, &MaterialAsset);
+
+        MaterialPaths.push_back(MaterialPath);
+    }
+
+    OutModel.MeshCount = static_cast<uint32_t>(IndexSubsets.size());
+    OutModel.Meshes.resize(IndexSubsets.size());
+    for (uint32_t SubsetIt = 0; SubsetIt < IndexSubsets.size(); SubsetIt++)
+    {
+        MeshAsset_s& OutMesh = OutModel.Meshes[SubsetIt];
+        const MeshProcessing::Subset_s& IndexSubset = IndexSubsets[SubsetIt];
+        const MeshProcessing::Subset_s& MeshletSubset = MeshletSubsets[SubsetIt];
+        OutMesh.IndexCount = IndexSubset.Count;
+        OutMesh.IndexOffset = IndexSubset.Offset;
+
+        OutMesh.MeshletCount = MeshletSubset.Count;
+        OutMesh.Meshlets.resize(MeshletSubset.Count);
+
+        if (SubsetIt < MaterialPaths.size())
+        {
+            wcscpy_s(OutMesh.MaterialPath, MaterialPaths[SubsetIt].c_str());
+        }
+
+        for (uint32_t MeshletIt = 0, MeshletOffset = MeshletSubset.Offset; MeshletIt < MeshletSubset.Count; MeshletIt++, MeshletOffset++)
+        {
+            MeshAsset_s::Meshlet_s& OutMeshlet = OutMesh.Meshlets[MeshletIt];
+            const MeshProcessing::Meshlet_s& Meshlet = Meshlets[MeshletOffset];
+
+            OutMeshlet.PrimCount = Meshlet.PrimCount;
+            OutMeshlet.PrimOffset = Meshlet.PrimOffset;
+            OutMeshlet.VertCount = Meshlet.VertCount;
+            OutMeshlet.VertOffset = Meshlet.VertOffset;
+        }
+    }
+
+#if 0
 
     std::vector<ModelMaterial_s> LoadedMaterials;
     LoadedMaterials.reserve(Reader.Attributes.size());
@@ -245,6 +287,10 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel)
         Mesh.Material = LoadedMaterials[SubsetIt + 1];
         OutModel.Meshes.push_back(Mesh);
     }
+
+    OutModel.MeshCount = static_cast<uint32_t>(OutModel.Meshes.size());
+
+#endif
 
     return true;
 }

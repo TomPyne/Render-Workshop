@@ -1,5 +1,5 @@
 #pragma once
 
-struct SubModel_s;
+struct ModelAsset_s;
 
-bool LoadModelFromWavefront(const wchar_t* WavefrontPath, SubModel_s& OutModel);
+bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel);

@@ -1,8 +1,11 @@
 #include "TextureManager.h"
 
+#include "FileUtils/FileStream.h"
+#include "FileUtils/PathUtils.h"
 #include "Logging/Logging.h"
 
 #include <algorithm>
+#include <fstream>
 #include <map>
 #include <Render/Binding.h>
 #include <Render/Textures.h>
@@ -11,14 +14,12 @@
 #include <stb/stb_image.h>
 
 // TODO:
-// 1. Texture manager shouldn't hold an owning reference to textures if possible, it prevents them from ever unloading.
-//    This may need to be implented with a new type of weak pointer in the Render lib.
-// 2. Enqueue texture loads on a helper thread, return the Texture_t handle immediately.
-// 3. Default textures
+// 1. Enqueue texture loads on a helper thread, return the Texture_t handle immediately.
+// 2. Default textures
 
 struct TextureManagerGlobals
 {
-    std::map<std::string, TextureAsset_s> LoadedTextures;
+    std::map<std::wstring, std::unique_ptr<TextureAsset_s>> LoadedTextureAssets;
 } G;
 
 // Move this to another util folder if required
@@ -63,12 +64,12 @@ constexpr bool IsPowerOfTwo(int Num)
     return false;
 }
 
-TextureAsset_s LoadTextureInternal(const char* FilePath, const wchar_t* WidePath, bool GenerateMips)
+TextureAsset_s* LoadTextureInternal(const char* FilePath, const wchar_t* WidePath, bool GenerateMips)
 {
-    auto Found = G.LoadedTextures.find(FilePath);
-    if (Found != G.LoadedTextures.end())
+    auto Found = G.LoadedTextureAssets.find(WidePath);
+    if (Found != G.LoadedTextureAssets.end())
     {
-        return Found->second;
+        return Found->second.get();
     }
 
     int X, Y, Comp;
@@ -93,22 +94,34 @@ TextureAsset_s LoadTextureInternal(const char* FilePath, const wchar_t* WidePath
 
     uint32_t MipX = static_cast<uint32_t>(X);
     uint32_t MipY = static_cast<uint32_t>(Y);
-    std::vector<tpr::MipData> MipData;
-    std::vector<std::unique_ptr<uint8_t[]>> MipMemory;
 
-    MipData.emplace_back(TexData, tpr::RenderFormat::R8G8B8A8_UNORM, MipX, MipY);
+    TextureAsset_s* Asset = new TextureAsset_s;
+    G.LoadedTextureAssets.emplace(std::wstring(WidePath), std::unique_ptr<TextureAsset_s>(Asset));
+
+    const tpr::RenderFormat TextureFormat = tpr::RenderFormat::R8G8B8A8_UNORM;
+
+    size_t RowPitch, SlicePitch;
+    CalculateTexturePitch(TextureFormat, MipX, MipY, &RowPitch, &SlicePitch);
+
+    Asset->MipPixels.push_back({});
+    Asset->MipPixels[0].resize(SlicePitch);
+
+    std::memcpy(Asset->MipPixels[0].data(), TexData, SlicePitch);
 
     if (GenerateMips)
     {
-        const uint8_t* LastMipData = (uint8_t*)TexData;
+        const uint8_t* LastMipData = Asset->MipPixels[0].data();
 
         while (MipX >= 2 && MipY >= 2)
         {
             MipX /= 2u;
             MipY /= 2u;
 
-            MipMemory.push_back(std::make_unique<uint8_t[]>(MipX * MipY * 4u));
-            uint8_t* CurrentMipData = MipMemory.back().get();
+            CalculateTexturePitch(TextureFormat, MipX, MipY, &RowPitch, &SlicePitch);
+
+            Asset->MipPixels.push_back({});
+            Asset->MipPixels.back().resize(SlicePitch);
+            uint8_t* CurrentMipData = Asset->MipPixels.back().data();
 
             for (uint32_t YIt = 0u; YIt < MipY; YIt++)
             {
@@ -122,57 +135,84 @@ TextureAsset_s LoadTextureInternal(const char* FilePath, const wchar_t* WidePath
                 }
             }
 
-            MipData.emplace_back(CurrentMipData, tpr::RenderFormat::R8G8B8A8_UNORM, MipX, MipY);
-
             LastMipData = CurrentMipData;
         }
     }
 
-    tpr::TextureCreateDescEx TexDesc = {};
-    TexDesc.Data = MipData.data();
-    TexDesc.DepthOrArraySize = 1u;
-    TexDesc.Dimension = tpr::TextureDimension::TEX2D;
-    TexDesc.Flags = tpr::RenderResourceFlags::SRV;
-    TexDesc.Height = Y;
-    TexDesc.Width = X;
-    TexDesc.MipCount = static_cast<uint32_t>(MipData.size());
-    TexDesc.DebugName = WidePath;
-    TexDesc.ResourceFormat = tpr::RenderFormat::R8G8B8A8_UNORM;
-
-    TextureAsset_s Asset;
-    Asset.Texture = tpr::CreateTextureEx(TexDesc);
-
-    STBI_FREE(TexData);
-
-    if (!Asset.Texture)
+    // Write generated asset to disk
     {
-        return {};
+        Asset->SourcePath = ReplacePathExtension(WidePath, L"rtex");
+
+        OFileStream_s Stream(Asset->SourcePath);
+
+        if (Stream.IsOpen())
+        {
+            Stream.Write(&Asset->Width);
+            Stream.Write(&Asset->Height);
+            Stream.Write(&Asset->Format);
+            Stream.Write(&Asset->MipCount);
+
+            for (const auto& AssetMipData : Asset->MipPixels)
+            {
+                Stream.WriteArray(AssetMipData.data(), AssetMipData.size());
+            }
+        }
+        else
+        {
+            LOGERROR("Failed to write texture asset file: %S", Asset->SourcePath);
+        }
     }
-
-    Asset.SRV = tpr::CreateTextureSRV(Asset.Texture, tpr::RenderFormat::R8G8B8A8_UNORM, tpr::TextureDimension::TEX2D, TexDesc.MipCount, TexDesc.DepthOrArraySize);
-
-    if (!Asset.SRV)
-    {
-        return {};
-    }
-
-#if _DEBUG
-    Asset.DebugName = WidePath;
-#endif
-
-    G.LoadedTextures[FilePath] = Asset;
 
     return Asset;
 }
 
-TextureAsset_s LoadTexture(const std::wstring& FilePath, bool GenerateMips)
+TextureAsset_s* LoadTextureAsset(const std::wstring& FilePath)
 {
-    std::string NarrowPath = WideToNarrow(FilePath);
-    return LoadTextureInternal(NarrowPath.c_str(), FilePath.c_str(), GenerateMips);
-}
+    TextureAsset_s* Asset = nullptr;
 
-TextureAsset_s LoadTexture(const std::string& FilePath, bool GenerateMips)
-{
-    std::wstring WidePath = NarrowToWide(FilePath);
-    return LoadTextureInternal(FilePath.c_str(), WidePath.c_str(), GenerateMips);
+    if (HasPathExtension(FilePath, L".rtex")) // Load from asset
+    {
+        IFileStream_s Stream(FilePath);
+        if (!Stream.IsOpen())
+        {
+            LOGERROR("Invalid path, has the texture been generated?");
+            return nullptr;
+        }
+
+        Asset = new TextureAsset_s;
+        G.LoadedTextureAssets.emplace(FilePath, std::unique_ptr<TextureAsset_s>(Asset));
+
+        Stream.Read(&Asset->Width);
+        Stream.Read(&Asset->Height);
+        Stream.Read(&Asset->Format);
+        Stream.Read(&Asset->MipCount);
+
+        Asset->MipPixels.resize(Asset->MipCount);
+
+        uint32_t MipWidth = Asset->Width;
+        uint32_t MipHeight = Asset->Height;
+        for (uint32_t MipIt = 0; MipIt < Asset->MipCount; MipIt++)
+        {
+            CHECK(MipWidth >= 1 && MipHeight >= 1);
+
+            size_t RowPitch, SlicePitch;
+            CalculateTexturePitch(Asset->Format, MipWidth, MipHeight, &RowPitch, &SlicePitch);
+
+            Asset->MipPixels[MipIt].resize(SlicePitch);
+
+            Stream.ReadArray(Asset->MipPixels[MipIt].data(), SlicePitch);
+
+            MipWidth /= 2;
+            MipHeight /= 2;
+        }
+
+        Asset->SourcePath = FilePath;
+    }
+    else // a source asset path, generate an asset
+    {
+        std::string NarrowPath = WideToNarrow(FilePath);
+        Asset = LoadTextureInternal(NarrowPath.c_str(), FilePath.c_str(), false);
+    }
+
+    return Asset;
 }

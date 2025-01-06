@@ -9,3 +9,8 @@ imgui.ini
 #files
 *.exe
 *.pdb
+
+#cooked assets
+*.rmat
+*.rmdl
+*.rtex

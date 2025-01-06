@@ -5,13 +5,15 @@
 
 struct TextureAsset_s
 {
-	tpr::TexturePtr Texture;
-	tpr::ShaderResourceViewPtr SRV;
+	uint32_t Width;
+	uint32_t Height;
+	tpr::RenderFormat Format;
+	uint32_t MipCount;
 
-#if _DEBUG
-	std::wstring DebugName;
-#endif
+	std::vector<std::vector<uint8_t>> MipPixels;
+
+	std::wstring SourcePath;
 };
 
-TextureAsset_s LoadTexture(const std::wstring& FilePath, bool GenerateMips = false);
-TextureAsset_s LoadTexture(const std::string& FilePath, bool GenerateMips = false);
+
+TextureAsset_s* LoadTextureAsset(const std::wstring& FilePath);
