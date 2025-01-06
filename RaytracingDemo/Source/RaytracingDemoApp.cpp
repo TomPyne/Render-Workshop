@@ -137,6 +137,8 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshVSPSO;
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
+
+	bool UseMeshShaders = false;
 } G;
 
 void RTDModel_s::Init(const ModelAsset_s* Asset)
@@ -230,11 +232,18 @@ void RTDModel_s::Draw(tpr::CommandList* CL)
 	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
 	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
 
-	for (const RTDMesh_s& Mesh : Meshes)
+	if (G.UseMeshShaders)
 	{
-		CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
 
-		CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
+	}
+	else
+	{
+		for (const RTDMesh_s& Mesh : Meshes)
+		{
+			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
+
+			CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
+		}
 	}
 }
 
@@ -380,7 +389,11 @@ void Update(float deltaSeconds)
 
 void ImguiUpdate()
 {
-	ImGui::ShowDemoWindow();
+	if (ImGui::Begin("RaytracingDemo"))
+	{
+		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
+		ImGui::End();
+	}
 }
 
 void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, float deltaSeconds)
