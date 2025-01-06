@@ -5,6 +5,17 @@ struct ViewData_s
     float __pad;
 };
 
+struct PixelInputs_s
+{
+    float4 SVPosition : SV_POSITION;
+    float2 UV : TEXCOORD0;
+    float3 Normal : NORMAL0;
+    uint MeshletIndex : COLOR0;
+};
+
+// Shared binds for vertex processing stages
+#if defined(_MS) || defined(_VS)
+
 struct MeshData_s
 {
     uint PositionBufSRVIndex;
@@ -19,73 +30,131 @@ struct MeshData_s
     float3 __pad;
 };
 
-struct DrawConstants_s
-{
-    uint IndexOffset;
-};
-
-ConstantBuffer<DrawConstants_s> c_Draw : register(b0);
 ConstantBuffer<ViewData_s> c_View : register(b1);
 ConstantBuffer<MeshData_s> c_Mesh : register(b2);
-
-struct PS_INPUT
-{
-    float4 SVPosition : SV_POSITION;
-    float2 UV : TEXCOORD0;
-    float3 Normal : NORMAL;
-};
-
-#ifdef _VS
 
 StructuredBuffer<float3> t_sbuf_f3[1024] : register(t0, space0);
 StructuredBuffer<float4> t_sbuf_f4[1024] : register(t0, space1);
 StructuredBuffer<float2> t_sbuf_f2[1024] : register(t0, space2);
 StructuredBuffer<uint> t_sbuf_uint[1024] : register(t0, space3);
 
-void main(in uint VertexID : SV_VertexID, out PS_INPUT Output)
+PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
 {
-    uint Index = t_sbuf_uint[c_Mesh.IndexBufSRVIndex][c_Draw.IndexOffset + VertexID];
-    float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][Index];
+    float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][VertexIndex];
+    float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][VertexIndex] : float3(0, 0, 0);
+    float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][VertexIndex] : float2(0, 0);
 
-    float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][Index] : float3(0, 0, 0);
-    float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][Index] : float2(0, 0);
+    PixelInputs_s Out;
+    Out.SVPosition =  mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
+    Out.Normal = Normal;
+    Out.UV = float2(UV.x, 1.0f - UV.y);
+    Out.MeshletIndex = MeshletIndex;
 
-    Output.SVPosition = mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
-    Output.Normal = Normal;
-    Output.UV = float2(UV.x, 1.0f - UV.y);
+    return Out;
+}
+
+#endif
+
+#ifdef _VS
+
+struct DrawConstants_s
+{
+    uint IndexOffset;
+};
+
+ConstantBuffer<DrawConstants_s> c_Draw : register(b0);
+
+void main(in uint VertexID : SV_VertexID, out PixelInputs_s Output)
+{
+    uint VertexIndex = t_sbuf_uint[c_Mesh.IndexBufSRVIndex][c_Draw.IndexOffset + VertexID];
+
+    Output = GetVertexAttributes(c_Draw.IndexOffset, VertexIndex);
 }
 
 #endif // _VS
 
 #ifdef _MS
 
+struct Meshlet_s
+{
+    uint VertCount;
+    uint VertOffset;
+    uint PrimCount;
+    uint PrimOffset;
+};
+
+struct DrawConstants_s
+{
+    uint MeshletOffset;
+};
+
+ConstantBuffer<DrawConstants_s> c_Draw : register(b0);
+
+StructuredBuffer<Meshlet_s> t_sbuf_meshlet[1024] : register(t0, space4);
+
+uint3 UnpackPrimitive(uint Primitive)
+{
+    // Unpacks a 10 bits per index triangle from a 32-bit uint.
+    return uint3(Primitive & 0x3FF, (Primitive >> 10) & 0x3FF, (Primitive >> 20) & 0x3FF);
+}
+
+uint3 GetPrimitive(Meshlet Meshlet, uint Index)
+{
+    return UnpackPrimitive(t_sbuf_uint[c_Mesh.PrimitiveIndexBufSRVIndex][Meshlet.PrimOffset + Index]);
+}
+
 [NumThreads(128, 1, 1)]
 [OutputTopology("triangle")]
-void main(out PS_INPUT Output)
+void main(
+    int uint GroupThreadID : SV_GroupThreadID,
+    in uint GroupID : SV_GroupID,
+    out indices uint3 Triangles[126],
+    out vertices PixelInputs_s Verts)
+{
+    Meshlet_s Meshlet = t_sbuf_meshlet[c_Mesh.MeshletBufSRVIndex][c_Draw.MeshletOffset + GroupID];
+
+    SetMeshOutputCounts(Meshlet.VertCount, Meshlet.PrimCount);
+
+    if(GroupThreadID < Meshlet.PrimCount)
+    {
+        Triangles[GroupThreadID] = GetPrimitive(Meshlet, GroupThreadID);
+    }
+
+    if(GroupThreadID < Meshlet.VertCount)
+    {
+        uint VertexIndex = GetVertexIndex(Meshlet, GroupThreadID);
+        Verts[GroupThreadID] = GetVertexAttributes(GroupID, VertexIndex);
+    }
+}
 
 #endif
 
 #ifdef _PS
 
-struct MaterialData
+struct MaterialData_s
 {
     float3 Albedo;
     uint AlbedoTextureIndex;
 };
 
-struct PS_OUTPUT
+struct PixelOutputs_s
 {
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
 };
 
-ConstantBuffer<MaterialData> c_Material : register(b3);
+ConstantBuffer<MaterialData_s> c_Material : register(b3);
 Texture2D<float4> t_Tex2d[1024] : register(t0, space0);
 SamplerState s_ClampedSampler : register(s1);
 
-void main(in PS_INPUT Input, out PS_OUTPUT Output)
+void main(in PixelInputs_s Input, out PixelOutputs_s Output)
 {
-    float3 Albedo = c_Material.Albedo;
+    float3 MeshletColor = float3(
+            float(Input.MeshletIndex & 1),
+            float(Input.MeshletIndex & 3) / 4,
+            float(Input.MeshletIndex & 7) / 8);
+
+    float3 Albedo = c_Material.Albedo * MeshletColor;
     if(c_Material.AlbedoTextureIndex != 0)
     {
         Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_ClampedSampler, Input.UV).rgb;
