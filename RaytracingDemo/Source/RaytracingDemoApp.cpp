@@ -44,6 +44,7 @@ struct RTDBuffer_s
 enum RTDDrawConstantSlots_e
 {
 	DCS_INDEX_OFFSET = 0,
+	DCS_MESHLET_OFFSET = 0,
 	DCS_COUNT,
 };
 
@@ -69,11 +70,8 @@ struct RTDMesh_s
 	uint32_t IndexOffset;
 	uint32_t IndexCount;
 
-	void Init(uint32_t InIndexOffset, uint32_t InIndexCount)
-	{
-		IndexOffset = InIndexOffset;
-		IndexCount = InIndexCount;
-	}
+	uint32_t MeshletOffset;
+	uint32_t MeshletCount;
 };
 
 struct RTDModel_s
@@ -189,7 +187,7 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 
 	if (!Asset->UniqueVertexIndices.empty())
 	{
-		UniqueVertexIndexBuffer.Init(Asset->UniqueVertexIndices.data(), Asset->UniqueVertexIndices.size());
+		UniqueVertexIndexBuffer.Init(reinterpret_cast<const uint32_t*>(Asset->UniqueVertexIndices.data()), Asset->UniqueVertexIndices.size() / 4);
 	}
 
 	if (!Asset->PrimitiveIndices.empty())
@@ -215,7 +213,10 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 	for (const ModelAsset_s::Mesh_s& MeshFromAsset : Asset->Meshes)
 	{
 		RTDMesh_s Mesh = {};
-		Mesh.Init(MeshFromAsset.IndexOffset, MeshFromAsset.IndexCount);
+		Mesh.IndexCount = MeshFromAsset.IndexCount;
+		Mesh.IndexOffset = MeshFromAsset.IndexOffset;
+		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
+		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
 
 		Meshes.push_back(Mesh);
 	}
@@ -234,7 +235,12 @@ void RTDModel_s::Draw(tpr::CommandList* CL)
 
 	if (G.UseMeshShaders)
 	{
+		for (const RTDMesh_s& Mesh : Meshes)
+		{
+			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_MESHLET_OFFSET, Mesh.MeshletOffset);
 
+			CL->DispatchMesh(Mesh.MeshletCount, 1u, 1u);
+		}
 	}
 	else
 	{
@@ -279,7 +285,7 @@ bool InitializeApp()
 		return false;
 	}
 
-	ModelAsset_s* ModelAsset = LoadModel(L"Assets/House.obj");
+	ModelAsset_s* ModelAsset = LoadModel(L"Assets/Rungholt.obj");
 
 	if (!ModelAsset)
 	{
@@ -298,7 +304,7 @@ bool InitializeApp()
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
 			.DepthDesc(true, ComparisionFunc::LESS_EQUAL)
-			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16B16A16_FLOAT }, { BlendMode::None(), BlendMode::None()}, RenderFormat::D16_UNORM)
+			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16B16A16_FLOAT }, { BlendMode::None(), BlendMode::None()}, RenderFormat::D32_FLOAT)
 			.VertexShader(MeshVS)
 			.PixelShader(MeshPS);
 
@@ -371,13 +377,13 @@ void ResizeApp(uint32_t width, uint32_t height)
 	TextureCreateDescEx DepthDesc = {};
 	DepthDesc.DebugName = L"SceneDepth";
 	DepthDesc.Flags = RenderResourceFlags::DSV;
-	DepthDesc.ResourceFormat = RenderFormat::D16_UNORM;
+	DepthDesc.ResourceFormat = RenderFormat::D32_FLOAT;
 	DepthDesc.Height = G.ScreenHeight;
 	DepthDesc.Width = G.ScreenWidth;
 	DepthDesc.InitialState = ResourceTransitionState::DEPTH_WRITE;
 	DepthDesc.Dimension = TextureDimension::TEX2D;
 	G.DepthTexture = CreateTextureEx(DepthDesc);
-	G.DepthDSV = CreateTextureDSV(G.DepthTexture, RenderFormat::D16_UNORM, TextureDimension::TEX2D, 1u);
+	G.DepthDSV = CreateTextureDSV(G.DepthTexture, RenderFormat::D32_FLOAT, TextureDimension::TEX2D, 1u);
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -449,7 +455,14 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->SetGraphicsRootDescriptorTable(RS_SRV_TABLE);
 	}
 
-	cl->SetPipelineState(G.MeshVSPSO);
+	if (G.UseMeshShaders)
+	{
+		cl->SetPipelineState(G.MeshMSPSO);
+	}
+	else
+	{
+		cl->SetPipelineState(G.MeshVSPSO);
+	}
 
 	G.Model.Draw(cl);
 

@@ -82,7 +82,7 @@ void WriteMaterialAsset(const std::wstring& FileName, const MaterialAsset_s* con
         if (ENSUREMSG(Stream.IsOpen(), "Failed to open material file for write %S", Path))
         {
             Stream.Write(&Asset->Albedo);
-            Stream.WriteArray(&Asset->AlbedoTexturePath, PathUtils::MaxPath);
+            Stream.WriteArray(Asset->AlbedoTexturePath, PathUtils::MaxPath);
         }
     }
 }

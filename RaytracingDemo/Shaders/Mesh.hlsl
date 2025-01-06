@@ -113,8 +113,8 @@ uint GetVertexIndex(Meshlet_s Meshlet, uint LocalIndex)
 void main(
     in uint GroupThreadID : SV_GroupThreadID,
     in uint GroupID : SV_GroupID,
-    out indices uint3 Triangles[126],
-    out vertices PixelInputs_s Verts[64])
+    out indices uint3 Triangles[128],
+    out vertices PixelInputs_s Verts[128])
 {
     Meshlet_s Meshlet = t_sbuf_meshlet[c_Mesh.MeshletBufSRVIndex][c_Draw.MeshletOffset + GroupID];
 
@@ -158,7 +158,7 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
             float(Input.MeshletIndex & 1),
             float(Input.MeshletIndex & 3) / 4,
             float(Input.MeshletIndex & 7) / 8);
-
+            
     float3 Albedo = c_Material.Albedo * MeshletColor;
     if(c_Material.AlbedoTextureIndex != 0)
     {

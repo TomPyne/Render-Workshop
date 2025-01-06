@@ -52,7 +52,7 @@ struct FileStream_s
 	template<typename T>
 	inline void WriteArray(const T* const Target, size_t Count)
 	{
-		if (Mode == FileStreamMode_e::READ)
+		if (Mode == FileStreamMode_e::WRITE)
 		{
 			OutputStream.write(reinterpret_cast<const char*>(Target), sizeof(T) * Count);
 		}

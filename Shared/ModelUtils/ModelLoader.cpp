@@ -195,8 +195,8 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     {
         ScopeTimer_s ScopeTimer("Meshletize mesh");
 
-        constexpr uint32_t MeshletMaxVerts = 64;
-        constexpr uint32_t MeshletMaxPrims = 126;
+        constexpr uint32_t MeshletMaxVerts = 128;
+        constexpr uint32_t MeshletMaxPrims = 128;
 
         if (!ENSUREMSG(MeshProcessing::ComputeMeshlets(
             MeshletMaxVerts, MeshletMaxPrims,
@@ -224,6 +224,8 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         wcscpy_s(MaterialAsset.AlbedoTexturePath, Reader.Materials[MaterialIt].Texture.c_str());
 
         std::wstring MaterialPath = L"Assets/" + Reader.Materials[MaterialIt].Name + L".rmat";
+
+        LOGINFO("Writing material: %S", MaterialPath.c_str());
         WriteMaterialAsset(MaterialPath, &MaterialAsset);
 
         MaterialPaths.push_back(MaterialPath);

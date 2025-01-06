@@ -1707,11 +1707,76 @@ bool AddToMeshlet(uint32_t MaxVerts, uint32_t MaxPrims, InlineMeshlet& Meshlet, 
 
 bool IsMeshletFull(uint32_t MaxVerts, uint32_t MaxPrims, const InlineMeshlet& Meshlet)
 {
-    assert(Meshlet.UniqueVertexIndices.size() <= MaxVerts);
-    assert(Meshlet.PrimitiveIndices.size() <= MaxPrims);
+    CHECK(Meshlet.UniqueVertexIndices.size() <= MaxVerts);
+    CHECK(Meshlet.PrimitiveIndices.size() <= MaxPrims);
 
     return Meshlet.UniqueVertexIndices.size() == MaxVerts
         || Meshlet.PrimitiveIndices.size() == MaxPrims;
+}
+
+float4 MinimumBoundingSphere(float3* points, size_t count)
+{
+    CHECK(points != nullptr && count != 0);
+
+    // Find the min & max points indices along each axis.
+    uint32_t minAxis[3] = { 0, 0, 0 };
+    uint32_t maxAxis[3] = { 0, 0, 0 };
+
+    for (uint32_t i = 1; i < count; ++i)
+    {
+        float* point = (float*)(points + i);
+
+        for (uint32_t j = 0; j < 3; ++j)
+        {
+            float* min = (float*)(&points[minAxis[j]]);
+            float* max = (float*)(&points[maxAxis[j]]);
+
+            minAxis[j] = point[j] < min[j] ? i : minAxis[j];
+            maxAxis[j] = point[j] > max[j] ? i : maxAxis[j];
+        }
+    }
+
+    // Find axis with maximum span.
+    float distSqMax = 0;
+    uint32_t axis = 0;
+
+    for (uint32_t i = 0; i < 3u; ++i)
+    {
+        float3 min = points[minAxis[i]];
+        float3 max = points[maxAxis[i]];
+
+        float distSq = LengthSqr(max - min);
+        if (distSq > distSqMax)
+        {
+            distSqMax = distSq;
+            axis = i;
+        }
+    }
+
+    // Calculate an initial starting center point & radius.
+    float3 p1 = points[minAxis[axis]];
+    float3 p2 = points[maxAxis[axis]];
+
+    float3 center = (p1 + p2) * 0.5f;
+    float radius = Length(p2 - p1) * 0.5f;
+    float radiusSq = radius * radius;
+
+    // Add all our points to bounding sphere expanding radius & recalculating center point as necessary.
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        float3 point = points[i];
+        float distSq = LengthSqr(point - center);
+
+        if (distSq > radiusSq)
+        {
+            float dist = sqrtf(distSq);
+            float k = (radius / dist) * 0.5f + 0.5f;
+
+            center = center * k + point * (1.0f - k);
+            radius = (radius + dist) * 0.5f;
+        }
+    }
+    return float4(center, radius);
 }
 
 void Meshletize(
@@ -1795,8 +1860,8 @@ void Meshletize(
 
             BoundingSphere BSphereNorm;
             BSphereNorm.InitFromPoints(TrackedNormals.size(), TrackedNormals.data());
-            Sphere = float4(BSpherePos.Origin, BSpherePos.Radius);
-            Normal = Normalize(BSphereNorm.Origin);
+            Sphere = MinimumBoundingSphere(TrackedPositions.data(), TrackedPositions.size());// float4(BSpherePos.Origin, BSpherePos.Radius);
+            Normal = Normalize(MinimumBoundingSphere(TrackedNormals.data(), TrackedNormals.size()).xyz);// Normalize(BSphereNorm.Origin);
 
             // Find and add all applicable adjacent triangles to candidate list
             const uint32_t AdjIndex = Index * 3;
