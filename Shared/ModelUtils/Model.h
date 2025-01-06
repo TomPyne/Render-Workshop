@@ -29,6 +29,8 @@ struct ModelAsset_s
 	uint32_t VertexCount = 0;
 	uint32_t IndexCount = 0;
 	uint32_t MeshCount = 0;
+	uint32_t UniqueIndexCount = 0;
+	uint32_t PrimitiveIndexCount = 0;
 	bool HasNormals = false;
 	bool HasTangents = false;
 	bool HasBitangents = false;
@@ -41,6 +43,8 @@ struct ModelAsset_s
 	tpr::RenderFormat IndexFormat = tpr::RenderFormat::UNKNOWN;
 	std::vector<uint8_t> Indices;
 	std::vector<MeshAsset_s> Meshes;
+	std::vector<uint8_t> UniqueVertexIndices;
+	std::vector<uint32_t> PrimitiveIndices; // 10 : 10 : 10
 
 	std::string SourcePath;
 };

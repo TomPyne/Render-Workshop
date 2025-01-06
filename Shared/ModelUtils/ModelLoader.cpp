@@ -189,7 +189,6 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     }
 
     std::vector<MeshProcessing::Meshlet_s> Meshlets;
-    std::vector<uint8_t> UniqueVertexIndices;
     std::vector<MeshProcessing::PackedTriangle_s> PrimitiveIndices;
     std::vector<MeshProcessing::Subset_s> MeshletSubsets;
 
@@ -206,10 +205,20 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
             OutModel.Positions.data(), static_cast<uint32_t>(OutModel.Positions.size()),
             MeshletSubsets,
             Meshlets,
-            UniqueVertexIndices,
+            OutModel.UniqueVertexIndices,
             PrimitiveIndices
         ), "ComputeMeshlets failed"))
             return false;
+    }
+
+    OutModel.UniqueIndexCount = static_cast<uint32_t>(OutModel.UniqueVertexIndices.size());
+
+    OutModel.PrimitiveIndexCount = static_cast<uint32_t>(PrimitiveIndices.size());
+    OutModel.PrimitiveIndices.resize(PrimitiveIndices.size());
+
+    for (uint32_t PrimIt = 0; PrimIt < OutModel.PrimitiveIndexCount; PrimIt++)
+    {
+        OutModel.PrimitiveIndices[PrimIt] = PrimitiveIndices[PrimIt].packed;
     }
 
     std::vector<std::wstring> MaterialPaths;

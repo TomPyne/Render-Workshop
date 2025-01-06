@@ -13,6 +13,8 @@ struct ModelGlobals
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
 {
+	const bool Writing = Mode == FileStreamMode_e::WRITE;
+
 	FileStream_s Stream(Path, Mode);
 
 	if (!Stream.IsOpen())
@@ -23,45 +25,62 @@ bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsse
 	Stream.Stream(&Asset.VertexCount);
 	Stream.Stream(&Asset.IndexCount);
 	Stream.Stream(&Asset.MeshCount);
+	Stream.Stream(&Asset.UniqueIndexCount);
+	Stream.Stream(&Asset.PrimitiveIndexCount);
 	Stream.Stream(&Asset.HasNormals);
 	Stream.Stream(&Asset.HasTangents);
 	Stream.Stream(&Asset.HasBitangents);
 	Stream.Stream(&Asset.HasTexcoords);
 
-	Asset.Positions.resize(Asset.VertexCount);
+	if (Writing)
+		Asset.Positions.resize(Asset.VertexCount);
+
 	Stream.StreamArray(Asset.Positions.data(), Asset.VertexCount);
 
 	if (Asset.HasNormals)
 	{
-		Asset.Normals.resize(Asset.VertexCount);
+		if (Writing)
+			Asset.Normals.resize(Asset.VertexCount);
+
 		Stream.StreamArray(Asset.Normals.data(), Asset.VertexCount);
 	}
 
 	if (Asset.HasTangents)
 	{
-		Asset.Tangents.resize(Asset.VertexCount);
+		if (Writing)
+			Asset.Tangents.resize(Asset.VertexCount);
+
 		Stream.StreamArray(Asset.Tangents.data(), Asset.VertexCount);
 	}
 
 	if (Asset.HasBitangents)
 	{
-		Asset.Bitangents.resize(Asset.VertexCount);
+		if (Writing)
+			Asset.Bitangents.resize(Asset.VertexCount);
+
 		Stream.StreamArray(Asset.Bitangents.data(), Asset.VertexCount);
 	}
 
 	if (Asset.HasTexcoords)
 	{
-		Asset.Texcoords.resize(Asset.VertexCount);
+		if (Writing)
+			Asset.Texcoords.resize(Asset.VertexCount);
+
 		Stream.StreamArray(Asset.Texcoords.data(), Asset.VertexCount);
 	}
 
 	Stream.Stream(&Asset.IndexFormat);
 
 	size_t IndexBufByteCount = Asset.IndexFormat == tpr::RenderFormat::R32_UINT ? 4 * Asset.IndexCount : 2 * Asset.IndexCount;
-	Asset.Indices.resize(IndexBufByteCount);
+
+	if(Writing)
+		Asset.Indices.resize(IndexBufByteCount);
+
 	Stream.StreamArray(Asset.Indices.data(), IndexBufByteCount);
 
-	Asset.Meshes.resize(Asset.MeshCount);
+	if (Writing)
+		Asset.Meshes.resize(Asset.MeshCount);
+
 	for (uint32_t MeshIt = 0; MeshIt < Asset.MeshCount; MeshIt++)
 	{
 		MeshAsset_s& Mesh = Asset.Meshes[MeshIt];
@@ -73,7 +92,9 @@ bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsse
 
 		if (Mesh.MeshletCount)
 		{
-			Mesh.Meshlets.resize(Mesh.MeshletCount);
+			if(Writing)
+				Mesh.Meshlets.resize(Mesh.MeshletCount);
+
 			Stream.StreamArray(Mesh.Meshlets.data(), Mesh.MeshletCount);
 		}
 	}
