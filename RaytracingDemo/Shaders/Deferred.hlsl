@@ -32,7 +32,7 @@ struct DeferredData
     float2 __pad;
 };
 
-ConstantBuffer<DeferredData> c_Deferred : register(b0);
+ConstantBuffer<DeferredData> c_Deferred : register(b1);
 Texture2D<float4> t_tex2d[1024] : register(t0, space0);
 SamplerState ClampedSampler : register(s1);
 

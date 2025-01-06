@@ -85,8 +85,8 @@ struct RTDModel_s
 
 enum RootSigSlots
 {
+	RS_ROOTCONSTANTS,
 	RS_VIEW_BUF,
-	RS_MODEL_BUF,
 	RS_MAT_BUF,
 	RS_SRV_TABLE,
 	RS_UAV_TABLE,
@@ -127,6 +127,16 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 
 		CHECK(!Asset->Positions.empty());
 		PositionBuffer.Init(Asset->Positions.data(), Asset->Positions.size());
+
+		CHECK(!Asset->Indices.empty());
+		if (Asset->IndexFormat == tpr::RenderFormat::R32_UINT)
+		{
+			IndexBuffer.Init(reinterpret_cast<const uint32_t*>(Asset->Indices.data()), Asset->Indices.size() / 4);
+		}
+		else // R16_UINT
+		{
+			IndexBuffer.Init(reinterpret_cast<const uint16_t*>(Asset->Indices.data()), Asset->Indices.size() / 2);
+		}		
 
 		if (Asset->HasNormals)
 		{
@@ -170,19 +180,31 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 
 			Meshes.push_back(Mesh);
 		}
+
+		RTDMaterialParams_s MaterialParams = {};
+		MaterialParams.Albedo = float3(1, 1, 1);
+		MaterialParams.AlbedoTextureIndex = 0;
+		ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
 	}
 }
 
 void RTDModel_s::Draw(tpr::CommandList* CL)
 {
-	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 0u, GetDescriptorIndex(PositionBuffer.BufferSRV));
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 1u, GetDescriptorIndex(NormalBuffer.BufferSRV));
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 2u, GetDescriptorIndex(TangentBuffer.BufferSRV));
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 3u, GetDescriptorIndex(BitangentBuffer.BufferSRV));
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 4u, GetDescriptorIndex(TexcoordBuffer.BufferSRV));
+	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 5u, GetDescriptorIndex(IndexBuffer.BufferSRV));
 
 	// Temp basic material for all meshes
 	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
 
 	for (const RTDMesh_s& Mesh : Meshes)
 	{
-		CL->DrawInstanced(Mesh.IndexCount, 1u, Mesh.IndexOffset, 0u);
+		CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 6u, Mesh.IndexOffset);
+
+		CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
 	}
 }
 
@@ -195,10 +217,10 @@ tpr::RenderInitParams GetAppRenderParams()
 	Params.DebugEnabled = false;
 #endif
 
-	Params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
+	Params.RootSigDesc.Flags = RootSignatureFlags::NONE;
 	Params.RootSigDesc.Slots.resize(RS_COUNT);
-	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(0, 0);
-	Params.RootSigDesc.Slots[RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(1, 0);
+	Params.RootSigDesc.Slots[RS_ROOTCONSTANTS] = RootSignatureSlot::ConstantsSlot(8u, 0);
+	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
 	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(2, 0);
 	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
 	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
@@ -239,14 +261,7 @@ bool InitializeApp()
 			.VertexShader(MeshVS)
 			.PixelShader(MeshPS);
 
-		InputElementDesc InputDesc[] =
-		{
-			{"POSITION", 0, RenderFormat::R32G32B32_FLOAT, 0, 0, InputClassification::PER_VERTEX, 0 },
-			{"TEXCOORD", 0, RenderFormat::R32G32_FLOAT, 1, 0, InputClassification::PER_VERTEX, 0 },
-			{"NORMAL", 0, RenderFormat::R32G32B32_FLOAT, 2, 0, InputClassification::PER_VERTEX, 0 },
-		};
-
-		G.MeshPSO = CreateGraphicsPipelineState(PsoDesc, InputDesc, ARRAYSIZE(InputDesc));
+		G.MeshPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
 	// Deferred PSO
@@ -380,7 +395,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	// Bind draw buffers
 	{
-		cl->SetGraphicsRootCBV(0, ViewCBuf);
+		cl->SetGraphicsRootCBV(RS_VIEW_BUF, ViewCBuf);
 		cl->SetGraphicsRootDescriptorTable(RS_SRV_TABLE);
 	}
 
@@ -407,7 +422,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	// Render deferred
 	{
-		cl->SetGraphicsRootCBV(0, DeferredCBuf);
+		cl->SetGraphicsRootCBV(RS_VIEW_BUF, DeferredCBuf);
 
 		cl->SetPipelineState(G.DeferredPSO);
 

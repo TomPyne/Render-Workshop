@@ -1,11 +1,24 @@
-struct ViewData
+struct ViewData_s
 {
     float4x4 ViewProjectionMatrix;
     float3 CameraPos;
     float __pad;
 };
 
-ConstantBuffer<ViewData> c_View : register(b0);
+struct MeshData_s
+{
+    uint PositionBufSRVIndex;
+	uint NormalBufSRVIndex;
+	uint TangentBufSRVIndex;
+	uint BitangentBufSRVIndex;
+	uint TexcoordBufSRVIndex;
+    uint IndexBufSRVIndex;
+    uint IndexOffset;
+};
+
+ConstantBuffer<MeshData_s> c_Mesh : register(b0);
+ConstantBuffer<ViewData_s> c_View : register(b1);
+
 
 struct PS_INPUT
 {
@@ -16,18 +29,22 @@ struct PS_INPUT
 
 #ifdef _VS
 
-struct VS_INPUT
-{
-    float3 Position : POSITION;
-    float2 Texcoord : TEXCOORD;
-    float3 Normal : NORMAL;
-};
+StructuredBuffer<float3> t_sbuf_f3[1024] : register(t0, space0);
+StructuredBuffer<float4> t_sbuf_f4[1024] : register(t0, space1);
+StructuredBuffer<float2> t_sbuf_f2[1024] : register(t0, space2);
+StructuredBuffer<uint> t_sbuf_uint[1024] : register(t0, space3);
 
-void main(in VS_INPUT Input, out PS_INPUT Output)
+void main(in uint VertexID : SV_VertexID, out PS_INPUT Output)
 {
-    Output.SVPosition = mul(c_View.ViewProjectionMatrix, float4(Input.Position, 1.0f));
-    Output.Normal = Input.Normal;
-    Output.UV = float2(Input.Texcoord.x, 1.0f - Input.Texcoord.y);
+    uint Index = t_sbuf_uint[c_Mesh.IndexBufSRVIndex][c_Mesh.IndexOffset + VertexID];
+    float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][Index];
+
+    float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][Index] : float3(0, 0, 0);
+    float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][Index] : float2(0, 0);
+
+    Output.SVPosition = mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
+    Output.Normal = Normal;
+    Output.UV = float2(UV.x, 1.0f - UV.y);
 }
 
 #endif // _VS
@@ -46,7 +63,7 @@ struct PS_OUTPUT
     float4 Normal : SV_TARGET1;
 };
 
-ConstantBuffer<MaterialData> c_Material : register(b1);
+ConstantBuffer<MaterialData> c_Material : register(b2);
 Texture2D<float4> t_Tex2d[1024] : register(t0, space0);
 SamplerState s_ClampedSampler : register(s1);
 
