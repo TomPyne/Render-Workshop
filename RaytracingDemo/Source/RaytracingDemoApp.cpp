@@ -41,14 +41,27 @@ struct RTDBuffer_s
 	}
 };
 
+enum RTDDrawConstantSlots_e
+{
+	DCS_INDEX_OFFSET = 0,
+	DCS_COUNT,
+};
+
 struct RTDMeshConstants_s
 {
+	// Vertex data
 	uint32_t PositionBufSRVIndex = 0;
 	uint32_t NormalBufSRVIndex = 0;
 	uint32_t TangentBufSRVIndex = 0;
 	uint32_t BitangentBufSRVIndex = 0;
 	uint32_t TexcoordBufSRVIndex = 0;
 	uint32_t IndexBufSRVIndex = 0;
+	// Mesh shader data
+	uint32_t MeshletBufSRVIndex = 0;
+	uint32_t UniqueVertexIndexBufSRVIndex = 0;
+	uint32_t PrimitiveIndexBufSRVIndex = 0;
+
+	float __pad[3];
 };
 
 struct RTDMesh_s
@@ -72,6 +85,10 @@ struct RTDModel_s
 	RTDBuffer_s TexcoordBuffer;
 	RTDBuffer_s IndexBuffer;
 
+	RTDBuffer_s MeshletBuffer;
+	RTDBuffer_s UniqueVertexIndexBuffer;
+	RTDBuffer_s PrimitiveIndexBuffer;
+
 	tpr::ConstantBufferPtr ModelConstantBuffer;
 
 	std::vector<RTDMesh_s> Meshes;
@@ -85,8 +102,9 @@ struct RTDModel_s
 
 enum RootSigSlots
 {
-	RS_ROOTCONSTANTS,
+	RS_DRAWCONSTANTS,
 	RS_VIEW_BUF,
+	RS_MODEL_BUF,
 	RS_MAT_BUF,
 	RS_SRV_TABLE,
 	RS_UAV_TABLE,
@@ -122,87 +140,98 @@ struct Globals_s
 
 void RTDModel_s::Init(const ModelAsset_s* Asset)
 {
+	CHECK(Asset != nullptr);
+
+	CHECK(!Asset->Positions.empty());
+	PositionBuffer.Init(Asset->Positions.data(), Asset->Positions.size());
+
+	CHECK(!Asset->Indices.empty());
+	if (Asset->IndexFormat == tpr::RenderFormat::R32_UINT)
 	{
-		CHECK(Asset != nullptr);
-
-		CHECK(!Asset->Positions.empty());
-		PositionBuffer.Init(Asset->Positions.data(), Asset->Positions.size());
-
-		CHECK(!Asset->Indices.empty());
-		if (Asset->IndexFormat == tpr::RenderFormat::R32_UINT)
-		{
-			IndexBuffer.Init(reinterpret_cast<const uint32_t*>(Asset->Indices.data()), Asset->Indices.size() / 4);
-		}
-		else // R16_UINT
-		{
-			IndexBuffer.Init(reinterpret_cast<const uint16_t*>(Asset->Indices.data()), Asset->Indices.size() / 2);
-		}		
-
-		if (Asset->HasNormals)
-		{
-			CHECK(!Asset->Normals.empty());
-			NormalBuffer.Init(Asset->Normals.data(), Asset->Normals.size());
-		}
-
-		if (Asset->HasTangents)
-		{
-			CHECK(!Asset->Tangents.empty());
-			TangentBuffer.Init(Asset->Tangents.data(), Asset->Tangents.size());
-		}
-
-		if (Asset->HasBitangents)
-		{
-			CHECK(!Asset->Bitangents.empty());
-			BitangentBuffer.Init(Asset->Bitangents.data(), Asset->Bitangents.size());
-		}
-
-		if (Asset->HasTexcoords)
-		{
-			CHECK(!Asset->Texcoords.empty());
-			TexcoordBuffer.Init(Asset->Texcoords.data(), Asset->Texcoords.size());
-		}
-
-		RTDMeshConstants_s MeshConstants = {};
-		MeshConstants.PositionBufSRVIndex = tpr::GetDescriptorIndex(PositionBuffer.BufferSRV);
-		MeshConstants.NormalBufSRVIndex = tpr::GetDescriptorIndex(NormalBuffer.BufferSRV);
-		MeshConstants.TangentBufSRVIndex = tpr::GetDescriptorIndex(TangentBuffer.BufferSRV);
-		MeshConstants.BitangentBufSRVIndex = tpr::GetDescriptorIndex(BitangentBuffer.BufferSRV);
-		MeshConstants.TexcoordBufSRVIndex = tpr::GetDescriptorIndex(TexcoordBuffer.BufferSRV);
-		MeshConstants.IndexBufSRVIndex = tpr::GetDescriptorIndex(IndexBuffer.BufferSRV);
-
-		ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
-
-		Meshes.reserve(Asset->MeshCount);
-		for (const MeshAsset_s& MeshAsset : Asset->Meshes)
-		{
-			RTDMesh_s Mesh = {};
-			Mesh.Init(MeshAsset.IndexOffset, MeshAsset.IndexCount);
-
-			Meshes.push_back(Mesh);
-		}
-
-		RTDMaterialParams_s MaterialParams = {};
-		MaterialParams.Albedo = float3(1, 1, 1);
-		MaterialParams.AlbedoTextureIndex = 0;
-		ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
+		IndexBuffer.Init(reinterpret_cast<const uint32_t*>(Asset->Indices.data()), Asset->Indices.size() / 4);
 	}
+	else // R16_UINT
+	{
+		IndexBuffer.Init(reinterpret_cast<const uint16_t*>(Asset->Indices.data()), Asset->Indices.size() / 2);
+	}		
+
+	if (Asset->HasNormals)
+	{
+		CHECK(!Asset->Normals.empty());
+		NormalBuffer.Init(Asset->Normals.data(), Asset->Normals.size());
+	}
+
+	if (Asset->HasTangents)
+	{
+		CHECK(!Asset->Tangents.empty());
+		TangentBuffer.Init(Asset->Tangents.data(), Asset->Tangents.size());
+	}
+
+	if (Asset->HasBitangents)
+	{
+		CHECK(!Asset->Bitangents.empty());
+		BitangentBuffer.Init(Asset->Bitangents.data(), Asset->Bitangents.size());
+	}
+
+	if (Asset->HasTexcoords)
+	{
+		CHECK(!Asset->Texcoords.empty());
+		TexcoordBuffer.Init(Asset->Texcoords.data(), Asset->Texcoords.size());
+	}
+
+	if (!Asset->Meshlets.empty())
+	{
+		MeshletBuffer.Init(Asset->Meshlets.data(), Asset->Meshlets.size());
+	}
+
+	if (!Asset->UniqueVertexIndices.empty())
+	{
+		UniqueVertexIndexBuffer.Init(Asset->UniqueVertexIndices.data(), Asset->UniqueVertexIndices.size());
+	}
+
+	if (!Asset->PrimitiveIndices.empty())
+	{
+		PrimitiveIndexBuffer.Init(Asset->PrimitiveIndices.data(), Asset->PrimitiveIndices.size());
+	}
+
+	RTDMeshConstants_s MeshConstants = {};
+	MeshConstants.PositionBufSRVIndex = tpr::GetDescriptorIndex(PositionBuffer.BufferSRV);
+	MeshConstants.NormalBufSRVIndex = tpr::GetDescriptorIndex(NormalBuffer.BufferSRV);
+	MeshConstants.TangentBufSRVIndex = tpr::GetDescriptorIndex(TangentBuffer.BufferSRV);
+	MeshConstants.BitangentBufSRVIndex = tpr::GetDescriptorIndex(BitangentBuffer.BufferSRV);
+	MeshConstants.TexcoordBufSRVIndex = tpr::GetDescriptorIndex(TexcoordBuffer.BufferSRV);
+	MeshConstants.IndexBufSRVIndex = tpr::GetDescriptorIndex(IndexBuffer.BufferSRV);
+
+	MeshConstants.MeshletBufSRVIndex = tpr::GetDescriptorIndex(MeshletBuffer.BufferSRV);
+	MeshConstants.UniqueVertexIndexBufSRVIndex = tpr::GetDescriptorIndex(UniqueVertexIndexBuffer.BufferSRV);
+	MeshConstants.PrimitiveIndexBufSRVIndex = tpr::GetDescriptorIndex(PrimitiveIndexBuffer.BufferSRV);
+
+	ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
+
+	Meshes.reserve(Asset->Meshes.size());
+	for (const ModelAsset_s::Mesh_s& MeshFromAsset : Asset->Meshes)
+	{
+		RTDMesh_s Mesh = {};
+		Mesh.Init(MeshFromAsset.IndexOffset, MeshFromAsset.IndexCount);
+
+		Meshes.push_back(Mesh);
+	}
+
+	RTDMaterialParams_s MaterialParams = {};
+	MaterialParams.Albedo = float3(1, 1, 1);
+	MaterialParams.AlbedoTextureIndex = 0;
+	ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
 }
 
 void RTDModel_s::Draw(tpr::CommandList* CL)
 {
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 0u, GetDescriptorIndex(PositionBuffer.BufferSRV));
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 1u, GetDescriptorIndex(NormalBuffer.BufferSRV));
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 2u, GetDescriptorIndex(TangentBuffer.BufferSRV));
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 3u, GetDescriptorIndex(BitangentBuffer.BufferSRV));
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 4u, GetDescriptorIndex(TexcoordBuffer.BufferSRV));
-	CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 5u, GetDescriptorIndex(IndexBuffer.BufferSRV));
-
 	// Temp basic material for all meshes
 	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
+	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
 
 	for (const RTDMesh_s& Mesh : Meshes)
 	{
-		CL->SetGraphicsRootValue(RS_ROOTCONSTANTS, 6u, Mesh.IndexOffset);
+		CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
 
 		CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
 	}
@@ -219,9 +248,10 @@ tpr::RenderInitParams GetAppRenderParams()
 
 	Params.RootSigDesc.Flags = RootSignatureFlags::NONE;
 	Params.RootSigDesc.Slots.resize(RS_COUNT);
-	Params.RootSigDesc.Slots[RS_ROOTCONSTANTS] = RootSignatureSlot::ConstantsSlot(8u, 0);
+	Params.RootSigDesc.Slots[RS_DRAWCONSTANTS] = RootSignatureSlot::ConstantsSlot(DCS_COUNT, 0);
 	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
-	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(2, 0);
+	Params.RootSigDesc.Slots[RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(2, 0);
+	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(3, 0);
 	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
 	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
 
@@ -249,10 +279,16 @@ bool InitializeApp()
 
 	G.Model.Init(ModelAsset);
 
+	tpr::ShaderMacros Macros;
+	Macros.push_back({ "RS_DRAWCONSTANTS", RS_DRAWCONSTANTS });
+	Macros.push_back({ "RS_VIEW_BUF", RS_VIEW_BUF });
+	Macros.push_back({ "RS_MODEL_BUF", RS_MODEL_BUF });
+	Macros.push_back({ "RS_MAT_BUF", RS_MAT_BUF });
+
 	// Mesh PSO
 	{
-		VertexShader_t MeshVS = CreateVertexShader("Shaders/Mesh.hlsl");
-		PixelShader_t MeshPS = CreatePixelShader("Shaders/Mesh.hlsl");
+		VertexShader_t MeshVS = CreateVertexShader("Shaders/Mesh.hlsl", Macros);
+		PixelShader_t MeshPS = CreatePixelShader("Shaders/Mesh.hlsl", Macros);
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -266,8 +302,8 @@ bool InitializeApp()
 
 	// Deferred PSO
 	{
-		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl");
-		PixelShader_t DeferredPS = CreatePixelShader("Shaders/Deferred.hlsl");
+		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl", Macros);
+		PixelShader_t DeferredPS = CreatePixelShader("Shaders/Deferred.hlsl", Macros);
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)

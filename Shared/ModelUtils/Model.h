@@ -6,14 +6,19 @@
 #include <SurfMath.h>
 #include <vector>
 
-struct MeshAsset_s
+struct ModelAsset_s
 {
-	wchar_t MaterialPath[PathUtils::MaxPath];
+	struct Mesh_s
+	{
+		wchar_t MaterialPath[PathUtils::MaxPath];
 
-	uint32_t IndexOffset;
-	uint32_t IndexCount;
+		uint32_t IndexOffset;
+		uint32_t IndexCount;
 
-	uint32_t MeshletCount;	
+		uint32_t MeshletOffset;
+		uint32_t MeshletCount;
+	};
+
 	struct Meshlet_s
 	{
 		uint32_t VertCount;
@@ -21,16 +26,10 @@ struct MeshAsset_s
 		uint32_t PrimCount;
 		uint32_t PrimOffset;
 	};
-	std::vector<Meshlet_s> Meshlets;
-};
 
-struct ModelAsset_s
-{
 	uint32_t VertexCount = 0;
 	uint32_t IndexCount = 0;
-	uint32_t MeshCount = 0;
-	uint32_t UniqueIndexCount = 0;
-	uint32_t PrimitiveIndexCount = 0;
+	tpr::RenderFormat IndexFormat = tpr::RenderFormat::UNKNOWN;
 	bool HasNormals = false;
 	bool HasTangents = false;
 	bool HasBitangents = false;
@@ -39,10 +38,10 @@ struct ModelAsset_s
 	std::vector<float3> Normals;
 	std::vector<float4> Tangents;
 	std::vector<float3> Bitangents;
-	std::vector<float2> Texcoords;
-	tpr::RenderFormat IndexFormat = tpr::RenderFormat::UNKNOWN;
+	std::vector<float2> Texcoords;	
 	std::vector<uint8_t> Indices;
-	std::vector<MeshAsset_s> Meshes;
+	std::vector<Mesh_s> Meshes;
+	std::vector<Meshlet_s> Meshlets;
 	std::vector<uint8_t> UniqueVertexIndices;
 	std::vector<uint32_t> PrimitiveIndices; // 10 : 10 : 10
 

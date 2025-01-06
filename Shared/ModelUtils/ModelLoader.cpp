@@ -211,15 +211,9 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
             return false;
     }
 
-    OutModel.UniqueIndexCount = static_cast<uint32_t>(OutModel.UniqueVertexIndices.size());
-
-    OutModel.PrimitiveIndexCount = static_cast<uint32_t>(PrimitiveIndices.size());
     OutModel.PrimitiveIndices.resize(PrimitiveIndices.size());
 
-    for (uint32_t PrimIt = 0; PrimIt < OutModel.PrimitiveIndexCount; PrimIt++)
-    {
-        OutModel.PrimitiveIndices[PrimIt] = PrimitiveIndices[PrimIt].packed;
-    }
+    memcpy(OutModel.PrimitiveIndices.data(), PrimitiveIndices.data(), sizeof(uint32_t)* PrimitiveIndices.size());
 
     std::vector<std::wstring> MaterialPaths;
 
@@ -235,34 +229,35 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         MaterialPaths.push_back(MaterialPath);
     }
 
-    OutModel.MeshCount = static_cast<uint32_t>(IndexSubsets.size());
     OutModel.Meshes.resize(IndexSubsets.size());
     for (uint32_t SubsetIt = 0; SubsetIt < IndexSubsets.size(); SubsetIt++)
     {
-        MeshAsset_s& OutMesh = OutModel.Meshes[SubsetIt];
+        ModelAsset_s::Mesh_s& OutMesh = OutModel.Meshes[SubsetIt];
         const MeshProcessing::Subset_s& IndexSubset = IndexSubsets[SubsetIt];
         const MeshProcessing::Subset_s& MeshletSubset = MeshletSubsets[SubsetIt];
         OutMesh.IndexCount = IndexSubset.Count;
         OutMesh.IndexOffset = IndexSubset.Offset;
 
         OutMesh.MeshletCount = MeshletSubset.Count;
-        OutMesh.Meshlets.resize(MeshletSubset.Count);
+        OutMesh.MeshletOffset = MeshletSubset.Offset;
 
         if (SubsetIt < MaterialPaths.size())
         {
             wcscpy_s(OutMesh.MaterialPath, MaterialPaths[SubsetIt].c_str());
         }
+    }
 
-        for (uint32_t MeshletIt = 0, MeshletOffset = MeshletSubset.Offset; MeshletIt < MeshletSubset.Count; MeshletIt++, MeshletOffset++)
-        {
-            MeshAsset_s::Meshlet_s& OutMeshlet = OutMesh.Meshlets[MeshletIt];
-            const MeshProcessing::Meshlet_s& Meshlet = Meshlets[MeshletOffset];
+    OutModel.Meshlets.resize(Meshlets.size());
 
-            OutMeshlet.PrimCount = Meshlet.PrimCount;
-            OutMeshlet.PrimOffset = Meshlet.PrimOffset;
-            OutMeshlet.VertCount = Meshlet.VertCount;
-            OutMeshlet.VertOffset = Meshlet.VertOffset;
-        }
+    for (uint32_t MeshletIt = 0; MeshletIt < Meshlets.size(); MeshletIt++)
+    {
+        ModelAsset_s::Meshlet_s& OutMeshlet = OutModel.Meshlets[MeshletIt];
+        const MeshProcessing::Meshlet_s& Meshlet = Meshlets[MeshletIt];
+
+        OutMeshlet.PrimCount = Meshlet.PrimCount;
+        OutMeshlet.PrimOffset = Meshlet.PrimOffset;
+        OutMeshlet.VertCount = Meshlet.VertCount;
+        OutMeshlet.VertOffset = Meshlet.VertOffset;
     }
 
 #if 0

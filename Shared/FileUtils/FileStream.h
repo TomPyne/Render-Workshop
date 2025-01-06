@@ -84,6 +84,42 @@ struct FileStream_s
 		StreamArray(Target, 1);
 	}
 
+	template<typename T>
+	inline void Read(std::vector<T>* TargetVector, uint32_t KnownSize = 0u)
+	{
+		if (KnownSize == 0)
+		{
+			Read(&KnownSize);
+		}
+		TargetVector->resize(KnownSize);
+		ReadArray(TargetVector->data(), KnownSize);
+	}
+
+	template<typename T>
+	inline void Write(std::vector<T>* TargetVector, uint32_t KnownSize = 0u)
+	{
+		if (KnownSize == 0u)
+		{
+			KnownSize = static_cast<uint32_t>(TargetVector->size());
+			Write(&KnownSize);
+		}
+		WriteArray(TargetVector->data(), KnownSize);
+	}
+
+	template<typename T>
+	inline void Stream(std::vector<T>* TargetVector, uint32_t KnownSize = 0u)
+	{
+		switch (Mode)
+		{
+		case FileStreamMode_e::READ:
+			Read(TargetVector, KnownSize);
+			break;
+		case FileStreamMode_e::WRITE:
+			Write(TargetVector, KnownSize);
+			break;
+		}
+	}
+
 	bool IsOpen() const { return Open; }
 
 private:

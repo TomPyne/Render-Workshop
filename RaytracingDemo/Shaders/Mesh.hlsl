@@ -13,12 +13,20 @@ struct MeshData_s
 	uint BitangentBufSRVIndex;
 	uint TexcoordBufSRVIndex;
     uint IndexBufSRVIndex;
+    uint MeshletBufSRVIndex;
+    uint UniqueVertexIndexBufSRVIndex;
+    uint PrimitiveIndexBufSRVIndex;
+    float3 __pad;
+};
+
+struct DrawConstants_s
+{
     uint IndexOffset;
 };
 
-ConstantBuffer<MeshData_s> c_Mesh : register(b0);
+ConstantBuffer<DrawConstants_s> c_Draw : register(b0);
 ConstantBuffer<ViewData_s> c_View : register(b1);
-
+ConstantBuffer<MeshData_s> c_Mesh : register(b2);
 
 struct PS_INPUT
 {
@@ -36,7 +44,7 @@ StructuredBuffer<uint> t_sbuf_uint[1024] : register(t0, space3);
 
 void main(in uint VertexID : SV_VertexID, out PS_INPUT Output)
 {
-    uint Index = t_sbuf_uint[c_Mesh.IndexBufSRVIndex][c_Mesh.IndexOffset + VertexID];
+    uint Index = t_sbuf_uint[c_Mesh.IndexBufSRVIndex][c_Draw.IndexOffset + VertexID];
     float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][Index];
 
     float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][Index] : float3(0, 0, 0);
@@ -48,6 +56,14 @@ void main(in uint VertexID : SV_VertexID, out PS_INPUT Output)
 }
 
 #endif // _VS
+
+#ifdef _MS
+
+[NumThreads(128, 1, 1)]
+[OutputTopology("triangle")]
+void main(out PS_INPUT Output)
+
+#endif
 
 #ifdef _PS
 
@@ -63,7 +79,7 @@ struct PS_OUTPUT
     float4 Normal : SV_TARGET1;
 };
 
-ConstantBuffer<MaterialData> c_Material : register(b2);
+ConstantBuffer<MaterialData> c_Material : register(b3);
 Texture2D<float4> t_Tex2d[1024] : register(t0, space0);
 SamplerState s_ClampedSampler : register(s1);
 

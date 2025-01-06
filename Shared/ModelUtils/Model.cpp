@@ -24,80 +24,42 @@ bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsse
 
 	Stream.Stream(&Asset.VertexCount);
 	Stream.Stream(&Asset.IndexCount);
-	Stream.Stream(&Asset.MeshCount);
-	Stream.Stream(&Asset.UniqueIndexCount);
-	Stream.Stream(&Asset.PrimitiveIndexCount);
 	Stream.Stream(&Asset.HasNormals);
 	Stream.Stream(&Asset.HasTangents);
 	Stream.Stream(&Asset.HasBitangents);
 	Stream.Stream(&Asset.HasTexcoords);
+	Stream.Stream(&Asset.IndexFormat);
 
-	if (Writing)
-		Asset.Positions.resize(Asset.VertexCount);
-
-	Stream.StreamArray(Asset.Positions.data(), Asset.VertexCount);
+	Stream.Stream(&Asset.Positions, Asset.VertexCount);
 
 	if (Asset.HasNormals)
 	{
-		if (Writing)
-			Asset.Normals.resize(Asset.VertexCount);
-
-		Stream.StreamArray(Asset.Normals.data(), Asset.VertexCount);
+		Stream.Stream(&Asset.Normals, Asset.VertexCount);
 	}
 
 	if (Asset.HasTangents)
 	{
-		if (Writing)
-			Asset.Tangents.resize(Asset.VertexCount);
-
-		Stream.StreamArray(Asset.Tangents.data(), Asset.VertexCount);
+		Stream.Stream(&Asset.Tangents, Asset.VertexCount);
 	}
 
 	if (Asset.HasBitangents)
 	{
-		if (Writing)
-			Asset.Bitangents.resize(Asset.VertexCount);
-
-		Stream.StreamArray(Asset.Bitangents.data(), Asset.VertexCount);
+		Stream.Stream(&Asset.Bitangents, Asset.VertexCount);
 	}
 
 	if (Asset.HasTexcoords)
 	{
-		if (Writing)
-			Asset.Texcoords.resize(Asset.VertexCount);
-
-		Stream.StreamArray(Asset.Texcoords.data(), Asset.VertexCount);
-	}
-
-	Stream.Stream(&Asset.IndexFormat);
+		Stream.Stream(&Asset.Texcoords, Asset.VertexCount);
+	}	
 
 	size_t IndexBufByteCount = Asset.IndexFormat == tpr::RenderFormat::R32_UINT ? 4 * Asset.IndexCount : 2 * Asset.IndexCount;
 
-	if(Writing)
-		Asset.Indices.resize(IndexBufByteCount);
+	Stream.Stream(&Asset.Indices, IndexBufByteCount);
 
-	Stream.StreamArray(Asset.Indices.data(), IndexBufByteCount);
-
-	if (Writing)
-		Asset.Meshes.resize(Asset.MeshCount);
-
-	for (uint32_t MeshIt = 0; MeshIt < Asset.MeshCount; MeshIt++)
-	{
-		MeshAsset_s& Mesh = Asset.Meshes[MeshIt];
-
-		Stream.StreamArray(Mesh.MaterialPath, PathUtils::MaxPath);
-		Stream.Stream(&Mesh.IndexOffset);
-		Stream.Stream(&Mesh.IndexCount);
-		Stream.Stream(&Mesh.MeshletCount);
-
-		if (Mesh.MeshletCount)
-		{
-			if(Writing)
-				Mesh.Meshlets.resize(Mesh.MeshletCount);
-
-			Stream.StreamArray(Mesh.Meshlets.data(), Mesh.MeshletCount);
-		}
-	}
+	Stream.Stream(&Asset.Meshes);
+	Stream.Stream(&Asset.Meshlets);
+	Stream.Stream(&Asset.UniqueVertexIndices);
+	Stream.Stream(&Asset.PrimitiveIndices);
 
 	return true;
 }
