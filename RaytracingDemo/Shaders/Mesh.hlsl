@@ -98,18 +98,23 @@ uint3 UnpackPrimitive(uint Primitive)
     return uint3(Primitive & 0x3FF, (Primitive >> 10) & 0x3FF, (Primitive >> 20) & 0x3FF);
 }
 
-uint3 GetPrimitive(Meshlet Meshlet, uint Index)
+uint3 GetPrimitive(Meshlet_s Meshlet, uint Index)
 {
     return UnpackPrimitive(t_sbuf_uint[c_Mesh.PrimitiveIndexBufSRVIndex][Meshlet.PrimOffset + Index]);
+}
+
+uint GetVertexIndex(Meshlet_s Meshlet, uint LocalIndex)
+{
+    return t_sbuf_uint[c_Mesh.UniqueVertexIndexBufSRVIndex][LocalIndex + Meshlet.VertOffset];
 }
 
 [NumThreads(128, 1, 1)]
 [OutputTopology("triangle")]
 void main(
-    int uint GroupThreadID : SV_GroupThreadID,
+    in uint GroupThreadID : SV_GroupThreadID,
     in uint GroupID : SV_GroupID,
     out indices uint3 Triangles[126],
-    out vertices PixelInputs_s Verts)
+    out vertices PixelInputs_s Verts[64])
 {
     Meshlet_s Meshlet = t_sbuf_meshlet[c_Mesh.MeshletBufSRVIndex][c_Draw.MeshletOffset + GroupID];
 

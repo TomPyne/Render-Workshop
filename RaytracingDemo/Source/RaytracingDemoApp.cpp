@@ -134,7 +134,8 @@ struct Globals_s
 	FlyCamera Cam;
 
 	// Shaders
-	GraphicsPipelineStatePtr MeshPSO;
+	GraphicsPipelineStatePtr MeshVSPSO;
+	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
 } G;
 
@@ -279,16 +280,11 @@ bool InitializeApp()
 
 	G.Model.Init(ModelAsset);
 
-	tpr::ShaderMacros Macros;
-	Macros.push_back({ "RS_DRAWCONSTANTS", RS_DRAWCONSTANTS });
-	Macros.push_back({ "RS_VIEW_BUF", RS_VIEW_BUF });
-	Macros.push_back({ "RS_MODEL_BUF", RS_MODEL_BUF });
-	Macros.push_back({ "RS_MAT_BUF", RS_MAT_BUF });
-
 	// Mesh PSO
 	{
-		VertexShader_t MeshVS = CreateVertexShader("Shaders/Mesh.hlsl", Macros);
-		PixelShader_t MeshPS = CreatePixelShader("Shaders/Mesh.hlsl", Macros);
+		VertexShader_t MeshVS = CreateVertexShader("Shaders/Mesh.hlsl");
+		MeshShader_t MeshMS = CreateMeshShader("Shaders/Mesh.hlsl");
+		PixelShader_t MeshPS = CreatePixelShader("Shaders/Mesh.hlsl");
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -297,13 +293,18 @@ bool InitializeApp()
 			.VertexShader(MeshVS)
 			.PixelShader(MeshPS);
 
-		G.MeshPSO = CreateGraphicsPipelineState(PsoDesc);
+		G.MeshVSPSO = CreateGraphicsPipelineState(PsoDesc);
+
+		PsoDesc.VertexShader(VertexShader_t::INVALID)
+			.MeshShader(MeshMS);
+
+		G.MeshMSPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
 	// Deferred PSO
 	{
-		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl", Macros);
-		PixelShader_t DeferredPS = CreatePixelShader("Shaders/Deferred.hlsl", Macros);
+		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl");
+		PixelShader_t DeferredPS = CreatePixelShader("Shaders/Deferred.hlsl");
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -435,7 +436,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->SetGraphicsRootDescriptorTable(RS_SRV_TABLE);
 	}
 
-	cl->SetPipelineState(G.MeshPSO);
+	cl->SetPipelineState(G.MeshVSPSO);
 
 	G.Model.Draw(cl);
 
