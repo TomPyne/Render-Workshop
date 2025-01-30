@@ -78,28 +78,22 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 
 	G.LoadedModelAssets[CookedPath] = std::unique_ptr<ModelAsset_s>(Asset);
 
-	if (HasPathExtension(Path, L".rmdl"))
+	if (StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
 	{
-		if (!StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
-		{
-			G.LoadedModelAssets[CookedPath] = nullptr;
-			return nullptr;
-		}
-	}
-	else if (HasPathExtension(Path, L".obj"))
-	{
-		if (!LoadModelFromWavefront(Path.c_str(), *Asset))
-		{
-			G.LoadedModelAssets[CookedPath] = nullptr;
-			return nullptr;
-		}
-
-		// Write cooked asset to disk
-
-		StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
-
 		return Asset;
 	}
+
+	if (HasPathExtension(Path, L".obj"))
+	{
+		if (LoadModelFromWavefront(Path.c_str(), *Asset))
+		{
+			StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
+
+			return Asset;
+		}
+	}
+
+	G.LoadedModelAssets[CookedPath] = nullptr;
 
 	LOGERROR("Unsupported file format %S", GetPathExtension(Path).c_str());
 	return nullptr;
