@@ -15,12 +15,17 @@ struct FileStream_s
 	{
 		if (Mode == FileStreamMode_e::READ)
 		{
-			InputStream = std::ifstream(Path, std::ios::binary);
+			InputStream = std::ifstream(Path, std::ios::in | std::ios::binary | std::ios::ate);
 			Open = InputStream.is_open();
+			if (Open)
+			{
+				Size = static_cast<size_t>(InputStream.tellg());
+				InputStream.seekg(0, std::ios::beg);
+			}
 		}
 		else
 		{
-			OutputStream = std::ofstream(Path, std::ios::binary);
+			OutputStream = std::ofstream(Path, std::ios_base::out | std::ios::binary);
 			Open = OutputStream.is_open();
 		}
 	}
@@ -55,6 +60,7 @@ struct FileStream_s
 		if (Mode == FileStreamMode_e::WRITE)
 		{
 			OutputStream.write(reinterpret_cast<const char*>(Target), sizeof(T) * Count);
+			Size += sizeof(T) * Count;
 		}
 	}
 
@@ -70,10 +76,10 @@ struct FileStream_s
 		switch (Mode)
 		{
 		case FileStreamMode_e::READ:
-			InputStream.read(reinterpret_cast<char*>(Target), sizeof(T) * Count);
+			ReadArray(Target, Count);
 			break;
 		case FileStreamMode_e::WRITE:
-			OutputStream.write(reinterpret_cast<char*>(Target), sizeof(T) * Count);
+			WriteArray(Target, Count);
 			break;
 		}
 	}
@@ -120,15 +126,52 @@ struct FileStream_s
 		}
 	}
 
-	bool IsOpen() const { return Open; }
+	inline void Read(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	{
+		if (KnownSize == 0)
+		{
+			Read(&KnownSize);
+		}
+		TargetStr->resize(KnownSize);
+		ReadArray(TargetStr->data(), KnownSize);
+	}
 
-private:
+	template<typename T>
+	inline void Write(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	{
+		if (KnownSize == 0u)
+		{
+			KnownSize = static_cast<uint32_t>(TargetStr->size());
+			Write(&KnownSize);
+		}
+		WriteArray(TargetStr->data(), KnownSize);
+	}
+
+	template<typename T>
+	inline void Stream(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	{
+		switch (Mode)
+		{
+		case FileStreamMode_e::READ:
+			Read(TargetStr, KnownSize);
+			break;
+		case FileStreamMode_e::WRITE:
+			Write(TargetStr, KnownSize);
+			break;
+		}
+	}
+
+	inline bool IsOpen() const noexcept { return Open; }
+	inline size_t GetSize() const noexcept { return Size; }
+
+protected:
 	std::ofstream OutputStream;
 	std::ifstream InputStream;
 
 	FileStreamMode_e Mode;
 
 	bool Open = false;
+	size_t Size = 0;
 };
 
 struct IFileStream_s : public FileStream_s
@@ -136,6 +179,11 @@ struct IFileStream_s : public FileStream_s
 	explicit IFileStream_s(const std::wstring& Path)
 		: FileStream_s(Path, FileStreamMode_e::READ)
 	{
+	}
+
+	inline void Seek(size_t Offset)
+	{
+		InputStream.seekg(Offset);
 	}
 };
 

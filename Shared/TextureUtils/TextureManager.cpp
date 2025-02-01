@@ -1,13 +1,12 @@
 #include "TextureManager.h"
 
+#include "DDSTextureLoader.h"
 #include "FileUtils/FileStream.h"
 #include "FileUtils/PathUtils.h"
 #include "Logging/Logging.h"
 
 #include <algorithm>
-#include <fstream>
 #include <map>
-#include <Render/Binding.h>
 #include <Render/Textures.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -64,103 +63,156 @@ constexpr bool IsPowerOfTwo(int Num)
     return false;
 }
 
-TextureAsset_s* LoadTextureInternal(const char* FilePath, const wchar_t* WidePath, bool GenerateMips)
+bool StreamRTex(const wchar_t* FilePath, FileStreamMode_e Mode, TextureAsset_s* Asset)
 {
-    auto Found = G.LoadedTextureAssets.find(WidePath);
-    if (Found != G.LoadedTextureAssets.end())
+    CHECK(FilePath != nullptr);
+    CHECK(Asset != nullptr);
+
+    FileStream_s Stream(FilePath, Mode);
+
+    if (!Stream.IsOpen())
     {
-        return Found->second.get();
+        return false;
     }
+
+    Stream.Stream(&Asset->Version);
+    Stream.Stream(&Asset->Width);
+    Stream.Stream(&Asset->Height);
+    Stream.Stream(&Asset->DepthOrArraySize);
+    Stream.Stream(&Asset->Dimension);
+    Stream.Stream(&Asset->Format);
+    Stream.Stream(&Asset->MipCount);
+    Stream.Stream(&Asset->Cubemap);
+    Stream.Stream(&Asset->SubResourceInfos);
+    Stream.Stream(&Asset->Data);
+    Stream.Stream(&Asset->SourcePath);
+
+    return true;
+}
+
+bool LoadRTexTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
+{
+    return StreamRTex(FilePath, FileStreamMode_e::READ, Asset);
+}
+
+bool LoadSTBITexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    CHECK(Asset != nullptr);
 
     int X, Y, Comp;
     void* TexData = stbi_load(FilePath, &X, &Y, &Comp, 4);
 
     if (!TexData)
     {
-        LOGERROR("Failed to load texture %s", FilePath);
-        return {};
+        return FAILMSG("Failed to load texture %s", FilePath);
     }
 
-    //ASSERTMSG(Comp == 4, "Loaded texture does not have the required component count of 4 (%i)", Comp);
+    Asset->Width = X;
+    Asset->Height = Y;
+    Asset->DepthOrArraySize = 1;
+    Asset->Dimension = TextureAssetDimension_e::TWODIM;
+    Asset->Format = tpr::RenderFormat::R8G8B8A8_UNORM;
+    Asset->MipCount = 1;
+    Asset->Cubemap = false;
 
-    if (GenerateMips)
+    size_t NumBytes, RowBytes;
+    tpr::GetTextureSurfaceInfo(Asset->Width, Asset->Height, Asset->Format, &NumBytes, &RowBytes);
+    TextureAssetSubResource_s Res;
+    Res.DataOffset = 0;
+    Res.RowPitch = static_cast<uint32_t>(RowBytes);
+    Res.SlicePitch = static_cast<uint32_t>(NumBytes);
+
+    Asset->SubResourceInfos.emplace_back(Res);
+
+    Asset->Data.resize(NumBytes);
+    memcpy(Asset->Data.data(), TexData, NumBytes);
+
+    STBI_FREE(TexData);
+
+    return true;
+}
+
+bool LoadPNGTexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    return LoadSTBITexture(FilePath, Asset);
+}
+
+bool LoadBMPTexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    return LoadSTBITexture(FilePath, Asset);
+}
+
+// TODO: Currently converts to LDR on return, we will want to retain hdr
+bool LoadHDRTexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    return LoadSTBITexture(FilePath, Asset);
+}
+
+bool LoadTGATexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    return LoadSTBITexture(FilePath, Asset);
+}
+
+bool LoadJPEGTexture(const char* FilePath, TextureAsset_s* Asset)
+{
+    return LoadSTBITexture(FilePath, Asset);
+}
+
+TextureAsset_s* LoadTextureInternal(const char* FilePath, const wchar_t* WidePath, bool GenerateMips)
+{
+    std::wstring CookedPath = ReplacePathExtension(WidePath, L"rtex");
+
+    auto Found = G.LoadedTextureAssets.find(CookedPath);
+    if (Found != G.LoadedTextureAssets.end())
     {
-        if (!IsPowerOfTwo(X) || !IsPowerOfTwo(Y))
-        {
-            LOGWARNING("Unsupported: Texture %s cannot generate mips as it is not power of 2 sized");
-            GenerateMips = false;
-        }
-    }
-
-    uint32_t MipX = static_cast<uint32_t>(X);
-    uint32_t MipY = static_cast<uint32_t>(Y);
+        return Found->second.get();
+    }    
 
     TextureAsset_s* Asset = new TextureAsset_s;
-    G.LoadedTextureAssets.emplace(std::wstring(WidePath), std::unique_ptr<TextureAsset_s>(Asset));
+    G.LoadedTextureAssets.emplace(std::wstring(CookedPath), std::unique_ptr<TextureAsset_s>(Asset));
 
-    const tpr::RenderFormat TextureFormat = tpr::RenderFormat::R8G8B8A8_UNORM;
+    std::wstring Extension = GetPathExtension(WidePath);
 
-    size_t RowPitch, SlicePitch;
-    CalculateTexturePitch(TextureFormat, MipX, MipY, &RowPitch, &SlicePitch);
-
-    Asset->MipPixels.push_back({});
-    Asset->MipPixels[0].resize(SlicePitch);
-
-    std::memcpy(Asset->MipPixels[0].data(), TexData, SlicePitch);
-
-    if (GenerateMips)
+    bool Success = LoadRTexTexture(WidePath, Asset);
+    
+    if(!Success)
     {
-        const uint8_t* LastMipData = Asset->MipPixels[0].data();
-
-        while (MipX >= 2 && MipY >= 2)
+        if (Extension == L"png")
         {
-            MipX /= 2u;
-            MipY /= 2u;
-
-            CalculateTexturePitch(TextureFormat, MipX, MipY, &RowPitch, &SlicePitch);
-
-            Asset->MipPixels.push_back({});
-            Asset->MipPixels.back().resize(SlicePitch);
-            uint8_t* CurrentMipData = Asset->MipPixels.back().data();
-
-            for (uint32_t YIt = 0u; YIt < MipY; YIt++)
-            {
-                for (uint32_t XIt = 0u; XIt < MipX * 4; XIt++)
-                {
-                    float Sample00 = static_cast<float>(LastMipData[(YIt * 2) * (MipX * 2 * 4) + (XIt * 2)]) / 255.0f;
-                    float Sample01 = static_cast<float>(LastMipData[(YIt * 2) * (MipX * 2 * 4) + (XIt * 2 + 1)]) / 255.0f;
-                    float Sample10 = static_cast<float>(LastMipData[(YIt * 2 + 1) * (MipX * 2 * 4) + (XIt * 2)]) / 255.0f;
-                    float Sample11 = static_cast<float>(LastMipData[(YIt * 2 + 1) * (MipX * 2 * 4) + (XIt * 2 + 1)]) / 255.0f;
-                    CurrentMipData[YIt * MipY * 4 + XIt] = static_cast<uint8_t>(((Sample00 + Sample01 + Sample10 + Sample11) / 4.0f) * 255.0f);
-                }
-            }
-
-            LastMipData = CurrentMipData;
+            Success = LoadPNGTexture(FilePath, Asset);
         }
-    }
-
-    // Write generated asset to disk
-    {
-        Asset->SourcePath = ReplacePathExtension(WidePath, L"rtex");
-
-        OFileStream_s Stream(Asset->SourcePath);
-
-        if (Stream.IsOpen())
+        else if (Extension == L"bmp")
         {
-            Stream.Write(&Asset->Width);
-            Stream.Write(&Asset->Height);
-            Stream.Write(&Asset->Format);
-            Stream.Write(&Asset->MipCount);
-
-            for (const auto& AssetMipData : Asset->MipPixels)
-            {
-                Stream.WriteArray(AssetMipData.data(), AssetMipData.size());
-            }
+            Success = LoadBMPTexture(FilePath, Asset);
+        }
+        else if (Extension == L"hdr")
+        {
+            Success = LoadHDRTexture(FilePath, Asset);
+        }
+        else if (Extension == L"tga")
+        {
+            Success = LoadTGATexture(FilePath, Asset);
+        }
+        else if (Extension == L"jpeg" || Extension == L"jpg")
+        {
+            Success = LoadJPEGTexture(FilePath, Asset);
+        }
+        else if (Extension == L"dds")
+        {
+            Success = LoadDDSTexture(WidePath, Asset);
         }
         else
         {
-            LOGERROR("Failed to write texture asset file: %S", Asset->SourcePath);
+            LOGERROR("Unsupported texture extension: %S ", WidePath);
+            return nullptr;
         }
+    }
+
+    Asset->SourcePath = WidePath;
+
+    if (Extension != L"rtex")
+    {
+        StreamRTex(CookedPath.c_str(), FileStreamMode_e::WRITE, Asset);
     }
 
     return Asset;
@@ -170,49 +222,8 @@ TextureAsset_s* LoadTextureAsset(const std::wstring& FilePath)
 {
     TextureAsset_s* Asset = nullptr;
 
-    if (HasPathExtension(FilePath, L".rtex")) // Load from asset
-    {
-        IFileStream_s Stream(FilePath);
-        if (!Stream.IsOpen())
-        {
-            LOGERROR("Invalid path, has the texture been generated?");
-            return nullptr;
-        }
-
-        Asset = new TextureAsset_s;
-        G.LoadedTextureAssets.emplace(FilePath, std::unique_ptr<TextureAsset_s>(Asset));
-
-        Stream.Read(&Asset->Width);
-        Stream.Read(&Asset->Height);
-        Stream.Read(&Asset->Format);
-        Stream.Read(&Asset->MipCount);
-
-        Asset->MipPixels.resize(Asset->MipCount);
-
-        uint32_t MipWidth = Asset->Width;
-        uint32_t MipHeight = Asset->Height;
-        for (uint32_t MipIt = 0; MipIt < Asset->MipCount; MipIt++)
-        {
-            CHECK(MipWidth >= 1 && MipHeight >= 1);
-
-            size_t RowPitch, SlicePitch;
-            CalculateTexturePitch(Asset->Format, MipWidth, MipHeight, &RowPitch, &SlicePitch);
-
-            Asset->MipPixels[MipIt].resize(SlicePitch);
-
-            Stream.ReadArray(Asset->MipPixels[MipIt].data(), SlicePitch);
-
-            MipWidth /= 2;
-            MipHeight /= 2;
-        }
-
-        Asset->SourcePath = FilePath;
-    }
-    else // a source asset path, generate an asset
-    {
-        std::string NarrowPath = WideToNarrow(FilePath);
-        Asset = LoadTextureInternal(NarrowPath.c_str(), FilePath.c_str(), false);
-    }
+    std::string NarrowPath = WideToNarrow(FilePath);
+    Asset = LoadTextureInternal(NarrowPath.c_str(), FilePath.c_str(), false);
 
     return Asset;
 }

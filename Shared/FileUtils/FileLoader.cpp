@@ -33,30 +33,49 @@ long GetFileSize(FILE* File)
     return Size;
 }
 
-bool LoadBinaryFile(const char* Path, File_s& OutFile)
+File_s LoadBinaryFile(FILE* File)
 {
-    FILE* File = nullptr;
-
-    if (fopen_s(&File, Path, "rb") != 0)
-    {
-        return false;
-    }
-
     if (!File)
     {
-        return false;
+        return {};
     }
+
+    File_s LoadedFile;
 
     long FileSize = GetFileSize(File);
 
     if (FileSize > 0)
     {
-        OutFile.Bytes.resize(static_cast<size_t>(FileSize));
+        LoadedFile.Bytes.resize(static_cast<size_t>(FileSize));
 
-        fread_s(OutFile.Bytes.data(), OutFile.Bytes.size(), sizeof(uint8_t), OutFile.Bytes.size(), File);
+        fread_s(LoadedFile.Bytes.data(), LoadedFile.Bytes.size(), sizeof(uint8_t), LoadedFile.Bytes.size(), File);
     }
 
     fclose(File);
 
-    return true;
+    return LoadedFile;
+}
+
+File_s LoadBinaryFile(const char* Path)
+{   
+    FILE* File = nullptr;
+
+    if (fopen_s(&File, Path, "rb") != 0)
+    {
+        return {};
+    }
+
+    return LoadBinaryFile(File);
+}
+
+File_s LoadBinaryFile(const wchar_t* Path)
+{
+    FILE* File = nullptr;
+
+    if (_wfopen_s(&File, Path, L"rb") != 0)
+    {
+        return {};
+    }
+
+    return LoadBinaryFile(File);
 }

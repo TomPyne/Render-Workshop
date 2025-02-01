@@ -13,8 +13,6 @@ struct ModelGlobals
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
 {
-	const bool Writing = Mode == FileStreamMode_e::WRITE;
-
 	FileStream_s Stream(Path, Mode);
 
 	if (!Stream.IsOpen())
