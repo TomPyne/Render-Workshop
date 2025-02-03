@@ -1,4 +1,6 @@
 #include "Model.h"
+
+#include "Assets/AssetConfig.h"
 #include "FileUtils/PathUtils.h"
 #include "FileUtils/FileStream.h"
 #include "Logging/Logging.h"
@@ -76,9 +78,12 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 
 	G.LoadedModelAssets[CookedPath] = std::unique_ptr<ModelAsset_s>(Asset);
 
-	if (StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
+	if (!GAssetConfig.SkipCookedLoading)
 	{
-		return Asset;
+		if (StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
+		{
+			return Asset;
+		}
 	}
 
 	if (HasPathExtension(Path, L".obj"))

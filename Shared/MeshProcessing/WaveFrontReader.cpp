@@ -29,7 +29,7 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
     static const size_t MAX_POLY = 64;
 
     std::wifstream InFile(FileName);
-    if (!ENSUREMSG(!InFile.fail(), "File not found"))
+    if (!ENSUREMSG(!InFile.fail(), "File not found: %S", FileName))
     {
         return false;
     }

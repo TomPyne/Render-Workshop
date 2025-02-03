@@ -2,10 +2,10 @@
 #include <SurfMath.h>
 #include "imgui.h"
 
+#include <Assets/AssetConfig.h>
 #include <Camera/FlyCamera.h>
 #include <Logging/Logging.h>
 #include <ModelUtils/Model.h>
-#include <ModelUtils/ModelLoader.h>
 
 using namespace tpr;
 
@@ -95,7 +95,7 @@ struct RTDModel_s
 
 	void Init(const ModelAsset_s* Asset);
 
-	void Draw(tpr::CommandList* CL);
+	void Draw(tpr::CommandList* CL) const;
 };
 
 enum RootSigSlots
@@ -111,7 +111,7 @@ enum RootSigSlots
 
 struct Globals_s
 {
-	RTDModel_s Model;
+	std::vector<RTDModel_s> Models;
 
 	// Targets
 	uint32_t ScreenWidth = 0;
@@ -227,7 +227,7 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 	ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
 }
 
-void RTDModel_s::Draw(tpr::CommandList* CL)
+void RTDModel_s::Draw(tpr::CommandList* CL) const
 {
 	// Temp basic material for all meshes
 	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
@@ -280,20 +280,35 @@ tpr::RenderInitParams GetAppRenderParams()
 
 bool InitializeApp()
 {
+	GAssetConfig.SkipCookedLoading = true;
+
 	if (!ENSUREMSG(Render_IsBindless(), "Only Bindless renderer supported for app"))
 	{
 		return false;
 	}
 
-	ModelAsset_s* ModelAsset = LoadModel(L"Assets/Rungholt.obj");
-
-	if (!ModelAsset)
+	std::vector<std::wstring> ModelPaths =
 	{
-		LOGERROR("Failed to load model");
-		return false;
-	}
+		///L"Assets/Models/Bistro_Building_01.obj",
+		//L"Assets/Models/Bistro_Lantern_Wind.obj",
+		//L"Assets/Models/Bistro_Manhole.obj",
+		L"Assets/Models/Bistro_Street.obj",
+		//L"Assets/Models/Bistro_Street_NormalFix.obj",
+	};
 
-	G.Model.Init(ModelAsset);
+	for (const std::wstring& Path : ModelPaths)
+	{
+		ModelAsset_s* ModelAsset = LoadModel(Path);
+
+		if (!ModelAsset)
+		{
+			LOGERROR("Failed to load model");
+			continue;
+		}
+		RTDModel_s Model;
+		Model.Init(ModelAsset);
+		G.Models.emplace_back(Model);
+	}
 
 	// Mesh PSO
 	{
@@ -464,7 +479,11 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->SetPipelineState(G.MeshVSPSO);
 	}
 
-	G.Model.Draw(cl);
+	for (const RTDModel_s& Model : G.Models)
+	{
+		Model.Draw(cl);
+	}
+	
 
 	// Transition for deferred pass
 	{

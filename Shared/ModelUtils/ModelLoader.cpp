@@ -63,25 +63,53 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     OutModel.IndexFormat = tpr::RenderFormat::R32_UINT;
     const uint32_t TriCount = OutModel.IndexCount / 3;
 
-    std::vector<float3> PositionReorder;
-    PositionReorder.resize(OutModel.VertexCount);
-
     std::vector<uint8_t> IndexReorder;
     IndexReorder.resize(OutModel.IndexCount * sizeof(uint32_t));
 
     std::vector<uint32_t> FaceRemap;
-    FaceRemap.resize(TriCount);
-
-    std::vector<uint32_t> VertexRemap;
-    VertexRemap.resize(OutModel.VertexCount);
-
-    std::vector<uint32_t> DupedVerts;
+    FaceRemap.resize(TriCount);   
 
     {
         ScopeTimer_s ScopeTimer("Clean and sort mesh by attributes");
 
+        std::vector<uint32_t> DupedVerts;
+
         if (!ENSUREMSG(MeshProcessing::CleanMesh(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.VertexCount, Attributes.data(), DupedVerts, true), "CleanMesh failed"))
             return false;
+
+        {
+            std::vector<float3> PositionReorder;
+            PositionReorder.resize(OutModel.VertexCount + DupedVerts.size());
+
+            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Positions.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), nullptr, PositionReorder.data()), "FinalizeVertices(Position) failed"))
+                return false;
+
+            std::swap(OutModel.Positions, PositionReorder);
+
+            if (Reader.HasNormals)
+            {
+                std::vector<float3> NormalReorder;
+                NormalReorder.resize(OutModel.VertexCount + DupedVerts.size());
+
+                if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Normals.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), nullptr, NormalReorder.data()), "FinalizeVertices(Normal) failed"))
+                    return false;
+
+                std::swap(OutModel.Normals, NormalReorder);
+            }
+
+            if (Reader.HasTexcoords)
+            {
+                std::vector<float2> UVReorder;
+                UVReorder.resize(OutModel.VertexCount + DupedVerts.size());
+
+                if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Texcoords.data(), sizeof(float2), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), nullptr, UVReorder.data()), "FinalizeVertices(UV) failed"))
+                    return false;
+
+                std::swap(OutModel.Texcoords, UVReorder);
+            }
+
+            OutModel.VertexCount += DupedVerts.size();
+        }
 
         if (!ENSUREMSG(MeshProcessing::AttributeSort(TriCount, Attributes.data(), FaceRemap.data()), "AttributeSort failed"))
             return false;
@@ -104,6 +132,9 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         std::swap(OutModel.Indices, IndexReorder);
     }
 
+    std::vector<uint32_t> VertexRemap;
+    VertexRemap.resize(OutModel.VertexCount);
+
     {
         ScopeTimer_s ScopeTimer("Optimise mesh vertices");
 
@@ -117,7 +148,10 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         if (!ENSUREMSG(MeshProcessing::FinalizeIndices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, VertexRemap.data(), OutModel.VertexCount, reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "FinalizeIndices failed"))
             return false;
 
-        if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Positions.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), PositionReorder.data()), "FinalizeVertices(Position) failed"))
+        std::vector<float3> PositionReorder;
+        PositionReorder.resize(OutModel.VertexCount);
+
+        if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Positions.data(), sizeof(float3), OutModel.VertexCount, nullptr, 0u, VertexRemap.data(), PositionReorder.data()), "FinalizeVertices(Position) failed"))
             return false;
 
         std::swap(OutModel.Indices, IndexReorder);
@@ -128,7 +162,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
             std::vector<float3> NormalReorder;
             NormalReorder.resize(OutModel.VertexCount);
 
-            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Normals.data(), sizeof(float3), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), NormalReorder.data()), "FinalizeVertices(Normal) failed"))
+            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Normals.data(), sizeof(float3), OutModel.VertexCount, nullptr, 0u, VertexRemap.data(), NormalReorder.data()), "FinalizeVertices(Normal) failed"))
                 return false;
 
             std::swap(OutModel.Normals, NormalReorder);
@@ -139,7 +173,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
             std::vector<float2> UVReorder;
             UVReorder.resize(OutModel.VertexCount);
 
-            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Texcoords.data(), sizeof(float2), OutModel.VertexCount, DupedVerts.data(), DupedVerts.size(), VertexRemap.data(), UVReorder.data()), "FinalizeVertices(UV) failed"))
+            if (!ENSUREMSG(MeshProcessing::FinalizeVertices(OutModel.Texcoords.data(), sizeof(float2), OutModel.VertexCount, nullptr, 0u, VertexRemap.data(), UVReorder.data()), "FinalizeVertices(UV) failed"))
                 return false;
 
             std::swap(OutModel.Texcoords, UVReorder);

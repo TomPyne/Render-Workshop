@@ -14,3 +14,10 @@ imgui.ini
 *.rmat
 *.rmdl
 *.rtex
+
+# raw assets
+*.obj
+*.mtl
+*.png
+*.dds
+*.tga

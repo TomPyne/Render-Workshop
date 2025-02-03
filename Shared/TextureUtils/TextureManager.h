@@ -31,7 +31,7 @@ struct TextureAsset_s
 	uint32_t MipCount;
 	bool Cubemap;
 
-	//  Depth/array slice -> Mips
+	// Depth/array slice -> Mips
 	std::vector<TextureAssetSubResource_s> SubResourceInfos;
 
 	std::vector<uint8_t> Data;
