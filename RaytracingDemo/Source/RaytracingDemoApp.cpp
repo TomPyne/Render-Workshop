@@ -289,11 +289,10 @@ bool InitializeApp()
 
 	std::vector<std::wstring> ModelPaths =
 	{
-		///L"Assets/Models/Bistro_Building_01.obj",
-		//L"Assets/Models/Bistro_Lantern_Wind.obj",
-		//L"Assets/Models/Bistro_Manhole.obj",
+		L"Assets/Models/Bistro_Building_01.obj",
+		L"Assets/Models/Bistro_Manhole.obj",
 		L"Assets/Models/Bistro_Street.obj",
-		//L"Assets/Models/Bistro_Street_NormalFix.obj",
+		L"Assets/Models/Bistro_Street_NormalFix.obj",
 	};
 
 	for (const std::wstring& Path : ModelPaths)

@@ -77,6 +77,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         if (!ENSUREMSG(MeshProcessing::CleanMesh(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.VertexCount, Attributes.data(), DupedVerts, true), "CleanMesh failed"))
             return false;
 
+        if(!DupedVerts.empty())
         {
             std::vector<float3> PositionReorder;
             PositionReorder.resize(OutModel.VertexCount + DupedVerts.size());
