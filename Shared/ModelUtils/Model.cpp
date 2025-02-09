@@ -1,20 +1,12 @@
 #include "Model.h"
 
-#include "Assets/AssetConfig.h"
+#include "Assets/Assets.h"
 #include "FileUtils/PathUtils.h"
 #include "FileUtils/FileStream.h"
 #include "Logging/Logging.h"
 #include "ModelUtils/ModelLoader.h"
 
-#include <map>
-#include <shared_mutex>
-
-struct ModelGlobals
-{
-	std::map<std::wstring, std::unique_ptr<ModelAsset_s>> LoadedModelAssets;
-
-	std::shared_mutex Mutex;
-} G;
+AssetLibrary_s<ModelAsset_s> GModelAssets;
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
 {
@@ -71,27 +63,18 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 {
 	std::wstring CookedPath = ReplacePathExtension(Path, L"rmdl");
 
-	ModelAsset_s* Asset = nullptr;
-
+	if (ModelAsset_s* Found = GModelAssets.FindAsset(CookedPath))
 	{
-		auto Lock = std::unique_lock(G.Mutex);
-
-		auto FoundIt = G.LoadedModelAssets.find(CookedPath);
-		if (FoundIt != G.LoadedModelAssets.end())
-		{
-			return FoundIt->second.get();
-		}
-
-		Asset = new ModelAsset_s;
-
-		G.LoadedModelAssets[CookedPath] = std::unique_ptr<ModelAsset_s>(Asset);
+		return Found;
 	}
+
+	ModelAsset_s* Asset = new ModelAsset_s;
 
 	if (!GAssetConfig.SkipCookedLoading)
 	{
 		if (StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
 		{
-			return Asset;
+			return GModelAssets.CreateAsset(CookedPath, Asset);
 		}
 	}
 
@@ -104,14 +87,8 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 				StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
 			}
 
-			return Asset;
+			return GModelAssets.CreateAsset(CookedPath, Asset);;
 		}
-	}
-
-	{
-		auto Lock = std::unique_lock(G.Mutex);
-
-		G.LoadedModelAssets[CookedPath] = nullptr;
 	}
 
 	LOGERROR("Unsupported file format %S", GetPathExtension(Path).c_str());

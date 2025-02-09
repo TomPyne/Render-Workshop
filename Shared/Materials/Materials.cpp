@@ -1,30 +1,25 @@
 #include "Materials.h"
 
-#include "Assets/AssetConfig.h"
+#include "Assets/Assets.h"
 #include "FileUtils/FileStream.h"
 #include "FileUtils/PathUtils.h"
 #include "Logging/Logging.h"
 
-#include <fstream>
 #include <map>
+#include <shared_mutex>
 
-struct MaterialGlobals
-{
-	std::map<std::wstring, std::unique_ptr<MaterialAsset_s>> LoadedMaterialAssets;
-} G;
+AssetLibrary_s<MaterialAsset_s> GMaterialsAssets;
 
 MaterialAsset_s* GetDefaultMaterialAsset()
 {
     static const std::wstring DefaultMaterialAssetPath = L"DefaultMaterial";
 
-    auto Found = G.LoadedMaterialAssets.find(DefaultMaterialAssetPath);
-    if (Found != G.LoadedMaterialAssets.end())
+    if (MaterialAsset_s* Found = GMaterialsAssets.FindAsset(DefaultMaterialAssetPath))
     {
-        return Found->second.get();
+        return Found;
     }
 
-    MaterialAsset_s* DefaultMat = new MaterialAsset_s;
-    G.LoadedMaterialAssets.emplace(DefaultMaterialAssetPath, DefaultMat);
+    MaterialAsset_s* DefaultMat = GMaterialsAssets.CreateAsset(DefaultMaterialAssetPath);
 
     DefaultMat->Albedo = float3(0.8f, 0.2f, 0.2f);
     DefaultMat->SourcePath = DefaultMaterialAssetPath;
@@ -32,36 +27,53 @@ MaterialAsset_s* GetDefaultMaterialAsset()
     return DefaultMat;
 }
 
+bool StreamMaterialAsset(const std::wstring& FilePath, FileStreamMode_e Mode, MaterialAsset_s& Asset)
+{
+    FileStream_s File = FileStream_s(FilePath, Mode);
+
+    if (!File.IsOpen())
+    {
+        return false;
+    }
+
+    File.Stream(&Asset.Albedo);
+    File.Stream(&Asset.Metallic);
+    File.Stream(&Asset.Roughness);
+    File.StreamStr(&Asset.AlbedoTexture);
+    File.StreamStr(&Asset.NormalTexture);
+    File.StreamStr(&Asset.MetallicTexture);
+    File.StreamStr(&Asset.RoughnessTexture);
+
+    return true;
+
+}
+
 MaterialAsset_s* LoadMaterialAsset(const std::wstring& FilePath)
 {
     MaterialAsset_s* Asset = nullptr;
 
-    auto Found = G.LoadedMaterialAssets.find(FilePath);
-    if (Found != G.LoadedMaterialAssets.end())
+    if (MaterialAsset_s* Found = GMaterialsAssets.FindAsset(FilePath))
     {
-        Asset = Found->second.get();
+        return Found;
     }
 
     if (!Asset)
     {
+        Asset = new MaterialAsset_s;        
+
         if (HasPathExtension(FilePath, L".rmat")) // Load from asset
         {
-            IFileStream_s Stream(FilePath);
-            if (Stream.IsOpen())
+            if (StreamMaterialAsset(FilePath, FileStreamMode_e::READ, *Asset))
             {
-                Asset = new MaterialAsset_s;
-                G.LoadedMaterialAssets.emplace(FilePath, Asset);
-
-                Stream.Read(&Asset->Albedo);
-                Stream.ReadArray(&Asset->AlbedoTexturePath, PathUtils::MaxPath);
-
-                Asset->SourcePath = FilePath;
+                GMaterialsAssets.CreateAsset(FilePath, Asset);
             }
             else
             {
-                LOGERROR("Invalid path, has the material been generated?");
+                delete Asset;
+
                 Asset = GetDefaultMaterialAsset();
             }
+            
         }
         else
         {
@@ -73,20 +85,15 @@ MaterialAsset_s* LoadMaterialAsset(const std::wstring& FilePath)
     return Asset;
 }
 
-void WriteMaterialAsset(const std::wstring& FileName, const MaterialAsset_s* const Asset)
+void WriteMaterialAsset(const std::wstring& FileName, MaterialAsset_s* Asset)
 {
     if (GAssetConfig.SkipCookedWriting)
         return;
 
+    if (!Asset)
+        return;
+
     std::wstring Path = ReplacePathExtension(FileName, L"rmat");
 
-    // Cache
-    {
-        OFileStream_s Stream(Path);
-        if (ENSUREMSG(Stream.IsOpen(), "Failed to open material file for write %S", Path))
-        {
-            Stream.Write(&Asset->Albedo);
-            Stream.WriteArray(Asset->AlbedoTexturePath, PathUtils::MaxPath);
-        }
-    }
+    StreamMaterialAsset(FileName, FileStreamMode_e::WRITE, *Asset);
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <fstream>
+#include <string>
+#include <vector>
 
 enum class FileStreamMode_e
 {
@@ -126,7 +128,7 @@ struct FileStream_s
 		}
 	}
 
-	inline void Read(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	inline void ReadStr(std::wstring* TargetStr, uint32_t KnownSize = 0u)
 	{
 		if (KnownSize == 0)
 		{
@@ -136,8 +138,7 @@ struct FileStream_s
 		ReadArray(TargetStr->data(), KnownSize);
 	}
 
-	template<typename T>
-	inline void Write(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	inline void WriteStr(std::wstring* TargetStr, uint32_t KnownSize = 0u)
 	{
 		if (KnownSize == 0u)
 		{
@@ -147,16 +148,15 @@ struct FileStream_s
 		WriteArray(TargetStr->data(), KnownSize);
 	}
 
-	template<typename T>
-	inline void Stream(std::wstring* TargetStr, uint32_t KnownSize = 0u)
+	inline void StreamStr(std::wstring* TargetStr, uint32_t KnownSize = 0u)
 	{
 		switch (Mode)
 		{
 		case FileStreamMode_e::READ:
-			Read(TargetStr, KnownSize);
+			ReadStr(TargetStr, KnownSize);
 			break;
 		case FileStreamMode_e::WRITE:
-			Write(TargetStr, KnownSize);
+			WriteStr(TargetStr, KnownSize);
 			break;
 		}
 	}

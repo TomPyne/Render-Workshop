@@ -1,6 +1,6 @@
 add_library(Shared
-            "Assets/AssetConfig.cpp"
-            "Assets/AssetConfig.h"
+            "Assets/Assets.cpp"
+            "Assets/Assets.h"
             "Camera/Camera.cpp"
             "Camera/Camera.h"
             "Camera/FlyCamera.cpp"

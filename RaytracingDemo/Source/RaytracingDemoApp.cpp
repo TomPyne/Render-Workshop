@@ -2,7 +2,7 @@
 #include <SurfMath.h>
 #include "imgui.h"
 
-#include <Assets/AssetConfig.h>
+#include <Assets/Assets.h>
 #include <Camera/FlyCamera.h>
 #include <Logging/Logging.h>
 #include <ModelUtils/Model.h>

@@ -6,6 +6,7 @@
 #include "MeshProcessing/MeshProcessing.h"
 #include "MeshProcessing/WaveFrontReader.h"
 #include "Profiling/ScopeTimer.h"
+#include "StringUtils/StringUtils.h"
 
 #include <SurfMath.h>
 
@@ -255,11 +256,19 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     {
         MaterialAsset_s MaterialAsset;
         MaterialAsset.Albedo = Reader.Materials[MaterialIt].Diffuse;
-        wcscpy_s(MaterialAsset.AlbedoTexturePath, Reader.Materials[MaterialIt].DiffuseTexture.c_str());
+        MaterialAsset.Metallic = Reader.Materials[MaterialIt].Metallic;
+        MaterialAsset.Roughness = Reader.Materials[MaterialIt].Roughness;
+        MaterialAsset.AlbedoTexture = Reader.Materials[MaterialIt].DiffuseTexture;
+        MaterialAsset.NormalTexture = Reader.Materials[MaterialIt].NormalTexture;
+        MaterialAsset.MetallicTexture = Reader.Materials[MaterialIt].MetallicTexture;
+        MaterialAsset.RoughnessTexture = Reader.Materials[MaterialIt].RoughnessTexture;       
 
-        std::wstring MaterialPath = L"Assets/" + Reader.Materials[MaterialIt].Name + L".rmat";
+        std::wstring MaterialName = Replace(Reader.Materials[MaterialIt].Name, L'.', L'_');        
 
-        LOGINFO("Writing material: %S", MaterialPath.c_str());
+        std::wstring MaterialPath = L"Assets/" + MaterialName + L".rmat";
+
+        MaterialAsset.SourcePath = MaterialPath;
+
         WriteMaterialAsset(MaterialPath, &MaterialAsset);
 
         MaterialPaths.push_back(MaterialPath);

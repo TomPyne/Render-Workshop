@@ -1,3 +1,3 @@
-#include "AssetConfig.h"
+#include "Assets.h"
 
 AssetConfig_s GAssetConfig;

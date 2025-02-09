@@ -1,20 +1,20 @@
 #pragma once
 
-#include "FileUtils/PathUtils.h"
-
 #include <SurfMath.h>
-#include <Render/RenderTypes.h>
-#include <Render/Buffers.h>
-
 #include <string>
 
 struct MaterialAsset_s
 {
 	float3 Albedo;
-	wchar_t AlbedoTexturePath[PathUtils::MaxPath];
+	float Metallic;
+	float Roughness;
+	std::wstring AlbedoTexture;
+	std::wstring NormalTexture;
+	std::wstring MetallicTexture;
+	std::wstring RoughnessTexture;
 
 	std::wstring SourcePath;
 };
 
 MaterialAsset_s* LoadMaterialAsset(const std::wstring& FilePath);
-void WriteMaterialAsset(const std::wstring& FilePath, const MaterialAsset_s* const Asset);
+void WriteMaterialAsset(const std::wstring& FilePath, MaterialAsset_s* Asset);
