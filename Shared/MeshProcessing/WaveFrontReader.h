@@ -27,16 +27,22 @@ public:
 		float3 Emissive;
 		u32 Shininess;
 		float Alpha;
+		float BumpScale;
+		float Roughness;
+		float Metallic;
 
 		bool HasSpecular;
 		bool HasEmissive;
 
 		std::wstring Name;
-		std::wstring Texture;
+		std::wstring DiffuseTexture;
 		std::wstring NormalTexture;
 		std::wstring SpecularTexture;
 		std::wstring EmissiveTexture;
 		std::wstring RMATexture;
+		std::wstring RoughnessTexture;
+		std::wstring MetallicTexture;
+		std::wstring BumpTexture;
 
 		Material_s() noexcept :
 			Ambient(0.2f, 0.2f, 0.2f),
@@ -45,14 +51,18 @@ public:
 			Emissive(0.f, 0.f, 0.f),
 			Shininess(0),
 			Alpha(1.f),
+			BumpScale(1.f),
+			Roughness(1.f),
+			Metallic(1.f),
 			HasSpecular(false),
 			HasEmissive(false),
 			Name{},
-			Texture{},
+			DiffuseTexture{},
 			NormalTexture{},
 			SpecularTexture{},
 			EmissiveTexture{},
-			RMATexture{}
+			RMATexture{},
+			BumpTexture{}
 		{
 		}
 	};
@@ -82,4 +92,5 @@ private:
 
 	uint32_t AddVertex(uint32_t Hash, const Vertex_s* Vertex, VertexCache_t& Cache);
 	void LoadTexturePath(std::wifstream& InFile, const std::wstring& BasePath, std::wstring& Texture);
+	void LoadBumpTexturePath(std::wifstream& InFile, const std::wstring& BasePath, float& Scale, std::wstring& Texture);
 };

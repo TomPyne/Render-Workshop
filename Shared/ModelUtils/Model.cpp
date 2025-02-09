@@ -7,10 +7,13 @@
 #include "ModelUtils/ModelLoader.h"
 
 #include <map>
+#include <shared_mutex>
 
 struct ModelGlobals
 {
 	std::map<std::wstring, std::unique_ptr<ModelAsset_s>> LoadedModelAssets;
+
+	std::shared_mutex Mutex;
 } G;
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
@@ -68,15 +71,21 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 {
 	std::wstring CookedPath = ReplacePathExtension(Path, L"rmdl");
 
-	auto FoundIt = G.LoadedModelAssets.find(CookedPath);
-	if (FoundIt != G.LoadedModelAssets.end())
+	ModelAsset_s* Asset = nullptr;
+
 	{
-		return FoundIt->second.get();
+		auto Lock = std::unique_lock(G.Mutex);
+
+		auto FoundIt = G.LoadedModelAssets.find(CookedPath);
+		if (FoundIt != G.LoadedModelAssets.end())
+		{
+			return FoundIt->second.get();
+		}
+
+		Asset = new ModelAsset_s;
+
+		G.LoadedModelAssets[CookedPath] = std::unique_ptr<ModelAsset_s>(Asset);
 	}
-
-	ModelAsset_s* Asset = new ModelAsset_s;
-
-	G.LoadedModelAssets[CookedPath] = std::unique_ptr<ModelAsset_s>(Asset);
 
 	if (!GAssetConfig.SkipCookedLoading)
 	{
@@ -90,13 +99,20 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 	{
 		if (LoadModelFromWavefront(Path.c_str(), *Asset))
 		{
-			StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
+			if (!GAssetConfig.SkipCookedWriting)
+			{
+				StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
+			}
 
 			return Asset;
 		}
 	}
 
-	G.LoadedModelAssets[CookedPath] = nullptr;
+	{
+		auto Lock = std::unique_lock(G.Mutex);
+
+		G.LoadedModelAssets[CookedPath] = nullptr;
+	}
 
 	LOGERROR("Unsupported file format %S", GetPathExtension(Path).c_str());
 	return nullptr;

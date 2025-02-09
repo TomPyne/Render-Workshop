@@ -7,6 +7,8 @@
 #include <Logging/Logging.h>
 #include <ModelUtils/Model.h>
 
+#include <ppl.h>
+
 using namespace tpr;
 
 struct RTDMaterialParams_s
@@ -289,21 +291,97 @@ bool InitializeApp()
 
 	std::vector<std::wstring> ModelPaths =
 	{
+		//L"Assets/Models/Bistro_Aerial_B.obj",
+		//L"Assets/Models/Bistro_Aerial_C.obj",
+		//L"Assets/Models/Bistro_Ashtray.obj",
+		//L"Assets/Models/Bistro_Awning.obj",
+		//L"Assets/Models/Bistro_Awning_02.obj",
+		//L"Assets/Models/Bistro_Bollard.obj",
 		L"Assets/Models/Bistro_Building_01.obj",
-		L"Assets/Models/Bistro_Manhole.obj",
-		L"Assets/Models/Bistro_Street.obj",
-		L"Assets/Models/Bistro_Street_NormalFix.obj",
+		//L"Assets/Models/Bistro_Building_02.obj",
+		//L"Assets/Models/Bistro_Building_03.obj",
+		//L"Assets/Models/Bistro_Building_03_Mirrored.obj",
+		//L"Assets/Models/Bistro_Building_04.obj",
+		//L"Assets/Models/Bistro_Building_05.obj",
+		//L"Assets/Models/Bistro_Building_06.obj",
+		//L"Assets/Models/Bistro_Building_07.obj",
+		//L"Assets/Models/Bistro_Building_08.obj",
+		//L"Assets/Models/Bistro_Building_09.obj",
+		//L"Assets/Models/Bistro_Building_10.obj",
+		//L"Assets/Models/Bistro_Building_11.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Ball_Small.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Box_High.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_High.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_Low.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_Low_Bend.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Box_Low.obj",
+		//L"Assets/Models/Bistro_Bux_Hedge_Cylinder_Low.obj",
+		//L"Assets/Models/Bistro_Chair_01.obj",
+		//L"Assets/Models/Bistro_Chimney_01A.obj",
+		//L"Assets/Models/Bistro_Chimney_01B.obj",
+		//L"Assets/Models/Bistro_Chimney_02A.obj",
+		//L"Assets/Models/Bistro_Chimney_02B.obj",
+		//L"Assets/Models/Bistro_Chimney_02C.obj",
+		//L"Assets/Models/Bistro_Doors.obj",
+		//L"Assets/Models/Bistro_Electric_Box.obj",
+		//L"Assets/Models/Bistro_Flowers_01A.obj",
+		//L"Assets/Models/Bistro_Flowers_01B.obj",
+		//L"Assets/Models/Bistro_Flowers_01C.obj",
+		//L"Assets/Models/Bistro_Flowers_01D.obj",
+		//L"Assets/Models/Bistro_Flowers_01E.obj",
+		//L"Assets/Models/Bistro_Front_Banner.obj",
+		//L"Assets/Models/Bistro_Glass.obj",
+		//L"Assets/Models/Bistro_Italian_Cypress.obj",
+		//L"Assets/Models/Bistro_Ivy.obj",
+		//L"Assets/Models/Bistro_Lantern_Wind.obj",
+		//L"Assets/Models/Bistro_Linde_Tree_Large.obj",
+		//L"Assets/Models/Bistro_Liquor_Bottle_01A.obj",
+		//L"Assets/Models/Bistro_Main_Balcony.obj",
+		//L"Assets/Models/Bistro_Manhole.obj",
+		//L"Assets/Models/Bistro_Menu_Sign_01A.obj",
+		//L"Assets/Models/Bistro_Menu_Sign_01B.obj",
+		//L"Assets/Models/Bistro_Napkin_Holder.obj",
+		//L"Assets/Models/Bistro_Odometer.obj",
+		//L"Assets/Models/Bistro_Plant_Pot.obj",
+		//L"Assets/Models/Bistro_Shop_Sign_A.obj",
+		//L"Assets/Models/Bistro_Shop_Sign_B.obj",
+		//L"Assets/Models/Bistro_Shop_Sign_C.obj",
+		//L"Assets/Models/Bistro_Shop_Sign_D.obj",
+		//L"Assets/Models/Bistro_Shop_Sign_E.obj",
+		//L"Assets/Models/Bistro_Sidewalk_Barrier.obj",
+		//L"Assets/Models/Bistro_Spotlights.obj",
+		//L"Assets/Models/Bistro_Street.obj",
+		//L"Assets/Models/Bistro_Street_Light_A.obj",
+		//L"Assets/Models/Bistro_Street_Light_B.obj",
+		//L"Assets/Models/Bistro_Street_Light_Glass_A.obj",
+		//L"Assets/Models/Bistro_Street_Light_Glass_B.obj",
+		//L"Assets/Models/Bistro_Street_NormalFix.obj",
+		//L"Assets/Models/Bistro_Street_Pivot.obj",
+		//L"Assets/Models/Bistro_Street_Sign.obj",
+		//L"Assets/Models/Bistro_String_Light_Wind.obj",
+		//L"Assets/Models/Bistro_Table.obj",
+		//L"Assets/Models/Bistro_Traffic_Sign.obj",
+		//L"Assets/Models/Bistro_Trash_Can.obj",
+		//L"Assets/Models/Bistro_Trash_Can_Open.obj",
+		//L"Assets/Models/Bistro_Vespa.obj",
 	};
 
-	for (const std::wstring& Path : ModelPaths)
-	{
-		ModelAsset_s* ModelAsset = LoadModel(Path);
+	std::vector<ModelAsset_s*> ModelAssets;
+	ModelAssets.resize(ModelPaths.size());
 
+	Concurrency::parallel_for((size_t)0u, ModelPaths.size(), [&](size_t i)
+	{
+		ModelAssets[i] = LoadModel(ModelPaths[i]);
+	});
+
+	for (ModelAsset_s* ModelAsset : ModelAssets)
+	{
 		if (!ModelAsset)
 		{
 			LOGERROR("Failed to load model");
 			continue;
 		}
+
 		RTDModel_s Model;
 		Model.Init(ModelAsset);
 		G.Models.emplace_back(Model);

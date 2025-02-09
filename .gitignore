@@ -14,6 +14,7 @@ imgui.ini
 *.rmat
 *.rmdl
 *.rtex
+*.rscn
 
 # raw assets
 *.obj

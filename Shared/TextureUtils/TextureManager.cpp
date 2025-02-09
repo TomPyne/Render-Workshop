@@ -4,8 +4,8 @@
 #include "FileUtils/FileStream.h"
 #include "FileUtils/PathUtils.h"
 #include "Logging/Logging.h"
+#include "StringUtils/StringUtils.h"
 
-#include <algorithm>
 #include <map>
 #include <Render/Textures.h>
 
@@ -20,33 +20,6 @@ struct TextureManagerGlobals
 {
     std::map<std::wstring, std::unique_ptr<TextureAsset_s>> LoadedTextureAssets;
 } G;
-
-// Move this to another util folder if required
-std::string WideToNarrow(const std::wstring& WideStr)
-{
-    std::string NarrowStr;
-    NarrowStr.resize(WideStr.length());
-
-    std::transform(WideStr.begin(), WideStr.end(), NarrowStr.begin(), [](wchar_t WideChar)
-    {
-        return (char)WideChar;
-    });
-
-    return NarrowStr;
-}
-
-std::wstring NarrowToWide(const std::string& NarrowStr)
-{
-    std::wstring WideStr;
-    WideStr.resize(NarrowStr.length());
-
-    std::transform(NarrowStr.begin(), NarrowStr.end(), WideStr.begin(), [](char NarrowChar)
-    {
-        return (wchar_t)NarrowChar;
-    });
-
-    return WideStr;
-}
 
 constexpr bool IsPowerOfTwo(int Num)
 {

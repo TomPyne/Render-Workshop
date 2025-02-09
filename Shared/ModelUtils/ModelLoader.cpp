@@ -6,7 +6,6 @@
 #include "MeshProcessing/MeshProcessing.h"
 #include "MeshProcessing/WaveFrontReader.h"
 #include "Profiling/ScopeTimer.h"
-#include "TextureUtils/TextureManager.h"
 
 #include <SurfMath.h>
 
@@ -14,7 +13,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
 {
     WaveFrontReader_c Reader;
     {
-        ScopeTimer_s ScopeTimer("Loaded Wavefront file");
+        ScopeTimer_s ScopeTimer(L"Loaded Wavefront file " + std::wstring(WavefrontPath));
 
         if (!Reader.Load(WavefrontPath))
         {
@@ -70,7 +69,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     FaceRemap.resize(TriCount);   
 
     {
-        ScopeTimer_s ScopeTimer("Clean and sort mesh by attributes");
+        ScopeTimer_s ScopeTimer(L"Clean and sort mesh by attributes " + std::wstring(WavefrontPath));
 
         std::vector<uint32_t> DupedVerts;
 
@@ -122,7 +121,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     }
 
     {
-        ScopeTimer_s ScopeTimer("Optimise mesh faces");
+        ScopeTimer_s ScopeTimer(L"Optimise mesh faces " + std::wstring(WavefrontPath));
 
         if (!ENSUREMSG(MeshProcessing::OptimizeFacesLRU(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, FaceRemap.data()), "OptimizeFacesLRU failed"))
             return false;
@@ -137,14 +136,14 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     VertexRemap.resize(OutModel.VertexCount);
 
     {
-        ScopeTimer_s ScopeTimer("Optimise mesh vertices");
+        ScopeTimer_s ScopeTimer(L"Optimise mesh vertices " + std::wstring(WavefrontPath));
 
         if (!ENSUREMSG(MeshProcessing::OptimizeVertices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, OutModel.VertexCount, VertexRemap.data()), "OptimizeVertices failed"))
             return false;
     }
 
     {
-        ScopeTimer_s ScopeTimer("Finalise mesh buffers");
+        ScopeTimer_s ScopeTimer(L"Finalise mesh buffers " + std::wstring(WavefrontPath));
 
         if (!ENSUREMSG(MeshProcessing::FinalizeIndices(reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data()), TriCount, VertexRemap.data(), OutModel.VertexCount, reinterpret_cast<MeshProcessing::index_t*>(IndexReorder.data())), "FinalizeIndices failed"))
             return false;
@@ -184,7 +183,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     std::vector<MeshProcessing::Subset_s> Subsets;
 
     {
-        ScopeTimer_s ScopeTimer("Compute mesh subsets");
+        ScopeTimer_s ScopeTimer(L"Compute mesh subsets " + std::wstring(WavefrontPath));
 
         Subsets = MeshProcessing::ComputeSubsets(Attributes.data(), Attributes.size());
     }    
@@ -199,7 +198,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
 
     if (!Reader.HasNormals)
     {
-        ScopeTimer_s ScopeTimer("Compute mesh normals");
+        ScopeTimer_s ScopeTimer(L"Compute mesh normals " + std::wstring(WavefrontPath));
 
         OutModel.Normals.resize(OutModel.VertexCount);
 
@@ -211,7 +210,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
 
     if (Reader.HasNormals && Reader.HasTexcoords)
     {
-        ScopeTimer_s ScopeTimer("Compute mesh tangents");
+        ScopeTimer_s ScopeTimer(L"Compute mesh tangents " + std::wstring(WavefrontPath));
 
         OutModel.Tangents.resize(OutModel.VertexCount);
         OutModel.Bitangents.resize(OutModel.VertexCount);
@@ -228,7 +227,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     std::vector<MeshProcessing::Subset_s> MeshletSubsets;
 
     {
-        ScopeTimer_s ScopeTimer("Meshletize mesh");
+        ScopeTimer_s ScopeTimer(L"Meshletize mesh " + std::wstring(WavefrontPath));
 
         constexpr uint32_t MeshletMaxVerts = 128;
         constexpr uint32_t MeshletMaxPrims = 128;
@@ -256,7 +255,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
     {
         MaterialAsset_s MaterialAsset;
         MaterialAsset.Albedo = Reader.Materials[MaterialIt].Diffuse;
-        wcscpy_s(MaterialAsset.AlbedoTexturePath, Reader.Materials[MaterialIt].Texture.c_str());
+        wcscpy_s(MaterialAsset.AlbedoTexturePath, Reader.Materials[MaterialIt].DiffuseTexture.c_str());
 
         std::wstring MaterialPath = L"Assets/" + Reader.Materials[MaterialIt].Name + L".rmat";
 

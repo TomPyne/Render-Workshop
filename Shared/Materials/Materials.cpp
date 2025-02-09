@@ -1,5 +1,6 @@
 #include "Materials.h"
 
+#include "Assets/AssetConfig.h"
 #include "FileUtils/FileStream.h"
 #include "FileUtils/PathUtils.h"
 #include "Logging/Logging.h"
@@ -74,6 +75,9 @@ MaterialAsset_s* LoadMaterialAsset(const std::wstring& FilePath)
 
 void WriteMaterialAsset(const std::wstring& FileName, const MaterialAsset_s* const Asset)
 {
+    if (GAssetConfig.SkipCookedWriting)
+        return;
+
     std::wstring Path = ReplacePathExtension(FileName, L"rmat");
 
     // Cache

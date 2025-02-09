@@ -2,24 +2,13 @@
 #include "Logging/Logging.h"
 
 #include <cstring>
+#include <filesystem>
 
 // Get a path relative to the base objects path
 std::wstring GetFileRelativePath(const std::wstring& BasePath, const std::wstring& InPath)
 {
-    wchar_t FName[_MAX_FNAME] = {};
-    _wsplitpath_s(BasePath.c_str(), nullptr, 0, nullptr, 0, FName, _MAX_FNAME, nullptr, 0);
-
-    wchar_t ext[_MAX_EXT] = {};
-    _wsplitpath_s(InPath.c_str(), nullptr, 0, nullptr, 0, FName, _MAX_FNAME, ext, _MAX_EXT);
-
-    wchar_t drive[_MAX_DRIVE] = {};
-    wchar_t dir[_MAX_DIR] = {};
-    _wsplitpath_s(BasePath.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, nullptr, 0, nullptr, 0);
-
-    wchar_t szPath[260] = {};
-    _wmakepath_s(szPath, 260, drive, dir, FName, ext);
-
-    return szPath;
+    std::filesystem::path Path = std::filesystem::path(BasePath).parent_path() / std::filesystem::path(InPath);
+    return std::filesystem::relative(Path).wstring();
 }
 
 bool WaveFrontReader_c::Load(const wchar_t* FileName)
@@ -437,10 +426,24 @@ bool WaveFrontReader_c::LoadMTL(const wchar_t* FileName)
             InFile >> Illumination;
             CurMaterial->Specular = (Illumination == 2);
         }
+        else if (0 == wcscmp(Command.c_str(), L"Pr"))
+        {
+            float Roughness;
+            InFile >> Roughness;
+            CurMaterial->Roughness = Roughness;
+
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Pm"))
+        {
+            float Metallic;
+            InFile >> Metallic;
+            CurMaterial->Metallic = Metallic;
+
+        }
         else if (0 == wcscmp(Command.c_str(), L"map_Kd"))
         {
             // Diffuse texture
-            LoadTexturePath(InFile, BasePath, CurMaterial->Texture);
+            LoadTexturePath(InFile, BasePath, CurMaterial->DiffuseTexture);
         }
         else if (0 == wcscmp(Command.c_str(), L"map_Ks"))
         {
@@ -465,6 +468,20 @@ bool WaveFrontReader_c::LoadMTL(const wchar_t* FileName)
         {
             // RMA texture
             LoadTexturePath(InFile, BasePath, CurMaterial->RMATexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Pr"))
+        {
+            // Roughness texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->RoughnessTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Pm"))
+        {
+            // Metallic texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->MetallicTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Bump"))
+        {
+            LoadBumpTexturePath(InFile, BasePath, CurMaterial->BumpScale, CurMaterial->BumpTexture);
         }
         else
         {
@@ -544,6 +561,60 @@ void WaveFrontReader_c::LoadTexturePath(std::wifstream& InFile, const std::wstri
         Path = Path.substr(Pos + 1);
     }
 
+    if (!Path.empty())
+    {
+        Texture = GetFileRelativePath(BasePath, Path);
+    }
+}
+
+void WaveFrontReader_c::LoadBumpTexturePath(std::wifstream& InFile, const std::wstring& BasePath, float& Scale, std::wstring& Texture)
+{
+    wchar_t Buff[1024] = {};
+    InFile.getline(Buff, 1024, L'\n');
+    InFile.putback(L'\n');
+
+    std::wstring Path = Buff;
+
+    // Ignore any end-of-line comment
+    size_t Pos = Path.find_first_of(L'#');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos);
+    }
+
+    // Trim any trailing whitespace
+    Pos = Path.find_last_not_of(L" \t");
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos + 1);
+    }
+
+    Pos = Path.find_first_of('-');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(Pos + 1);
+
+        if (Path.starts_with(L"bm"))
+        {
+            Pos = Path.find_first_of(' ');
+            Path = Path.substr(Pos + 1);
+
+            Pos = Path.find_first_of(' ');
+            std::wstring BumpScaleStr = Path.substr(0, Path.find_first_of(' '));
+
+            Scale = _wtof(BumpScaleStr.c_str());
+
+            Path = Path.substr(Pos + 1);
+        }
+    }
+
+    // Texture path should be last element in line
+    Pos = Path.find_last_of(' ');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(Pos + 1);
+    }
+    
     if (!Path.empty())
     {
         Texture = GetFileRelativePath(BasePath, Path);

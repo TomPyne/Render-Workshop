@@ -33,10 +33,10 @@ struct MeshData_s
 ConstantBuffer<ViewData_s> c_View : register(b1);
 ConstantBuffer<MeshData_s> c_Mesh : register(b2);
 
-StructuredBuffer<float3> t_sbuf_f3[1024] : register(t0, space0);
-StructuredBuffer<float4> t_sbuf_f4[1024] : register(t0, space1);
-StructuredBuffer<float2> t_sbuf_f2[1024] : register(t0, space2);
-StructuredBuffer<uint> t_sbuf_uint[1024] : register(t0, space3);
+StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space0);
+StructuredBuffer<float4> t_sbuf_f4[8192] : register(t0, space1);
+StructuredBuffer<float2> t_sbuf_f2[8192] : register(t0, space2);
+StructuredBuffer<uint> t_sbuf_uint[8192] : register(t0, space3);
 
 PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
 {
@@ -90,7 +90,7 @@ struct DrawConstants_s
 
 ConstantBuffer<DrawConstants_s> c_Draw : register(b0);
 
-StructuredBuffer<Meshlet_s> t_sbuf_meshlet[1024] : register(t0, space4);
+StructuredBuffer<Meshlet_s> t_sbuf_meshlet[8192] : register(t0, space4);
 
 uint3 UnpackPrimitive(uint Primitive)
 {
@@ -149,7 +149,7 @@ struct PixelOutputs_s
 };
 
 ConstantBuffer<MaterialData_s> c_Material : register(b3);
-Texture2D<float4> t_Tex2d[1024] : register(t0, space0);
+Texture2D<float4> t_Tex2d[8192] : register(t0, space0);
 SamplerState s_ClampedSampler : register(s1);
 
 void main(in PixelInputs_s Input, out PixelOutputs_s Output)
