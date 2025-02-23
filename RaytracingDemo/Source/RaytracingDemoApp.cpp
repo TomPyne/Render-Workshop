@@ -6,22 +6,38 @@
 #include <Camera/FlyCamera.h>
 #include <Logging/Logging.h>
 #include <ModelUtils/Model.h>
+#include <Materials/Materials.h>
+#include <TextureUtils/TextureManager.h>
 
 #include <ppl.h>
 
 using namespace tpr;
 
+struct RTDTexture_s
+{
+	tpr::TexturePtr Texture = {};
+	tpr::ShaderResourceViewPtr SRV = {};
+};
+
 struct RTDMaterialParams_s
 {
 	float3 Albedo;
+	float __Pad0;
 	uint32_t AlbedoTextureIndex;
+	uint32_t NormalTextureIndex;
+	uint32_t MetallicRoughnessTextureIndex;
+	float __Pad1;
 };
 
 struct RTDMaterial_s
 {
 	RTDMaterialParams_s Params;
 
-	tpr::ConstantBuffer_t MaterialConstantBuffer;
+	RTDTexture_s* AlbedoTexture = nullptr;
+	RTDTexture_s* NormalTexture = nullptr;
+	RTDTexture_s* MetallicRoughnessTexture = nullptr;
+
+	tpr::ConstantBuffer_t MaterialConstantBuffer = {};
 };
 
 struct RTDBuffer_s
@@ -74,6 +90,8 @@ struct RTDMesh_s
 
 	uint32_t MeshletOffset;
 	uint32_t MeshletCount;
+
+	RTDMaterial_s* Material = nullptr;
 };
 
 struct RTDModel_s
@@ -92,8 +110,6 @@ struct RTDModel_s
 	tpr::ConstantBufferPtr ModelConstantBuffer;
 
 	std::vector<RTDMesh_s> Meshes;
-
-	RTDMaterial_s ModelMaterial;
 
 	void Init(const ModelAsset_s* Asset);
 
@@ -137,6 +153,10 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshVSPSO;
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
+
+	std::map<ModelAsset_s*, std::unique_ptr<RTDModel_s>> ModelMap;
+	std::map<MaterialAsset_s*, std::unique_ptr<RTDMaterial_s>> MaterialMap;
+	std::map<MaterialAsset_s*, std::unique_ptr<RTDTexture_s>> TextureMap;
 
 	bool UseMeshShaders = false;
 } G;
@@ -220,19 +240,22 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
 		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
 
+
+		
+
 		Meshes.push_back(Mesh);
 	}
 
 	RTDMaterialParams_s MaterialParams = {};
 	MaterialParams.Albedo = float3(1, 1, 1);
 	MaterialParams.AlbedoTextureIndex = 0;
-	ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
+	//ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
 }
 
 void RTDModel_s::Draw(tpr::CommandList* CL) const
 {
 	// Temp basic material for all meshes
-	CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
+	//CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
 	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
 
 	if (G.UseMeshShaders)
@@ -289,15 +312,17 @@ bool InitializeApp()
 		return false;
 	}
 
+	// First cook
+
 	std::vector<std::wstring> ModelPaths =
 	{
-		//L"Assets/Models/Bistro_Aerial_B.obj",
+		L"Assets/Models/Bistro_Aerial_B.obj",
 		//L"Assets/Models/Bistro_Aerial_C.obj",
 		//L"Assets/Models/Bistro_Ashtray.obj",
 		//L"Assets/Models/Bistro_Awning.obj",
 		//L"Assets/Models/Bistro_Awning_02.obj",
 		//L"Assets/Models/Bistro_Bollard.obj",
-		L"Assets/Models/Bistro_Building_01.obj",
+		//L"Assets/Models/Bistro_Building_01.obj",
 		//L"Assets/Models/Bistro_Building_02.obj",
 		//L"Assets/Models/Bistro_Building_03.obj",
 		//L"Assets/Models/Bistro_Building_03_Mirrored.obj",
@@ -382,9 +407,9 @@ bool InitializeApp()
 			continue;
 		}
 
-		RTDModel_s Model;
-		Model.Init(ModelAsset);
-		G.Models.emplace_back(Model);
+		G.ModelMap[ModelAsset] = std::make_unique<RTDModel_s>();
+
+		G.ModelMap[ModelAsset]->Init(ModelAsset);
 	}
 
 	// Mesh PSO

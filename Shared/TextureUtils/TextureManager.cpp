@@ -1,5 +1,6 @@
 #include "TextureManager.h"
 
+#include "Assets/Assets.h"
 #include "DDSTextureLoader.h"
 #include "FileUtils/FileStream.h"
 #include "FileUtils/PathUtils.h"
@@ -16,10 +17,7 @@
 // 1. Enqueue texture loads on a helper thread, return the Texture_t handle immediately.
 // 2. Default textures
 
-struct TextureManagerGlobals
-{
-    std::map<std::wstring, std::unique_ptr<TextureAsset_s>> LoadedTextureAssets;
-} G;
+AssetLibrary_s<TextureAsset_s> GTextureAssets;
 
 constexpr bool IsPowerOfTwo(int Num)
 {
@@ -135,14 +133,12 @@ TextureAsset_s* LoadTextureInternal(const char* FilePath, const wchar_t* WidePat
 {
     std::wstring CookedPath = ReplacePathExtension(WidePath, L"rtex");
 
-    auto Found = G.LoadedTextureAssets.find(CookedPath);
-    if (Found != G.LoadedTextureAssets.end())
+    if (TextureAsset_s* Found = GTextureAssets.FindAsset(CookedPath))
     {
-        return Found->second.get();
-    }    
+        return Found;
+    }
 
-    TextureAsset_s* Asset = new TextureAsset_s;
-    G.LoadedTextureAssets.emplace(std::wstring(CookedPath), std::unique_ptr<TextureAsset_s>(Asset));
+    TextureAsset_s* Asset = GTextureAssets.CreateAsset(CookedPath);
 
     std::wstring Extension = GetPathExtension(WidePath);
 

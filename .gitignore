@@ -11,10 +11,9 @@ imgui.ini
 *.pdb
 
 #cooked assets
-*.rmat
-*.rmdl
-*.rtex
-*.rscn
+*.hp_mdl
+*.hp_mtl
+*.hp_tex
 
 # raw assets
 *.obj

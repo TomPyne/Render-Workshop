@@ -48,4 +48,6 @@ struct ModelAsset_s
 	std::string SourcePath;
 };
 
+
+bool CookModel(const std::wstring& AssetPath, ModelAsset_s** OutAsset = nullptr);
 ModelAsset_s* LoadModel(const std::wstring& Path);

@@ -6,7 +6,8 @@
 
 struct AssetConfig_s
 {
-	bool SkipCookedLoading = false;
+	bool CookOnDemand = true;
+	bool SkipCookedLoading = false; // Remove this
 	bool SkipCookedWriting = false;
 };
 

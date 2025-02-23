@@ -6,6 +6,8 @@
 #include "Logging/Logging.h"
 #include "ModelUtils/ModelLoader.h"
 
+#include <filesystem>
+
 AssetLibrary_s<ModelAsset_s> GModelAssets;
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
@@ -59,38 +61,144 @@ bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsse
 	return true;
 }
 
-ModelAsset_s* LoadModel(const std::wstring& Path)
+void MakeDirectoryForCookedAsset(const std::wstring& CookedPath)
 {
-	std::wstring CookedPath = ReplacePathExtension(Path, L"rmdl");
+	std::filesystem::path ParentPath = std::filesystem::path(CookedPath).parent_path();
+	std::filesystem::create_directories(ParentPath);
+}
 
-	if (ModelAsset_s* Found = GModelAssets.FindAsset(CookedPath))
+bool IsSupportedSourceType(const std::wstring& ext)
+{
+	if (ext == L".obj")
 	{
-		return Found;
+		return true;
 	}
+
+	return false;
+}
+
+std::wstring GetAssetPath()
+{
+	return L"Assets/";
+}
+
+std::wstring GetCookedPath()
+{
+	return L"Cooked/";
+}
+
+bool IsAssetPath(const std::wstring& Path)
+{
+	return Path.starts_with(GetAssetPath());
+}
+
+bool IsCookedPath(const std::wstring& Path)
+{
+	return Path.starts_with(GetCookedPath());
+}
+
+std::wstring AssetPathToCookedPath(const std::wstring& AssetPath, const std::wstring& CookedExtension)
+{
+	std::wstring CookedAssetPath = GetCookedPath() + AssetPath.substr(GetAssetPath().size());
+	return ReplacePathExtension(CookedAssetPath, CookedExtension.c_str());
+}
+
+std::wstring GetModelCookedPath(const std::wstring& AssetPath)
+{
+	return AssetPathToCookedPath(AssetPath, L"hp_mdl");
+}
+
+bool CookModel(const std::wstring& AssetPath, ModelAsset_s** OutAsset)
+{
+	if (!IsAssetPath(AssetPath))
+	{		
+		return FAILMSG("%S needs to be in the Assets/ dir", AssetPath.c_str());
+	}
+
+	if (!IsSupportedSourceType(GetPathExtension(AssetPath)))
+	{
+		return FAILMSG("%S is not a supported source model extension", AssetPath.c_str());
+	}
+
+	std::wstring CookedAssetPath = GetModelCookedPath(AssetPath);
+
+	MakeDirectoryForCookedAsset(CookedAssetPath);
+
+	LOGINFO("Cooking %S to %S", AssetPath.c_str(), CookedAssetPath.c_str());
 
 	ModelAsset_s* Asset = new ModelAsset_s;
 
-	if (!GAssetConfig.SkipCookedLoading)
+	if (HasPathExtension(AssetPath, L".obj"))
 	{
-		if (StreamModelAsset(CookedPath, FileStreamMode_e::READ, *Asset))
-		{
-			return GModelAssets.CreateAsset(CookedPath, Asset);
-		}
-	}
-
-	if (HasPathExtension(Path, L".obj"))
-	{
-		if (LoadModelFromWavefront(Path.c_str(), *Asset))
+		if (LoadModelFromWavefront(AssetPath.c_str(), *Asset))
 		{
 			if (!GAssetConfig.SkipCookedWriting)
 			{
-				StreamModelAsset(CookedPath, FileStreamMode_e::WRITE, *Asset);
+				StreamModelAsset(CookedAssetPath, FileStreamMode_e::WRITE, *Asset);
 			}
-
-			return GModelAssets.CreateAsset(CookedPath, Asset);;
 		}
 	}
 
-	LOGERROR("Unsupported file format %S", GetPathExtension(Path).c_str());
+	if (OutAsset)
+	{
+		*OutAsset = Asset;
+	}
+	else
+	{
+		delete Asset;
+	}
+
+	return true;
+}
+
+ModelAsset_s* LoadModel(const std::wstring& Path)
+{
+	if (IsAssetPath(Path))
+	{
+		std::wstring CookedPath = GetModelCookedPath(Path);
+		if (ModelAsset_s* Found = GModelAssets.FindAsset(CookedPath))
+		{
+			return Found;
+		}
+
+		if (!GAssetConfig.CookOnDemand)
+		{
+			LOGERROR("Can't load asset %S when CookOnDemand is disabled", Path.c_str());
+			return nullptr;
+		}
+		else
+		{
+			ModelAsset_s* Asset = nullptr;
+			
+			if (!CookModel(Path, &Asset))
+			{
+				return nullptr;
+			}
+			else
+			{
+				CHECK(Asset != nullptr);
+
+				return GModelAssets.CreateAsset(CookedPath, Asset);
+			}
+		}
+	}
+	else if (IsCookedPath(Path))
+	{		
+		if (ModelAsset_s* Found = GModelAssets.FindAsset(Path))
+		{
+			return Found;
+		}
+
+		ModelAsset_s* Asset = new ModelAsset_s;
+
+		if (StreamModelAsset(Path, FileStreamMode_e::READ, *Asset))
+		{
+			return GModelAssets.CreateAsset(Path, Asset);
+		}
+
+		return GModelAssets.CreateAsset(Path, Asset);
+	}
+
+	LOGERROR("Could not find asset %S to load or cook", Path.c_str());
 	return nullptr;
 }
