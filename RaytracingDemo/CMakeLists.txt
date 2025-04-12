@@ -1,6 +1,7 @@
 function(create_proj projname rapi)
 	add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
 
+	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
 	target_link_libraries(${projname}${rapi} Shared)
 
@@ -16,6 +17,7 @@ function(create_proj projname rapi)
 	"${PROJECT_SOURCE_DIR}/Include"	
 	"${PROJECT_SOURCE_DIR}/Render"
 	"${PROJECT_SOURCE_DIR}/Shared"
+	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
 
 	target_sources(${projname}${rapi}

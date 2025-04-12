@@ -8,6 +8,7 @@
 
 #include <filesystem>
 
+#if 0
 AssetLibrary_s<ModelAsset_s> GModelAssets;
 
 bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsset_s& Asset)
@@ -202,3 +203,4 @@ ModelAsset_s* LoadModel(const std::wstring& Path)
 	LOGERROR("Could not find asset %S to load or cook", Path.c_str());
 	return nullptr;
 }
+#endif

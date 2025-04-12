@@ -3,13 +3,16 @@
 #include "Logging/Logging.h"
 #include "Materials/Materials.h"
 #include "Model.h"
+#if 0
 #include "MeshProcessing/MeshProcessing.h"
 #include "MeshProcessing/WaveFrontReader.h"
+#endif
 #include "Profiling/ScopeTimer.h"
 #include "StringUtils/StringUtils.h"
 
 #include <SurfMath.h>
 
+#if 0
 bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel)
 {
     WaveFrontReader_c Reader;
@@ -343,3 +346,4 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
 
     return true;
 }
+#endif

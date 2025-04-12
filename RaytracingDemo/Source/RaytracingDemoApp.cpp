@@ -9,6 +9,8 @@
 #include <Materials/Materials.h>
 #include <TextureUtils/TextureManager.h>
 
+#include <HPModel.h>
+
 #include <ppl.h>
 
 using namespace tpr;
@@ -21,11 +23,11 @@ struct RTDTexture_s
 
 struct RTDMaterialParams_s
 {
-	float3 Albedo;
+	float3 Albedo = float3(1, 1, 1);
 	float __Pad0;
-	uint32_t AlbedoTextureIndex;
-	uint32_t NormalTextureIndex;
-	uint32_t MetallicRoughnessTextureIndex;
+	uint32_t AlbedoTextureIndex = 0;
+	uint32_t NormalTextureIndex = 0;
+	uint32_t MetallicRoughnessTextureIndex = 0;
 	float __Pad1;
 };
 
@@ -111,7 +113,7 @@ struct RTDModel_s
 
 	std::vector<RTDMesh_s> Meshes;
 
-	void Init(const ModelAsset_s* Asset);
+	void Init(const HPModel_s* Asset);
 
 	void Draw(tpr::CommandList* CL) const;
 };
@@ -158,10 +160,13 @@ struct Globals_s
 	std::map<MaterialAsset_s*, std::unique_ptr<RTDMaterial_s>> MaterialMap;
 	std::map<MaterialAsset_s*, std::unique_ptr<RTDTexture_s>> TextureMap;
 
+	RTDMaterial_s DefaultMaterial = {};
+
 	bool UseMeshShaders = false;
+	bool ShowMeshID = false;
 } G;
 
-void RTDModel_s::Init(const ModelAsset_s* Asset)
+void RTDModel_s::Init(const HPModel_s* Asset)
 {
 	CHECK(Asset != nullptr);
 
@@ -232,30 +237,20 @@ void RTDModel_s::Init(const ModelAsset_s* Asset)
 	ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
 
 	Meshes.reserve(Asset->Meshes.size());
-	for (const ModelAsset_s::Mesh_s& MeshFromAsset : Asset->Meshes)
+	for (const HPModel_s::Mesh_s& MeshFromAsset : Asset->Meshes)
 	{
 		RTDMesh_s Mesh = {};
 		Mesh.IndexCount = MeshFromAsset.IndexCount;
 		Mesh.IndexOffset = MeshFromAsset.IndexOffset;
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
-		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
-
-
-		
+		Mesh.MeshletCount = MeshFromAsset.MeshletCount;		
 
 		Meshes.push_back(Mesh);
 	}
-
-	RTDMaterialParams_s MaterialParams = {};
-	MaterialParams.Albedo = float3(1, 1, 1);
-	MaterialParams.AlbedoTextureIndex = 0;
-	//ModelMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&MaterialParams);
 }
 
 void RTDModel_s::Draw(tpr::CommandList* CL) const
 {
-	// Temp basic material for all meshes
-	//CL->SetGraphicsRootCBV(RS_MAT_BUF, ModelMaterial.MaterialConstantBuffer);
 	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
 
 	if (G.UseMeshShaders)
@@ -316,100 +311,26 @@ bool InitializeApp()
 
 	std::vector<std::wstring> ModelPaths =
 	{
-		L"Assets/Models/Bistro_Aerial_B.obj",
-		//L"Assets/Models/Bistro_Aerial_C.obj",
-		//L"Assets/Models/Bistro_Ashtray.obj",
-		//L"Assets/Models/Bistro_Awning.obj",
-		//L"Assets/Models/Bistro_Awning_02.obj",
-		//L"Assets/Models/Bistro_Bollard.obj",
-		//L"Assets/Models/Bistro_Building_01.obj",
-		//L"Assets/Models/Bistro_Building_02.obj",
-		//L"Assets/Models/Bistro_Building_03.obj",
-		//L"Assets/Models/Bistro_Building_03_Mirrored.obj",
-		//L"Assets/Models/Bistro_Building_04.obj",
-		//L"Assets/Models/Bistro_Building_05.obj",
-		//L"Assets/Models/Bistro_Building_06.obj",
-		//L"Assets/Models/Bistro_Building_07.obj",
-		//L"Assets/Models/Bistro_Building_08.obj",
-		//L"Assets/Models/Bistro_Building_09.obj",
-		//L"Assets/Models/Bistro_Building_10.obj",
-		//L"Assets/Models/Bistro_Building_11.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Ball_Small.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Box_High.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_High.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_Low.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Box_Long_Low_Bend.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Box_Low.obj",
-		//L"Assets/Models/Bistro_Bux_Hedge_Cylinder_Low.obj",
-		//L"Assets/Models/Bistro_Chair_01.obj",
-		//L"Assets/Models/Bistro_Chimney_01A.obj",
-		//L"Assets/Models/Bistro_Chimney_01B.obj",
-		//L"Assets/Models/Bistro_Chimney_02A.obj",
-		//L"Assets/Models/Bistro_Chimney_02B.obj",
-		//L"Assets/Models/Bistro_Chimney_02C.obj",
-		//L"Assets/Models/Bistro_Doors.obj",
-		//L"Assets/Models/Bistro_Electric_Box.obj",
-		//L"Assets/Models/Bistro_Flowers_01A.obj",
-		//L"Assets/Models/Bistro_Flowers_01B.obj",
-		//L"Assets/Models/Bistro_Flowers_01C.obj",
-		//L"Assets/Models/Bistro_Flowers_01D.obj",
-		//L"Assets/Models/Bistro_Flowers_01E.obj",
-		//L"Assets/Models/Bistro_Front_Banner.obj",
-		//L"Assets/Models/Bistro_Glass.obj",
-		//L"Assets/Models/Bistro_Italian_Cypress.obj",
-		//L"Assets/Models/Bistro_Ivy.obj",
-		//L"Assets/Models/Bistro_Lantern_Wind.obj",
-		//L"Assets/Models/Bistro_Linde_Tree_Large.obj",
-		//L"Assets/Models/Bistro_Liquor_Bottle_01A.obj",
-		//L"Assets/Models/Bistro_Main_Balcony.obj",
-		//L"Assets/Models/Bistro_Manhole.obj",
-		//L"Assets/Models/Bistro_Menu_Sign_01A.obj",
-		//L"Assets/Models/Bistro_Menu_Sign_01B.obj",
-		//L"Assets/Models/Bistro_Napkin_Holder.obj",
-		//L"Assets/Models/Bistro_Odometer.obj",
-		//L"Assets/Models/Bistro_Plant_Pot.obj",
-		//L"Assets/Models/Bistro_Shop_Sign_A.obj",
-		//L"Assets/Models/Bistro_Shop_Sign_B.obj",
-		//L"Assets/Models/Bistro_Shop_Sign_C.obj",
-		//L"Assets/Models/Bistro_Shop_Sign_D.obj",
-		//L"Assets/Models/Bistro_Shop_Sign_E.obj",
-		//L"Assets/Models/Bistro_Sidewalk_Barrier.obj",
-		//L"Assets/Models/Bistro_Spotlights.obj",
-		//L"Assets/Models/Bistro_Street.obj",
-		//L"Assets/Models/Bistro_Street_Light_A.obj",
-		//L"Assets/Models/Bistro_Street_Light_B.obj",
-		//L"Assets/Models/Bistro_Street_Light_Glass_A.obj",
-		//L"Assets/Models/Bistro_Street_Light_Glass_B.obj",
-		//L"Assets/Models/Bistro_Street_NormalFix.obj",
-		//L"Assets/Models/Bistro_Street_Pivot.obj",
-		//L"Assets/Models/Bistro_Street_Sign.obj",
-		//L"Assets/Models/Bistro_String_Light_Wind.obj",
-		//L"Assets/Models/Bistro_Table.obj",
-		//L"Assets/Models/Bistro_Traffic_Sign.obj",
-		//L"Assets/Models/Bistro_Trash_Can.obj",
-		//L"Assets/Models/Bistro_Trash_Can_Open.obj",
-		//L"Assets/Models/Bistro_Vespa.obj",
+		L"Cooked/Models/Bistro_Aerial_B.hp_mdl",
+		L"Cooked/Models/Bistro_Building_01.hp_mdl",
 	};
 
-	std::vector<ModelAsset_s*> ModelAssets;
+	std::vector<HPModel_s> ModelAssets;
 	ModelAssets.resize(ModelPaths.size());
 
 	Concurrency::parallel_for((size_t)0u, ModelPaths.size(), [&](size_t i)
 	{
-		ModelAssets[i] = LoadModel(ModelPaths[i]);
+		HPModel_s LoadedModel;
+		if (LoadedModel.Serialize(ModelPaths[i], FileStreamMode_e::READ))
+		{
+			ModelAssets[i] = std::move(LoadedModel);
+		}
 	});
 
-	for (ModelAsset_s* ModelAsset : ModelAssets)
+	for (const HPModel_s& ModelAsset : ModelAssets)
 	{
-		if (!ModelAsset)
-		{
-			LOGERROR("Failed to load model");
-			continue;
-		}
-
-		G.ModelMap[ModelAsset] = std::make_unique<RTDModel_s>();
-
-		G.ModelMap[ModelAsset]->Init(ModelAsset);
+		G.Models.push_back({});
+		G.Models.back().Init(&ModelAsset);
 	}
 
 	// Mesh PSO
@@ -447,6 +368,9 @@ bool InitializeApp()
 
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
+
+	// Create default material
+	G.DefaultMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
 	G.Cam.SetNearFar(0.1f, 1000.0f);
@@ -515,6 +439,7 @@ void ImguiUpdate()
 	if (ImGui::Begin("RaytracingDemo"))
 	{
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
+		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
 		ImGui::End();
 	}
 }
@@ -525,11 +450,12 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	{
 		matrix viewProjection;
 		float3 CamPos;
-		float __pad;
+		uint32_t DebugMeshID;
 	} ViewConsts;
 
 	ViewConsts.viewProjection = G.Cam.GetView() * G.Cam.GetProjection();
 	ViewConsts.CamPos = G.Cam.GetPosition();
+	ViewConsts.DebugMeshID = G.ShowMeshID;
 
 	DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
 
@@ -581,6 +507,8 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->SetPipelineState(G.MeshVSPSO);
 	}
 
+	// Temp basic material for all meshes
+	cl->SetGraphicsRootCBV(RS_MAT_BUF, G.DefaultMaterial.MaterialConstantBuffer);
 	for (const RTDModel_s& Model : G.Models)
 	{
 		Model.Draw(cl);

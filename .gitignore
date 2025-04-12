@@ -3,6 +3,9 @@ bin
 build
 lib
 
+#generated
+.vs
+
 #imgui
 imgui.ini
 
@@ -14,6 +17,7 @@ imgui.ini
 *.hp_mdl
 *.hp_mtl
 *.hp_tex
+*.hp_pkg
 
 # raw assets
 *.obj

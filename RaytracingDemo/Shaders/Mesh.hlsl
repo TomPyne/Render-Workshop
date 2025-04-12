@@ -2,8 +2,10 @@ struct ViewData_s
 {
     float4x4 ViewProjectionMatrix;
     float3 CameraPos;
-    float __pad;
+    uint DebugMeshID;
 };
+
+ConstantBuffer<ViewData_s> c_View : register(b1);
 
 struct PixelInputs_s
 {
@@ -30,7 +32,6 @@ struct MeshData_s
     float3 __pad;
 };
 
-ConstantBuffer<ViewData_s> c_View : register(b1);
 ConstantBuffer<MeshData_s> c_Mesh : register(b2);
 
 StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space0);
@@ -159,7 +160,13 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
             float(Input.MeshletIndex & 3) / 4,
             float(Input.MeshletIndex & 7) / 8);
             
-    float3 Albedo = c_Material.Albedo * MeshletColor;
+    float3 Albedo = c_Material.Albedo;
+    
+    if(c_View.DebugMeshID != 0)
+    {
+        Albedo *= MeshletColor;
+    }
+
     if(c_Material.AlbedoTextureIndex != 0)
     {
         Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_ClampedSampler, Input.UV).rgb;
