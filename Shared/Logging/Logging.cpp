@@ -2,8 +2,16 @@
 
 #include <cassert>
 #include <stdio.h>
-#include <stdarg.h>
 #include <Windows.h>
+#include <iostream>
+
+static bool ConsoleLogging = false;
+static bool PrettyPrinting = false;
+
+#define ERROR_COLOR 12
+#define WARN_COLOR 14
+#define INFO_COLOR 15
+#define DEBUG_COLOR 8
 
 constexpr size_t MaxLogSize = 16 * 2048;
 thread_local char LogBuffer[MaxLogSize];
@@ -25,25 +33,50 @@ void LogFatal(const char* str)
 	assert(0);
 }
 
+void LogOutput(const char* Str, int Color)
+{
+	OutputDebugStringA(Str);
+
+	if (ConsoleLogging)
+	{
+		if (PrettyPrinting)
+		{
+			HANDLE Console = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(Console, Color);
+		}
+		std::cout << Str;
+	}
+}
+
 void LogError(const char* str)
 {
-	OutputDebugStringA(str);
+	LogOutput(str, ERROR_COLOR);
 	__debugbreak();
 }
 
 void LogWarning(const char* str)
 {
-	OutputDebugStringA(str);
+	LogOutput(str, WARN_COLOR);
 }
 
 void LogInfo(const char* str)
 {
-	OutputDebugStringA(str);
+	LogOutput(str, INFO_COLOR);
 }
 
 void LogDebug(const char* str)
 {
-	OutputDebugStringA(str);
+	LogOutput(str, DEBUG_COLOR);
+}
+
+void LoggingEnableConsole(bool Enable)
+{
+	ConsoleLogging = Enable;
+}
+
+void LoggingEnablePrettyPrint(bool Enable)
+{
+	PrettyPrinting = Enable;
 }
 
 void _LogFatalfLF(const char* fmt, ...)

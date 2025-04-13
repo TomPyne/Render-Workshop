@@ -17,6 +17,9 @@ int wmain(int argc, wchar_t* argv[])
 {
 	LOGINFO("HalfPipeApp Startup");
 
+	LoggingEnableConsole(true);
+	LoggingEnablePrettyPrint(true);
+
 	std::vector<std::wstring> PackagesToCook;
 	std::vector<HPAssetArgs_s> AssetsToCook;
 

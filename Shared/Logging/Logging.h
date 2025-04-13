@@ -1,5 +1,8 @@
 #pragma once
 
+void LoggingEnableConsole(bool Enable);
+void LoggingEnablePrettyPrint(bool Enable);
+
 void _LogFatalfLF(const char* fmt, ...);
 void _LogErrorfLF(const char* fmt, ...);
 void _LogWarningfLF(const char* fmt, ...);
