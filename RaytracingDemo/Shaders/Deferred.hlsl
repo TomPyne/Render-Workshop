@@ -27,7 +27,8 @@ void main(uint VertexID : SV_VertexID, out PS_INPUT Output)
 
 struct DeferredData
 {
-    float4x4 InverseViewProjection;
+    float4x4 InverseProjection;
+    float4x4 InverseView;
     uint SceneColorTextureIndex;
     uint SceneNormalTextureIndex;
     uint SceneRoughnessMetallicTextureIndex;
@@ -58,11 +59,18 @@ float Lambert()
     return 1.0f / PI;
 }
 
-float GGX(float NoH, float A)
+float GGX(float NoH, float Roughness)
 {
-    float A2 = A * A;
+    float A2 = Roughness * Roughness;
     float F = (NoH * A2 - NoH) * NoH + 1.0f;
     return A2 / (PI * F * F);
+}
+
+float GeometrySchlickGGX(float NoV, float K)
+{
+    float Denom = NoV * (1.0 - K) + K;
+	
+    return NoV / Denom;
 }
 
 float SmithGGXCorrelated(float NoV, float NoL, float A)
@@ -88,20 +96,27 @@ float3 ViewPositionFromDepth(float2 UV, float Depth)
 {
     float x = UV.x * 2 - 1;
     float y = (1 - UV.y) * 2 - 1;
-    float4 ProjectedPos = float4(x, y, Depth, 1.0f);
+    float4 ProjectedPos = float4(x, y, Depth,  1.0f);
 
-    ProjectedPos = mul(c_Deferred.InverseViewProjection, ProjectedPos);
+    ProjectedPos = mul(c_Deferred.InverseProjection, ProjectedPos);
 
-    return ProjectedPos.xyz / ProjectedPos.w;
+    ProjectedPos /= ProjectedPos.w;
+
+    return mul(c_Deferred.InverseView, ProjectedPos).xyz;
 }
 
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
-    float3 Normal = normalize(t_tex2d_f4[c_Deferred.SceneNormalTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb);
-    float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
-    float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
-    RoughnessMetallic = float2(0.1f, 1.0f);
     float Depth = t_tex2d_f1[c_Deferred.DepthTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
+    if(Depth >= 1.0f)
+    {
+        Output.Color = float4(0, 0, 0, 1);
+        return;
+    }
+
+    float3 Normal = (t_tex2d_f4[c_Deferred.SceneNormalTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb);
+    float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
+    float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
     float3 Position = ViewPositionFromDepth(Input.UV, Depth);
 
     if(c_Deferred.DrawMode != DRAWMODE_LIT)
@@ -113,7 +128,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         }
         else if(c_Deferred.DrawMode == DRAWMODE_NORMAL)
         {
-            Output.Color = float4((Normal + float3(1, 1, 1)) * 0.5f, 1.0f);
+            Output.Color = float4((Normal + float3(1, 1, 1)) * 0.5f, 1);
             return;
         }
         else if(c_Deferred.DrawMode == DRAWMODE_ROUGHNESS)
@@ -142,8 +157,11 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         }
     }
 
-    float3 L = normalize(-float3(1.0, -1, 1.0));
-    float3 V = normalize(Position - c_Deferred.CamPosition);
+    float Roughness = RoughnessMetallic.r * RoughnessMetallic.r;
+    float Metallic = RoughnessMetallic.g;
+
+    float3 L = normalize(float3(0.5f, 1, 0.3));
+    float3 V = normalize(c_Deferred.CamPosition - Position);
     float3 H = normalize(V + L);
 
     float NoV = abs(dot(Normal, V)) + 0.00001f;
@@ -152,21 +170,20 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float LoH = saturate(dot(L, H));
     
     float3 Reflectance = 0.55f;
-    float3 F0 = 0.16f * Reflectance * Reflectance * (1.0f - RoughnessMetallic.g) + Color * RoughnessMetallic.g;
+    float3 F0 = 0.16f * Reflectance * Reflectance * (1.0f - Metallic) + Color * Metallic;
 
-    float D = GGX(NoH, RoughnessMetallic.r);
+    float D = GGX(NoH, Roughness);
     float3 F = Schlick(LoH, F0);
-    float Vis = SmithGGXCorrelated(NoV, NoL, RoughnessMetallic.r);
-
-    float3 Diffuse = (1.0f - RoughnessMetallic.g) * Color;
+    float Vis = SmithGGXCorrelated(NoV, NoL, Roughness);   
 
     float3 SpecularTerm = (D * Vis) * F; // TODO energy loss compensation
+
+    float3 Diffuse = (1.0f - Metallic) * Color;
     float3 DiffuseTerm = Diffuse * Lambert();
 
-
-    Output.Color = float4((SpecularTerm + DiffuseTerm) * NoL, 1.0f);
-    //Output.Color = float4(Depth < 1.0f ? F : float3(0, 0, 0), 1.0f);
-    Output.Color = float4(NoL.rrr, 1.0f);
+    float3 Lighting = (SpecularTerm + DiffuseTerm) * NoL;
+    Lighting += float3(0.1f, 0.1f, 0.1f) * Diffuse;
+    
+    Output.Color = float4(Lighting, 1.0f);
 }
-
 #endif

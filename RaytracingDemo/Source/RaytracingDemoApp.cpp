@@ -321,7 +321,7 @@ tpr::RenderInitParams GetAppRenderParams()
 {
 	tpr::RenderInitParams Params;
 #ifdef _DEBUG
-	Params.DebugEnabled = true;
+	Params.DebugEnabled = false;
 #else
 	Params.DebugEnabled = false;
 #endif
@@ -357,7 +357,24 @@ bool InitializeApp()
 	{
 		L"Cooked/Models/Bistro_Aerial_B.hp_mdl",
 		L"Cooked/Models/Bistro_Building_01.hp_mdl",
+		L"Cooked/Models/Bistro_Building_02.hp_mdl",
+		L"Cooked/Models/Bistro_Building_03.hp_mdl",
+		L"Cooked/Models/Bistro_Building_04.hp_mdl",
+		L"Cooked/Models/Bistro_Building_05.hp_mdl",
+		L"Cooked/Models/Bistro_Building_06.hp_mdl",
+		L"Cooked/Models/Bistro_Building_07.hp_mdl",
+		L"Cooked/Models/Bistro_Building_08.hp_mdl",
+		L"Cooked/Models/Bistro_Building_09.hp_mdl",
+		L"Cooked/Models/Bistro_Building_10.hp_mdl",
+		L"Cooked/Models/Bistro_Building_11.hp_mdl",
+		L"Cooked/Models/Bistro_Street.hp_mdl",
+		L"Cooked/Models/Bistro_Street_NormalFix.hp_mdl",
 	};
+
+	//std::vector<std::wstring> ModelPaths =
+	//{
+	//	L"Cooked/Models/PBRTest.hp_mdl"
+	//};
 
 	std::vector<HPModel_s> ModelAssets;
 	ModelAssets.resize(ModelPaths.size());
@@ -456,6 +473,11 @@ void ImguiUpdate()
 		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
 		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
+		if (ImGui::Button("Recompile Shaders"))
+		{
+			ReloadShaders();
+			ReloadPipelines();
+		}
 		ImGui::End();
 	}
 }
@@ -477,7 +499,8 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	struct
 	{
-		matrix InverseViewProjection;
+		matrix InverseProjection;
+		matrix InverseView;
 		uint32_t SceneColorTextureIndex;
 		uint32_t SceneNormalTextureIndex;
 		uint32_t SceneRoughnessMetallicTextureIndex;
@@ -486,7 +509,8 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		float3 CamPosition;
 	} DeferredConsts;
 
-	DeferredConsts.InverseViewProjection = InverseMatrix(ViewConsts.viewProjection);
+	DeferredConsts.InverseProjection = InverseMatrix(G.Cam.GetProjection());
+	DeferredConsts.InverseView = InverseMatrix(G.Cam.GetView());
 	DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(G.SceneColor.SRV);
 	DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(G.SceneNormal.SRV);
 	DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(G.SceneRoughnessMetallic.SRV);

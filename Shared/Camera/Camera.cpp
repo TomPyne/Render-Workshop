@@ -10,7 +10,7 @@ void Camera::Resize(u32 w, u32 h)
 
 	_aspectRatio = (float)w / (float)h;
 
-	_projection = MakeMatrixPerspectiveFovLH( ConvertToRadians( _fov ), _aspectRatio, _nearZ, _farZ);
+	_projection = MakeMatrixPerspectiveFovLH(ConvertToRadians( _fov ), _aspectRatio, _nearZ, _farZ);
 }
 
 void Camera::SetNearFar(float near, float far)
