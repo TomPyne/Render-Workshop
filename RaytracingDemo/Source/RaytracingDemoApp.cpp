@@ -160,19 +160,21 @@ struct SceneDepth_s
 {
 	TexturePtr Texture = {};
 	DepthStencilViewPtr DSV = {};
+	ShaderResourceViewPtr SRV = {};
 
-	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
+	void Init(uint32_t Width, uint32_t Height, RenderFormat DepthFormat, RenderFormat SRVFormat, const wchar_t* DebugName)
 	{
 		TextureCreateDescEx Desc = {};
 		Desc.DebugName = DebugName ? DebugName : L"UnkownSceneDepth";
-		Desc.Flags = RenderResourceFlags::DSV;
-		Desc.ResourceFormat = Format;
+		Desc.Flags = RenderResourceFlags::DSV | RenderResourceFlags::SRV;
+		Desc.ResourceFormat = DepthFormat;
 		Desc.Height = Height;
 		Desc.Width = Width;
 		Desc.InitialState = ResourceTransitionState::DEPTH_WRITE;
 		Desc.Dimension = TextureDimension::TEX2D;
 		Texture = CreateTextureEx(Desc);
-		DSV = CreateTextureDSV(Texture, Format, TextureDimension::TEX2D, 1u);
+		DSV = CreateTextureDSV(Texture, DepthFormat, TextureDimension::TEX2D, 1u);
+		SRV = CreateTextureSRV(Texture, SRVFormat, TextureDimension::TEX2D, 1u, 1u);
 	}
 };
 
@@ -436,7 +438,7 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneColor.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
 	G.SceneNormal.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
 	G.SceneRoughnessMetallic.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	G.SceneDepth.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, L"SceneDepth");
+	G.SceneDepth.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -452,7 +454,7 @@ void ImguiUpdate()
 	{
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
 		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
-		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Lighting\0";
+		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
 		ImGui::End();
 	}
@@ -475,16 +477,22 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	struct
 	{
+		matrix InverseViewProjection;
 		uint32_t SceneColorTextureIndex;
 		uint32_t SceneNormalTextureIndex;
 		uint32_t SceneRoughnessMetallicTextureIndex;
+		uint32_t DepthTextureIndex;
 		uint32_t DrawMode;
+		float3 CamPosition;
 	} DeferredConsts;
 
+	DeferredConsts.InverseViewProjection = InverseMatrix(ViewConsts.viewProjection);
 	DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(G.SceneColor.SRV);
 	DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(G.SceneNormal.SRV);
 	DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(G.SceneRoughnessMetallic.SRV);
+	DeferredConsts.DepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 	DeferredConsts.DrawMode = G.DrawMode;
+	DeferredConsts.CamPosition = G.Cam.GetPosition();
 
 	DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
@@ -538,6 +546,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->TransitionResource(G.SceneColor.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 		cl->TransitionResource(G.SceneNormal.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.SceneDepth.Texture, tpr::ResourceTransitionState::DEPTH_WRITE, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 	}
 
 	// Bind back buffer target
@@ -565,6 +574,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 		cl->TransitionResource(G.SceneColor.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
 		cl->TransitionResource(G.SceneNormal.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
 		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
+		cl->TransitionResource(G.SceneDepth.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::DEPTH_WRITE);
 	}
 }
 
