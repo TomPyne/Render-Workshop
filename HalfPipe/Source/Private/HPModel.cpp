@@ -1,7 +1,19 @@
 #include "HPModel.h"
+#include "HPModel.h"
 
 #include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
+
+bool HPModel_s::Mesh_s::Serialize(FileStream_s& Stream)
+{
+    Stream.Stream(&IndexOffset);
+    Stream.Stream(&IndexCount);
+    Stream.Stream(&MeshletOffset);
+    Stream.Stream(&MeshletCount);
+    Stream.StreamStr(&LibMaterialName);
+
+    return true;
+}
 
 bool HPModel_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
 {
@@ -11,6 +23,13 @@ bool HPModel_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
     {
         return false;
     }
+
+    return Serialize(Stream);
+}
+
+bool HPModel_s::Serialize(FileStream_s& Stream)
+{
+    CHECK(Stream.IsOpen());
 
     Stream.Stream(&Version);
 
@@ -55,10 +74,24 @@ bool HPModel_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
 
     Stream.Stream(&Indices, static_cast<uint32_t>(IndexBufByteCount));
 
-    Stream.Stream(&Meshes);
+    size_t MeshCount = Meshes.size();
+    Stream.Stream(&MeshCount);
+    Meshes.resize(MeshCount);
+
+    for (Mesh_s& Mesh : Meshes)
+    {
+        if (!Mesh.Serialize(Stream))
+        {
+            return false;
+        }
+    }
+
     Stream.Stream(&Meshlets);
     Stream.Stream(&UniqueVertexIndices);
     Stream.Stream(&PrimitiveIndices);
+
+    Stream.StreamStr(&MaterialLibPath);
+    Stream.StreamStr(&SourcePath);
 
     return true;
 }

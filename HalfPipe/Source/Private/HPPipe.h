@@ -12,17 +12,19 @@ class IHPPipe_c
 {
 public:
 	virtual const wchar_t* GetAssetType() const = 0;
-	virtual void Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args) = 0;
-	virtual std::wstring GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const = 0;
+	virtual void Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const HPArgs_t& Args) = 0;
+	virtual std::wstring GetCookedAssetPath(const std::wstring& OutputDir, const HPArgs_t& Args) const = 0;
+	virtual std::wstring GetPackageAssetPath(const HPArgs_t& Args) const = 0;
 
 protected:
 
-	static bool ParseArgs(const std::vector<std::wstring>& Args, const wchar_t* Command, std::wstring& OutValue);
+	static bool ParseArgs(const HPArgs_t& Args, const wchar_t* Command, std::wstring& OutValue);
 };
 
 void InitPipes();
 IHPPipe_c* GetPipeForAsset(const wchar_t* AssetType);
 std::wstring GetCookedPathForAssetFromArgs(const std::wstring& OutputDir, const HPAssetArgs_s& AssetArgs);
+std::wstring GetPackagePathForAssetFromArgs(const HPAssetArgs_s& AssetArgs);
 
 void PushCookCommand(const HPAssetArgs_s& Args);
 void ProcessCookCommands(const std::wstring& SourceDir, const std::wstring& OutputDir);

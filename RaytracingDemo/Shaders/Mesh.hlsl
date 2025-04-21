@@ -139,13 +139,10 @@ void main(
 
 struct MaterialData_s
 {
-    float3 Albedo;
     uint AlbedoTextureIndex;
-
     uint NormalTextureIndex;
-    float Roughness;
-    float Metallic;
     uint RoughnessMetallicTextureIndex;
+    float __Pad;
 };
 
 struct PixelOutputs_s
@@ -157,25 +154,27 @@ struct PixelOutputs_s
 
 ConstantBuffer<MaterialData_s> c_Material : register(b3);
 Texture2D<float4> t_Tex2d[8192] : register(t0, space0);
-SamplerState s_ClampedSampler : register(s1);
+SamplerState s_WrappedSampler : register(s0);
 
 void main(in PixelInputs_s Input, out PixelOutputs_s Output)
 {            
-    float3 Albedo = c_Material.Albedo;
+    float3 Albedo =float3(1.0f, 1.0f, 1.0f);
     if(c_Material.AlbedoTextureIndex != 0)
     {
-        Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_ClampedSampler, Input.UV).rgb;
+        Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
     }
 
     float3 Normal = Input.Normal;
     // TODO: Texture normals
 
-    float Roughness = c_Material.Roughness;
-    float Metallic = c_Material.Metallic;
+    float Roughness = 0.7f;
+    float Metallic = 0.0f;
 
     if(c_Material.RoughnessMetallicTextureIndex != 0)
     {
-        float2 RoughnessMetallicSample = t_Tex2d[c_Material.RoughnessMetallicTextureIndex].Sample(s_ClampedSampler, Input.UV).rg;
+        float2 RoughnessMetallicSample = t_Tex2d[c_Material.RoughnessMetallicTextureIndex].Sample(s_WrappedSampler, Input.UV).rg;
+        Roughness = RoughnessMetallicSample.g;
+        Metallic = RoughnessMetallicSample.r;
     }
     
     if(c_View.DebugMeshID != 0)

@@ -6,41 +6,44 @@
 #include <Camera/FlyCamera.h>
 #include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
-#include <ModelUtils/Model.h>
-#include <Materials/Materials.h>
-#include <TextureUtils/TextureManager.h>
 
 #include <HPModel.h>
+#include <HPWfMtlLib.h>
+#include <HPTexture.h>
 
 #include <ppl.h>
 
 using namespace tpr;
 
+static const std::wstring s_AssetDirectory = L"Cooked/";
+
 struct RTDTexture_s
 {
 	tpr::TexturePtr Texture = {};
 	tpr::ShaderResourceViewPtr SRV = {};
+
+	bool Init(const HPTexture_s& Asset);
 };
 
 struct RTDMaterialParams_s
 {
-	float3 Albedo = float3(1, 1, 1);
 	uint32_t AlbedoTextureIndex = 0;
 	uint32_t NormalTextureIndex = 0;
-	float Roughness = 1.0f;
-	float Metallic = 0.0f;
-	uint32_t MetallicRoughnessTextureIndex = 0;
+	uint32_t RoughnessMetallicTextureIndex = 0;
+	float __Pad;
 };
 
 struct RTDMaterial_s
 {
 	RTDMaterialParams_s Params;
 
-	RTDTexture_s* AlbedoTexture = nullptr;
-	RTDTexture_s* NormalTexture = nullptr;
-	RTDTexture_s* MetallicRoughnessTexture = nullptr;
+	std::shared_ptr<RTDTexture_s> AlbedoTexture = nullptr;
+	std::shared_ptr<RTDTexture_s> NormalTexture = nullptr;
+	std::shared_ptr<RTDTexture_s> RoughnessMetallicTexture = nullptr;
 
 	tpr::ConstantBuffer_t MaterialConstantBuffer = {};
+
+	bool Init(const HPWfMtlLib_s::Material_s& Asset);
 };
 
 struct RTDBuffer_s
@@ -94,7 +97,7 @@ struct RTDMesh_s
 	uint32_t MeshletOffset;
 	uint32_t MeshletCount;
 
-	RTDMaterial_s* Material = nullptr;
+	std::shared_ptr<RTDMaterial_s> Material = nullptr;
 };
 
 struct RTDModel_s
@@ -114,7 +117,7 @@ struct RTDModel_s
 
 	std::vector<RTDMesh_s> Meshes;
 
-	void Init(const HPModel_s* Asset);
+	bool Init(const HPModel_s* Asset);
 
 	void Draw(tpr::CommandList* CL) const;
 };
@@ -200,9 +203,9 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
 
-	std::map<ModelAsset_s*, std::unique_ptr<RTDModel_s>> ModelMap;
-	std::map<MaterialAsset_s*, std::unique_ptr<RTDMaterial_s>> MaterialMap;
-	std::map<MaterialAsset_s*, std::unique_ptr<RTDTexture_s>> TextureMap;
+	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
+	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
+	std::map<std::wstring, std::shared_ptr<RTDTexture_s>> TextureMap;
 
 	RTDMaterial_s DefaultMaterial = {};
 
@@ -211,7 +214,82 @@ struct Globals_s
 	int32_t DrawMode = 0;
 } G;
 
-void RTDModel_s::Init(const HPModel_s* Asset)
+bool RTDTexture_s::Init(const HPTexture_s& Asset)
+{
+	tpr::TextureCreateDescEx TexDesc = {};
+	TexDesc.DebugName = Asset.SourcePath;
+	TexDesc.Width = Asset.Width;
+	TexDesc.Height = Asset.Height;
+	TexDesc.DepthOrArraySize = 1u;
+	TexDesc.MipCount = static_cast<uint32_t>(Asset.Mips.size());
+	TexDesc.Dimension = TextureDimension::TEX2D;
+	TexDesc.Flags = tpr::RenderResourceFlags::SRV;
+	TexDesc.ResourceFormat = Asset.Format;
+
+	std::vector<MipData> Data;
+	Data.resize(Asset.Mips.size());
+	for (size_t MipIt = 0; MipIt < Asset.Mips.size(); MipIt++)
+	{
+		Data[MipIt].RowPitch = Asset.Mips[MipIt].RowPitch;
+		Data[MipIt].SlicePitch = Asset.Mips[MipIt].SlicePitch;
+		Data[MipIt].Data = Asset.Data.data() + Asset.Mips[MipIt].Offset;
+	}
+
+	TexDesc.Data = Data.data();
+
+	Texture = tpr::CreateTextureEx(TexDesc);
+	SRV = tpr::CreateTextureSRV(Texture);
+
+	return true;
+}
+
+bool RTDMaterial_s::Init(const HPWfMtlLib_s::Material_s& Asset)
+{
+	auto LoadTexture = [](const std::wstring& TexPath) -> std::shared_ptr<RTDTexture_s>
+	{
+		if (TexPath.empty())
+			return nullptr;
+
+		HPTexture_s TextureAsset;
+		if (!TextureAsset.Serialize(s_AssetDirectory + TexPath, FileStreamMode_e::READ))
+		{
+			LOGERROR("Failed to load texture asset");
+			return nullptr;
+		}
+
+		auto TexIt = G.TextureMap.find(TexPath);
+		if (TexIt != G.TextureMap.end())
+		{
+			return TexIt->second;
+		}
+
+		std::shared_ptr<RTDTexture_s> NewTexture = std::make_shared<RTDTexture_s>();
+		if (NewTexture->Init(TextureAsset))
+		{
+			G.TextureMap[TexPath] = NewTexture;
+		}
+		else
+		{
+			G.TextureMap[TexPath] = nullptr;
+		}
+
+		return G.TextureMap[TexPath];
+	};
+
+	AlbedoTexture = LoadTexture(Asset.DiffuseTexture);
+	RoughnessMetallicTexture = LoadTexture(Asset.SpecularTexture);
+	NormalTexture = LoadTexture(Asset.NormalTexture);
+
+	Params.AlbedoTextureIndex = AlbedoTexture ? tpr::GetDescriptorIndex(AlbedoTexture->SRV) : 0;
+	Params.RoughnessMetallicTextureIndex = RoughnessMetallicTexture ? tpr::GetDescriptorIndex(RoughnessMetallicTexture->SRV) : 0;
+	Params.NormalTextureIndex = NormalTexture ? tpr::GetDescriptorIndex(NormalTexture->SRV) : 0;
+
+	MaterialConstantBuffer = tpr::CreateConstantBuffer(&Params);
+
+	return true;
+}
+
+bool RTDModel_s::Init(const HPModel_s* Asset)
 {
 	CHECK(Asset != nullptr);
 
@@ -281,6 +359,18 @@ void RTDModel_s::Init(const HPModel_s* Asset)
 
 	ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
 
+	HPWfMtlLib_s MaterialLib;
+	if (Asset->MaterialLibPath.empty())
+	{
+		LOGERROR("No material lib provided for %S, default materials not handled", Asset->SourcePath);
+		return false;
+	}
+	if (!MaterialLib.Serialize(s_AssetDirectory + Asset->MaterialLibPath, FileStreamMode_e::READ))
+	{
+		LOGERROR("Material lib % failed to load for model %S, default materials not handled", Asset->SourcePath);
+		return false;
+	}
+
 	Meshes.reserve(Asset->Meshes.size());
 	for (const HPModel_s::Mesh_s& MeshFromAsset : Asset->Meshes)
 	{
@@ -288,10 +378,48 @@ void RTDModel_s::Init(const HPModel_s* Asset)
 		Mesh.IndexCount = MeshFromAsset.IndexCount;
 		Mesh.IndexOffset = MeshFromAsset.IndexOffset;
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
-		Mesh.MeshletCount = MeshFromAsset.MeshletCount;		
+		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
+
+		std::wstring MaterialKey = Asset->MaterialLibPath + MeshFromAsset.LibMaterialName;
+		auto It = G.MaterialMap.find(MaterialKey);
+		if (It != G.MaterialMap.end())
+		{
+			Mesh.Material = It->second;
+		}
+		else
+		{
+			std::shared_ptr<RTDMaterial_s> LoadedMaterial = nullptr;
+			for (const HPWfMtlLib_s::Material_s& LibMaterial : MaterialLib.Materials)
+			{
+				if (LibMaterial.Name == MeshFromAsset.LibMaterialName)
+				{
+					std::shared_ptr<RTDMaterial_s> NewMaterial = std::make_shared<RTDMaterial_s>();
+					if (NewMaterial->Init(LibMaterial))
+					{
+						LoadedMaterial = NewMaterial;
+					}
+					else
+					{
+						LOGERROR("Failed to create material %S", MaterialKey.c_str());
+					}					
+
+					break;
+				}
+			}
+
+			if (LoadedMaterial == nullptr)
+			{
+				LOGERROR("Failed to find material %S for %S", MeshFromAsset.LibMaterialName.c_str(), Asset->SourcePath.c_str());
+			}
+
+			G.MaterialMap[MaterialKey] = LoadedMaterial;
+			Mesh.Material = LoadedMaterial;
+		}
 
 		Meshes.push_back(Mesh);
 	}
+
+	return true;
 }
 
 void RTDModel_s::Draw(tpr::CommandList* CL) const
@@ -304,6 +432,8 @@ void RTDModel_s::Draw(tpr::CommandList* CL) const
 		{
 			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_MESHLET_OFFSET, Mesh.MeshletOffset);
 
+			CL->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
+
 			CL->DispatchMesh(Mesh.MeshletCount, 1u, 1u);
 		}
 	}
@@ -312,6 +442,8 @@ void RTDModel_s::Draw(tpr::CommandList* CL) const
 		for (const RTDMesh_s& Mesh : Meshes)
 		{
 			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
+
+			CL->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
 
 			CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
 		}
@@ -322,7 +454,7 @@ tpr::RenderInitParams GetAppRenderParams()
 {
 	tpr::RenderInitParams Params;
 #ifdef _DEBUG
-	Params.DebugEnabled = false;
+	Params.DebugEnabled = true;
 #else
 	Params.DebugEnabled = false;
 #endif
@@ -376,7 +508,7 @@ bool InitializeApp()
 
 	std::vector<std::wstring> ModelPaths =
 	{
-		L"Cooked/Models/Bistro2.hp_mdl"
+		L"Models/bistro2.hp_mdl"
 	};
 
 	std::vector<HPModel_s> ModelAssets;
@@ -385,7 +517,7 @@ bool InitializeApp()
 	Concurrency::parallel_for((size_t)0u, ModelPaths.size(), [&](size_t i)
 	{
 		HPModel_s LoadedModel;
-		if (LoadedModel.Serialize(ModelPaths[i], FileStreamMode_e::READ))
+		if (LoadedModel.Serialize(s_AssetDirectory + ModelPaths[i], FileStreamMode_e::READ))
 		{
 			ModelAssets[i] = std::move(LoadedModel);
 		}
@@ -562,7 +694,7 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 	}
 
 	// Temp basic material for all meshes
-	cl->SetGraphicsRootCBV(RS_MAT_BUF, G.DefaultMaterial.MaterialConstantBuffer);
+	//cl->SetGraphicsRootCBV(RS_MAT_BUF, G.DefaultMaterial.MaterialConstantBuffer);
 	for (const RTDModel_s& Model : G.Models)
 	{
 		Model.Draw(cl);
@@ -609,5 +741,3 @@ void ShutdownApp()
 {
 
 }
-
-

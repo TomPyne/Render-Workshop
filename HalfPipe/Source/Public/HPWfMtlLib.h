@@ -18,6 +18,7 @@ struct HPWfMtlLib_s
 
 	struct Material_s
 	{
+		std::wstring Name;
 		std::wstring DiffuseTexture;
 		std::wstring SpecularTexture;
 		std::wstring NormalTexture;

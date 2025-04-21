@@ -13,18 +13,21 @@ enum class HPModelVersion_e
 };
 
 enum class FileStreamMode_e;
+struct FileStream_s;
 
 struct HPModel_s
 {
 	struct Mesh_s
 	{
-		wchar_t MaterialPath[PathUtils::MaxPath];
-
 		uint32_t IndexOffset;
 		uint32_t IndexCount;
 
 		uint32_t MeshletOffset;
 		uint32_t MeshletCount;
+
+		std::wstring LibMaterialName;
+
+		bool Serialize(FileStream_s& Stream);
 	};
 
 	struct Meshlet_s
@@ -55,7 +58,9 @@ struct HPModel_s
 	std::vector<uint8_t> UniqueVertexIndices;
 	std::vector<uint32_t> PrimitiveIndices; // 10 : 10 : 10
 
-	std::string SourcePath;
+	std::wstring MaterialLibPath;
+	std::wstring SourcePath;
 
 	bool Serialize(const std::wstring& Path, FileStreamMode_e Mode);
+	bool Serialize(FileStream_s& Stream);
 };

@@ -31,6 +31,7 @@ bool HPWfMtlLib_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
 
     for (size_t MaterialIt = 0; MaterialIt < MaterialCount; MaterialIt++)
     {
+        Stream.StreamStr(&Materials[MaterialIt].Name);
         Stream.StreamStr(&Materials[MaterialIt].DiffuseTexture);
         Stream.StreamStr(&Materials[MaterialIt].SpecularTexture);
         Stream.StreamStr(&Materials[MaterialIt].NormalTexture);

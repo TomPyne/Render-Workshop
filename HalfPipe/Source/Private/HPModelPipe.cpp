@@ -33,8 +33,10 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
         MtlLibArgs.Args.push_back(ContentRelativePath);
         PushCookCommand(MtlLibArgs);
 
-        MtlLibCookedPath = GetCookedPathForAssetFromArgs(OutputDir, MtlLibArgs);
+        MtlLibCookedPath = GetPackagePathForAssetFromArgs(MtlLibArgs);
     }
+
+    OutModel.MaterialLibPath = MtlLibCookedPath;
 
     std::vector<uint32_t> Attributes;
 
@@ -264,31 +266,11 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
 
     memcpy(OutModel.PrimitiveIndices.data(), PrimitiveIndices.data(), sizeof(uint32_t) * PrimitiveIndices.size());
 
-#if 0
-    std::vector<std::wstring> MaterialPaths;
-
-    for (uint32_t MaterialIt = 1; MaterialIt < Reader.Materials.size(); MaterialIt++)
+    bool UsingMaterials = !Reader.Materials.empty();
+    if (UsingMaterials)
     {
-        MaterialAsset_s MaterialAsset;
-        MaterialAsset.Albedo = Reader.Materials[MaterialIt].Diffuse;
-        MaterialAsset.Metallic = Reader.Materials[MaterialIt].Metallic;
-        MaterialAsset.Roughness = Reader.Materials[MaterialIt].Roughness;
-        MaterialAsset.AlbedoTexture = Reader.Materials[MaterialIt].DiffuseTexture;
-        MaterialAsset.NormalTexture = Reader.Materials[MaterialIt].NormalTexture;
-        MaterialAsset.MetallicTexture = Reader.Materials[MaterialIt].MetallicTexture;
-        MaterialAsset.RoughnessTexture = Reader.Materials[MaterialIt].RoughnessTexture;
-
-        std::wstring MaterialName = Replace(Reader.Materials[MaterialIt].Name, L'.', L'_');
-
-        std::wstring MaterialPath = L"Assets/" + MaterialName + L".rmat";
-
-        MaterialAsset.SourcePath = MaterialPath;
-
-        WriteMaterialAsset(MaterialPath, &MaterialAsset);
-
-        MaterialPaths.push_back(MaterialPath);
+        UsingMaterials = Reader.Materials.size() == IndexSubsets.size() + 1;
     }
-#endif
 
     OutModel.Meshes.resize(IndexSubsets.size());
     for (uint32_t SubsetIt = 0; SubsetIt < IndexSubsets.size(); SubsetIt++)
@@ -302,12 +284,10 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
         OutMesh.MeshletCount = MeshletSubset.Count;
         OutMesh.MeshletOffset = MeshletSubset.Offset;
 
-#if 0
-        if (SubsetIt < MaterialPaths.size())
+        if (UsingMaterials)
         {
-            wcscpy_s(OutMesh.MaterialPath, MaterialPaths[SubsetIt].c_str());
+            OutMesh.LibMaterialName = Reader.Materials[SubsetIt + 1].Name;
         }
-#endif
     }
 
     OutModel.Meshlets.resize(Meshlets.size());
@@ -323,42 +303,6 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
         OutMeshlet.VertOffset = Meshlet.VertOffset;
     }
 
-#if 0
-
-    std::vector<ModelMaterial_s> LoadedMaterials;
-    LoadedMaterials.reserve(Reader.Attributes.size());
-
-    for (const WaveFrontReader_c::Material_s& Mtl : Reader.Materials)
-    {
-        ModelMaterial_s NewMaterial = {};
-        NewMaterial.Params.Albedo = Mtl.Diffuse;
-
-        if (!Mtl.Texture.empty())
-        {
-            NewMaterial.AlbedoTexture = LoadTexture(Mtl.Texture, false);
-            NewMaterial.Params.AlbedoTextureIndex = tpr::GetDescriptorIndex(NewMaterial.AlbedoTexture.SRV);
-        }
-
-        NewMaterial.MaterialBuffer = tpr::CreateConstantBuffer(&NewMaterial.Params);
-
-        LoadedMaterials.push_back(NewMaterial);
-    }
-
-    CHECK(IndexSubsets.size() <= LoadedMaterials.size() - 1);
-
-    for (uint32_t SubsetIt = 0; SubsetIt < IndexSubsets.size(); SubsetIt++)
-    {
-        SubMesh_s Mesh;
-        Mesh.IndexOffset = IndexSubsets[SubsetIt].Offset;
-        Mesh.IndexCount = IndexSubsets[SubsetIt].Count;
-        Mesh.Material = LoadedMaterials[SubsetIt + 1];
-        OutModel.Meshes.push_back(Mesh);
-    }
-
-    OutModel.MeshCount = static_cast<uint32_t>(OutModel.Meshes.size());
-
-#endif
-
     return true;
 }
 
@@ -367,7 +311,7 @@ static std::wstring GenerateOutputPath(const std::wstring& OutputDir, const std:
     return OutputDir + L"/" + ReplacePathExtension(AssetPath, L"hp_mdl");
 }
 
-void HPModelPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args)
+void HPModelPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const HPArgs_t& Args)
 {
     std::wstring AssetPath;
     if (!ParseArgs(Args, L"-src", AssetPath))
@@ -407,7 +351,7 @@ void HPModelPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& Outp
     LOGINFO("[HPModelPipe] Cooked model [%S]", AssetOutputPath.c_str());
 }
 
-std::wstring HPModelPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const
+std::wstring HPModelPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const HPArgs_t& Args) const
 {
     std::wstring AssetPath;
     if (!ParseArgs(Args, L"-src", AssetPath))
@@ -417,4 +361,15 @@ std::wstring HPModelPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, co
     }
 
     return GenerateOutputPath(OutputDir, AssetPath);
+}
+
+std::wstring HPModelPipe_c::GetPackageAssetPath(const HPArgs_t& Args) const
+{
+    std::wstring AssetPath;
+    if (!ParseArgs(Args, L"-src", AssetPath))
+    {
+        LOGERROR("[HPModelPipe] No source path provided for asset");
+        return {};
+    }
+    return ReplacePathExtension(AssetPath, L"hp_mdl");
 }

@@ -12,7 +12,7 @@ static std::wstring GenerateOutputPath(const std::wstring& OutputDir, const std:
 	return OutputDir + L"/" + ReplacePathExtension(AssetPath, L"hp_tex");
 }
 
-void HPTexturePipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args)
+void HPTexturePipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const HPArgs_t& Args)
 {
 	std::wstring AssetPath;
 	if (!ParseArgs(Args, L"-src", AssetPath))
@@ -52,6 +52,7 @@ void HPTexturePipe_c::Cook(const std::wstring& SourceDir, const std::wstring& Ou
 		return;
 	}
 
+	CookedAsset.SourcePath = AssetPath;
 	CookedAsset.Width = LoadedTexture.Width;
 	CookedAsset.Height = LoadedTexture.Height;
 	CookedAsset.Format = LoadedTexture.Format;
@@ -76,7 +77,7 @@ void HPTexturePipe_c::Cook(const std::wstring& SourceDir, const std::wstring& Ou
 	LOGINFO("[HPTexturePipe] Cooked texture [%S]", AssetOutputPath.c_str());
 }
 
-std::wstring HPTexturePipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const
+std::wstring HPTexturePipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const HPArgs_t& Args) const
 {
 	std::wstring AssetPath;
 	if (!ParseArgs(Args, L"-src", AssetPath))
@@ -86,4 +87,15 @@ std::wstring HPTexturePipe_c::GetCookedAssetPath(const std::wstring& OutputDir, 
 	}
 
 	return GenerateOutputPath(OutputDir, AssetPath);
+}
+
+std::wstring HPTexturePipe_c::GetPackageAssetPath(const HPArgs_t& Args) const
+{
+	std::wstring AssetPath;
+	if (!ParseArgs(Args, L"-src", AssetPath))
+	{
+		LOGERROR("[HPTexturePipe] No source path provided for asset");
+		return {};
+	}
+	return ReplacePathExtension(AssetPath, L"hp_tex");
 }

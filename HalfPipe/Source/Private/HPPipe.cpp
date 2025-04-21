@@ -63,6 +63,16 @@ std::wstring GetCookedPathForAssetFromArgs(const std::wstring& OutputDir, const 
 	return {};
 }
 
+std::wstring GetPackagePathForAssetFromArgs(const HPAssetArgs_s& AssetArgs)
+{
+	if (IHPPipe_c* Pipe = GetPipeForAsset(AssetArgs.AssetType.c_str()))
+	{
+		return Pipe->GetPackageAssetPath(AssetArgs.Args);
+	}
+
+	return {};
+}
+
 void PushCookCommand(const HPAssetArgs_s& Args)
 {
 	G.CookCommands.push(Args);
@@ -89,7 +99,7 @@ void ProcessCookCommands(const std::wstring& SourceDir, const std::wstring& Outp
 	}
 }
 
-bool IHPPipe_c::ParseArgs(const std::vector<std::wstring>& Args, const wchar_t* Command, std::wstring& OutValue)
+bool IHPPipe_c::ParseArgs(const HPArgs_t& Args, const wchar_t* Command, std::wstring& OutValue)
 {
 	for (size_t ArgIt = 0; ArgIt < Args.size(); ArgIt++)
 	{

@@ -13,7 +13,7 @@ static std::wstring GenerateOutputPath(const std::wstring& OutputDir, const std:
 	return OutputDir + L"/" + ReplacePathExtension(AssetPath, L"hp_wml");
 }
 
-void HPWfMtlLibPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args)
+void HPWfMtlLibPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const HPArgs_t& Args)
 {
 	std::wstring AssetPath;
 	if (!ParseArgs(Args, L"-src", AssetPath))
@@ -62,12 +62,13 @@ void HPWfMtlLibPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& O
 			MtlLibArgs.Args.push_back(ContentRelativePath);
 			PushCookCommand(MtlLibArgs);
 
-			return GetCookedPathForAssetFromArgs(OutputDir, MtlLibArgs);
+			return GetPackagePathForAssetFromArgs(MtlLibArgs);
 		};
 
+		CookedAsset.Materials[MaterialIt].Name = MtlReader.Materials[MaterialIt].Name;
 		CookedAsset.Materials[MaterialIt].DiffuseTexture = RequestTexture(MtlReader.Materials[MaterialIt].DiffuseTexture);
 		CookedAsset.Materials[MaterialIt].SpecularTexture = RequestTexture(MtlReader.Materials[MaterialIt].SpecularTexture);
-		CookedAsset.Materials[MaterialIt].NormalTexture = RequestTexture(MtlReader.Materials[MaterialIt].NormalTexture);
+		CookedAsset.Materials[MaterialIt].NormalTexture = RequestTexture(MtlReader.Materials[MaterialIt].BumpTexture);
 	}
 
 	std::wstring AssetOutputPath = GenerateOutputPath(OutputDir, AssetPath);
@@ -83,7 +84,7 @@ void HPWfMtlLibPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& O
 	LOGINFO("[HPWfMtlLibPipe] Cooked material [%S]", AssetOutputPath.c_str());
 }
 
-std::wstring HPWfMtlLibPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const
+std::wstring HPWfMtlLibPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const HPArgs_t& Args) const
 {
 	std::wstring AssetPath;
 	if (!ParseArgs(Args, L"-src", AssetPath))
@@ -93,4 +94,15 @@ std::wstring HPWfMtlLibPipe_c::GetCookedAssetPath(const std::wstring& OutputDir,
 	}
 
 	return GenerateOutputPath(OutputDir, AssetPath);
+}
+
+std::wstring HPWfMtlLibPipe_c::GetPackageAssetPath(const HPArgs_t& Args) const
+{
+	std::wstring AssetPath;
+	if (!ParseArgs(Args, L"-src", AssetPath))
+	{
+		LOGERROR("[HPWfMtlLibPipe] No source path provided for asset");
+		return {};
+	}
+	return ReplacePathExtension(AssetPath, L"hp_wml");
 }
