@@ -12,6 +12,8 @@ struct PixelInputs_s
     float4 SVPosition : SV_POSITION;
     float2 UV : TEXCOORD0;
     float3 Normal : NORMAL0;
+    float3 Tangent : TANGENT;
+    float3 Bitangent : BITANGENT;
     uint MeshletIndex : COLOR0;
 };
 
@@ -43,11 +45,15 @@ PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
 {
     float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][VertexIndex];
     float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][VertexIndex] : float3(0, 0, 0);
+    float3 Bitangent = c_Mesh.BitangentBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.BitangentBufSRVIndex][VertexIndex] : float3(0, 0, 0);
+    float3 Tangent = c_Mesh.TangentBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.TangentBufSRVIndex][VertexIndex] : float3(0, 0, 0);
     float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][VertexIndex] : float2(0, 0);
 
     PixelInputs_s Out;
     Out.SVPosition =  mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
     Out.Normal = Normal;
+    Out.Bitangent = Bitangent;
+    Out.Tangent = Tangent;
     Out.UV = float2(UV.x, 1.0f - UV.y);
     Out.MeshletIndex = MeshletIndex;
 
@@ -164,8 +170,17 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
         Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
     }
 
-    float3 Normal = Input.Normal;
-    // TODO: Texture normals
+    float3 Normal = normalize(Input.Normal);
+    if(c_Material.NormalTextureIndex != 0)
+    {
+        float3 TexNormal = t_Tex2d[c_Material.NormalTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
+        TexNormal = (2.0f * TexNormal) - float3(1.0f, 1.0f, 1.0f);
+
+        TexNormal.z = sqrt(1.0f - TexNormal.r * TexNormal.r - TexNormal.g * TexNormal.g);
+        float3x3 TangentMatrix = float3x3(normalize(Input.Tangent), normalize(Input.Bitangent), Normal);
+
+        Normal = normalize(mul(TexNormal, TangentMatrix));
+    }
 
     float Roughness = 0.7f;
     float Metallic = 0.0f;
@@ -188,7 +203,7 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     }
 
     Output.Color = float4(Albedo, 1.0f);
-    Output.Normal = float4(Input.Normal, 0.0f);
+    Output.Normal = float4(Normal, 0.0f);
     Output.RoughnessMetallic = float2(Roughness, Metallic);
 }
 
