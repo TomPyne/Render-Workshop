@@ -41,7 +41,7 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
 
     uint32_t CurSubset = 0;
 
-    std::wstring MaterialFilename = {};
+    MtlFile = {};
     for (;; )
     {
         std::wstring Command;
@@ -263,7 +263,7 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
         else if (0 == wcscmp(Command.c_str(), L"mtllib"))
         {
             // Material library
-            InFile >> MaterialFilename;
+            InFile >> MtlFile;
         }
         else if (0 == wcscmp(Command.c_str(), L"usemtl"))
         {
@@ -311,10 +311,10 @@ bool WaveFrontReader_c::Load(const wchar_t* FileName)
     Bounds.InitFromPoints(Positions.data(), Positions.size());
 
     // If an associated material file was found, read that in as well.
-    if (!MaterialFilename.empty())
+    if (!MtlFile.empty())
     {
-        std::wstring MtlPath = GetFileRelativePath(FileName, MaterialFilename);
-        return LoadMTL(MtlPath.c_str());
+        MtlFile = GetFileRelativePath(FileName, MtlFile);
+        return LoadMTL(MtlFile.c_str());
     }
 
     return true;
@@ -615,6 +615,279 @@ void WaveFrontReader_c::LoadBumpTexturePath(std::wifstream& InFile, const std::w
         Path = Path.substr(Pos + 1);
     }
     
+    if (!Path.empty())
+    {
+        Texture = GetFileRelativePath(BasePath, Path);
+    }
+}
+
+bool WaveFrontMtlReader_c::Load(const wchar_t* FileName)
+{
+    // Assumes MTL is in CWD along with OBJ
+    std::wifstream InFile(FileName);
+    if (!InFile)
+    {
+        LOGERROR("File not found");
+        return false;
+    }
+
+    std::wstring BasePath(FileName);
+
+    Material_s* CurMaterial = nullptr;
+
+    for (;; )
+    {
+        std::wstring Command;
+        InFile >> Command;
+        if (!InFile)
+            break;
+
+        if (0 == wcscmp(Command.c_str(), L"newmtl"))
+        {
+            // Switching active materials
+            wchar_t Name[260] = {};
+            InFile >> Name;
+
+            CurMaterial = nullptr;
+            for (auto Iter = Materials.begin(); Iter != Materials.end(); ++Iter)
+            {
+                if (0 == wcscmp(Iter->Name.c_str(), Name))
+                {
+                    CurMaterial = Iter._Ptr;
+                    break;
+                }
+            }
+
+            if (CurMaterial == nullptr)
+            {
+                Materials.push_back({});
+                Materials.back().Name = Name;
+
+                CurMaterial = &Materials.back();
+            }
+        }
+
+        // The rest of the commands rely on an active material
+        if (CurMaterial == nullptr)
+            continue;
+
+        if (0 == wcscmp(Command.c_str(), L"#"))
+        {
+            // Comment
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Ka"))
+        {
+            // Ambient color
+            float R, G, B;
+            InFile >> R >> G >> B;
+            CurMaterial->Ambient = float3(R, G, B);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Kd"))
+        {
+            // Diffuse color
+            float R, G, B;
+            InFile >> R >> G >> B;
+            CurMaterial->Diffuse = float3(R, G, B);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Ks"))
+        {
+            // Specular color
+            float R, G, B;
+            InFile >> R >> G >> B;
+            CurMaterial->Specular = float3(R, G, B);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Ke"))
+        {
+            // Emissive color
+            float R, G, B;
+            InFile >> R >> G >> B;
+            CurMaterial->Emissive = float3(R, G, B);
+            if (R > 0.f || G > 0.f || B > 0.f)
+            {
+                CurMaterial->Emissive = true;
+            }
+        }
+        else if (0 == wcscmp(Command.c_str(), L"d"))
+        {
+            // Alpha
+            float Alpha;
+            InFile >> Alpha;
+            CurMaterial->Alpha = std::min(1.f, std::max(0.f, Alpha));
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Tr"))
+        {
+            // Transparency (inverse of alpha)
+            float InvAlpha;
+            InFile >> InvAlpha;
+            CurMaterial->Alpha = std::min(1.f, std::max(0.f, 1.f - InvAlpha));
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Ns"))
+        {
+            // Shininess
+            int Shininess;
+            InFile >> Shininess;
+            CurMaterial->Shininess = uint32_t(Shininess);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"illum"))
+        {
+            // Specular on/off
+            int Illumination;
+            InFile >> Illumination;
+            CurMaterial->Specular = (Illumination == 2);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Pr"))
+        {
+            float Roughness;
+            InFile >> Roughness;
+            CurMaterial->Roughness = Roughness;
+
+        }
+        else if (0 == wcscmp(Command.c_str(), L"Pm"))
+        {
+            float Metallic;
+            InFile >> Metallic;
+            CurMaterial->Metallic = Metallic;
+
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Kd"))
+        {
+            // Diffuse texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->DiffuseTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Ks"))
+        {
+            // Specular texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->SpecularTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Kn")
+            || 0 == wcscmp(Command.c_str(), L"norm"))
+        {
+            // Normal texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->NormalTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Ke")
+            || 0 == wcscmp(Command.c_str(), L"map_emissive"))
+        {
+            // Emissive texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->EmissiveTexture);
+            CurMaterial->Emissive = true;
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_RMA")
+            || 0 == wcscmp(Command.c_str(), L"map_ORM"))
+        {
+            // RMA texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->RMATexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Pr"))
+        {
+            // Roughness texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->RoughnessTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Pm"))
+        {
+            // Metallic texture
+            LoadTexturePath(InFile, BasePath, CurMaterial->MetallicTexture);
+        }
+        else if (0 == wcscmp(Command.c_str(), L"map_Bump"))
+        {
+            LoadBumpTexturePath(InFile, BasePath, CurMaterial->BumpScale, CurMaterial->BumpTexture);
+        }
+        else
+        {
+            // Unimplemented or unrecognized command
+        }
+
+        InFile.ignore(1000, L'\n');
+    }
+
+    InFile.close();
+
+    return true;
+}
+
+void WaveFrontMtlReader_c::LoadTexturePath(std::wifstream& InFile, const std::wstring& BasePath, std::wstring& Texture)
+{
+    wchar_t Buff[1024] = {};
+    InFile.getline(Buff, 1024, L'\n');
+    InFile.putback(L'\n');
+
+    std::wstring Path = Buff;
+
+    // Ignore any end-of-line comment
+    size_t Pos = Path.find_first_of(L'#');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos);
+    }
+
+    // Trim any trailing whitespace
+    Pos = Path.find_last_not_of(L" \t");
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos + 1);
+    }
+
+    // Texture path should be last element in line
+    Pos = Path.find_last_of(' ');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(Pos + 1);
+    }
+
+    if (!Path.empty())
+    {
+        Texture = GetFileRelativePath(BasePath, Path);
+    }
+}
+
+void WaveFrontMtlReader_c::LoadBumpTexturePath(std::wifstream& InFile, const std::wstring& BasePath, float& Scale, std::wstring& Texture)
+{
+    wchar_t Buff[1024] = {};
+    InFile.getline(Buff, 1024, L'\n');
+    InFile.putback(L'\n');
+
+    std::wstring Path = Buff;
+
+    // Ignore any end-of-line comment
+    size_t Pos = Path.find_first_of(L'#');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos);
+    }
+
+    // Trim any trailing whitespace
+    Pos = Path.find_last_not_of(L" \t");
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(0, Pos + 1);
+    }
+
+    Pos = Path.find_first_of('-');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(Pos + 1);
+
+        if (Path.starts_with(L"bm"))
+        {
+            Pos = Path.find_first_of(' ');
+            Path = Path.substr(Pos + 1);
+
+            Pos = Path.find_first_of(' ');
+            std::wstring BumpScaleStr = Path.substr(0, Path.find_first_of(' '));
+
+            Scale = _wtof(BumpScaleStr.c_str());
+
+            Path = Path.substr(Pos + 1);
+        }
+    }
+
+    // Texture path should be last element in line
+    Pos = Path.find_last_of(' ');
+    if (Pos != std::wstring::npos)
+    {
+        Path = Path.substr(Pos + 1);
+    }
+
     if (!Path.empty())
     {
         Texture = GetFileRelativePath(BasePath, Path);

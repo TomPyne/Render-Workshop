@@ -5,11 +5,10 @@ void HPCook(const std::wstring& SourceDir, const std::wstring& OutputDir, const 
 {
 	InitPipes();
 
-	for (const HPAssetArgs_s Asset : Args)
+	for (const HPAssetArgs_s& AssetArgs : Args)
 	{
-		if (IHPPipe_c* Pipe = GetPipeForAsset(Asset.AssetType.c_str()))
-		{
-			Pipe->Cook(SourceDir, OutputDir, Asset.Args);
-		}
+		PushCookCommand(AssetArgs);
 	}
+
+	ProcessCookCommands(SourceDir, OutputDir);
 }

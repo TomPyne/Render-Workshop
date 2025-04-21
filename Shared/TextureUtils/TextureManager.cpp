@@ -7,8 +7,8 @@
 #include "Logging/Logging.h"
 #include "StringUtils/StringUtils.h"
 
-#include <map>
 #include <Render/Textures.h>
+#include <Render/TextureInfo.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -166,10 +166,10 @@ TextureAsset_s* LoadTextureInternal(const char* FilePath, const wchar_t* WidePat
         {
             Success = LoadJPEGTexture(FilePath, Asset);
         }
-        else if (Extension == L"dds")
-        {
-            Success = LoadDDSTexture(WidePath, Asset);
-        }
+        //else if (Extension == L"dds")
+        //{
+        //    Success = LoadDDSTexture(WidePath, Asset);
+        //}
         else
         {
             LOGERROR("Unsupported texture extension: %S ", WidePath);

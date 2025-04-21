@@ -18,6 +18,7 @@ imgui.ini
 *.hp_mtl
 *.hp_tex
 *.hp_pkg
+*.hp_wml
 
 # raw assets
 *.obj

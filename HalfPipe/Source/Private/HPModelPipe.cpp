@@ -9,7 +9,7 @@
 #include <Logging/Logging.h>
 #include <Profiling/ScopeTimer.h>
 
-bool LoadModelFromWavefront(const wchar_t* WavefrontPath, HPModel_s& OutModel)
+bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& OutputDir, const wchar_t* WavefrontPath, HPModel_s& OutModel)
 {
     WaveFrontReader_c Reader;
     {
@@ -19,6 +19,21 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, HPModel_s& OutModel)
         {
             return false;
         }
+    }
+
+    std::wstring MtlLibCookedPath;
+    if(!Reader.MtlFile.empty())
+    {
+        std::wstring AbsolutePath = MakePathAbsolute(Reader.MtlFile);
+        std::wstring ContentRelativePath = MakePathRelativeTo(AbsolutePath, SourceDir);
+
+        HPAssetArgs_s MtlLibArgs;
+        MtlLibArgs.AssetType = L"WfMtlLib";
+        MtlLibArgs.Args.push_back(L"-src");
+        MtlLibArgs.Args.push_back(ContentRelativePath);
+        PushCookCommand(MtlLibArgs);
+
+        MtlLibCookedPath = GetCookedPathForAssetFromArgs(OutputDir, MtlLibArgs);
     }
 
     std::vector<uint32_t> Attributes;
@@ -229,8 +244,8 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, HPModel_s& OutModel)
     {
         ScopeTimer_s ScopeTimer(L"Meshletize mesh " + std::wstring(WavefrontPath));
 
-        constexpr uint32_t MeshletMaxVerts = 128;
-        constexpr uint32_t MeshletMaxPrims = 128;
+        constexpr uint32_t MeshletMaxVerts = 64;
+        constexpr uint32_t MeshletMaxPrims = 126;
 
         if (!ENSUREMSG(MeshProcessing::ComputeMeshlets(
             MeshletMaxVerts, MeshletMaxPrims,
@@ -347,39 +362,27 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, HPModel_s& OutModel)
     return true;
 }
 
-void HPModelPipe_c::Cook(const std::wstring& SourcePath, const std::wstring& OutputPath, const std::vector<std::wstring>& Args)
+static std::wstring GenerateOutputPath(const std::wstring& OutputDir, const std::wstring& AssetPath)
+{
+    return OutputDir + L"/" + ReplacePathExtension(AssetPath, L"hp_mdl");
+}
+
+void HPModelPipe_c::Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args)
 {
     std::wstring AssetPath;
-
-	for (size_t ArgIt = 0; ArgIt < Args.size(); ArgIt++)
-	{
-		const std::wstring& Command = Args[ArgIt];
-
-		if (Command == L"-src")
-		{
-			ArgIt++;
-			if (ArgIt >= Args.size())
-			{
-				LOGERROR("[HPModelPipe] Missing argument for -src");
-				return;
-			}
-
-            AssetPath = Args[ArgIt];
-        }
-	}
-
-    if (AssetPath.empty())
+    if (!ParseArgs(Args, L"-src", AssetPath))
     {
         LOGERROR("[HPModelPipe] No source path provided for asset");
+        return;
     }
 
-    std::wstring AbsSrcPath = SourcePath + L"/" + AssetPath;
+    std::wstring AbsSrcPath = SourceDir + L"/" + AssetPath;
 
     HPModel_s ProcessedModel;
 
     if (HasPathExtension(AssetPath, L".obj"))
     {
-        if (!LoadModelFromWavefront(AbsSrcPath.c_str(), ProcessedModel))
+        if (!LoadModelFromWavefront( SourceDir, OutputDir, AbsSrcPath.c_str(), ProcessedModel))
         {
             LOGERROR("[HPModelPipe] Failed to process model");
             return;
@@ -391,8 +394,10 @@ void HPModelPipe_c::Cook(const std::wstring& SourcePath, const std::wstring& Out
         return;
     }
 
-    std::wstring AssetOutputPath = OutputPath + L"/" + ReplacePathExtension(AssetPath, L"hp_mdl");
+    std::wstring AssetOutputPath = GenerateOutputPath(OutputDir, AssetPath);
    
+    CreateDirectories(AssetOutputPath);
+
     if (!ProcessedModel.Serialize(AssetOutputPath, FileStreamMode_e::WRITE))
     {
         LOGERROR("[HPModelPipe] Failed to write asset [%S]", AssetOutputPath.c_str());
@@ -400,4 +405,16 @@ void HPModelPipe_c::Cook(const std::wstring& SourcePath, const std::wstring& Out
     }
 
     LOGINFO("[HPModelPipe] Cooked model [%S]", AssetOutputPath.c_str());
+}
+
+std::wstring HPModelPipe_c::GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const
+{
+    std::wstring AssetPath;
+    if (!ParseArgs(Args, L"-src", AssetPath))
+    {
+        LOGERROR("[HPModelPipe] No source path provided for asset");
+        return {};
+    }
+
+    return GenerateOutputPath(OutputDir, AssetPath);
 }

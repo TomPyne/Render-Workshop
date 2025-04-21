@@ -1,11 +1,23 @@
 #include "HPModel.h"
 
+#include <FileUtils/FileStream.h>
+#include <Logging/Logging.h>
+
 bool HPModel_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
 {
     FileStream_s Stream(Path, Mode);
 
     if (!Stream.IsOpen())
     {
+        return false;
+    }
+
+    Stream.Stream(&Version);
+
+    if (Version != HPModelVersion_e::CURRENT)
+    {
+        LOGWARNING("[HPModel] Serializing with version mismatch");
+
         return false;
     }
 
@@ -41,7 +53,7 @@ bool HPModel_s::Serialize(const std::wstring& Path, FileStreamMode_e Mode)
 
     size_t IndexBufByteCount = IndexFormat == tpr::RenderFormat::R32_UINT ? 4 * IndexCount : 2 * IndexCount;
 
-    Stream.Stream(&Indices, IndexBufByteCount);
+    Stream.Stream(&Indices, static_cast<uint32_t>(IndexBufByteCount));
 
     Stream.Stream(&Meshes);
     Stream.Stream(&Meshlets);

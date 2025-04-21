@@ -1,8 +1,7 @@
 #include "DDSTextureLoader.h"
 #include "FileUtils/FileLoader.h"
 #include "Logging/Logging.h"
-#include "Render/Textures.h"
-#include "TextureManager.h"
+#include <Render/TextureInfo.h>
 
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(ch0, ch1, ch2, ch3)                              \
@@ -367,7 +366,7 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
 
 #undef ISBITMASK
 
-bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
+bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
 {
     if (!Asset || !FilePath)
     {
@@ -431,7 +430,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
     uint32_t Height = Header.Height;
     uint32_t Depth = Header.Depth;
     uint32_t ArraySize = 1u;
-    TextureAssetDimension_e Dimension = TextureAssetDimension_e::UNKNOWN;
+    DDSTexture_s::Dimension_e Dimension = DDSTexture_s::Dimension_e::UNKNOWN;
     tpr::RenderFormat Format = tpr::RenderFormat::UNKNOWN;
     bool IsCubemap = false;
     
@@ -509,7 +508,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
                 return FAILMSG("LoadDDSTexture: 1D Textures need a fixed height of 1 (%S)", FilePath);
             }
             Height = Depth = 1u;
-            Dimension = TextureAssetDimension_e::ONEDIM;
+            Dimension = DDSTexture_s::Dimension_e::ONEDIM;
             break;
 
         case DDSDimTex2D:
@@ -519,7 +518,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
                 IsCubemap = true;
             }
             Depth = 1;
-            Dimension = TextureAssetDimension_e::TWODIM;
+            Dimension = DDSTexture_s::Dimension_e::TWODIM;
             break;
         case DDSDimTex3D:
             if (!(Header.Flags & DDS_HEADER_FLAGS_VOLUME))
@@ -530,7 +529,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
             {
                 return FAILMSG("LoadDDSTexture: 3D Textures do not support arrays (%S)", FilePath);
             }
-            Dimension = TextureAssetDimension_e::THREEDIM;
+            Dimension = DDSTexture_s::Dimension_e::THREEDIM;
             break;
         default:
             return FAILMSG("LoadDDSTexture: Unsupported resource dimension (%S)", FilePath);
@@ -547,7 +546,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
 
         if (Header.Flags & DDS_HEADER_FLAGS_VOLUME)
         {
-            Dimension = TextureAssetDimension_e::THREEDIM;
+            Dimension = DDSTexture_s::Dimension_e::THREEDIM;
         }
         else
         {
@@ -563,7 +562,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
             }
 
             Depth = 1u;
-            Dimension = TextureAssetDimension_e::TWODIM;
+            Dimension = DDSTexture_s::Dimension_e::TWODIM;
         }
     }
 
@@ -582,13 +581,13 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
 
     switch (Dimension)
     {
-    case TextureAssetDimension_e::ONEDIM:
+    case DDSTexture_s::Dimension_e::ONEDIM:
         if (ArraySize> MaxArraySize1D || Width > MaxDim1D)
         {
             return FAILMSG("LoadDDSTexture: 1D texture width/depth larger than supported by hardware (%S)", FilePath);
         }
         break;
-    case TextureAssetDimension_e::TWODIM:
+    case DDSTexture_s::Dimension_e::TWODIM:
         if (IsCubemap)
         {
             if (Depth > MaxArraySize2D || Width > MaxDimCube || Height > MaxDimCube)
@@ -601,7 +600,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
             return FAILMSG("LoadDDSTexture: 2D texture width/height/depth larger than supported by hardware (%S)", FilePath);
         }
         break;
-    case TextureAssetDimension_e::THREEDIM:
+    case DDSTexture_s::Dimension_e::THREEDIM:
         if (Depth > MaxDim3D || Width > MaxDim3D || Height > MaxDim3D)
         {
             return FAILMSG("LoadDDSTexture: 3D texture width/height/depth larger than supported by hardware (%S)", FilePath);
@@ -611,7 +610,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
         return FAILMSG("LoadDDSTexture: Unsupported texture dimension (%S)", FilePath);
     }
 
-    size_t NumResources = Dimension == TextureAssetDimension_e::THREEDIM ? 1 : ArraySize;
+    size_t NumResources = Dimension == DDSTexture_s::Dimension_e::THREEDIM ? 1 : ArraySize;
     NumResources *= MipCount;
 
     constexpr uint32_t MaxResources = 30720u;
@@ -626,8 +625,9 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
     size_t TexDepth = 0;
     size_t NumBytes = 0;
     size_t RowBytes = 0;
+    size_t NumRowsUnused = 0;
 
-    std::vector<TextureAssetSubResource_s> SubResourceInfos;
+    std::vector<DDSTexture_s::Subresource_s> SubResourceInfos;
     SubResourceInfos.reserve(NumResources);
 
     uint32_t SrcBitOffset = 0u;
@@ -638,7 +638,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
         uint32_t D = Depth;
         for (uint32_t MipIt = 0; MipIt < MipCount; MipIt++)
         {            
-            tpr::GetTextureSurfaceInfo(W, H, Format, &NumBytes, &RowBytes);
+            tpr::GetTextureSurfaceInfo(W, H, Format, &NumBytes, &RowBytes, &NumRowsUnused);
 
             if (NumBytes > UINT32_MAX || RowBytes > UINT32_MAX)
             {
@@ -652,28 +652,28 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
                 TexDepth = D;
             }
 
-            TextureAssetSubResource_s Res;
+            DDSTexture_s::Subresource_s Res;
             Res.DataOffset = SrcBitOffset;
             Res.RowPitch = static_cast<uint32_t>(RowBytes);
             Res.SlicePitch = static_cast<uint32_t>(NumBytes);
 
             SubResourceInfos.emplace_back(Res);
+
+            if ((SrcBitOffset + (NumBytes * D)) > DataSize)
+            {
+                return FAILMSG("LoadDDSTexture: Reached EOF (%S)", FilePath);
+            }
+
+            SrcBitOffset += static_cast<uint32_t>(NumBytes * D);
+
+            W = W >> 1;
+            H = H >> 1;
+            D = D >> 1;
+
+            if (W == 0) W = 1;
+            if (H == 0) H = 1;
+            if (D == 0) D = 1;
         }
-
-        if ((SrcBitOffset + (NumBytes * D)) > DataSize)
-        {
-            return FAILMSG("LoadDDSTexture: Reached EOF (%S)", FilePath);
-        }
-
-        SrcBitOffset += static_cast<uint32_t>(NumBytes * D);
-
-        W = W >> 1;
-        H = H >> 1;
-        D = D >> 1;
-
-        if (W == 0) W = 1;
-        if (H == 0) H = 1;
-        if (D == 0) D = 1;
     }
     
     if (SubResourceInfos.empty())
@@ -683,7 +683,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
 
     Asset->Width = Width;
     Asset->Height = Height;
-    Asset->DepthOrArraySize = Dimension == TextureAssetDimension_e::THREEDIM ? Depth : ArraySize;
+    Asset->DepthOrArraySize = Dimension == DDSTexture_s::Dimension_e::THREEDIM ? Depth : ArraySize;
     Asset->Dimension = Dimension;
     Asset->Format = Format;
     Asset->MipCount = MipCount;
@@ -691,8 +691,6 @@ bool LoadDDSTexture(const wchar_t* FilePath, TextureAsset_s* Asset)
 
     std::swap(Asset->SubResourceInfos, SubResourceInfos);
     std::swap(Asset->Data, Data);
-
-    Asset->SourcePath = FilePath;
 
     LOGINFO("Loaded texture %S, Width: %d, Height: %d, Depth: %d, Array Size: %d, Mips: %d, Is Cubemap: %d", FilePath, Width, Height, Depth, ArraySize, MipCount, IsCubemap);
 

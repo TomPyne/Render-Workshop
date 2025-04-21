@@ -353,6 +353,7 @@ bool InitializeApp()
 
 	// First cook
 
+#if 0
 	std::vector<std::wstring> ModelPaths =
 	{
 		L"Cooked/Models/Bistro_Aerial_B.hp_mdl",
@@ -370,11 +371,12 @@ bool InitializeApp()
 		L"Cooked/Models/Bistro_Street.hp_mdl",
 		L"Cooked/Models/Bistro_Street_NormalFix.hp_mdl",
 	};
+#endif
 
-	//std::vector<std::wstring> ModelPaths =
-	//{
-	//	L"Cooked/Models/PBRTest.hp_mdl"
-	//};
+	std::vector<std::wstring> ModelPaths =
+	{
+		L"Cooked/Models/Bistro2.hp_mdl"
+	};
 
 	std::vector<HPModel_s> ModelAssets;
 	ModelAssets.resize(ModelPaths.size());

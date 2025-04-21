@@ -6,6 +6,45 @@
 #include <unordered_map>
 #include <vector>
 
+class WaveFrontMtlReader_c
+{
+public:
+
+	struct Material_s
+	{
+		float3 Ambient = float3(0.2f);
+		float3 Diffuse = float3(0.8f);
+		float3 Specular = float3(1.0f);
+		float3 Emissive = float3(0.0f);
+		u32 Shininess = 0;
+		float Alpha = 1.0f;
+		float BumpScale = 1.0f;
+		float Roughness = 1.0f;
+		float Metallic = 1.0f;
+
+		bool HasSpecular = false;
+		bool HasEmissive = false;
+
+		std::wstring Name;
+		std::wstring DiffuseTexture;
+		std::wstring NormalTexture;
+		std::wstring SpecularTexture;
+		std::wstring EmissiveTexture;
+		std::wstring RMATexture;
+		std::wstring RoughnessTexture;
+		std::wstring MetallicTexture;
+		std::wstring BumpTexture;
+	};
+
+	std::vector<Material_s> Materials;
+
+	bool Load(const wchar_t* FileName);
+
+private:
+	void LoadTexturePath(std::wifstream& InFile, const std::wstring& BasePath, std::wstring& Texture);
+	void LoadBumpTexturePath(std::wifstream& InFile, const std::wstring& BasePath, float& Scale, std::wstring& Texture);
+};
+
 class WaveFrontReader_c
 {
 public:
@@ -73,6 +112,7 @@ public:
 	std::vector<Material_s> Materials;
 
 	std::wstring            Name;
+	std::wstring			MtlFile;
 	bool                    HasNormals;
 	bool                    HasTexcoords;
 

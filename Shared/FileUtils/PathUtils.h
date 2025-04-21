@@ -14,3 +14,8 @@ bool HasPathExtension(const wchar_t* Path, const wchar_t* Extension);
 inline std::wstring GetPathExtension(const std::wstring& Path) { return GetPathExtension(Path.c_str()); }
 inline std::wstring ReplacePathExtension(const std::wstring& Path, const wchar_t* NewExtension) { return ReplacePathExtension(Path.c_str(), NewExtension); }
 inline bool HasPathExtension(const std::wstring& Path, const wchar_t* Extension) { return HasPathExtension(Path.c_str(), Extension); }
+
+std::wstring MakePathAbsolute(const std::wstring& Path);
+std::wstring MakePathRelativeTo(const std::wstring& Path, const std::wstring& Base);
+
+bool CreateDirectories(const std::wstring& Path);

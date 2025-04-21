@@ -2,9 +2,17 @@
 
 #include <FileUtils/PathUtils.h>
 #include <Render/RenderTypes.h>
-#include <FileUtils/FileStream.h>
 #include <SurfMath.h>
 #include <vector>
+
+enum class HPModelVersion_e
+{
+	INITIAL = 0,
+
+	CURRENT = INITIAL,
+};
+
+enum class FileStreamMode_e;
 
 struct HPModel_s
 {
@@ -26,6 +34,8 @@ struct HPModel_s
 		uint32_t PrimCount;
 		uint32_t PrimOffset;
 	};
+
+	HPModelVersion_e Version = HPModelVersion_e::CURRENT;
 
 	uint32_t VertexCount = 0;
 	uint32_t IndexCount = 0;

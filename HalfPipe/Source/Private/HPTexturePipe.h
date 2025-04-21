@@ -2,10 +2,10 @@
 
 #include "HPPipe.h"
 
-class HPModelPipe_c : public IHPPipe_c
+class HPTexturePipe_c : public IHPPipe_c
 {
 public:
-	const wchar_t* GetAssetType() const override { return L"Model"; }
+	const wchar_t* GetAssetType() const override { return L"Texture"; }
 	void Cook(const std::wstring& SourceDir, const std::wstring& OutputDir, const std::vector<std::wstring>& Args) override;
 	std::wstring GetCookedAssetPath(const std::wstring& OutputDir, const std::vector<std::wstring>& Args) const;
 };

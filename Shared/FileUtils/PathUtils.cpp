@@ -1,6 +1,7 @@
 #include "PathUtils.h"
 
 #include "Logging/Logging.h"
+#include <filesystem>
 
 std::wstring GetPathExtension(const wchar_t* Path)
 {
@@ -36,4 +37,20 @@ bool HasPathExtension(const wchar_t* Path, const wchar_t* Extension)
 	_wsplitpath_s(Path, nullptr, 0, nullptr, 0, nullptr, 0, Ext, _MAX_EXT);
 
 	return wcscmp(Ext, Extension) == 0;
+}
+
+std::wstring MakePathAbsolute(const std::wstring& path)
+{
+	return std::filesystem::absolute(path).native();
+}
+
+std::wstring MakePathRelativeTo(const std::wstring& Path, const std::wstring& Base)
+{
+	return std::filesystem::relative(Path, Base).native();
+}
+
+bool CreateDirectories(const std::wstring& Path)
+{
+	std::filesystem::path ParentPath = std::filesystem::path(Path).parent_path();
+	return std::filesystem::create_directories(ParentPath);
 }
