@@ -4,6 +4,7 @@
 
 #include <Assets/Assets.h>
 #include <Camera/FlyCamera.h>
+#include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
 #include <ModelUtils/Model.h>
 #include <Materials/Materials.h>
