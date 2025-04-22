@@ -1,7 +1,7 @@
 #include <Render/Render.h>
 #include <SurfMath.h>
 
-using namespace tpr;
+using namespace rl;
 
 static struct
 {

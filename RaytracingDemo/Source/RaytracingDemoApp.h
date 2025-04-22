@@ -4,7 +4,7 @@
 
 #include <Render/RenderTypes.h>
 
-tpr::RenderInitParams GetAppRenderParams();
+rl::RenderInitParams GetAppRenderParams();
 
 bool InitializeApp();
 
@@ -14,6 +14,6 @@ void Update(float deltaSeconds);
 
 void ImguiUpdate();
 
-void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, float deltaSeconds);
+void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds);
 
 void ShutdownApp();

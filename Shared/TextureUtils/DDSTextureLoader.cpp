@@ -68,7 +68,7 @@ struct DDSHeader_s
 
 struct DDSHeaderDXT10_s
 {
-    tpr::RenderFormat Format;
+    rl::RenderFormat Format;
     uint32_t ResourceDimension;
     uint32_t MiscFlag;
     uint32_t ArraySize;
@@ -87,7 +87,7 @@ static_assert(DDSDX10HeaderSize > DDSMinHeaderSize, "DDS DX10 Header should be l
 
 #define ISBITMASK( r,g,b,a ) ( PixelFormat.RBitMask == r && PixelFormat.GBitMask == g && PixelFormat.BBitMask == b && PixelFormat.ABitMask == a )
 
-tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
+rl::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
 {
     if (PixelFormat.Flags & DDS_RGB)
     {
@@ -98,17 +98,17 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
         case 32:
             if (ISBITMASK(0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000))
             {
-                return tpr::RenderFormat::R8G8B8A8_UNORM;
+                return rl::RenderFormat::R8G8B8A8_UNORM;
             }
 
             if (ISBITMASK(0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000))
             {
-                return tpr::RenderFormat::B8G8R8A8_UNORM;
+                return rl::RenderFormat::B8G8R8A8_UNORM;
             }
 
             if (ISBITMASK(0x00ff0000, 0x0000ff00, 0x000000ff, 0))
             {
-                return tpr::RenderFormat::B8G8R8X8_UNORM;
+                return rl::RenderFormat::B8G8R8X8_UNORM;
             }
 
             // No DXGI format maps to ISBITMASK(0x000000ff,0x0000ff00,0x00ff0000,0) aka D3DFMT_X8B8G8R8
@@ -122,20 +122,20 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
             // For 'correct' writers, this should be 0x000003ff,0x000ffc00,0x3ff00000 for RGB data
             if (ISBITMASK(0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000))
             {
-                return tpr::RenderFormat::R10G10B10A2_UNORM;
+                return rl::RenderFormat::R10G10B10A2_UNORM;
             }
 
             // No DXGI format maps to ISBITMASK(0x000003ff,0x000ffc00,0x3ff00000,0xc0000000) aka D3DFMT_A2R10G10B10
 
             if (ISBITMASK(0x0000ffff, 0xffff0000, 0, 0))
             {
-                return tpr::RenderFormat::R16G16_UNORM;
+                return rl::RenderFormat::R16G16_UNORM;
             }
 
             if (ISBITMASK(0xffffffff, 0, 0, 0))
             {
                 // Only 32-bit color channel format in D3D9 was R32F
-                return tpr::RenderFormat::R32_FLOAT; // D3DX writes this out as a FourCC of 114
+                return rl::RenderFormat::R32_FLOAT; // D3DX writes this out as a FourCC of 114
             }
             break;
 
@@ -146,28 +146,28 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
         case 16:
             if (ISBITMASK(0x7c00, 0x03e0, 0x001f, 0x8000))
             {
-                return tpr::RenderFormat::B5G5R5A1_UNORM;
+                return rl::RenderFormat::B5G5R5A1_UNORM;
             }
             if (ISBITMASK(0xf800, 0x07e0, 0x001f, 0))
             {
-                return tpr::RenderFormat::B5G6R5_UNORM;
+                return rl::RenderFormat::B5G6R5_UNORM;
             }
 
             // No DXGI format maps to ISBITMASK(0x7c00,0x03e0,0x001f,0) aka D3DFMT_X1R5G5B5
 
             if (ISBITMASK(0x0f00, 0x00f0, 0x000f, 0xf000))
             {
-                return tpr::RenderFormat::B4G4R4A4_UNORM;
+                return rl::RenderFormat::B4G4R4A4_UNORM;
             }
 
             // NVTT versions 1.x wrote this as RGB instead of LUMINANCE
             if (ISBITMASK(0x00ff, 0, 0, 0xff00))
             {
-                return tpr::RenderFormat::R8G8_UNORM;
+                return rl::RenderFormat::R8G8_UNORM;
             }
             if (ISBITMASK(0xffff, 0, 0, 0))
             {
-                return tpr::RenderFormat::R16_UNORM;
+                return rl::RenderFormat::R16_UNORM;
             }
 
             // No DXGI format maps to ISBITMASK(0x0f00,0x00f0,0x000f,0) aka D3DFMT_X4R4G4B4
@@ -179,14 +179,14 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
             // NVTT versions 1.x wrote this as RGB instead of LUMINANCE
             if (ISBITMASK(0xff, 0, 0, 0))
             {
-                return tpr::RenderFormat::R8_UNORM;
+                return rl::RenderFormat::R8_UNORM;
             }
 
             // No 3:3:2 or paletted DXGI formats aka D3DFMT_R3G3B2, D3DFMT_P8
             break;
 
         default:
-            return tpr::RenderFormat::UNKNOWN;
+            return rl::RenderFormat::UNKNOWN;
         }
     }
     else if (PixelFormat.Flags & DDS_LUMINANCE)
@@ -196,37 +196,37 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
         case 16:
             if (ISBITMASK(0xffff, 0, 0, 0))
             {
-                return tpr::RenderFormat::R16_UNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R16_UNORM; // D3DX10/11 writes this out as DX10 extension
             }
             if (ISBITMASK(0x00ff, 0, 0, 0xff00))
             {
-                return tpr::RenderFormat::R8G8_UNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R8G8_UNORM; // D3DX10/11 writes this out as DX10 extension
             }
             break;
 
         case 8:
             if (ISBITMASK(0xff, 0, 0, 0))
             {
-                return tpr::RenderFormat::R8_UNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R8_UNORM; // D3DX10/11 writes this out as DX10 extension
             }
 
             // No DXGI format maps to ISBITMASK(0x0f,0,0,0xf0) aka D3DFMT_A4L4
 
             if (ISBITMASK(0x00ff, 0, 0, 0xff00))
             {
-                return tpr::RenderFormat::R8G8_UNORM; // Some DDS writers assume the bitcount should be 8 instead of 16
+                return rl::RenderFormat::R8G8_UNORM; // Some DDS writers assume the bitcount should be 8 instead of 16
             }
             break;
 
         default:
-            return tpr::RenderFormat::UNKNOWN;
+            return rl::RenderFormat::UNKNOWN;
         }
     }
     else if (PixelFormat.Flags & DDS_ALPHA)
     {
         if (8 == PixelFormat.RGBBitCount)
         {
-            return tpr::RenderFormat::A8_UNORM;
+            return rl::RenderFormat::A8_UNORM;
         }
     }
     else if (PixelFormat.Flags & DDS_BUMPDUDV)
@@ -236,11 +236,11 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
         case 32:
             if (ISBITMASK(0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000))
             {
-                return tpr::RenderFormat::R8G8B8A8_SNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R8G8B8A8_SNORM; // D3DX10/11 writes this out as DX10 extension
             }
             if (ISBITMASK(0x0000ffff, 0xffff0000, 0, 0))
             {
-                return tpr::RenderFormat::R16G16_SNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R16G16_SNORM; // D3DX10/11 writes this out as DX10 extension
             }
 
             // No DXGI format maps to ISBITMASK(0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000) aka D3DFMT_A2W10V10U10
@@ -249,12 +249,12 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
         case 16:
             if (ISBITMASK(0x00ff, 0xff00, 0, 0))
             {
-                return tpr::RenderFormat::R8G8_SNORM; // D3DX10/11 writes this out as DX10 extension
+                return rl::RenderFormat::R8G8_SNORM; // D3DX10/11 writes this out as DX10 extension
             }
             break;
 
         default:
-            return tpr::RenderFormat::UNKNOWN;
+            return rl::RenderFormat::UNKNOWN;
         }
 
         // No DXGI format maps to DDPF_BUMPLUMINANCE aka D3DFMT_L6V5U5, D3DFMT_X8L8V8U8
@@ -263,105 +263,105 @@ tpr::RenderFormat GetFormat(const DDSPixelFormat_s& PixelFormat) noexcept
     {
         if (MAKEFOURCC('D', 'X', 'T', '1') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC1_UNORM;
+            return rl::RenderFormat::BC1_UNORM;
         }
         if (MAKEFOURCC('D', 'X', 'T', '3') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC2_UNORM;
+            return rl::RenderFormat::BC2_UNORM;
         }
         if (MAKEFOURCC('D', 'X', 'T', '5') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC3_UNORM;
+            return rl::RenderFormat::BC3_UNORM;
         }
 
         // While pre-multiplied alpha isn't directly supported by the DXGI formats,
         // they are basically the same as these BC formats so they can be mapped
         if (MAKEFOURCC('D', 'X', 'T', '2') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC2_UNORM;
+            return rl::RenderFormat::BC2_UNORM;
         }
         if (MAKEFOURCC('D', 'X', 'T', '4') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC3_UNORM;
+            return rl::RenderFormat::BC3_UNORM;
         }
 
         if (MAKEFOURCC('A', 'T', 'I', '1') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC4_UNORM;
+            return rl::RenderFormat::BC4_UNORM;
         }
         if (MAKEFOURCC('B', 'C', '4', 'U') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC4_UNORM;
+            return rl::RenderFormat::BC4_UNORM;
         }
         if (MAKEFOURCC('B', 'C', '4', 'S') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC4_SNORM;
+            return rl::RenderFormat::BC4_SNORM;
         }
 
         if (MAKEFOURCC('A', 'T', 'I', '2') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC5_UNORM;
+            return rl::RenderFormat::BC5_UNORM;
         }
         if (MAKEFOURCC('B', 'C', '5', 'U') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC5_UNORM;
+            return rl::RenderFormat::BC5_UNORM;
         }
         if (MAKEFOURCC('B', 'C', '5', 'S') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::BC5_SNORM;
+            return rl::RenderFormat::BC5_SNORM;
         }
 
         // BC6H and BC7 are written using the "DX10" extended header
 
         if (MAKEFOURCC('R', 'G', 'B', 'G') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::R8G8_B8G8_UNORM;
+            return rl::RenderFormat::R8G8_B8G8_UNORM;
         }
         if (MAKEFOURCC('G', 'R', 'G', 'B') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::G8R8_G8B8_UNORM;
+            return rl::RenderFormat::G8R8_G8B8_UNORM;
         }
 
         if (MAKEFOURCC('Y', 'U', 'Y', '2') == PixelFormat.FourCC)
         {
-            return tpr::RenderFormat::YUY2;
+            return rl::RenderFormat::YUY2;
         }
 
         // Check for D3DFORMAT enums being set here
         switch (PixelFormat.FourCC)
         {
         case 36: // D3DFMT_A16B16G16R16
-            return tpr::RenderFormat::R16G16B16A16_UNORM;
+            return rl::RenderFormat::R16G16B16A16_UNORM;
 
         case 110: // D3DFMT_Q16W16V16U16
-            return tpr::RenderFormat::R16G16B16A16_SNORM;
+            return rl::RenderFormat::R16G16B16A16_SNORM;
 
         case 111: // D3DFMT_R16F
-            return tpr::RenderFormat::R16_FLOAT;
+            return rl::RenderFormat::R16_FLOAT;
 
         case 112: // D3DFMT_G16R16F
-            return tpr::RenderFormat::R16G16_FLOAT;
+            return rl::RenderFormat::R16G16_FLOAT;
 
         case 113: // D3DFMT_A16B16G16R16F
-            return tpr::RenderFormat::R16G16B16A16_FLOAT;
+            return rl::RenderFormat::R16G16B16A16_FLOAT;
 
         case 114: // D3DFMT_R32F
-            return tpr::RenderFormat::R32_FLOAT;
+            return rl::RenderFormat::R32_FLOAT;
 
         case 115: // D3DFMT_G32R32F
-            return tpr::RenderFormat::R32G32_FLOAT;
+            return rl::RenderFormat::R32G32_FLOAT;
 
         case 116: // D3DFMT_A32B32G32R32F
-            return tpr::RenderFormat::R32G32B32A32_FLOAT;
+            return rl::RenderFormat::R32G32B32A32_FLOAT;
 
             // No DXGI format maps to D3DFMT_CxV8U8
 
         default:
-            return tpr::RenderFormat::UNKNOWN;
+            return rl::RenderFormat::UNKNOWN;
         }
     }
 
-    return tpr::RenderFormat::UNKNOWN;
+    return rl::RenderFormat::UNKNOWN;
 }
 
 #undef ISBITMASK
@@ -431,7 +431,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
     uint32_t Depth = Header.Depth;
     uint32_t ArraySize = 1u;
     DDSTexture_s::Dimension_e Dimension = DDSTexture_s::Dimension_e::UNKNOWN;
-    tpr::RenderFormat Format = tpr::RenderFormat::UNKNOWN;
+    rl::RenderFormat Format = rl::RenderFormat::UNKNOWN;
     bool IsCubemap = false;
     
     uint32_t MipCount = Header.MipMapCount > 0 ? Header.MipMapCount : 1;
@@ -448,7 +448,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
             return FAILMSG("LoadDDSTexture: 0 array size (%S)", FilePath);
         }
 
-        if (DDSHeaderDXT10.Format >= tpr::RenderFormat::COUNT)
+        if (DDSHeaderDXT10.Format >= rl::RenderFormat::COUNT)
         {
             return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
         }
@@ -459,40 +459,40 @@ bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
 
         switch (DDSHeaderDXT10.Format)
         {
-        case tpr::RenderFormat::NV12:
-        case tpr::RenderFormat::P010:
-        case tpr::RenderFormat::P016:
-        case tpr::RenderFormat::OPAQUE_420:
+        case rl::RenderFormat::NV12:
+        case rl::RenderFormat::P010:
+        case rl::RenderFormat::P016:
+        case rl::RenderFormat::OPAQUE_420:
             if ((DDSHeaderDXT10.ResourceDimension != DDSDimTex2D) || (Width % 2) != 0 || (Height % 2) != 0)
             {
                 return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
             }
             break;
 
-        case tpr::RenderFormat::YUY2:
-        case tpr::RenderFormat::Y210:
-        case tpr::RenderFormat::Y216:
+        case rl::RenderFormat::YUY2:
+        case rl::RenderFormat::Y210:
+        case rl::RenderFormat::Y216:
             if ((Width % 2) != 0)
             {
                 return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
             }
             break;
 
-        case tpr::RenderFormat::NV11:
+        case rl::RenderFormat::NV11:
             if ((Width % 4) != 0)
             {
                 return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
             }
             break;
 
-        case tpr::RenderFormat::AI44:
-        case tpr::RenderFormat::IA44:
-        case tpr::RenderFormat::P8:
-        case tpr::RenderFormat::A8P8:
+        case rl::RenderFormat::AI44:
+        case rl::RenderFormat::IA44:
+        case rl::RenderFormat::P8:
+        case rl::RenderFormat::A8P8:
             return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
 
         default:
-            if (tpr::BitsPerPixel(DDSHeaderDXT10.Format) == 0)
+            if (rl::BitsPerPixel(DDSHeaderDXT10.Format) == 0)
             {
                 return FAILMSG("LoadDDSTexture: Unsupported format (%S)", FilePath);
             }
@@ -539,7 +539,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
     {
         Format = GetFormat(Header.DDSPixelFormat);
 
-        if (Format == tpr::RenderFormat::UNKNOWN)
+        if (Format == rl::RenderFormat::UNKNOWN)
         {
             return FAILMSG("LoadDDSTexture: Unknown texture format (%S)", FilePath);
         }
@@ -638,7 +638,7 @@ bool LoadDDSTexture(const wchar_t* FilePath, DDSTexture_s* Asset)
         uint32_t D = Depth;
         for (uint32_t MipIt = 0; MipIt < MipCount; MipIt++)
         {            
-            tpr::GetTextureSurfaceInfo(W, H, Format, &NumBytes, &RowBytes, &NumRowsUnused);
+            rl::GetTextureSurfaceInfo(W, H, Format, &NumBytes, &RowBytes, &NumRowsUnused);
 
             if (NumBytes > UINT32_MAX || RowBytes > UINT32_MAX)
             {

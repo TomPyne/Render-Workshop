@@ -13,14 +13,14 @@
 
 #include <ppl.h>
 
-using namespace tpr;
+using namespace rl;
 
 static const std::wstring s_AssetDirectory = L"Cooked/";
 
 struct RTDTexture_s
 {
-	tpr::TexturePtr Texture = {};
-	tpr::ShaderResourceViewPtr SRV = {};
+	rl::TexturePtr Texture = {};
+	rl::ShaderResourceViewPtr SRV = {};
 
 	bool Init(const HPTexture_s& Asset);
 };
@@ -41,15 +41,15 @@ struct RTDMaterial_s
 	std::shared_ptr<RTDTexture_s> NormalTexture = nullptr;
 	std::shared_ptr<RTDTexture_s> RoughnessMetallicTexture = nullptr;
 
-	tpr::ConstantBuffer_t MaterialConstantBuffer = {};
+	rl::ConstantBuffer_t MaterialConstantBuffer = {};
 
 	bool Init(const HPWfMtlLib_s::Material_s& Asset);
 };
 
 struct RTDBuffer_s
 {
-	tpr::StructuredBufferPtr StructuredBuffer = {};
-	tpr::ShaderResourceViewPtr BufferSRV = {};
+	rl::StructuredBufferPtr StructuredBuffer = {};
+	rl::ShaderResourceViewPtr BufferSRV = {};
 
 	template<typename T>
 	void Init(const T* const Data, size_t Count)
@@ -57,9 +57,9 @@ struct RTDBuffer_s
 		if (Count)
 		{
 			CHECK(Data != nullptr);
-			StructuredBuffer = tpr::CreateStructuredBuffer(Data, Count);
+			StructuredBuffer = rl::CreateStructuredBuffer(Data, Count);
 			CHECK(StructuredBuffer);
-			BufferSRV = tpr::CreateStructuredBufferSRV(StructuredBuffer, 0u, static_cast<uint32_t>(Count), static_cast<uint32_t>(sizeof(T)));
+			BufferSRV = rl::CreateStructuredBufferSRV(StructuredBuffer, 0u, static_cast<uint32_t>(Count), static_cast<uint32_t>(sizeof(T)));
 			CHECK(BufferSRV);
 		}
 	}
@@ -113,13 +113,13 @@ struct RTDModel_s
 	RTDBuffer_s UniqueVertexIndexBuffer;
 	RTDBuffer_s PrimitiveIndexBuffer;
 
-	tpr::ConstantBufferPtr ModelConstantBuffer;
+	rl::ConstantBufferPtr ModelConstantBuffer;
 
 	std::vector<RTDMesh_s> Meshes;
 
 	bool Init(const HPModel_s* Asset);
 
-	void Draw(tpr::CommandList* CL) const;
+	void Draw(rl::CommandList* CL) const;
 };
 
 enum RootSigSlots
@@ -216,14 +216,14 @@ struct Globals_s
 
 bool RTDTexture_s::Init(const HPTexture_s& Asset)
 {
-	tpr::TextureCreateDescEx TexDesc = {};
+	rl::TextureCreateDescEx TexDesc = {};
 	TexDesc.DebugName = Asset.SourcePath;
 	TexDesc.Width = Asset.Width;
 	TexDesc.Height = Asset.Height;
 	TexDesc.DepthOrArraySize = 1u;
 	TexDesc.MipCount = static_cast<uint32_t>(Asset.Mips.size());
 	TexDesc.Dimension = TextureDimension::TEX2D;
-	TexDesc.Flags = tpr::RenderResourceFlags::SRV;
+	TexDesc.Flags = rl::RenderResourceFlags::SRV;
 	TexDesc.ResourceFormat = Asset.Format;
 
 	std::vector<MipData> Data;
@@ -237,8 +237,8 @@ bool RTDTexture_s::Init(const HPTexture_s& Asset)
 
 	TexDesc.Data = Data.data();
 
-	Texture = tpr::CreateTextureEx(TexDesc);
-	SRV = tpr::CreateTextureSRV(Texture);
+	Texture = rl::CreateTextureEx(TexDesc);
+	SRV = rl::CreateTextureSRV(Texture);
 
 	return true;
 }
@@ -280,11 +280,11 @@ bool RTDMaterial_s::Init(const HPWfMtlLib_s::Material_s& Asset)
 	RoughnessMetallicTexture = LoadTexture(Asset.SpecularTexture);
 	NormalTexture = LoadTexture(Asset.NormalTexture);
 
-	Params.AlbedoTextureIndex = AlbedoTexture ? tpr::GetDescriptorIndex(AlbedoTexture->SRV) : 0;
-	Params.RoughnessMetallicTextureIndex = RoughnessMetallicTexture ? tpr::GetDescriptorIndex(RoughnessMetallicTexture->SRV) : 0;
-	Params.NormalTextureIndex = NormalTexture ? tpr::GetDescriptorIndex(NormalTexture->SRV) : 0;
+	Params.AlbedoTextureIndex = AlbedoTexture ? rl::GetDescriptorIndex(AlbedoTexture->SRV) : 0;
+	Params.RoughnessMetallicTextureIndex = RoughnessMetallicTexture ? rl::GetDescriptorIndex(RoughnessMetallicTexture->SRV) : 0;
+	Params.NormalTextureIndex = NormalTexture ? rl::GetDescriptorIndex(NormalTexture->SRV) : 0;
 
-	MaterialConstantBuffer = tpr::CreateConstantBuffer(&Params);
+	MaterialConstantBuffer = rl::CreateConstantBuffer(&Params);
 
 	return true;
 }
@@ -297,7 +297,7 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 	PositionBuffer.Init(Asset->Positions.data(), Asset->Positions.size());
 
 	CHECK(!Asset->Indices.empty());
-	if (Asset->IndexFormat == tpr::RenderFormat::R32_UINT)
+	if (Asset->IndexFormat == rl::RenderFormat::R32_UINT)
 	{
 		IndexBuffer.Init(reinterpret_cast<const uint32_t*>(Asset->Indices.data()), Asset->Indices.size() / 4);
 	}
@@ -346,18 +346,18 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 	}
 
 	RTDMeshConstants_s MeshConstants = {};
-	MeshConstants.PositionBufSRVIndex = tpr::GetDescriptorIndex(PositionBuffer.BufferSRV);
-	MeshConstants.NormalBufSRVIndex = tpr::GetDescriptorIndex(NormalBuffer.BufferSRV);
-	MeshConstants.TangentBufSRVIndex = tpr::GetDescriptorIndex(TangentBuffer.BufferSRV);
-	MeshConstants.BitangentBufSRVIndex = tpr::GetDescriptorIndex(BitangentBuffer.BufferSRV);
-	MeshConstants.TexcoordBufSRVIndex = tpr::GetDescriptorIndex(TexcoordBuffer.BufferSRV);
-	MeshConstants.IndexBufSRVIndex = tpr::GetDescriptorIndex(IndexBuffer.BufferSRV);
+	MeshConstants.PositionBufSRVIndex = rl::GetDescriptorIndex(PositionBuffer.BufferSRV);
+	MeshConstants.NormalBufSRVIndex = rl::GetDescriptorIndex(NormalBuffer.BufferSRV);
+	MeshConstants.TangentBufSRVIndex = rl::GetDescriptorIndex(TangentBuffer.BufferSRV);
+	MeshConstants.BitangentBufSRVIndex = rl::GetDescriptorIndex(BitangentBuffer.BufferSRV);
+	MeshConstants.TexcoordBufSRVIndex = rl::GetDescriptorIndex(TexcoordBuffer.BufferSRV);
+	MeshConstants.IndexBufSRVIndex = rl::GetDescriptorIndex(IndexBuffer.BufferSRV);
 
-	MeshConstants.MeshletBufSRVIndex = tpr::GetDescriptorIndex(MeshletBuffer.BufferSRV);
-	MeshConstants.UniqueVertexIndexBufSRVIndex = tpr::GetDescriptorIndex(UniqueVertexIndexBuffer.BufferSRV);
-	MeshConstants.PrimitiveIndexBufSRVIndex = tpr::GetDescriptorIndex(PrimitiveIndexBuffer.BufferSRV);
+	MeshConstants.MeshletBufSRVIndex = rl::GetDescriptorIndex(MeshletBuffer.BufferSRV);
+	MeshConstants.UniqueVertexIndexBufSRVIndex = rl::GetDescriptorIndex(UniqueVertexIndexBuffer.BufferSRV);
+	MeshConstants.PrimitiveIndexBufSRVIndex = rl::GetDescriptorIndex(PrimitiveIndexBuffer.BufferSRV);
 
-	ModelConstantBuffer = tpr::CreateConstantBuffer(&MeshConstants);
+	ModelConstantBuffer = rl::CreateConstantBuffer(&MeshConstants);
 
 	HPWfMtlLib_s MaterialLib;
 	if (Asset->MaterialLibPath.empty())
@@ -422,7 +422,7 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 	return true;
 }
 
-void RTDModel_s::Draw(tpr::CommandList* CL) const
+void RTDModel_s::Draw(rl::CommandList* CL) const
 {
 	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
 
@@ -450,9 +450,9 @@ void RTDModel_s::Draw(tpr::CommandList* CL) const
 	}
 }
 
-tpr::RenderInitParams GetAppRenderParams()
+rl::RenderInitParams GetAppRenderParams()
 {
-	tpr::RenderInitParams Params;
+	rl::RenderInitParams Params;
 #ifdef _DEBUG
 	Params.DebugEnabled = true;
 #else
@@ -465,8 +465,8 @@ tpr::RenderInitParams GetAppRenderParams()
 	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
 	Params.RootSigDesc.Slots[RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(2, 0);
 	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(3, 0);
-	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
-	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
+	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
+	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
 	Params.RootSigDesc.GlobalSamplers.resize(2);
 	Params.RootSigDesc.GlobalSamplers[0].AddressModeUVW(SamplerAddressMode::WRAP).FilterModeMinMagMip(SamplerFilterMode::ANISOTROPIC);
@@ -566,7 +566,7 @@ bool InitializeApp()
 	}
 
 	// Create default material
-	G.DefaultMaterial.MaterialConstantBuffer = tpr::CreateConstantBuffer(&G.DefaultMaterial.Params);
+	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
 	G.Cam.SetNearFar(0.1f, 1000.0f);
@@ -617,7 +617,7 @@ void ImguiUpdate()
 	}
 }
 
-void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, float deltaSeconds)
+void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
 {
 	struct
 	{
@@ -702,10 +702,10 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	// Transition for deferred pass
 	{
-		cl->TransitionResource(G.SceneColor.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneNormal.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, tpr::ResourceTransitionState::RENDER_TARGET, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneDepth.Texture, tpr::ResourceTransitionState::DEPTH_WRITE, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		cl->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::DEPTH_WRITE, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 	}
 
 	// Bind back buffer target
@@ -730,10 +730,10 @@ void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, flo
 
 	// Transition for next pass
 	{
-		cl->TransitionResource(G.SceneColor.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneNormal.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneDepth.Texture, tpr::ResourceTransitionState::PIXEL_SHADER_RESOURCE, tpr::ResourceTransitionState::DEPTH_WRITE);
+		cl->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		cl->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		cl->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::DEPTH_WRITE);
 	}
 }
 

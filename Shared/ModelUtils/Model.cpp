@@ -50,7 +50,7 @@ bool StreamModelAsset(const std::wstring& Path, FileStreamMode_e Mode, ModelAsse
 		Stream.Stream(&Asset.Texcoords, Asset.VertexCount);
 	}	
 
-	size_t IndexBufByteCount = Asset.IndexFormat == tpr::RenderFormat::R32_UINT ? 4 * Asset.IndexCount : 2 * Asset.IndexCount;
+	size_t IndexBufByteCount = Asset.IndexFormat == rl::RenderFormat::R32_UINT ? 4 * Asset.IndexCount : 2 * Asset.IndexCount;
 
 	Stream.Stream(&Asset.Indices, IndexBufByteCount);
 

@@ -82,12 +82,12 @@ bool LoadSTBITexture(const char* FilePath, TextureAsset_s* Asset)
     Asset->Height = Y;
     Asset->DepthOrArraySize = 1;
     Asset->Dimension = TextureAssetDimension_e::TWODIM;
-    Asset->Format = tpr::RenderFormat::R8G8B8A8_UNORM;
+    Asset->Format = rl::RenderFormat::R8G8B8A8_UNORM;
     Asset->MipCount = 1;
     Asset->Cubemap = false;
 
     size_t NumBytes, RowBytes;
-    tpr::GetTextureSurfaceInfo(Asset->Width, Asset->Height, Asset->Format, &NumBytes, &RowBytes);
+    rl::GetTextureSurfaceInfo(Asset->Width, Asset->Height, Asset->Format, &NumBytes, &RowBytes);
     TextureAssetSubResource_s Res;
     Res.DataOffset = 0;
     Res.RowPitch = static_cast<uint32_t>(RowBytes);

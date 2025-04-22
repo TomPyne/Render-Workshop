@@ -42,7 +42,7 @@ struct HPModel_s
 
 	uint32_t VertexCount = 0;
 	uint32_t IndexCount = 0;
-	tpr::RenderFormat IndexFormat = tpr::RenderFormat::UNKNOWN;
+	rl::RenderFormat IndexFormat = rl::RenderFormat::UNKNOWN;
 	bool HasNormals = false;
 	bool HasTangents = false;
 	bool HasBitangents = false;

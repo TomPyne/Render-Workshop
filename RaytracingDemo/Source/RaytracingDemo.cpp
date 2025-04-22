@@ -6,7 +6,7 @@
 #include <Render/Render.h>
 #include "RayTracingDemoApp.h"
 
-using namespace tpr;
+using namespace rl;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int main()

@@ -27,7 +27,7 @@ struct TextureAsset_s
 	uint32_t Height;
 	uint32_t DepthOrArraySize;
 	TextureAssetDimension_e Dimension;
-	tpr::RenderFormat Format;
+	rl::RenderFormat Format;
 	uint32_t MipCount;
 	bool Cubemap;
 

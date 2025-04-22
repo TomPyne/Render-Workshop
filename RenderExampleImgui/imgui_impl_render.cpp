@@ -4,7 +4,7 @@
 
 #include <memory>
 
-using namespace tpr;
+using namespace rl;
 
 static RenderFormat g_TargetFormat;
 
@@ -32,7 +32,7 @@ struct ImRenderFrameData
 static void ImGui_ImplRender_InitPlatformInterface();
 static void ImGui_ImplRender_ShutdownPlatformInterface();
 
-static void ImGui_ImplRender_SetupRenderState(ImDrawData* draw_data, tpr::CommandList* cl, DynamicBuffer_t vb, DynamicBuffer_t ib, DynamicBuffer_t cb)
+static void ImGui_ImplRender_SetupRenderState(ImDrawData* draw_data, rl::CommandList* cl, DynamicBuffer_t vb, DynamicBuffer_t ib, DynamicBuffer_t cb)
 {
     // Setup viewport
     Viewport vp{};
@@ -178,7 +178,7 @@ void ImGui_ImplRender_RenderDrawData(ImRenderFrameData* frame_data, ImDrawData* 
 
                 if (Render_IsBindless())
                 {
-                    cl->SetGraphicsRootValue(1, GetDescriptorIndex(srv));
+                    cl->SetGraphicsRootValue(1, 0u, GetDescriptorIndex(srv));
                 }
                 else
                 {

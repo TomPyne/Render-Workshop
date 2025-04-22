@@ -25,7 +25,7 @@ struct DDSTexture_s
 	uint32_t Height;
 	uint32_t DepthOrArraySize;
 	Dimension_e Dimension;
-	tpr::RenderFormat Format;
+	rl::RenderFormat Format;
 	uint32_t MipCount;
 	bool Cubemap;
 

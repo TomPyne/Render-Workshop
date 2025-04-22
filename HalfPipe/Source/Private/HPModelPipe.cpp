@@ -76,7 +76,7 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
 
     OutModel.IndexCount = static_cast<uint32_t>(Reader.Indices.size());
     OutModel.VertexCount = static_cast<uint32_t>(OutModel.Positions.size());
-    OutModel.IndexFormat = tpr::RenderFormat::R32_UINT;
+    OutModel.IndexFormat = rl::RenderFormat::R32_UINT;
     const uint32_t TriCount = OutModel.IndexCount / 3;
 
     std::vector<uint8_t> IndexReorder;

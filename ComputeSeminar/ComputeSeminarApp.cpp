@@ -5,7 +5,7 @@
 
 #include <Render/Render.h>
 
-using namespace tpr;
+using namespace rl;
 
 struct BindVertexBuffer
 {
@@ -416,7 +416,7 @@ void InitBallArray()
 
 			G.Balls.push_back(std::move(NewBall));
 
-			G.BallIndices.push_back(G.BallIndices.size());
+			G.BallIndices.push_back(static_cast<uint32_t>(G.BallIndices.size()));
 		}
 	}
 
@@ -432,7 +432,7 @@ enum RootSigSlots
 	RS_COUNT,
 };
 
-tpr::RenderInitParams GetAppRenderParams()
+rl::RenderInitParams GetAppRenderParams()
 {
 	RenderInitParams params;
 #ifdef _DEBUG
@@ -444,8 +444,8 @@ tpr::RenderInitParams GetAppRenderParams()
 	params.RootSigDesc.Slots.resize(RS_COUNT);
 	params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(0, 0);
 	params.RootSigDesc.Slots[RS_MESH_BUF] = RootSignatureSlot::CBVSlot(1, 0);
-	params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::SRV);
-	params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, tpr::RootSignatureDescriptorTableType::UAV);
+	params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
+	params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
 	params.RootSigDesc.GlobalSamplers.resize(1);
 	params.RootSigDesc.GlobalSamplers[0].AddressModeUVW(SamplerAddressMode::WRAP).FilterModeMinMagMip(SamplerFilterMode::LINEAR);
@@ -635,7 +635,7 @@ void ImguiUpdate()
 {
 }
 
-void Render(tpr::RenderView* view, tpr::CommandListSubmissionGroup* clGroup, float deltaSeconds)
+void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
 {
 	struct
 	{

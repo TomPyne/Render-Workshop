@@ -63,7 +63,7 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
 
     OutModel.IndexCount = static_cast<uint32_t>(Reader.Indices.size());
     OutModel.VertexCount = static_cast<uint32_t>(OutModel.Positions.size());
-    OutModel.IndexFormat = tpr::RenderFormat::R32_UINT;
+    OutModel.IndexFormat = rl::RenderFormat::R32_UINT;
     const uint32_t TriCount = OutModel.IndexCount / 3;
 
     std::vector<uint8_t> IndexReorder;
@@ -321,10 +321,10 @@ bool LoadModelFromWavefront(const wchar_t* WavefrontPath, ModelAsset_s& OutModel
         if (!Mtl.Texture.empty())
         {
             NewMaterial.AlbedoTexture = LoadTexture(Mtl.Texture, false);
-            NewMaterial.Params.AlbedoTextureIndex = tpr::GetDescriptorIndex(NewMaterial.AlbedoTexture.SRV);
+            NewMaterial.Params.AlbedoTextureIndex = rl::GetDescriptorIndex(NewMaterial.AlbedoTexture.SRV);
         }
 
-        NewMaterial.MaterialBuffer = tpr::CreateConstantBuffer(&NewMaterial.Params);
+        NewMaterial.MaterialBuffer = rl::CreateConstantBuffer(&NewMaterial.Params);
 
         LoadedMaterials.push_back(NewMaterial);
     }

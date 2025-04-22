@@ -18,7 +18,7 @@ struct HPTexture_s
 
 	uint32_t Width;
 	uint32_t Height;
-	tpr::RenderFormat Format;
+	rl::RenderFormat Format;
 
 	struct MipData_s
 	{

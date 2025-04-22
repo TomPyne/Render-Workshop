@@ -70,7 +70,7 @@ bool HPModel_s::Serialize(FileStream_s& Stream)
         Stream.Stream(&Texcoords, VertexCount);
     }
 
-    size_t IndexBufByteCount = IndexFormat == tpr::RenderFormat::R32_UINT ? 4 * IndexCount : 2 * IndexCount;
+    size_t IndexBufByteCount = IndexFormat == rl::RenderFormat::R32_UINT ? 4 * IndexCount : 2 * IndexCount;
 
     Stream.Stream(&Indices, static_cast<uint32_t>(IndexBufByteCount));
 
