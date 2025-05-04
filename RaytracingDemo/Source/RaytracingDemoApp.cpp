@@ -1,4 +1,5 @@
 #include <Render/Render.h>
+#include <Render/Raytracing.h>
 #include <SurfMath.h>
 #include "imgui.h"
 
@@ -96,6 +97,8 @@ struct RTDMesh_s
 
 	uint32_t MeshletOffset;
 	uint32_t MeshletCount;
+
+	RaytracingGeometryPtr RaytracingGeometry = {};
 
 	std::shared_ptr<RTDMaterial_s> Material = nullptr;
 };
@@ -202,12 +205,15 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshVSPSO;
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
+	RaytracingPipelineStatePtr RTPSO;
 
 	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
 	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
 	std::map<std::wstring, std::shared_ptr<RTDTexture_s>> TextureMap;
 
 	RTDMaterial_s DefaultMaterial = {};
+
+	RaytracingScenePtr RaytracingScene = {};
 
 	bool UseMeshShaders = false;
 	bool ShowMeshID = false;
@@ -371,6 +377,14 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		return false;
 	}
 
+	rl::RaytracingGeometryDesc RTDesc = {};
+	RTDesc.StructuredVertexBuffer = PositionBuffer.StructuredBuffer;
+	RTDesc.VertexFormat = RenderFormat::R32G32B32_FLOAT;
+	RTDesc.VertexCount = static_cast<uint32_t>(Asset->Positions.size());
+	RTDesc.VertexStride = static_cast<uint32_t>(sizeof(float3));
+	RTDesc.StructuredIndexBuffer = IndexBuffer.StructuredBuffer;
+	RTDesc.IndexFormat = Asset->IndexFormat;
+
 	Meshes.reserve(Asset->Meshes.size());
 	for (const HPModel_s::Mesh_s& MeshFromAsset : Asset->Meshes)
 	{
@@ -379,6 +393,13 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		Mesh.IndexOffset = MeshFromAsset.IndexOffset;
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
 		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
+
+		RTDesc.IndexCount = MeshFromAsset.IndexCount;
+		RTDesc.IndexOffset = MeshFromAsset.IndexOffset;
+
+		Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
+
+		rl::AddRaytracingGeometryToScene(Mesh.RaytracingGeometry, G.RaytracingScene);
 
 		std::wstring MaterialKey = Asset->MaterialLibPath + MeshFromAsset.LibMaterialName;
 		auto It = G.MaterialMap.find(MaterialKey);
@@ -484,6 +505,8 @@ bool InitializeApp()
 		return false;
 	}
 
+	G.RaytracingScene = rl::CreateRaytracingScene();
+
 	// First cook
 
 #if 0
@@ -563,6 +586,14 @@ bool InitializeApp()
 			.PixelShader(DeferredPS);
 
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
+	}
+
+	// RT PSO
+	{
+		rl::RaytracingPipelineStateDesc RTDesc = {};
+		RTDesc.RayGenShader = rl::CreateRayGenShader("Shaders/RTShadows.hlsl");
+		RTDesc.DebugName = L"RTShadow";
+		G.RTPSO = CreateRaytracingPipelineState(RTDesc);
 	}
 
 	// Create default material
