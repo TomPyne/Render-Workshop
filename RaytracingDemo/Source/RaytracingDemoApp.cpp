@@ -16,6 +16,8 @@
 
 using namespace rl;
 
+static constexpr bool DemoUsesRaytracing = false;
+
 static const std::wstring s_AssetDirectory = L"Cooked/";
 
 struct RTDTexture_s
@@ -141,12 +143,13 @@ struct SceneTarget_s
 	TexturePtr Texture = {};
 	RenderTargetViewPtr RTV = {};
 	ShaderResourceViewPtr SRV = {};
+	UnorderedAccessViewPtr UAV = {};
 
 	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
 	{
 		TextureCreateDescEx Desc = {};
 		Desc.DebugName = DebugName ? DebugName : L"UnknownSceneTarget";
-		Desc.Flags = RenderResourceFlags::RTV | RenderResourceFlags::SRV;
+		Desc.Flags = RenderResourceFlags::RTV | RenderResourceFlags::SRV | RenderResourceFlags::UAV;
 		Desc.ResourceFormat = Format;
 		Desc.Height = Height;
 		Desc.Width = Width;
@@ -155,6 +158,7 @@ struct SceneTarget_s
 		Texture = CreateTextureEx(Desc);
 		RTV = CreateTextureRTV(Texture, Format, TextureDimension::TEX2D, 1u);
 		SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
+		UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
 
 		if (!Texture || !RTV || !SRV)
 		{
@@ -196,6 +200,7 @@ struct Globals_s
 	SceneTarget_s SceneColor = {};
 	SceneTarget_s SceneNormal = {};
 	SceneTarget_s SceneRoughnessMetallic = {};
+	SceneTarget_s SceneShadow = {};
 	SceneDepth_s SceneDepth = {};
 
 	// Camera
@@ -397,9 +402,12 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		RTDesc.IndexCount = MeshFromAsset.IndexCount;
 		RTDesc.IndexOffset = MeshFromAsset.IndexOffset;
 
-		Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
+		if (DemoUsesRaytracing)
+		{
+			Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
 
-		rl::AddRaytracingGeometryToScene(Mesh.RaytracingGeometry, G.RaytracingScene);
+			rl::AddRaytracingGeometryToScene(Mesh.RaytracingGeometry, G.RaytracingScene);
+		}
 
 		std::wstring MaterialKey = Asset->MaterialLibPath + MeshFromAsset.LibMaterialName;
 		auto It = G.MaterialMap.find(MaterialKey);
@@ -505,8 +513,10 @@ bool InitializeApp()
 		return false;
 	}
 
-	G.RaytracingScene = rl::CreateRaytracingScene();
-
+	if (DemoUsesRaytracing)
+	{
+		G.RaytracingScene = rl::CreateRaytracingScene();
+	}
 	// First cook
 
 #if 0
@@ -589,6 +599,7 @@ bool InitializeApp()
 	}
 
 	// RT PSO
+	if(DemoUsesRaytracing)
 	{
 		rl::RaytracingPipelineStateDesc RTDesc = {};
 		RTDesc.RayGenShader = rl::CreateRayGenShader("Shaders/RTShadows.hlsl");
@@ -621,6 +632,7 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneColor.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
 	G.SceneNormal.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
 	G.SceneRoughnessMetallic.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
+	G.SceneShadow.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow");
 	G.SceneDepth.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
@@ -689,6 +701,11 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	CommandList* cl = clGroup->CreateCommandList();
 
 	cl->SetRootSignature();
+
+	if (DemoUsesRaytracing)
+	{
+		cl->BuildRaytracingScene(G.RaytracingScene);
+	}
 
 	// Bind and clear targets
 	{
