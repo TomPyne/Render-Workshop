@@ -280,9 +280,9 @@ bool MeshProcessing::ReorderIndices(index_t* Indices, size_t NumFaces, const uin
 
         if (Src < NumFaces)
         {
-            OutIndices[j * 3] = Indices[Src * 3];
+            OutIndices[j * 3] = Indices[Src * 3 + 2];
             OutIndices[j * 3 + 1] = Indices[Src * 3 + 1];
-            OutIndices[j * 3 + 2] = Indices[Src * 3 + 2];
+            OutIndices[j * 3 + 2] = Indices[Src * 3];
         }
         else
             return false;

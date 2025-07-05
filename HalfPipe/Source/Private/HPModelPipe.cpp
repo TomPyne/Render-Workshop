@@ -56,7 +56,7 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
 
     for (uint32_t VertIt = 0; VertIt < Reader.Vertices.size(); VertIt++)
     {
-        OutModel.Positions[VertIt] = Reader.Vertices[VertIt].Position;
+        OutModel.Positions[VertIt] = Reader.Vertices[VertIt].Position * float3(-1.0f, 1.0f, 1.0f);
 
         if (Reader.HasNormals)
         {
@@ -70,14 +70,26 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
     }
 
     OutModel.Indices.resize(Reader.Indices.size() * sizeof(uint32_t));
-    std::memcpy(OutModel.Indices.data(), Reader.Indices.data(), Reader.Indices.size() * sizeof(uint32_t));
+    OutModel.IndexCount = static_cast<uint32_t>(Reader.Indices.size());
+    const uint32_t TriCount = OutModel.IndexCount / 3;
+
+    {
+        MeshProcessing::index_t* OutIt = reinterpret_cast<MeshProcessing::index_t*>(OutModel.Indices.data());
+        MeshProcessing::index_t* InIt = reinterpret_cast<MeshProcessing::index_t*>(Reader.Indices.data());
+        for (uint32_t TriIt = 0; TriIt < TriCount; TriIt++)
+        {
+            OutIt[TriIt * 3 + 0] = InIt[TriIt * 3 + 2];
+            OutIt[TriIt * 3 + 1] = InIt[TriIt * 3 + 1];
+            OutIt[TriIt * 3 + 2] = InIt[TriIt * 3 + 0];
+        }
+    }
 
     Attributes = Reader.Attributes;
 
-    OutModel.IndexCount = static_cast<uint32_t>(Reader.Indices.size());
+   
     OutModel.VertexCount = static_cast<uint32_t>(OutModel.Positions.size());
     OutModel.IndexFormat = rl::RenderFormat::R32_UINT;
-    const uint32_t TriCount = OutModel.IndexCount / 3;
+    
 
     std::vector<uint8_t> IndexReorder;
     IndexReorder.resize(OutModel.IndexCount * sizeof(uint32_t));
