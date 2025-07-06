@@ -16,7 +16,7 @@
 
 using namespace rl;
 
-static constexpr bool DemoUsesRaytracing = false;
+static constexpr bool DemoUsesRaytracing = true;
 
 static const std::wstring s_AssetDirectory = L"Cooked/";
 
@@ -613,6 +613,8 @@ bool InitializeApp()
 	G.Cam.SetPosition(float3(-5, 20, 25));
 	G.Cam.SetNearFar(0.1f, 1000.0f);
 
+	BuildRaytracingScene(G.RaytracingScene);
+
 	return true;
 }
 
@@ -702,10 +704,10 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	cl->SetRootSignature();
 
-	if (DemoUsesRaytracing)
-	{
-		cl->BuildRaytracingScene(G.RaytracingScene);
-	}
+	//if (DemoUsesRaytracing)
+	//{
+	//	cl->BuildRaytracingScene(G.RaytracingScene);
+	//}
 
 	// Bind and clear targets
 	{
