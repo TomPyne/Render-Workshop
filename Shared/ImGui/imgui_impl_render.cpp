@@ -125,8 +125,6 @@ void ImGui_ImplRender_RenderDrawData(ImRenderFrameData* frame_data, ImDrawData* 
     if (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f)
         return;
 
-    GraphicsPipelineState_t prevPSO = cl->GetPreviousPSO();
-
     if (Render_IsBindless())
     {
         cl->SetGraphicsRootDescriptorTable(2u);
@@ -191,8 +189,6 @@ void ImGui_ImplRender_RenderDrawData(ImRenderFrameData* frame_data, ImDrawData* 
         global_idx_offset += cmd_list->IdxBuffer.Size;
         global_vtx_offset += cmd_list->VtxBuffer.Size;
     }
-
-    cl->SetPipelineState(prevPSO);
 }
 
 IMGUI_IMPL_API void ImGui_ImplRender_ReleaseFrameData(ImRenderFrameData* frame_data)

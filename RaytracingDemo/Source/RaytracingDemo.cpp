@@ -15,6 +15,11 @@ int main()
 	::RegisterClassEx(&wc);
 	HWND hwnd = ::CreateWindow(wc.lpszClassName, "Ray Tracing Demo", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
+	//while (!IsDebuggerPresent())
+	//{
+	//	Sleep(100);
+	//}
+
 	{
 		RenderInitParams params = GetAppRenderParams();
 
@@ -103,7 +108,6 @@ int main()
 			ImGui_ImplRender_ReleaseFrameData(frameData);
 
 			finalCl->TransitionResource(view->GetCurrentBackBufferTexture(), ResourceTransitionState::RENDER_TARGET, ResourceTransitionState::PRESENT);
-
 		}
 
 		clGroup.Submit();

@@ -127,16 +127,31 @@ struct RTDModel_s
 	void Draw(rl::CommandList* CL) const;
 };
 
-enum RootSigSlots
+namespace GlobalRootSigSlots
 {
-	RS_DRAWCONSTANTS,
-	RS_VIEW_BUF,
-	RS_MODEL_BUF,
-	RS_MAT_BUF,
-	RS_SRV_TABLE,
-	RS_UAV_TABLE,
-	RS_COUNT,
-};
+	enum Value
+	{
+		RS_DRAWCONSTANTS,
+		RS_VIEW_BUF,
+		RS_MODEL_BUF,
+		RS_MAT_BUF,
+		RS_SRV_TABLE,
+		RS_UAV_TABLE,
+		RS_COUNT,
+	};
+}
+
+namespace RTRootSigSlots
+{
+	enum Value
+	{
+		RS_CONSTANTS,
+		RS_RAYTRACING_SCENE,
+		RS_SRV_TABLE,
+		RS_UAV_TABLE,
+		RS_COUNT,
+	};
+}
 
 struct SceneTarget_s
 {
@@ -160,9 +175,36 @@ struct SceneTarget_s
 		SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
 		UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
 
-		if (!Texture || !RTV || !SRV)
+		if (!Texture || !RTV || !SRV || !UAV)
 		{
-			LOGERROR("Scene Target [%S] failed to intialize", DebugName ? DebugName : L"Unknown");
+			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
+		}
+	}
+};
+
+struct SceneComputeBuffer_s
+{
+	TexturePtr Texture = {};
+	ShaderResourceViewPtr SRV = {};
+	UnorderedAccessViewPtr UAV = {};
+
+	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
+	{
+		TextureCreateDescEx Desc = {};
+		Desc.DebugName = DebugName ? DebugName : L"UnknownSceneComputeBuffer";
+		Desc.Flags = RenderResourceFlags::SRV | RenderResourceFlags::UAV;
+		Desc.ResourceFormat = Format;
+		Desc.Height = Height;
+		Desc.Width = Width;
+		Desc.InitialState = ResourceTransitionState::UNORDERED_ACCESS;
+		Desc.Dimension = TextureDimension::TEX2D;
+		Texture = CreateTextureEx(Desc);
+		SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
+		UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
+
+		if (!Texture || !UAV || !SRV)
+		{
+			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
 		}
 	}
 };
@@ -186,6 +228,11 @@ struct SceneDepth_s
 		Texture = CreateTextureEx(Desc);
 		DSV = CreateTextureDSV(Texture, DepthFormat, TextureDimension::TEX2D, 1u);
 		SRV = CreateTextureSRV(Texture, SRVFormat, TextureDimension::TEX2D, 1u, 1u);
+
+		if (!Texture || !DSV || !SRV)
+		{
+			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
+		}
 	}
 };
 
@@ -200,7 +247,7 @@ struct Globals_s
 	SceneTarget_s SceneColor = {};
 	SceneTarget_s SceneNormal = {};
 	SceneTarget_s SceneRoughnessMetallic = {};
-	SceneTarget_s SceneShadow = {};
+	SceneComputeBuffer_s SceneShadow = {};
 	SceneDepth_s SceneDepth = {};
 
 	// Camera
@@ -211,6 +258,7 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
 	RaytracingPipelineStatePtr RTPSO;
+	RootSignaturePtr RTRootSignature;
 
 	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
 	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
@@ -219,6 +267,7 @@ struct Globals_s
 	RTDMaterial_s DefaultMaterial = {};
 
 	RaytracingScenePtr RaytracingScene = {};
+	RaytracingShaderTablePtr RaytracingShaderTable = {};
 
 	bool UseMeshShaders = false;
 	bool ShowMeshID = false;
@@ -453,15 +502,15 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 
 void RTDModel_s::Draw(rl::CommandList* CL) const
 {
-	CL->SetGraphicsRootCBV(RS_MODEL_BUF, ModelConstantBuffer);
+	CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MODEL_BUF, ModelConstantBuffer);
 
 	if (G.UseMeshShaders)
 	{
 		for (const RTDMesh_s& Mesh : Meshes)
 		{
-			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_MESHLET_OFFSET, Mesh.MeshletOffset);
+			CL->SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, DCS_MESHLET_OFFSET, Mesh.MeshletOffset);
 
-			CL->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
+			CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
 
 			CL->DispatchMesh(Mesh.MeshletCount, 1u, 1u);
 		}
@@ -470,9 +519,9 @@ void RTDModel_s::Draw(rl::CommandList* CL) const
 	{
 		for (const RTDMesh_s& Mesh : Meshes)
 		{
-			CL->SetGraphicsRootValue(RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
+			CL->SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, DCS_INDEX_OFFSET, Mesh.IndexOffset);
 
-			CL->SetGraphicsRootCBV(RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
+			CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
 
 			CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
 		}
@@ -489,13 +538,13 @@ rl::RenderInitParams GetAppRenderParams()
 #endif
 
 	Params.RootSigDesc.Flags = RootSignatureFlags::NONE;
-	Params.RootSigDesc.Slots.resize(RS_COUNT);
-	Params.RootSigDesc.Slots[RS_DRAWCONSTANTS] = RootSignatureSlot::ConstantsSlot(DCS_COUNT, 0);
-	Params.RootSigDesc.Slots[RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
-	Params.RootSigDesc.Slots[RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(2, 0);
-	Params.RootSigDesc.Slots[RS_MAT_BUF] = RootSignatureSlot::CBVSlot(3, 0);
-	Params.RootSigDesc.Slots[RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
-	Params.RootSigDesc.Slots[RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
+	Params.RootSigDesc.Slots.resize(GlobalRootSigSlots::RS_COUNT);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_DRAWCONSTANTS] = RootSignatureSlot::ConstantsSlot(DCS_COUNT, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(2, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MAT_BUF] = RootSignatureSlot::CBVSlot(3, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
 	Params.RootSigDesc.GlobalSamplers.resize(2);
 	Params.RootSigDesc.GlobalSamplers[0].AddressModeUVW(SamplerAddressMode::WRAP).FilterModeMinMagMip(SamplerFilterMode::ANISOTROPIC);
@@ -601,10 +650,30 @@ bool InitializeApp()
 	// RT PSO
 	if(DemoUsesRaytracing)
 	{
+		RootSignatureDesc RTRootSignatureDesc = {};
+		RTRootSignatureDesc.Slots.resize(RTRootSigSlots::RS_COUNT);
+		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_CONSTANTS] = RootSignatureSlot::CBVSlot(0, 0);
+		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_RAYTRACING_SCENE] = RootSignatureSlot::SRVSlot(0, 0);
+		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::SRV);
+		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::UAV);
+
+		G.RTRootSignature = CreateRootSignature(RTRootSignatureDesc);
+
 		rl::RaytracingPipelineStateDesc RTDesc = {};
 		RTDesc.RayGenShader = rl::CreateRayGenShader("Shaders/RTShadows.hlsl");
+		RTDesc.MissShader = rl::CreateMissShader("Shaders/RTShadows.hlsl");
 		RTDesc.DebugName = L"RTShadow";
+		RTDesc.RootSig = G.RTRootSignature;
 		G.RTPSO = CreateRaytracingPipelineState(RTDesc);
+
+		BuildRaytracingScene(G.RaytracingScene);
+
+		RaytracingShaderTableLayout ShaderTableLayout;
+		ShaderTableLayout.RayGenShader = RTDesc.RayGenShader;
+		ShaderTableLayout.MissShader = RTDesc.MissShader;
+		G.RaytracingShaderTable = CreateRaytracingShaderTable(G.RTPSO, ShaderTableLayout);
+
+
 	}
 
 	// Create default material
@@ -613,7 +682,6 @@ bool InitializeApp()
 	G.Cam.SetPosition(float3(-5, 20, 25));
 	G.Cam.SetNearFar(0.1f, 1000.0f);
 
-	BuildRaytracingScene(G.RaytracingScene);
 
 	return true;
 }
@@ -658,8 +726,8 @@ void ImguiUpdate()
 			ReloadShaders();
 			ReloadPipelines();
 		}
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
 void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
@@ -681,12 +749,17 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	{
 		matrix InverseProjection;
 		matrix InverseView;
+
 		uint32_t SceneColorTextureIndex;
 		uint32_t SceneNormalTextureIndex;
 		uint32_t SceneRoughnessMetallicTextureIndex;
 		uint32_t DepthTextureIndex;
+
 		uint32_t DrawMode;
 		float3 CamPosition;
+
+		uint32_t ShadowTexture;
+		float __pad0[3];
 	} DeferredConsts;
 
 	DeferredConsts.InverseProjection = InverseMatrix(G.Cam.GetProjection());
@@ -697,12 +770,13 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	DeferredConsts.DepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 	DeferredConsts.DrawMode = G.DrawMode;
 	DeferredConsts.CamPosition = G.Cam.GetPosition();
+	DeferredConsts.ShadowTexture = GetDescriptorIndex(G.SceneShadow.SRV);
 
 	DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-	CommandList* cl = clGroup->CreateCommandList();
+	CommandList* MainCL = clGroup->CreateCommandList();
 
-	cl->SetRootSignature();
+	MainCL->SetRootSignature();
 
 	//if (DemoUsesRaytracing)
 	//{
@@ -712,51 +786,97 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	// Bind and clear targets
 	{
 		constexpr float DefaultClearCol[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-		cl->ClearRenderTarget(G.SceneColor.RTV, DefaultClearCol);
-		cl->ClearRenderTarget(G.SceneNormal.RTV, DefaultClearCol);
-		cl->ClearRenderTarget(G.SceneRoughnessMetallic.RTV, DefaultClearCol);
-		cl->ClearDepth(G.SceneDepth.DSV, 1.0f);
+		MainCL->ClearRenderTarget(G.SceneColor.RTV, DefaultClearCol);
+		MainCL->ClearRenderTarget(G.SceneNormal.RTV, DefaultClearCol);
+		MainCL->ClearRenderTarget(G.SceneRoughnessMetallic.RTV, DefaultClearCol);
+		MainCL->ClearDepth(G.SceneDepth.DSV, 1.0f);
 
 		RenderTargetView_t SceneTargets[] = { G.SceneColor.RTV, G.SceneNormal.RTV, G.SceneRoughnessMetallic.RTV };
-		cl->SetRenderTargets(SceneTargets, ARRAYSIZE(SceneTargets), G.SceneDepth.DSV);
+		MainCL->SetRenderTargets(SceneTargets, ARRAYSIZE(SceneTargets), G.SceneDepth.DSV);
 	}
 
 	// Init viewport and scissor
 	{
 		Viewport vp{ G.ScreenWidth, G.ScreenHeight };
-		cl->SetViewports(&vp, 1);
-		cl->SetDefaultScissor();
+		MainCL->SetViewports(&vp, 1);
+		MainCL->SetDefaultScissor();
 	}
 
 	// Bind draw buffers
 	{
-		cl->SetGraphicsRootCBV(RS_VIEW_BUF, ViewCBuf);
-		cl->SetGraphicsRootDescriptorTable(RS_SRV_TABLE);
+		MainCL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBuf);
+		MainCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 	}
 
 	if (G.UseMeshShaders)
 	{
-		cl->SetPipelineState(G.MeshMSPSO);
+		MainCL->SetPipelineState(G.MeshMSPSO);
 	}
 	else
 	{
-		cl->SetPipelineState(G.MeshVSPSO);
+		MainCL->SetPipelineState(G.MeshVSPSO);
 	}
 
 	// Temp basic material for all meshes
 	//cl->SetGraphicsRootCBV(RS_MAT_BUF, G.DefaultMaterial.MaterialConstantBuffer);
 	for (const RTDModel_s& Model : G.Models)
 	{
-		Model.Draw(cl);
+		Model.Draw(MainCL);
 	}
 
 	// Transition for deferred pass
 	{
-		cl->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		cl->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::DEPTH_WRITE, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		MainCL->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		MainCL->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		MainCL->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		MainCL->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::DEPTH_WRITE, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 	}
+
+	// RT Shadows
+	if(DemoUsesRaytracing)
+	{
+		CommandList* RTCL = clGroup->CreateCommandList();
+		struct RayUniforms_s
+		{
+			matrix CamToWorld;
+
+			float3 SunDirection;
+			float __pad0;
+
+			float2 ScreenResolution;
+			uint32_t SceneDepthTextureIndex;
+			uint32_t SceneShadowTextureIndex;
+		} RayUniforms;
+
+		RayUniforms.CamToWorld = (InverseMatrix(G.Cam.GetView() * G.Cam.GetProjection()));
+		RayUniforms.SunDirection = float3(0.0f, 1.0f, 0.0f); // Hardcoded sun direction
+		RayUniforms.ScreenResolution = float2(G.ScreenWidth, G.ScreenHeight);
+		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
+		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+
+		DynamicBuffer_t RayCBuf = CreateDynamicConstantBuffer(&RayUniforms);
+
+		RTCL->SetPipelineState(G.RTPSO);
+		RTCL->SetComputeRootSignature(G.RTRootSignature);
+		RTCL->SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
+		RTCL->SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, G.RaytracingScene);
+		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
+		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
+
+		
+		RTCL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
+
+		RTCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+	}
+
+	CommandList* DeferredCL = clGroup->CreateCommandList();
+
+	DeferredCL->SetRootSignature();
+	DeferredCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+
+	Viewport vp{ G.ScreenWidth, G.ScreenHeight };
+	DeferredCL->SetViewports(&vp, 1);
+	DeferredCL->SetDefaultScissor();
 
 	// Bind back buffer target
 	{
@@ -764,26 +884,30 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 		RenderTargetView_t backBufferRtv = view->GetCurrentBackBufferRTV();
 
-		cl->ClearRenderTarget(backBufferRtv, DefaultClearCol);
+		DeferredCL->ClearRenderTarget(backBufferRtv, DefaultClearCol);
 
-		cl->SetRenderTargets(&backBufferRtv, 1, G.SceneDepth.DSV);
+		DeferredCL->SetRenderTargets(&backBufferRtv, 1, G.SceneDepth.DSV);
 	}
 
 	// Render deferred
 	{
-		cl->SetGraphicsRootCBV(RS_VIEW_BUF, DeferredCBuf);
+		DeferredCL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DeferredCBuf);
 
-		cl->SetPipelineState(G.DeferredPSO);
+		DeferredCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 
-		cl->DrawInstanced(6u, 1u, 0u, 0u);
+		DeferredCL->SetPipelineState(G.DeferredPSO);
+
+		DeferredCL->DrawInstanced(6u, 1u, 0u, 0u);
 	}
 
 	// Transition for next pass
 	{
-		cl->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		cl->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::DEPTH_WRITE);
+		DeferredCL->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		DeferredCL->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		DeferredCL->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
+		DeferredCL->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::DEPTH_WRITE);
+
+		DeferredCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::UNORDERED_ACCESS);
 	}
 }
 

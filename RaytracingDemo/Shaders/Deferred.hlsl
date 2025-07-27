@@ -35,6 +35,8 @@ struct DeferredData
     uint DepthTextureIndex;
     uint DrawMode;
     float3 CamPosition;
+    uint ShadowTextureIndex;
+    float3 __pad0;
 };
 
 #define DRAWMODE_LIT 0
@@ -181,7 +183,9 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 Diffuse = (1.0f - Metallic) * Color;
     float3 DiffuseTerm = Diffuse * Lambert();
 
-    float3 Lighting = (SpecularTerm + DiffuseTerm) * NoL * 5.0f;
+    float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
+
+    float3 Lighting = (SpecularTerm + DiffuseTerm) * NoL * Shadow * 5.0f;
     Lighting += 0.3f * Diffuse;
     
     Output.Color = float4(Lighting, 1.0f);
