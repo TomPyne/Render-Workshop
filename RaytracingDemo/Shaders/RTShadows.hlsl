@@ -16,7 +16,7 @@ struct Uniforms
     float4x4 CamToWorld;
 
     float3 SunDirection;
-    float __pad0;
+    float SunSoftAngle;
 
     float2 ScreenResolution;
     uint SceneDepthTextureIndex;
@@ -24,6 +24,11 @@ struct Uniforms
 };
 
 ConstantBuffer<Uniforms> c_Uniforms : register(b0);
+
+float Random(float3 Seed)
+{
+    return frac(sin(dot(Seed.xyz, float3(12.9898,78.233, 128.943)))* 43758.5453123);
+}
 
 [shader("raygeneration")]
 void RayGen()
@@ -40,7 +45,29 @@ void RayGen()
     float4 Unprojected = mul(c_Uniforms.CamToWorld, float4(ScreenPos, SceneDepth, 1));
     float3 WorldPos = Unprojected.xyz / Unprojected.w;
 
-    RayDesc Ray = { WorldPos, 0.1f, c_Uniforms.SunDirection, FLT_MAX };
+    float3 Axis = c_Uniforms.SunDirection;
+
+    float R1 = saturate(Random(WorldPos));
+    float R2 = saturate(Random(WorldPos * 2.0f));
+
+    float3 Ortho1 = normalize(cross(Axis, float3(0, 0, 1)));
+    float3 Ortho2 = cross(Axis, Ortho1);
+    float Theta = acos(1 - R1 * (1 - cos(c_Uniforms.SunSoftAngle)));
+    float Phi = R2 * 6.28318530718;
+
+    float SinTheta = sin(Theta);
+    float CosTheta = cos(Theta);
+
+    float SinThetaCosPhi = SinTheta * cos(Phi);
+    float SinPhiSinTheta = SinTheta * sin(Phi);
+    
+    float3 RayDirection = float3(
+        SinThetaCosPhi * Ortho1.x + SinPhiSinTheta * Ortho2.x + CosTheta * Axis.x,
+        SinThetaCosPhi * Ortho1.y + SinPhiSinTheta * Ortho2.y + CosTheta * Axis.y,
+        SinThetaCosPhi * Ortho1.z + SinPhiSinTheta * Ortho2.z + CosTheta * Axis.z
+    );
+
+    RayDesc Ray = { WorldPos, 0.1f, RayDirection, FLT_MAX };
     RayPayload Payload = { FLT_MAX };
 
     TraceRay(t_accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, Ray, Payload);

@@ -276,7 +276,8 @@ struct Globals_s
 	int32_t DrawMode = 0;
 
 	float SunYaw = 0.0f;
-	float SunPitch = 70.0f;
+	float SunPitch = 1.0f;
+	float SunSoftAngle = 0.01f;
 } G;
 
 float3 GetSunDirection()
@@ -722,6 +723,7 @@ void ImguiUpdate()
 		ImGui::Separator();
 		ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f);
 		ImGui::SliderAngle("Sun Pitch", &G.SunPitch, 0.0f, 90.0f);
+		ImGui::SliderAngle("Sun Soft Angle", &G.SunSoftAngle, 0.0f, 5.0f);
 		ImGui::Separator();
 		if (ImGui::Button("Recompile Shaders"))
 		{
@@ -845,7 +847,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			matrix CamToWorld;
 
 			float3 SunDirection;
-			float __pad0;
+			float SunSoftAngle;;
 
 			float2 ScreenResolution;
 			uint32_t SceneDepthTextureIndex;
@@ -854,6 +856,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 		RayUniforms.CamToWorld = (InverseMatrix(G.Cam.GetView() * G.Cam.GetProjection()));
 		RayUniforms.SunDirection = SunDirection;
+		RayUniforms.SunSoftAngle = G.SunSoftAngle;
 		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
