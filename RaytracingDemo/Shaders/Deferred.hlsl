@@ -36,7 +36,7 @@ struct DeferredData
     uint DrawMode;
     float3 CamPosition;
     uint ShadowTextureIndex;
-    float3 __pad0;
+    float3 SunDirection;
 };
 
 #define DRAWMODE_LIT 0
@@ -47,6 +47,7 @@ struct DeferredData
 #define DRAWMODE_DEPTH 5
 #define DRAWMODE_POSITION 6
 #define DRAWMODE_LIGHTING 7
+#define DRAWMODE_RTSHADOWS 8
 
 ConstantBuffer<DeferredData> c_Deferred : register(b1);
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
@@ -117,9 +118,12 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     }
 
     float3 Normal = (t_tex2d_f4[c_Deferred.SceneNormalTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb);
+    Normal.x *= -1.0f;
     float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
     float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
     float3 Position = ViewPositionFromDepth(Input.UV, Depth);
+
+    float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
 
     if(c_Deferred.DrawMode != DRAWMODE_LIT)
     {
@@ -157,12 +161,17 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         {
             Color = float3(1, 1, 1);
         }
+        else if(c_Deferred.DrawMode == DRAWMODE_RTSHADOWS)
+        {
+            Output.Color = float4(Shadow, Shadow, Shadow, 1.0f);
+            return;
+        }
     }
 
-    float Roughness = RoughnessMetallic.r * RoughnessMetallic.r;
+    float Roughness = RoughnessMetallic.r;// * RoughnessMetallic.r;
     float Metallic = RoughnessMetallic.g;
 
-    float3 L = normalize(float3(0.5f, 1, 0.3));
+    float3 L = c_Deferred.SunDirection;
     float3 V = normalize(c_Deferred.CamPosition - Position);
     float3 H = normalize(V + L);
 
@@ -178,16 +187,15 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 F = Schlick(LoH, F0);
     float Vis = SmithGGXCorrelated(NoV, NoL, Roughness);   
 
-    float3 SpecularTerm = (D * Vis) * F; // TODO energy loss compensation
+    float3 SpecularTerm = (D * Vis) * F * 4; // TODO energy loss compensation
 
     float3 Diffuse = (1.0f - Metallic) * Color;
     float3 DiffuseTerm = Diffuse * Lambert();
 
-    float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
-
-    float3 Lighting = (SpecularTerm + DiffuseTerm) * NoL * Shadow * 5.0f;
-    Lighting += 0.3f * Diffuse;
+    float3 Lighting = (SpecularTerm + DiffuseTerm) * Shadow * 5 * NoL;
+    //Lighting += 0.3f * Diffuse;
     
-    Output.Color = float4(Lighting, 1.0f);
+    Output.Color = float4(Lighting + Diffuse * 0.5, 1.0f);
+   //Output.Color = float4(Vis.rrr, 1.0f);
 }
 #endif

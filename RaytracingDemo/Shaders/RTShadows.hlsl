@@ -40,8 +40,7 @@ void RayGen()
     float4 Unprojected = mul(c_Uniforms.CamToWorld, float4(ScreenPos, SceneDepth, 1));
     float3 WorldPos = Unprojected.xyz / Unprojected.w;
 
-    float3 SunDir = normalize(float3(-0.5f, 1, -0.3));
-    RayDesc Ray = { WorldPos, 0.1f, SunDir, FLT_MAX };
+    RayDesc Ray = { WorldPos, 0.1f, c_Uniforms.SunDirection, FLT_MAX };
     RayPayload Payload = { FLT_MAX };
 
     TraceRay(t_accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, Ray, Payload);

@@ -16,8 +16,6 @@
 
 using namespace rl;
 
-static constexpr bool DemoUsesRaytracing = true;
-
 static const std::wstring s_AssetDirectory = L"Cooked/";
 
 struct RTDTexture_s
@@ -257,7 +255,10 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshVSPSO;
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
+	ComputePipelineStatePtr UAVClearPSO;
 	RaytracingPipelineStatePtr RTPSO;
+
+	// RT Root Signature
 	RootSignaturePtr RTRootSignature;
 
 	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
@@ -271,8 +272,22 @@ struct Globals_s
 
 	bool UseMeshShaders = false;
 	bool ShowMeshID = false;
+	bool ShowShadows = true;
 	int32_t DrawMode = 0;
+
+	float SunYaw = 0.0f;
+	float SunPitch = 70.0f;
 } G;
+
+float3 GetSunDirection()
+{
+	const float CosTheta = cosf(G.SunPitch);
+	const float SinTheta = sinf(G.SunPitch);
+	const float CosPhi = cosf(G.SunYaw);
+	const float SinPhi = sinf(G.SunYaw);
+
+	return Normalize(float3(CosPhi * CosTheta, SinTheta, SinPhi * CosTheta));
+}
 
 bool RTDTexture_s::Init(const HPTexture_s& Asset)
 {
@@ -451,7 +466,6 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		RTDesc.IndexCount = MeshFromAsset.IndexCount;
 		RTDesc.IndexOffset = MeshFromAsset.IndexOffset;
 
-		if (DemoUsesRaytracing)
 		{
 			Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
 
@@ -562,31 +576,7 @@ bool InitializeApp()
 		return false;
 	}
 
-	if (DemoUsesRaytracing)
-	{
-		G.RaytracingScene = rl::CreateRaytracingScene();
-	}
-	// First cook
-
-#if 0
-	std::vector<std::wstring> ModelPaths =
-	{
-		L"Cooked/Models/Bistro_Aerial_B.hp_mdl",
-		L"Cooked/Models/Bistro_Building_01.hp_mdl",
-		L"Cooked/Models/Bistro_Building_02.hp_mdl",
-		L"Cooked/Models/Bistro_Building_03.hp_mdl",
-		L"Cooked/Models/Bistro_Building_04.hp_mdl",
-		L"Cooked/Models/Bistro_Building_05.hp_mdl",
-		L"Cooked/Models/Bistro_Building_06.hp_mdl",
-		L"Cooked/Models/Bistro_Building_07.hp_mdl",
-		L"Cooked/Models/Bistro_Building_08.hp_mdl",
-		L"Cooked/Models/Bistro_Building_09.hp_mdl",
-		L"Cooked/Models/Bistro_Building_10.hp_mdl",
-		L"Cooked/Models/Bistro_Building_11.hp_mdl",
-		L"Cooked/Models/Bistro_Street.hp_mdl",
-		L"Cooked/Models/Bistro_Street_NormalFix.hp_mdl",
-	};
-#endif
+	G.RaytracingScene = rl::CreateRaytracingScene();
 
 	std::vector<std::wstring> ModelPaths =
 	{
@@ -632,6 +622,16 @@ bool InitializeApp()
 		G.MeshMSPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
+	// UAV Clear PSO
+	{
+		ComputeShader_t UAVClearShader = CreateComputeShader("Shaders/ClearUAV.hlsl");
+		ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = UAVClearShader;
+		PsoDesc.DebugName = L"ClearUAV";
+		
+		G.UAVClearPSO = CreateComputePipelineState(PsoDesc);
+	}
+
 	// Deferred PSO
 	{
 		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl");
@@ -648,7 +648,6 @@ bool InitializeApp()
 	}
 
 	// RT PSO
-	if(DemoUsesRaytracing)
 	{
 		RootSignatureDesc RTRootSignatureDesc = {};
 		RTRootSignatureDesc.Slots.resize(RTRootSigSlots::RS_COUNT);
@@ -672,8 +671,6 @@ bool InitializeApp()
 		ShaderTableLayout.RayGenShader = RTDesc.RayGenShader;
 		ShaderTableLayout.MissShader = RTDesc.MissShader;
 		G.RaytracingShaderTable = CreateRaytracingShaderTable(G.RTPSO, ShaderTableLayout);
-
-
 	}
 
 	// Create default material
@@ -719,8 +716,13 @@ void ImguiUpdate()
 	{
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
 		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
-		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0";
+		ImGui::Checkbox("Show Shadows", &G.ShowShadows);
+		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
+		ImGui::Separator();
+		ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f);
+		ImGui::SliderAngle("Sun Pitch", &G.SunPitch, 0.0f, 90.0f);
+		ImGui::Separator();
 		if (ImGui::Button("Recompile Shaders"))
 		{
 			ReloadShaders();
@@ -732,6 +734,7 @@ void ImguiUpdate()
 
 void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
 {
+	float3 SunDirection = GetSunDirection();
 	struct
 	{
 		matrix viewProjection;
@@ -759,7 +762,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		float3 CamPosition;
 
 		uint32_t ShadowTexture;
-		float __pad0[3];
+		float3 SunDirection;
 	} DeferredConsts;
 
 	DeferredConsts.InverseProjection = InverseMatrix(G.Cam.GetProjection());
@@ -771,6 +774,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	DeferredConsts.DrawMode = G.DrawMode;
 	DeferredConsts.CamPosition = G.Cam.GetPosition();
 	DeferredConsts.ShadowTexture = GetDescriptorIndex(G.SceneShadow.SRV);
+	DeferredConsts.SunDirection = SunDirection;
 
 	DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
@@ -833,7 +837,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	}
 
 	// RT Shadows
-	if(DemoUsesRaytracing)
+	if(G.ShowShadows)
 	{
 		CommandList* RTCL = clGroup->CreateCommandList();
 		struct RayUniforms_s
@@ -849,8 +853,8 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		} RayUniforms;
 
 		RayUniforms.CamToWorld = (InverseMatrix(G.Cam.GetView() * G.Cam.GetProjection()));
-		RayUniforms.SunDirection = float3(0.0f, 1.0f, 0.0f); // Hardcoded sun direction
-		RayUniforms.ScreenResolution = float2(G.ScreenWidth, G.ScreenHeight);
+		RayUniforms.SunDirection = SunDirection;
+		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
 
@@ -862,11 +866,28 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		RTCL->SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, G.RaytracingScene);
 		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
 		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
-
 		
-		RTCL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
+		RTCL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);		
+	}
+	else
+	{
+		struct ClearUniforms_s
+		{
+			uint32_t UAVIndex;
+			uint32_t Width;
+			uint32_t Height;
+			float ClearVal;
+		} ClearUniforms;
+		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		ClearUniforms.Width = G.ScreenWidth;
+		ClearUniforms.Height = G.ScreenHeight;
+		ClearUniforms.ClearVal = 1.0f;
+		DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
 
-		RTCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		MainCL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+		MainCL->SetPipelineState(G.UAVClearPSO);
+		MainCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
+		MainCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
 	}
 
 	CommandList* DeferredCL = clGroup->CreateCommandList();
@@ -877,6 +898,8 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	Viewport vp{ G.ScreenWidth, G.ScreenHeight };
 	DeferredCL->SetViewports(&vp, 1);
 	DeferredCL->SetDefaultScissor();
+
+	DeferredCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 
 	// Bind back buffer target
 	{
