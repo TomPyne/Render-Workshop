@@ -278,6 +278,8 @@ struct Globals_s
 	float SunYaw = 0.0f;
 	float SunPitch = 1.0f;
 	float SunSoftAngle = 0.01f;
+
+	float ElapsedTime = 0.0f;
 } G;
 
 float3 GetSunDirection()
@@ -708,6 +710,8 @@ void ResizeApp(uint32_t width, uint32_t height)
 
 void Update(float deltaSeconds)
 {
+	G.ElapsedTime += deltaSeconds;
+
 	G.Cam.UpdateView(deltaSeconds);
 }
 
@@ -852,6 +856,9 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			float2 ScreenResolution;
 			uint32_t SceneDepthTextureIndex;
 			uint32_t SceneShadowTextureIndex;
+
+			float Time;
+			float __pad[3];
 		} RayUniforms;
 
 		RayUniforms.CamToWorld = (InverseMatrix(G.Cam.GetView() * G.Cam.GetProjection()));
@@ -860,6 +867,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		RayUniforms.Time = G.ElapsedTime;
 
 		DynamicBuffer_t RayCBuf = CreateDynamicConstantBuffer(&RayUniforms);
 

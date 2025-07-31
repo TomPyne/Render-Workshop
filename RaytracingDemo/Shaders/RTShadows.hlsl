@@ -21,6 +21,9 @@ struct Uniforms
     float2 ScreenResolution;
     uint SceneDepthTextureIndex;
     uint SceneShadowTextureIndex;
+
+    float Time;
+    float3 __pad0;
 };
 
 ConstantBuffer<Uniforms> c_Uniforms : register(b0);
@@ -47,8 +50,8 @@ void RayGen()
 
     float3 Axis = c_Uniforms.SunDirection;
 
-    float R1 = saturate(Random(WorldPos));
-    float R2 = saturate(Random(WorldPos * 2.0f));
+    float R1 = saturate(Random(WorldPos + c_Uniforms.Time.xxx));
+    float R2 = saturate(Random(WorldPos * 2.0f + c_Uniforms.Time.xxx));
 
     float3 Ortho1 = normalize(cross(Axis, float3(0, 0, 1)));
     float3 Ortho2 = cross(Axis, Ortho1);
