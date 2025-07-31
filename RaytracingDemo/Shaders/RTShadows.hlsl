@@ -9,7 +9,8 @@ static const float FLT_MAX = asfloat(0x7F7FFFFF);
 
 RaytracingAccelerationStructure t_accel : register(t0, space0);
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space0); // Depth
-RWTexture2D<float> u_tex2d_f1[8192] : register(u1, space0); // Shadow Buffer
+RWTexture2D<float> u_tex2d_f1[8192] : register(u0, space0); // Shadow Buffer
+RWTexture2D<float2> u_tex2d_f2[8192] : register(u0, space1); // Shadow History Buffer
 
 struct Uniforms
 {
@@ -22,8 +23,10 @@ struct Uniforms
     uint SceneDepthTextureIndex;
     uint SceneShadowTextureIndex;
 
+    uint SceneShadowHistoryTextureIndex;
     float Time;
-    float3 __pad0;
+    float AccumFrames;
+    float __pad0;
 };
 
 ConstantBuffer<Uniforms> c_Uniforms : register(b0);
@@ -31,6 +34,12 @@ ConstantBuffer<Uniforms> c_Uniforms : register(b0);
 float Random(float3 Seed)
 {
     return frac(sin(dot(Seed.xyz, float3(12.9898,78.233, 128.943)))* 43758.5453123);
+}
+
+float3 GetWorldPos(float4x4 CamToWorld, float2 ScreenPos, float Depth)
+{
+    float4 Unprojected = mul(CamToWorld, float4(ScreenPos, Depth, 1));
+    return Unprojected.xyz / Unprojected.w;
 }
 
 [shader("raygeneration")]
@@ -45,8 +54,7 @@ void RayGen()
 
     float SceneDepth = t_tex2d_f1[c_Uniforms.SceneDepthTextureIndex].Load(int3(Pixel, 0));
 
-    float4 Unprojected = mul(c_Uniforms.CamToWorld, float4(ScreenPos, SceneDepth, 1));
-    float3 WorldPos = Unprojected.xyz / Unprojected.w;
+    float3 WorldPos = GetWorldPos(c_Uniforms.CamToWorld, ScreenPos, SceneDepth);
 
     float3 Axis = c_Uniforms.SunDirection;
 
@@ -75,7 +83,17 @@ void RayGen()
 
     TraceRay(t_accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, Ray, Payload);
 
-    u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DispatchRaysIndex().xy] = Payload.RayHitT < FLT_MAX ? 1.0f : 0.0f;
+    const float Shadow = Payload.RayHitT < FLT_MAX ? 1.0f : 0.0f;    
+
+    // Accumulate history
+    //float2 History = u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid];
+    //float Smoothing = 2.0f / ((History.y * 255.0f) + 1.0f);
+    //loat AccumulatedShadow = (Shadow * Smoothing) + (History.x) * (1.0f - Smoothing);
+    //u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid] = float2(AccumulatedShadow, (History.y + 1.0f) / 255.0f);
+
+    //u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid] = float2(lerp(History.x, Shadow, saturate(1.1f - History.y)), History.y += (2.0f / 255.0f));
+    float History = u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid];
+    u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid] = lerp(Shadow, History, saturate(pow(c_Uniforms.AccumFrames * 0.001f, 0.01f)));
 }
 
 #endif

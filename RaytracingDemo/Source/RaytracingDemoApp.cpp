@@ -246,16 +246,21 @@ struct Globals_s
 	SceneTarget_s SceneNormal = {};
 	SceneTarget_s SceneRoughnessMetallic = {};
 	SceneComputeBuffer_s SceneShadow = {};
+	SceneComputeBuffer_s SceneShadowHistory = {};
 	SceneDepth_s SceneDepth = {};
 
 	// Camera
 	FlyCamera Cam;
 
+	matrix PrevViewProjection;
+	uint32_t FramesSinceMove = 0;
+
 	// Shaders
 	GraphicsPipelineStatePtr MeshVSPSO;
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
-	ComputePipelineStatePtr UAVClearPSO;
+	ComputePipelineStatePtr UAVClearF1PSO;
+	ComputePipelineStatePtr UAVClearF2PSO;
 	RaytracingPipelineStatePtr RTPSO;
 
 	// RT Root Signature
@@ -627,12 +632,15 @@ bool InitializeApp()
 
 	// UAV Clear PSO
 	{
-		ComputeShader_t UAVClearShader = CreateComputeShader("Shaders/ClearUAV.hlsl");
 		ComputePipelineStateDesc PsoDesc = {};
-		PsoDesc.Cs = UAVClearShader;
-		PsoDesc.DebugName = L"ClearUAV";
-		
-		G.UAVClearPSO = CreateComputePipelineState(PsoDesc);
+
+		PsoDesc.Cs = CreateComputeShader("Shaders/ClearUAV.hlsl", { "F1" });
+		PsoDesc.DebugName = L"ClearUAVF1";		
+		G.UAVClearF1PSO = CreateComputePipelineState(PsoDesc);
+
+		PsoDesc.Cs = CreateComputeShader("Shaders/ClearUAV.hlsl", { "F2" });
+		PsoDesc.DebugName = L"ClearUAVF2";
+		G.UAVClearF2PSO = CreateComputePipelineState(PsoDesc);
 	}
 
 	// Deferred PSO
@@ -657,7 +665,7 @@ bool InitializeApp()
 		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_CONSTANTS] = RootSignatureSlot::CBVSlot(0, 0);
 		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_RAYTRACING_SCENE] = RootSignatureSlot::SRVSlot(0, 0);
 		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::SRV);
-		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::UAV);
+		RTRootSignatureDesc.Slots[RTRootSigSlots::RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
 		G.RTRootSignature = CreateRootSignature(RTRootSignatureDesc);
 
@@ -703,6 +711,7 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneNormal.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
 	G.SceneRoughnessMetallic.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
 	G.SceneShadow.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow");
+	G.SceneShadowHistory.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8G8_UNORM, L"SceneShadowHistory");
 	G.SceneDepth.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
@@ -725,9 +734,18 @@ void ImguiUpdate()
 		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
 		ImGui::Separator();
-		ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f);
-		ImGui::SliderAngle("Sun Pitch", &G.SunPitch, 0.0f, 90.0f);
-		ImGui::SliderAngle("Sun Soft Angle", &G.SunSoftAngle, 0.0f, 5.0f);
+		if (ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f))
+		{
+			G.FramesSinceMove = 0;
+		}
+		if (ImGui::SliderAngle("Sun Pitch", &G.SunPitch, 0.0f, 90.0f))
+		{
+			G.FramesSinceMove = 0;
+		}
+		if (ImGui::SliderAngle("Sun Soft Angle", &G.SunSoftAngle, 0.0f, 5.0f))
+		{
+			G.FramesSinceMove = 0;
+		}
 		ImGui::Separator();
 		if (ImGui::Button("Recompile Shaders"))
 		{
@@ -741,6 +759,21 @@ void ImguiUpdate()
 void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
 {
 	float3 SunDirection = GetSunDirection();
+	matrix ViewProjection = G.Cam.GetView() * G.Cam.GetProjection();
+
+	const bool bCameraMoved = ViewProjection != G.PrevViewProjection;
+
+	if (bCameraMoved)
+	{
+		G.FramesSinceMove = 0;
+	}
+	else
+	{
+		G.FramesSinceMove++;
+	}
+
+	G.PrevViewProjection = ViewProjection;
+
 	struct
 	{
 		matrix viewProjection;
@@ -748,7 +781,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		uint32_t DebugMeshID;
 	} ViewConsts;
 
-	ViewConsts.viewProjection = G.Cam.GetView() * G.Cam.GetProjection();
+	ViewConsts.viewProjection = ViewProjection;
 	ViewConsts.CamPos = G.Cam.GetPosition();
 	ViewConsts.DebugMeshID = G.ShowMeshID;
 
@@ -788,11 +821,6 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	MainCL->SetRootSignature();
 
-	//if (DemoUsesRaytracing)
-	//{
-	//	cl->BuildRaytracingScene(G.RaytracingScene);
-	//}
-
 	// Bind and clear targets
 	{
 		constexpr float DefaultClearCol[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -816,6 +844,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	{
 		MainCL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBuf);
 		MainCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+		MainCL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
 	}
 
 	if (G.UseMeshShaders)
@@ -842,10 +871,55 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		MainCL->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::DEPTH_WRITE, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 	}
 
-	// RT Shadows
-	if(G.ShowShadows)
+	if (G.ShowShadows && bCameraMoved)
 	{
-		CommandList* RTCL = clGroup->CreateCommandList();
+		struct ClearUniforms_s
+		{
+			uint32_t UAVIndex;
+			uint32_t Width;
+			uint32_t Height;
+			float __Pad0;
+			float2 ClearVal;
+			float2 __Pad1;
+		} ClearUniforms;
+		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadowHistory.UAV);
+		ClearUniforms.Width = G.ScreenWidth;
+		ClearUniforms.Height = G.ScreenHeight;
+		ClearUniforms.ClearVal = float2(0.0f, 0.0f);
+		DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
+
+		MainCL->SetPipelineState(G.UAVClearF2PSO);
+		MainCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
+		MainCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+
+		MainCL->UAVBarrier(G.SceneShadowHistory.Texture);
+	}
+
+	// RT Shadows
+	if (!G.ShowShadows)
+	{
+		struct ClearUniforms_s
+		{
+			uint32_t UAVIndex;
+			uint32_t Width;
+			uint32_t Height;
+			float __Pad0;
+
+			float ClearVal;
+			float3 __Pad1;
+		} ClearUniforms;
+		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		ClearUniforms.Width = G.ScreenWidth;
+		ClearUniforms.Height = G.ScreenHeight;
+		ClearUniforms.ClearVal = 1.0f;
+		DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
+
+		MainCL->SetPipelineState(G.UAVClearF1PSO);
+		MainCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
+		MainCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+	}
+	else
+	{
 		struct RayUniforms_s
 		{
 			matrix CamToWorld;
@@ -857,48 +931,36 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			uint32_t SceneDepthTextureIndex;
 			uint32_t SceneShadowTextureIndex;
 
+			uint32_t SceneShadowHistoryTextureIndex;
 			float Time;
-			float __pad[3];
+			float AccumFrames;
+			float __pad[1];
 		} RayUniforms;
 
-		RayUniforms.CamToWorld = (InverseMatrix(G.Cam.GetView() * G.Cam.GetProjection()));
+		RayUniforms.CamToWorld = InverseMatrix(ViewProjection);
 		RayUniforms.SunDirection = SunDirection;
 		RayUniforms.SunSoftAngle = G.SunSoftAngle;
 		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		RayUniforms.SceneShadowHistoryTextureIndex = GetDescriptorIndex(G.SceneShadowHistory.UAV);
 		RayUniforms.Time = G.ElapsedTime;
+		RayUniforms.AccumFrames = (float)G.FramesSinceMove;
 
 		DynamicBuffer_t RayCBuf = CreateDynamicConstantBuffer(&RayUniforms);
 
-		RTCL->SetPipelineState(G.RTPSO);
+		CommandList* RTCL = clGroup->CreateCommandList();
+
 		RTCL->SetComputeRootSignature(G.RTRootSignature);
+		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
+
+		RTCL->SetPipelineState(G.RTPSO);
+
 		RTCL->SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
 		RTCL->SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, G.RaytracingScene);
 		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
-		RTCL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
-		
-		RTCL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);		
-	}
-	else
-	{
-		struct ClearUniforms_s
-		{
-			uint32_t UAVIndex;
-			uint32_t Width;
-			uint32_t Height;
-			float ClearVal;
-		} ClearUniforms;
-		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadow.UAV);
-		ClearUniforms.Width = G.ScreenWidth;
-		ClearUniforms.Height = G.ScreenHeight;
-		ClearUniforms.ClearVal = 1.0f;
-		DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
 
-		MainCL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
-		MainCL->SetPipelineState(G.UAVClearPSO);
-		MainCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
-		MainCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+		RTCL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
 	}
 
 	CommandList* DeferredCL = clGroup->CreateCommandList();
