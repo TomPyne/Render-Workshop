@@ -42,7 +42,8 @@ struct DeferredData
     float3 SunDirection;
 
     uint SceneVelocityTextureIndex;
-    float3 __Pad0;
+    uint PrevDepthTextureIndex;
+    float2 ViewportSizeRcp;
 };
 
 #define DRAWMODE_LIT 0
@@ -106,9 +107,17 @@ struct PS_OUTPUT
 float3 GetWorldPos(float4x4 CamToWorld, float2 UV, float Depth)
 {
     float x = UV.x * 2 - 1;
-    float y = (1 - UV.y) * 2 - 1;
+    float y = UV.y * 2 - 1;
     float4 ProjectedPos = float4(x, y, Depth,  1.0f);
 
+    float4 Unprojected = mul(CamToWorld, ProjectedPos);
+    return Unprojected.xyz / Unprojected.w;
+}
+
+float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
+{
+    //ScreenPos.y = -ScreenPos.y;
+    float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
     float4 Unprojected = mul(CamToWorld, ProjectedPos);
     return Unprojected.xyz / Unprojected.w;
 }
@@ -140,8 +149,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
     float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
     
-    float3 Position = GetWorldPos(c_Deferred.CamToWorld, Input.UV, Depth);
-    //float3 Position = ViewPositionFromDepth(Input.UV, Depth);
+    float3 Position = GetWorldPosFromScreen(c_Deferred.CamToWorld, Input.SVPosition.xy * c_Deferred.ViewportSizeRcp, Depth);
 
     float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
 
@@ -194,12 +202,25 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         }
         else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
         {
-            // float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
-            // float2 ReconstructedSVPos = Input.SVPosition + Velocity;
+            float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
+            float2 ReconstructedSVPos = Input.SVPosition.xy + Velocity;
 
-            // float4 ProjectedPos = float4(x, y, Depth,  1.0f);
-            // float4 Unprojected = mul(CamToWorld, ProjectedPos);
-            // return Unprojected.xyz / Unprojected.w;
+            float Disoccluded = 0.0f;
+            if(any(ReconstructedSVPos < 0.0f) || any(ReconstructedSVPos * c_Deferred.ViewportSizeRcp > 1.0f))
+            {
+                Disoccluded = 1.0f;
+            }
+
+            float ReconstructedDepth = t_tex2d_f1[c_Deferred.PrevDepthTextureIndex].SampleLevel(ClampedSampler, ReconstructedSVPos * c_Deferred.ViewportSizeRcp, 0u).r;            
+            float3 ReconstructedPosition = GetWorldPosFromScreen(c_Deferred.PrevCamToWorld, ReconstructedSVPos * c_Deferred.ViewportSizeRcp, ReconstructedDepth);
+            float3 Offset = Position - ReconstructedPosition;
+            if(dot(Offset, Offset) > 10.0f)
+            {
+                Disoccluded = 1.0f;//length(Position - ReconstructedPosition);
+            }
+            Output.Color = float4(Disoccluded.rrr, 1);
+            return;
+            //
         }
     }
 
@@ -230,7 +251,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 Lighting = (SpecularTerm + DiffuseTerm) * Shadow * 5 * NoL;
     //Lighting += 0.3f * Diffuse;
     
-    Output.Color = float4(Lighting + Diffuse * 0.5, 1.0f);
-   //Output.Color = float4(Vis.rrr, 1.0f);
+    Output.Color = float4(Lighting + Diffuse, 1.0f);
+    //Output.Color = float4(SpecularTerm, 1.0f);
 }
 #endif
