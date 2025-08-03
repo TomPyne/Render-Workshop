@@ -23,10 +23,9 @@ struct Uniforms
     uint SceneDepthTextureIndex;
     uint SceneShadowTextureIndex;
 
-    uint SceneShadowHistoryTextureIndex;
     float Time;
     float AccumFrames;
-    float __pad0;
+    float2 __pad0;
 };
 
 ConstantBuffer<Uniforms> c_Uniforms : register(b0);
@@ -86,12 +85,6 @@ void RayGen()
     const float Shadow = Payload.RayHitT < FLT_MAX ? 1.0f : 0.0f;    
 
     // Accumulate history
-    //float2 History = u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid];
-    //float Smoothing = 2.0f / ((History.y * 255.0f) + 1.0f);
-    //loat AccumulatedShadow = (Shadow * Smoothing) + (History.x) * (1.0f - Smoothing);
-    //u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid] = float2(AccumulatedShadow, (History.y + 1.0f) / 255.0f);
-
-    //u_tex2d_f2[c_Uniforms.SceneShadowHistoryTextureIndex][DTid] = float2(lerp(History.x, Shadow, saturate(1.1f - History.y)), History.y += (2.0f / 255.0f));
     float History = u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid];
     u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid] = lerp(Shadow, History, saturate(pow(c_Uniforms.AccumFrames * 0.001f, 0.01f)));
 }

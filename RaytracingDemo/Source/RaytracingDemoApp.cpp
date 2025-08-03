@@ -157,63 +157,61 @@ struct SceneTarget_s
 	RenderTargetViewPtr RTV = {};
 	ShaderResourceViewPtr SRV = {};
 	UnorderedAccessViewPtr UAV = {};
+	DepthStencilViewPtr DSV = {};
+	ResourceTransitionState CurrentState = ResourceTransitionState::COMMON;	
 
-	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
+	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, ResourceTransitionState InitialState, bool IsRenderTarget, bool IsComputeTarget, bool IsShaderResource, const wchar_t* DebugName)
 	{
+		if (!IsRenderTarget && !IsComputeTarget && !IsShaderResource)
+		{
+			LOGERROR("Scene Target [%S] has unknown usage, at least one of IsRenderTarget, IsComputeTarget or IsShaderResource must be true", DebugName ? DebugName : L"UnknownSceneTarget");
+		}
+
 		TextureCreateDescEx Desc = {};
 		Desc.DebugName = DebugName ? DebugName : L"UnknownSceneTarget";
-		Desc.Flags = RenderResourceFlags::RTV | RenderResourceFlags::SRV | RenderResourceFlags::UAV;
+		if(IsRenderTarget)
+			Desc.Flags |= RenderResourceFlags::RTV;
+
+		if(IsComputeTarget)
+			Desc.Flags |= RenderResourceFlags::UAV;
+
+		if (IsShaderResource)
+			Desc.Flags |= RenderResourceFlags::SRV;
+
 		Desc.ResourceFormat = Format;
 		Desc.Height = Height;
 		Desc.Width = Width;
-		Desc.InitialState = ResourceTransitionState::RENDER_TARGET;
+		Desc.InitialState = InitialState;
 		Desc.Dimension = TextureDimension::TEX2D;
 		Texture = CreateTextureEx(Desc);
-		RTV = CreateTextureRTV(Texture, Format, TextureDimension::TEX2D, 1u);
-		SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
-		UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
 
-		if (!Texture || !RTV || !SRV || !UAV)
+		if(IsRenderTarget)
+			RTV = CreateTextureRTV(Texture, Format, TextureDimension::TEX2D, 1u);
+
+		if(IsShaderResource)
+			SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
+
+		if(IsComputeTarget)
+			UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
+
+		CurrentState = InitialState;
+		if (!Texture || (IsRenderTarget && !RTV) || (IsShaderResource && !SRV) || (IsComputeTarget && !UAV))
 		{
 			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
 		}
 	}
-};
 
-struct SceneComputeBuffer_s
-{
-	TexturePtr Texture = {};
-	ShaderResourceViewPtr SRV = {};
-	UnorderedAccessViewPtr UAV = {};
-
-	void Init(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
+	void InitAsRenderTarget(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
 	{
-		TextureCreateDescEx Desc = {};
-		Desc.DebugName = DebugName ? DebugName : L"UnknownSceneComputeBuffer";
-		Desc.Flags = RenderResourceFlags::SRV | RenderResourceFlags::UAV;
-		Desc.ResourceFormat = Format;
-		Desc.Height = Height;
-		Desc.Width = Width;
-		Desc.InitialState = ResourceTransitionState::UNORDERED_ACCESS;
-		Desc.Dimension = TextureDimension::TEX2D;
-		Texture = CreateTextureEx(Desc);
-		SRV = CreateTextureSRV(Texture, Format, TextureDimension::TEX2D, 1u, 1u);
-		UAV = CreateTextureUAV(Texture, Format, TextureDimension::TEX2D, 1u);
-
-		if (!Texture || !UAV || !SRV)
-		{
-			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
-		}
+		Init(Width, Height, Format, ResourceTransitionState::RENDER_TARGET, true, true, true, DebugName);
 	}
-};
 
-struct SceneDepth_s
-{
-	TexturePtr Texture = {};
-	DepthStencilViewPtr DSV = {};
-	ShaderResourceViewPtr SRV = {};
+	void InitAsCompute(uint32_t Width, uint32_t Height, RenderFormat Format, const wchar_t* DebugName)
+	{
+		Init(Width, Height, Format, ResourceTransitionState::UNORDERED_ACCESS, false, true, true, DebugName);
+	}
 
-	void Init(uint32_t Width, uint32_t Height, RenderFormat DepthFormat, RenderFormat SRVFormat, const wchar_t* DebugName)
+	void InitAsDepth(uint32_t Width, uint32_t Height, RenderFormat DepthFormat, RenderFormat SRVFormat, const wchar_t* DebugName)
 	{
 		TextureCreateDescEx Desc = {};
 		Desc.DebugName = DebugName ? DebugName : L"UnkownSceneDepth";
@@ -226,10 +224,19 @@ struct SceneDepth_s
 		Texture = CreateTextureEx(Desc);
 		DSV = CreateTextureDSV(Texture, DepthFormat, TextureDimension::TEX2D, 1u);
 		SRV = CreateTextureSRV(Texture, SRVFormat, TextureDimension::TEX2D, 1u, 1u);
-
+		CurrentState = ResourceTransitionState::DEPTH_WRITE;
 		if (!Texture || !DSV || !SRV)
 		{
 			LOGERROR("Scene Target [%S] failed to intialize", Desc.DebugName.c_str());
+		}
+	}
+
+	void Transition(CommandList* Cl, ResourceTransitionState NewState)
+	{
+		if (CurrentState != NewState)
+		{
+			Cl->TransitionResource(Texture, CurrentState, NewState);
+			CurrentState = NewState;
 		}
 	}
 };
@@ -245,9 +252,9 @@ struct Globals_s
 	SceneTarget_s SceneColor = {};
 	SceneTarget_s SceneNormal = {};
 	SceneTarget_s SceneRoughnessMetallic = {};
-	SceneComputeBuffer_s SceneShadow = {};
-	SceneComputeBuffer_s SceneShadowHistory = {};
-	SceneDepth_s SceneDepth = {};
+	SceneTarget_s SceneVelocity = {};
+	SceneTarget_s SceneShadow = {};
+	SceneTarget_s SceneDepth = {};
 
 	// Camera
 	FlyCamera Cam;
@@ -618,7 +625,7 @@ bool InitializeApp()
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
 			.DepthDesc(true, ComparisionFunc::LESS_EQUAL)
-			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16_FLOAT }, { BlendMode::None(), BlendMode::None(), BlendMode::None() }, RenderFormat::D32_FLOAT)
+			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16B16A16_FLOAT, RenderFormat::R16G16_FLOAT, RenderFormat::R16G16_FLOAT }, { BlendMode::None(), BlendMode::None(), BlendMode::None(), BlendMode::None()}, RenderFormat::D32_FLOAT)
 			.VertexShader(MeshVS)
 			.PixelShader(MeshPS);
 
@@ -707,12 +714,12 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.ScreenWidth = width;
 	G.ScreenHeight = height;
 
-	G.SceneColor.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
-	G.SceneNormal.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
-	G.SceneRoughnessMetallic.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	G.SceneShadow.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow");
-	G.SceneShadowHistory.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8G8_UNORM, L"SceneShadowHistory");
-	G.SceneDepth.Init(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth");
+	G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
+	G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
+	G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
+	G.SceneShadow.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow");
+	G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
+	G.SceneDepth.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -731,7 +738,7 @@ void ImguiUpdate()
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
 		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
 		ImGui::Checkbox("Show Shadows", &G.ShowShadows);
-		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0";
+		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0Velocity\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
 		ImGui::Separator();
 		if (ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f))
@@ -770,18 +777,18 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	else
 	{
 		G.FramesSinceMove++;
-	}
-
-	G.PrevViewProjection = ViewProjection;
+	}	
 
 	struct
 	{
-		matrix viewProjection;
+		matrix ViewProjection;
+		matrix PrevviewProjection;
 		float3 CamPos;
 		uint32_t DebugMeshID;
 	} ViewConsts;
 
-	ViewConsts.viewProjection = ViewProjection;
+	ViewConsts.ViewProjection = ViewProjection;
+	ViewConsts.PrevviewProjection = G.PrevViewProjection;
 	ViewConsts.CamPos = G.Cam.GetPosition();
 	ViewConsts.DebugMeshID = G.ShowMeshID;
 
@@ -789,8 +796,8 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	struct
 	{
-		matrix InverseProjection;
-		matrix InverseView;
+		matrix CamToWorld;
+		matrix PrevCamToWorld;
 
 		uint32_t SceneColorTextureIndex;
 		uint32_t SceneNormalTextureIndex;
@@ -802,10 +809,13 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 		uint32_t ShadowTexture;
 		float3 SunDirection;
+
+		uint32_t VelocityTextureIndex;
+		float3 __Pad0;
 	} DeferredConsts;
 
-	DeferredConsts.InverseProjection = InverseMatrix(G.Cam.GetProjection());
-	DeferredConsts.InverseView = InverseMatrix(G.Cam.GetView());
+	DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
+	DeferredConsts.CamToWorld = InverseMatrix(G.PrevViewProjection);
 	DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(G.SceneColor.SRV);
 	DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(G.SceneNormal.SRV);
 	DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(G.SceneRoughnessMetallic.SRV);
@@ -814,6 +824,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	DeferredConsts.CamPosition = G.Cam.GetPosition();
 	DeferredConsts.ShadowTexture = GetDescriptorIndex(G.SceneShadow.SRV);
 	DeferredConsts.SunDirection = SunDirection;
+	DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
 
 	DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
@@ -827,9 +838,10 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		MainCL->ClearRenderTarget(G.SceneColor.RTV, DefaultClearCol);
 		MainCL->ClearRenderTarget(G.SceneNormal.RTV, DefaultClearCol);
 		MainCL->ClearRenderTarget(G.SceneRoughnessMetallic.RTV, DefaultClearCol);
+		MainCL->ClearRenderTarget(G.SceneVelocity.RTV, DefaultClearCol);
 		MainCL->ClearDepth(G.SceneDepth.DSV, 1.0f);
 
-		RenderTargetView_t SceneTargets[] = { G.SceneColor.RTV, G.SceneNormal.RTV, G.SceneRoughnessMetallic.RTV };
+		RenderTargetView_t SceneTargets[] = { G.SceneColor.RTV, G.SceneNormal.RTV, G.SceneRoughnessMetallic.RTV, G.SceneVelocity.RTV };
 		MainCL->SetRenderTargets(SceneTargets, ARRAYSIZE(SceneTargets), G.SceneDepth.DSV);
 	}
 
@@ -865,34 +877,11 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	// Transition for deferred pass
 	{
-		MainCL->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		MainCL->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		MainCL->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		MainCL->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::DEPTH_WRITE, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-	}
-
-	if (G.ShowShadows && bCameraMoved)
-	{
-		struct ClearUniforms_s
-		{
-			uint32_t UAVIndex;
-			uint32_t Width;
-			uint32_t Height;
-			float __Pad0;
-			float2 ClearVal;
-			float2 __Pad1;
-		} ClearUniforms;
-		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadowHistory.UAV);
-		ClearUniforms.Width = G.ScreenWidth;
-		ClearUniforms.Height = G.ScreenHeight;
-		ClearUniforms.ClearVal = float2(0.0f, 0.0f);
-		DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
-
-		MainCL->SetPipelineState(G.UAVClearF2PSO);
-		MainCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
-		MainCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
-
-		MainCL->UAVBarrier(G.SceneShadowHistory.Texture);
+		G.SceneColor.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		G.SceneNormal.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		G.SceneRoughnessMetallic.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		G.SceneVelocity.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		G.SceneDepth.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 	}
 
 	// RT Shadows
@@ -931,10 +920,9 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			uint32_t SceneDepthTextureIndex;
 			uint32_t SceneShadowTextureIndex;
 
-			uint32_t SceneShadowHistoryTextureIndex;
 			float Time;
 			float AccumFrames;
-			float __pad[1];
+			float __pad[2];
 		} RayUniforms;
 
 		RayUniforms.CamToWorld = InverseMatrix(ViewProjection);
@@ -943,7 +931,6 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(G.SceneDepth.SRV);
 		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
-		RayUniforms.SceneShadowHistoryTextureIndex = GetDescriptorIndex(G.SceneShadowHistory.UAV);
 		RayUniforms.Time = G.ElapsedTime;
 		RayUniforms.AccumFrames = (float)G.FramesSinceMove;
 
@@ -972,7 +959,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	DeferredCL->SetViewports(&vp, 1);
 	DeferredCL->SetDefaultScissor();
 
-	DeferredCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+	G.SceneShadow.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 
 	// Bind back buffer target
 	{
@@ -998,13 +985,15 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	// Transition for next pass
 	{
-		DeferredCL->TransitionResource(G.SceneColor.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		DeferredCL->TransitionResource(G.SceneNormal.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		DeferredCL->TransitionResource(G.SceneRoughnessMetallic.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::RENDER_TARGET);
-		DeferredCL->TransitionResource(G.SceneDepth.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::DEPTH_WRITE);
-
-		DeferredCL->TransitionResource(G.SceneShadow.Texture, rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE, rl::ResourceTransitionState::UNORDERED_ACCESS);
+		G.SceneColor.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
+		G.SceneNormal.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
+		G.SceneRoughnessMetallic.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
+		G.SceneVelocity.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
+		G.SceneDepth.Transition(DeferredCL, ResourceTransitionState::DEPTH_WRITE);
+		G.SceneShadow.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
 	}
+
+	G.PrevViewProjection = ViewProjection;
 }
 
 void ShutdownApp()

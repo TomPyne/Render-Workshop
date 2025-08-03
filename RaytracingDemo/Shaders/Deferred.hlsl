@@ -27,16 +27,22 @@ void main(uint VertexID : SV_VertexID, out PS_INPUT Output)
 
 struct DeferredData
 {
-    float4x4 InverseProjection;
-    float4x4 InverseView;
+    float4x4 CamToWorld;
+    float4x4 PrevCamToWorld;
+
     uint SceneColorTextureIndex;
     uint SceneNormalTextureIndex;
     uint SceneRoughnessMetallicTextureIndex;
     uint DepthTextureIndex;
+
     uint DrawMode;
     float3 CamPosition;
+
     uint ShadowTextureIndex;
     float3 SunDirection;
+
+    uint SceneVelocityTextureIndex;
+    float3 __Pad0;
 };
 
 #define DRAWMODE_LIT 0
@@ -48,6 +54,8 @@ struct DeferredData
 #define DRAWMODE_POSITION 6
 #define DRAWMODE_LIGHTING 7
 #define DRAWMODE_RTSHADOWS 8
+#define DRAWMODE_VELOCITY 9
+#define DRAWMODE_DISOCCLUSION 10
 
 ConstantBuffer<DeferredData> c_Deferred : register(b1);
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
@@ -95,18 +103,28 @@ struct PS_OUTPUT
     float4 Color : SV_TARGET0;
 };
 
-float3 ViewPositionFromDepth(float2 UV, float Depth)
+float3 GetWorldPos(float4x4 CamToWorld, float2 UV, float Depth)
 {
     float x = UV.x * 2 - 1;
     float y = (1 - UV.y) * 2 - 1;
     float4 ProjectedPos = float4(x, y, Depth,  1.0f);
 
-    ProjectedPos = mul(c_Deferred.InverseProjection, ProjectedPos);
-
-    ProjectedPos /= ProjectedPos.w;
-
-    return mul(c_Deferred.InverseView, ProjectedPos).xyz;
+    float4 Unprojected = mul(CamToWorld, ProjectedPos);
+    return Unprojected.xyz / Unprojected.w;
 }
+
+// float3 ViewPositionFromDepth(float2 UV, float Depth)
+// {
+//     float x = UV.x * 2 - 1;
+//     float y = (1 - UV.y) * 2 - 1;
+//     float4 ProjectedPos = float4(x, y, Depth,  1.0f);
+
+//     ProjectedPos = mul(c_Deferred.InverseProjection, ProjectedPos);
+
+//     ProjectedPos /= ProjectedPos.w;
+
+//     return mul(c_Deferred.InverseView, ProjectedPos).xyz;
+// }
 
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
@@ -121,7 +139,9 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     Normal.x *= -1.0f;
     float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
     float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
-    float3 Position = ViewPositionFromDepth(Input.UV, Depth);
+    
+    float3 Position = GetWorldPos(c_Deferred.CamToWorld, Input.UV, Depth);
+    //float3 Position = ViewPositionFromDepth(Input.UV, Depth);
 
     float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
 
@@ -165,6 +185,21 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         {
             Output.Color = float4(Shadow, Shadow, Shadow, 1.0f);
             return;
+        }
+        else if(c_Deferred.DrawMode == DRAWMODE_VELOCITY)
+        {
+            float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
+            Output.Color = float4(abs(Velocity), 0, 1);
+            return;
+        }
+        else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
+        {
+            // float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
+            // float2 ReconstructedSVPos = Input.SVPosition + Velocity;
+
+            // float4 ProjectedPos = float4(x, y, Depth,  1.0f);
+            // float4 Unprojected = mul(CamToWorld, ProjectedPos);
+            // return Unprojected.xyz / Unprojected.w;
         }
     }
 

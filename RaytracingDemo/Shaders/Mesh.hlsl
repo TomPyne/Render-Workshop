@@ -1,6 +1,7 @@
 struct ViewData_s
 {
     float4x4 ViewProjectionMatrix;
+    float4x4 PrevViewProjectionMatrix;
     float3 CameraPos;
     uint DebugMeshID;
 };
@@ -14,6 +15,7 @@ struct PixelInputs_s
     float3 Normal : NORMAL0;
     float3 Tangent : TANGENT;
     float3 Bitangent : BITANGENT;
+    float2 Velocity : VELOCITY;
     uint MeshletIndex : COLOR0;
 };
 
@@ -50,12 +52,15 @@ PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
     float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][VertexIndex] : float2(0, 0);
 
     PixelInputs_s Out;
-    Out.SVPosition =  mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
+    Out.SVPosition = mul(c_View.ViewProjectionMatrix, float4(Position, 1.0f));
     Out.Normal = Normal;
     Out.Bitangent = Bitangent;
     Out.Tangent = Tangent;
     Out.UV = float2(UV.x, 1.0f - UV.y);
     Out.MeshletIndex = MeshletIndex;
+
+    float4 PrevSvPosition = mul(c_View.PrevViewProjectionMatrix, float4(Position, 1.0f));
+    Out.Velocity = Out.SVPosition.xy - PrevSvPosition.xy;
 
     return Out;
 }
@@ -156,6 +161,7 @@ struct PixelOutputs_s
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
     float2 RoughnessMetallic : SV_TARGET2;
+    float2 Velocity : SV_TARGET3;
 };
 
 ConstantBuffer<MaterialData_s> c_Material : register(b3);
@@ -205,6 +211,7 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     Output.Color = float4(Albedo, 1.0f);
     Output.Normal = float4(Normal, 0.0f);
     Output.RoughnessMetallic = float2(Roughness, Metallic);
+    Output.Velocity = Input.Velocity;
 }
 
 #endif
