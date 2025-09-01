@@ -60,7 +60,8 @@ PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
     Out.MeshletIndex = MeshletIndex;
 
     float4 PrevSvPosition = mul(c_View.PrevViewProjectionMatrix, float4(Position, 1.0f));
-    Out.Velocity = Out.SVPosition.xy - PrevSvPosition.xy;
+    //Out.Velocity = ((Out.SVPosition.xy) / Out.SVPosition.w) - ((PrevSvPosition.xy) / PrevSvPosition.w);
+    Out.Velocity = ((Out.SVPosition.xy) / Out.SVPosition.w) - ((PrevSvPosition.xy) / PrevSvPosition.w);
 
     return Out;
 }

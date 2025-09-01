@@ -3,17 +3,20 @@ struct ConstantData
     float4x4 CamToWorld;
     float4x4 PrevCamToWorld;
 
-    uint32_t DepthTextureIndex;
-    uint32_t PrevDepthTextureIndex;
-    uint32_t ShadowTextureIndex;
-    uint32_t PrevShadowTextureIndex;
+    float4x4 ClipToPrevClip;
 
-    uint32_t ConfidenceTextureIndex; // Store
-    uint32_t VelocityTextureIndex;
+    uint DepthTextureIndex;
+    uint PrevDepthTextureIndex;
+    uint ShadowTextureIndex;
+    uint PrevShadowTextureIndex;
+
+    uint ConfidenceTextureIndex; // Store
+    uint PrevConfidenceTextureIndex;
+    uint VelocityTextureIndex;
+    uint DebugTextureIndex;
+
     float2 ViewportSizeRcp;
-
     uint2 ViewportSize;
-    float2 __pad0;
 };
 
 ConstantBuffer<ConstantData> c_G : register(b1);
@@ -38,34 +41,54 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         return;
 
     float2 Pixel = float2(DispatchThreadId.xy) + 0.5;
+    float2 NDC = (Pixel * c_G.ViewportSizeRcp) * 2.0f - 1.0f;
     float2 UV = Pixel * c_G.ViewportSizeRcp;
 
     // Load current sample
-    float CurrentDepth = t_tex2d_f1[c_G.DepthTextureIndex].SampleLevel(ClampedSampler, UV, 0u).r;
+    float CurrentDepth = t_tex2d_f1[c_G.DepthTextureIndex][DispatchThreadId.xy].r;
     float CurrentShadow = u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy];
-    float3 CurrentWorldPosition = GetWorldPosFromScreen(c_G.CamToWorld, UV, CurrentDepth);   
+    
 
     // Reconstruct previous sample
-    float2 Velocity = t_tex2d_f2[c_G.VelocityTextureIndex].SampleLevel(ClampedSampler, UV, 0u).rg;
-    float2 ReconstructedSVPos = Pixel + Velocity;
-    float2 ReconstructedUv = ReconstructedSVPos * c_G.ViewportSizeRcp;
+    float2 Velocity = t_tex2d_f2[c_G.VelocityTextureIndex][DispatchThreadId.xy].rg;
+    Velocity.y *= -1.0f;
+    float2 PrevNDC = NDC - Velocity;
+    
+    float3 CurrentWorldPosition = GetWorldPosFromScreen(c_G.CamToWorld, UV, CurrentDepth);
+    
+    float2 ReconstructedUv = (PrevNDC * 0.5f) + 0.5f;
+    float2 ReconstructedScreenPos = ReconstructedUv *  c_G.ViewportSize;
 
-    float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0u).r;   
-    float ReconstructedShadow = t_tex2d_f1[c_G.PrevShadowTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0u).r;         
-    float3 ReconstructedPosition = GetWorldPosFromScreen(c_G.PrevCamToWorld, ReconstructedUv, ReconstructedDepth);
-
-    // Compare world pos
-    float3 Offset = CurrentWorldPosition - ReconstructedPosition;
-    float Confidence = u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy];
-
-    if(dot(Offset, Offset) > 1.0f)
+    int2 ReconstructedPixel = int2(ReconstructedScreenPos);
+    float DebugDepth = 0.0f;
+    float Confidence = 0.0f;
+    if(all(ReconstructedPixel >= 0) && all(ReconstructedPixel < c_G.ViewportSize))
     {
-        Confidence = 0.0f; // Disoccluded
-    }   
+        float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex][ReconstructedPixel].r;
+        float ReconstructedShadow = t_tex2d_f1[c_G.PrevShadowTextureIndex][ReconstructedPixel].r;
+        float3 ReconstructedPosition = GetWorldPosFromScreen(c_G.PrevCamToWorld, ReconstructedUv, ReconstructedDepth);
 
-    // Accumulate if similar
-    u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy] = lerp(CurrentShadow, ReconstructedShadow, Confidence);
+        DebugDepth = ReconstructedDepth;
+        // Compare world pos
+        float3 Offset = CurrentWorldPosition - ReconstructedPosition;
+
+        if(dot(Offset, Offset) < 0.1f)
+        {
+            Confidence = t_tex2d_f1[c_G.PrevConfidenceTextureIndex][ReconstructedPixel];
+
+            Confidence = saturate(Confidence + ((0.99f - Confidence) * 0.1f));
+        }
+        else
+        {
+            Confidence = 0.0f; // Disoccluded
+        }
+
+        // Accumulate if similar
+        u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy] = lerp(CurrentShadow, ReconstructedShadow, Confidence);
+    }
+
+    //u_tex2d_f1[c_G.DebugTextureIndex][DispatchThreadId.xy] = Offset.r;
 
     // Output confidence, if similar then we inch towards 1, if unsimilar we reset to 0
-    u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = lerp(Confidence, 1.0f, 0.01f);
+    u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = Confidence;
 }

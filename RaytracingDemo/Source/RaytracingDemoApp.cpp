@@ -257,7 +257,9 @@ struct Globals_s
 	SceneTarget_s SceneShadow1 = {};
 	SceneTarget_s SceneDepth0 = {};
 	SceneTarget_s SceneDepth1 = {};
-	SceneTarget_s SceneConfidence = {};
+	SceneTarget_s SceneConfidence0 = {};
+	SceneTarget_s SceneConfidence1 = {};
+	SceneTarget_s Debug = {};
 
 	// Camera
 	FlyCamera Cam;
@@ -736,7 +738,9 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
 	G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
 	G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
-	G.SceneConfidence.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence");
+	G.SceneConfidence0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence0");
+	G.SceneConfidence1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence1");
+	G.Debug.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, L"Debug");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -790,6 +794,8 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	SceneTarget_s& PrevFrameDepth = FrameID % 2 == 0 ? G.SceneDepth1 : G.SceneDepth0;
 	SceneTarget_s& CurrentFrameShadow = FrameID % 2 == 0 ? G.SceneShadow0 : G.SceneShadow1;
 	SceneTarget_s& PrevFrameShadow = FrameID % 2 == 0 ? G.SceneShadow1 : G.SceneShadow0;
+	SceneTarget_s& CurrentFrameConfidence = FrameID % 2 == 0 ? G.SceneConfidence0 : G.SceneConfidence1;
+	SceneTarget_s& PrevFrameConfidence = FrameID % 2 == 0 ? G.SceneConfidence1 : G.SceneConfidence0;
 
 	const bool bCameraMoved = ViewProjection != G.PrevViewProjection;
 
@@ -955,16 +961,20 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 
 	PrevFrameDepth.Transition(DeferredCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
 	PrevFrameShadow.Transition(DeferredCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+	G.Debug.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
 
 	// Denoise
 	{
 		DeferredCL->UAVBarrier(CurrentFrameShadow.Texture);
-		G.SceneConfidence.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
+		CurrentFrameConfidence.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
+		PrevFrameConfidence.Transition(DeferredCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
 
 		struct DenoiseUniforms_s
 		{
 			matrix CamToWorld;
 			matrix PrevCamToWorld;
+
+			matrix ClipToPrevClip;
 
 			uint32_t DepthTextureIndex;
 			uint32_t PrevFrameDepthTextureIndex;
@@ -972,22 +982,27 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			uint32_t PrevFrameShadowTextureIndex;
 
 			uint32_t ConfidenceTextureIndex;
+			uint32_t PrevConfidenceTextureIndex;
 			uint32_t VelocityTextureIndex;
-			float2 ViewportSizeRcp;
+			uint32_t DebugTextureIndex;
 
+			float2 ViewportSizeRcp;
 			uint32_t ViewportWidth;
 			uint32_t ViewportHeight;
-			float __Pad0[2];
+			
 		} DenoiseUniforms;
 
 		DenoiseUniforms.CamToWorld = InverseMatrix(ViewProjection);
 		DenoiseUniforms.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+		DenoiseUniforms.ClipToPrevClip = DenoiseUniforms.PrevCamToWorld * G.PrevViewProjection;
 		DenoiseUniforms.DepthTextureIndex = GetDescriptorIndex(CurrentFrameDepth.SRV);
 		DenoiseUniforms.PrevFrameDepthTextureIndex = GetDescriptorIndex(PrevFrameDepth.SRV);
 		DenoiseUniforms.ShadowTextureIndex = GetDescriptorIndex(CurrentFrameShadow.UAV);
 		DenoiseUniforms.PrevFrameShadowTextureIndex = GetDescriptorIndex(PrevFrameShadow.SRV);
-		DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(G.SceneConfidence.UAV);
+		DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(CurrentFrameConfidence.UAV);
+		DenoiseUniforms.PrevConfidenceTextureIndex = GetDescriptorIndex(PrevFrameConfidence.SRV);
 		DenoiseUniforms.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
+		DenoiseUniforms.DebugTextureIndex = GetDescriptorIndex(G.Debug.UAV);
 		DenoiseUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
 		DenoiseUniforms.ViewportWidth = G.ScreenWidth;
 		DenoiseUniforms.ViewportHeight = G.ScreenHeight;
@@ -1016,7 +1031,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	}
 
 	CurrentFrameShadow.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-	G.SceneConfidence.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+	CurrentFrameConfidence.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 
 	// Render deferred
 	{
@@ -1052,7 +1067,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		DeferredConsts.ShadowTexture = GetDescriptorIndex(CurrentFrameShadow.SRV);
 		DeferredConsts.SunDirection = SunDirection;
 		DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
-		DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(G.SceneConfidence.SRV);
+		DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(CurrentFrameConfidence.SRV);
 		DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
 
 		DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);

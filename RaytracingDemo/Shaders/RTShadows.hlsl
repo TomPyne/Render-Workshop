@@ -77,15 +77,15 @@ void RayGen()
         SinThetaCosPhi * Ortho1.z + SinPhiSinTheta * Ortho2.z + CosTheta * Axis.z
     );
 
-    RayDesc Ray = { WorldPos, 0.1f, RayDirection, FLT_MAX };
+    RayDesc Ray = { WorldPos + RayDirection * 0.1f, 0.1f, RayDirection, FLT_MAX };
     RayPayload Payload = { FLT_MAX };
 
     TraceRay(t_accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, Ray, Payload);
 
-    const float Shadow = Payload.RayHitT < FLT_MAX ? 1.0f : 0.0f;    
+    const float Shadow = Payload.RayHitT < FLT_MAX ? 1.0f : 0.0f;
 
     // Accumulate history
-    float History = u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid];
+    //float History = u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid];
     u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid] = Shadow;//lerp(Shadow, History, saturate(pow(c_Uniforms.AccumFrames * 0.001f, 0.01f)));
 }
 
