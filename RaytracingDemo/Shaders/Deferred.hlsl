@@ -42,7 +42,7 @@ struct DeferredData
     float3 SunDirection;
 
     uint SceneVelocityTextureIndex;
-    uint PrevDepthTextureIndex;
+    uint ConfidenceTextureIndex;
     float2 ViewportSizeRcp;
 };
 
@@ -202,25 +202,9 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
         }
         else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
         {
-            float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
-            float2 ReconstructedSVPos = Input.SVPosition.xy + Velocity;
-
-            float Disoccluded = 0.0f;
-            if(any(ReconstructedSVPos < 0.0f) || any(ReconstructedSVPos * c_Deferred.ViewportSizeRcp > 1.0f))
-            {
-                Disoccluded = 1.0f;
-            }
-
-            float ReconstructedDepth = t_tex2d_f1[c_Deferred.PrevDepthTextureIndex].SampleLevel(ClampedSampler, ReconstructedSVPos * c_Deferred.ViewportSizeRcp, 0u).r;            
-            float3 ReconstructedPosition = GetWorldPosFromScreen(c_Deferred.PrevCamToWorld, ReconstructedSVPos * c_Deferred.ViewportSizeRcp, ReconstructedDepth);
-            float3 Offset = Position - ReconstructedPosition;
-            if(dot(Offset, Offset) > 10.0f)
-            {
-                Disoccluded = 1.0f;//length(Position - ReconstructedPosition);
-            }
-            Output.Color = float4(Disoccluded.rrr, 1);
+            float Confidence =t_tex2d_f1[c_Deferred.ConfidenceTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
+            Output.Color = float4(Confidence.rrr, 1);
             return;
-            //
         }
     }
 

@@ -253,9 +253,11 @@ struct Globals_s
 	SceneTarget_s SceneNormal = {};
 	SceneTarget_s SceneRoughnessMetallic = {};
 	SceneTarget_s SceneVelocity = {};
-	SceneTarget_s SceneShadow = {};
+	SceneTarget_s SceneShadow0 = {};
+	SceneTarget_s SceneShadow1 = {};
 	SceneTarget_s SceneDepth0 = {};
 	SceneTarget_s SceneDepth1 = {};
+	SceneTarget_s SceneConfidence = {};
 
 	// Camera
 	FlyCamera Cam;
@@ -269,6 +271,7 @@ struct Globals_s
 	GraphicsPipelineStatePtr DeferredPSO;
 	ComputePipelineStatePtr UAVClearF1PSO;
 	ComputePipelineStatePtr UAVClearF2PSO;
+	ComputePipelineStatePtr ShadowDenoisePSO;
 	RaytracingPipelineStatePtr RTPSO;
 
 	// RT Root Signature
@@ -666,6 +669,16 @@ bool InitializeApp()
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
+	// Denoiser PSO
+	{
+		ComputeShader_t ShadowDenoiserCS = CreateComputeShader("Shaders/ShadowDenoiser.hlsl");
+		ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = ShadowDenoiserCS;
+		PsoDesc.DebugName = L"ShadowDenoiser";
+
+		G.ShadowDenoisePSO = CreateComputePipelineState(PsoDesc);
+	}
+
 	// RT PSO
 	{
 		RootSignatureDesc RTRootSignatureDesc = {};
@@ -718,10 +731,12 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
 	G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
 	G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	G.SceneShadow.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow");
+	G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
+	G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
 	G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
 	G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
 	G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
+	G.SceneConfidence.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -770,8 +785,11 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	float3 SunDirection = GetSunDirection();
 	matrix ViewProjection = G.Cam.GetView() * G.Cam.GetProjection();
 
-	SceneTarget_s& CurrentFrameDepth = view->GetFrameID() % 2 == 0 ? G.SceneDepth0 : G.SceneDepth1;
-	SceneTarget_s& PrevFrameDepth = view->GetFrameID() % 2 == 0 ? G.SceneDepth1 : G.SceneDepth0;
+	const uint64_t FrameID = view->GetFrameID();
+	SceneTarget_s& CurrentFrameDepth = FrameID % 2 == 0 ? G.SceneDepth0 : G.SceneDepth1;
+	SceneTarget_s& PrevFrameDepth = FrameID % 2 == 0 ? G.SceneDepth1 : G.SceneDepth0;
+	SceneTarget_s& CurrentFrameShadow = FrameID % 2 == 0 ? G.SceneShadow0 : G.SceneShadow1;
+	SceneTarget_s& PrevFrameShadow = FrameID % 2 == 0 ? G.SceneShadow1 : G.SceneShadow0;
 
 	const bool bCameraMoved = ViewProjection != G.PrevViewProjection;
 
@@ -798,43 +816,6 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	ViewConsts.DebugMeshID = G.ShowMeshID;
 
 	DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
-
-	struct
-	{
-		matrix CamToWorld;
-		matrix PrevCamToWorld;
-
-		uint32_t SceneColorTextureIndex;
-		uint32_t SceneNormalTextureIndex;
-		uint32_t SceneRoughnessMetallicTextureIndex;
-		uint32_t DepthTextureIndex;
-
-		uint32_t DrawMode;
-		float3 CamPosition;
-
-		uint32_t ShadowTexture;
-		float3 SunDirection;
-
-		uint32_t VelocityTextureIndex;
-		uint32_t PrevFrameDepthTextureIndex;
-		float2 ViewportSizeRcp;
-	} DeferredConsts;
-
-	DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
-	DeferredConsts.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
-	DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(G.SceneColor.SRV);
-	DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(G.SceneNormal.SRV);
-	DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(G.SceneRoughnessMetallic.SRV);
-	DeferredConsts.DepthTextureIndex = GetDescriptorIndex(CurrentFrameDepth.SRV);
-	DeferredConsts.DrawMode = G.DrawMode;
-	DeferredConsts.CamPosition = G.Cam.GetPosition();
-	DeferredConsts.ShadowTexture = GetDescriptorIndex(G.SceneShadow.SRV);
-	DeferredConsts.SunDirection = SunDirection;
-	DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
-	DeferredConsts.PrevFrameDepthTextureIndex = GetDescriptorIndex(PrevFrameDepth.SRV);
-	DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
-
-	DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
 	CommandList* MainCL = clGroup->CreateCommandList();
 
@@ -891,8 +872,11 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		G.SceneColor.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 		G.SceneNormal.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
 		G.SceneRoughnessMetallic.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		G.SceneVelocity.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
-		CurrentFrameDepth.Transition(MainCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+		G.SceneVelocity.Transition(MainCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+		CurrentFrameDepth.Transition(MainCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+
+
+		CurrentFrameShadow.Transition(MainCL, ResourceTransitionState::UNORDERED_ACCESS);
 	}
 
 	// RT Shadows
@@ -908,7 +892,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 			float ClearVal;
 			float3 __Pad1;
 		} ClearUniforms;
-		ClearUniforms.UAVIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		ClearUniforms.UAVIndex = GetDescriptorIndex(CurrentFrameShadow.UAV);
 		ClearUniforms.Width = G.ScreenWidth;
 		ClearUniforms.Height = G.ScreenHeight;
 		ClearUniforms.ClearVal = 1.0f;
@@ -941,7 +925,7 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		RayUniforms.SunSoftAngle = G.SunSoftAngle;
 		RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
 		RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(CurrentFrameDepth.SRV);
-		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(G.SceneShadow.UAV);
+		RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(CurrentFrameShadow.UAV);
 		RayUniforms.Time = G.ElapsedTime;
 		RayUniforms.AccumFrames = (float)G.FramesSinceMove;
 
@@ -966,11 +950,59 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 	DeferredCL->SetRootSignature();
 	DeferredCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 
+	DeferredCL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+	DeferredCL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+
+	PrevFrameDepth.Transition(DeferredCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+	PrevFrameShadow.Transition(DeferredCL, ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE);
+
+	// Denoise
+	{
+		DeferredCL->UAVBarrier(CurrentFrameShadow.Texture);
+		G.SceneConfidence.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
+
+		struct DenoiseUniforms_s
+		{
+			matrix CamToWorld;
+			matrix PrevCamToWorld;
+
+			uint32_t DepthTextureIndex;
+			uint32_t PrevFrameDepthTextureIndex;
+			uint32_t ShadowTextureIndex;
+			uint32_t PrevFrameShadowTextureIndex;
+
+			uint32_t ConfidenceTextureIndex;
+			uint32_t VelocityTextureIndex;
+			float2 ViewportSizeRcp;
+
+			uint32_t ViewportWidth;
+			uint32_t ViewportHeight;
+			float __Pad0[2];
+		} DenoiseUniforms;
+
+		DenoiseUniforms.CamToWorld = InverseMatrix(ViewProjection);
+		DenoiseUniforms.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+		DenoiseUniforms.DepthTextureIndex = GetDescriptorIndex(CurrentFrameDepth.SRV);
+		DenoiseUniforms.PrevFrameDepthTextureIndex = GetDescriptorIndex(PrevFrameDepth.SRV);
+		DenoiseUniforms.ShadowTextureIndex = GetDescriptorIndex(CurrentFrameShadow.UAV);
+		DenoiseUniforms.PrevFrameShadowTextureIndex = GetDescriptorIndex(PrevFrameShadow.SRV);
+		DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(G.SceneConfidence.UAV);
+		DenoiseUniforms.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
+		DenoiseUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+		DenoiseUniforms.ViewportWidth = G.ScreenWidth;
+		DenoiseUniforms.ViewportHeight = G.ScreenHeight;
+
+		DynamicBuffer_t DenoiseCBuf = CreateDynamicConstantBuffer(&DenoiseUniforms);
+
+		DeferredCL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DenoiseCBuf);
+		DeferredCL->SetPipelineState(G.ShadowDenoisePSO);
+
+		DeferredCL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+	}
+
 	Viewport vp{ G.ScreenWidth, G.ScreenHeight };
 	DeferredCL->SetViewports(&vp, 1);
-	DeferredCL->SetDefaultScissor();
-
-	G.SceneShadow.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+	DeferredCL->SetDefaultScissor();	
 
 	// Bind back buffer target
 	{
@@ -983,8 +1015,48 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		DeferredCL->SetRenderTargets(&backBufferRtv, 1, DepthStencilView_t::INVALID);
 	}
 
+	CurrentFrameShadow.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+	G.SceneConfidence.Transition(DeferredCL, ResourceTransitionState::PIXEL_SHADER_RESOURCE);
+
 	// Render deferred
 	{
+		struct
+		{
+			matrix CamToWorld;
+			matrix PrevCamToWorld;
+
+			uint32_t SceneColorTextureIndex;
+			uint32_t SceneNormalTextureIndex;
+			uint32_t SceneRoughnessMetallicTextureIndex;
+			uint32_t DepthTextureIndex;
+
+			uint32_t DrawMode;
+			float3 CamPosition;
+
+			uint32_t ShadowTexture;
+			float3 SunDirection;
+
+			uint32_t VelocityTextureIndex;
+			uint32_t ConfidenceTextureIndex;
+			float2 ViewportSizeRcp;
+		} DeferredConsts;
+
+		DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
+		DeferredConsts.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+		DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(G.SceneColor.SRV);
+		DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(G.SceneNormal.SRV);
+		DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(G.SceneRoughnessMetallic.SRV);
+		DeferredConsts.DepthTextureIndex = GetDescriptorIndex(CurrentFrameDepth.SRV);
+		DeferredConsts.DrawMode = G.DrawMode;
+		DeferredConsts.CamPosition = G.Cam.GetPosition();
+		DeferredConsts.ShadowTexture = GetDescriptorIndex(CurrentFrameShadow.SRV);
+		DeferredConsts.SunDirection = SunDirection;
+		DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(G.SceneVelocity.SRV);
+		DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(G.SceneConfidence.SRV);
+		DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+
+		DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
+
 		DeferredCL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DeferredCBuf);
 
 		DeferredCL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
@@ -1000,7 +1072,6 @@ void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float
 		G.SceneNormal.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
 		G.SceneRoughnessMetallic.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
 		G.SceneVelocity.Transition(DeferredCL, ResourceTransitionState::RENDER_TARGET);
-		G.SceneShadow.Transition(DeferredCL, ResourceTransitionState::UNORDERED_ACCESS);
 	}
 
 	G.PrevViewProjection = ViewProjection;

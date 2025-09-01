@@ -86,7 +86,7 @@ void RayGen()
 
     // Accumulate history
     float History = u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid];
-    u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid] = lerp(Shadow, History, saturate(pow(c_Uniforms.AccumFrames * 0.001f, 0.01f)));
+    u_tex2d_f1[c_Uniforms.SceneShadowTextureIndex][DTid] = Shadow;//lerp(Shadow, History, saturate(pow(c_Uniforms.AccumFrames * 0.001f, 0.01f)));
 }
 
 #endif
