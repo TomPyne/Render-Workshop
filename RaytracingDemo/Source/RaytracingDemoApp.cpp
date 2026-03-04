@@ -7,6 +7,7 @@
 #include <Camera/FlyCamera.h>
 #include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
+#include <RenderUtils/RenderGraph/RenderGraph.h>
 
 #include <HPModel.h>
 #include <HPWfMtlLib.h>
@@ -258,6 +259,12 @@ struct Globals_s
 	SceneTarget_s SceneDepth0 = {};
 	SceneTarget_s SceneDepth1 = {};
 	SceneTarget_s SceneConfidence = {};
+	SceneTarget_s SceneDepthHistory = {};
+	SceneTarget_s SceneShadowHistory = {};
+
+	RenderGraphTexturePtr_t SceneConfidenceRGTexture = {};
+	RenderGraphTexturePtr_t SceneShadowHistoryRGTexture = {};
+	RenderGraphTexturePtr_t SceneDepthHistoryRGTexture = {};
 
 	// Camera
 	FlyCamera Cam;
@@ -276,6 +283,9 @@ struct Globals_s
 
 	// RT Root Signature
 	RootSignaturePtr RTRootSignature;
+
+	// RG
+	RenderGraphResourcePool_s RenderGraphResourcePool;
 
 	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
 	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
@@ -633,11 +643,13 @@ bool InitializeApp()
 			.VertexShader(MeshVS)
 			.PixelShader(MeshPS);
 
+		PsoDesc.DebugName = L"MeshVSPSO";
 		G.MeshVSPSO = CreateGraphicsPipelineState(PsoDesc);
 
 		PsoDesc.VertexShader(VertexShader_t::INVALID)
 			.MeshShader(MeshMS);
 
+		PsoDesc.DebugName = L"MeshMSPSO";
 		G.MeshMSPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
@@ -665,6 +677,8 @@ bool InitializeApp()
 			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::None() }, RenderFormat::UNKNOWN)
 			.VertexShader(DeferredVS)
 			.PixelShader(DeferredPS);
+
+		PsoDesc.DebugName = L"DeferredPSO";
 
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
@@ -728,15 +742,22 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.ScreenWidth = width;
 	G.ScreenHeight = height;
 
-	G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
-	G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
-	G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
-	G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
-	G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
-	G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
-	G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
-	G.SceneConfidence.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence");
+	//G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
+	//G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
+	//G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
+	//G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
+	//G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
+	//G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
+	//G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
+	//G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
+	//G.SceneConfidence.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence");
+
+	//G.SceneDepthHistory.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, L"SceneDepthHistory");
+	//G.SceneShadowHistory.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadowHistory");
+
+	G.SceneConfidenceRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidence");
+	G.SceneShadowHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneShadowHistory");
+	G.SceneDepthHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthHistory");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -780,8 +801,312 @@ void ImguiUpdate()
 	ImGui::End();
 }
 
+void RenderWithGraph(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup)
+{
+	float3 SunDirection = GetSunDirection();
+	matrix ViewProjection = G.Cam.GetView() * G.Cam.GetProjection();
+
+	const bool bCameraMoved = ViewProjection != G.PrevViewProjection;
+
+	if (bCameraMoved)
+	{
+		G.FramesSinceMove = 0;
+	}
+	else
+	{
+		G.FramesSinceMove++;
+	}
+
+	struct
+	{
+		matrix ViewProjection;
+		matrix PrevviewProjection;
+		float3 CamPos;
+		uint32_t DebugMeshID;
+	} ViewConsts;
+
+	ViewConsts.ViewProjection = ViewProjection;
+	ViewConsts.PrevviewProjection = G.PrevViewProjection;
+	ViewConsts.CamPos = G.Cam.GetPosition();
+	ViewConsts.DebugMeshID = G.ShowMeshID;
+
+	DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
+
+	RenderGraphBuilder_s RGBuilder(G.RenderGraphResourcePool);
+	// Clear pass - no dont clear, set clear as part of the binding
+	// 
+	// Mesh draw pass
+	RenderGraphResourceHandle_t SceneColorTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorTexture");
+	RenderGraphResourceHandle_t SceneNormalTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalTexture");
+	RenderGraphResourceHandle_t SceneRoughnessMetallicTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneRoughnessMetallicTexture");
+	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
+	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
+
+	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
+	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneNormalTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
+	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	{
+		CL->SetRootSignature();
+
+		rl::RenderTargetView_t SceneRTVs[] = 
+		{ 
+			RG.GetRTV(SceneColorTexture),
+			RG.GetRTV(SceneNormalTexture),
+			RG.GetRTV(SceneRoughnessMetallicTexture),
+			RG.GetRTV(SceneVelocityTexture)
+		};
+		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
+		CL->SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), SceneDSV); // TODO: this should be set by the graph
+
+		Viewport vp{ G.ScreenWidth, G.ScreenHeight };
+		CL->SetViewports(&vp, 1);
+		CL->SetDefaultScissor(); // Could also be captured by the command context
+
+		CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBuf);
+		CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
+
+		CL->SetPipelineState(G.UseMeshShaders ? G.MeshMSPSO : G.MeshVSPSO);
+
+		for (const RTDModel_s& Model : G.Models)
+		{
+			Model.Draw(CL);
+		}
+	});
+
+	// Draw RT shadows or clear RT shadows
+
+	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"CurrentFrameShadow");
+	RenderGraphResourceHandle_t ConfidenceTexture = RGBuilder.InjectTexture(G.SceneConfidenceRGTexture, L"SceneConfidencePrevFrame");
+
+	if (G.ShowShadows)
+	{
+		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::RAYTRACING, L"RT Shadows")
+		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		{
+			struct RayUniforms_s
+			{
+				matrix CamToWorld;
+
+				float3 SunDirection;
+				float SunSoftAngle;;
+
+				float2 ScreenResolution;
+				uint32_t SceneDepthTextureIndex;
+				uint32_t SceneShadowTextureIndex;
+
+				float Time;
+				float AccumFrames;
+				float __pad[2];
+			} RayUniforms;
+
+			RayUniforms.CamToWorld = InverseMatrix(ViewProjection);
+			RayUniforms.SunDirection = SunDirection;
+			RayUniforms.SunSoftAngle = G.SunSoftAngle;
+			RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
+			RayUniforms.SceneDepthTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneDepthTexture));
+			RayUniforms.SceneShadowTextureIndex = GetDescriptorIndex(RG.GetUAV(ShadowTexture));
+			RayUniforms.Time = G.ElapsedTime;
+			RayUniforms.AccumFrames = (float)G.FramesSinceMove;
+
+			DynamicBuffer_t RayCBuf = CreateDynamicConstantBuffer(&RayUniforms);
+
+			CL->SetComputeRootSignature(G.RTRootSignature);
+
+			CL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
+			CL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
+
+			CL->SetPipelineState(G.RTPSO);
+
+			CL->SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
+			CL->SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, G.RaytracingScene);
+
+			CL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
+		});
+
+		RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(G.SceneShadowHistoryRGTexture, L"PrevFrameShadow");
+		RenderGraphResourceHandle_t DepthHistoryTexture = RGBuilder.InjectTexture(G.SceneDepthHistoryRGTexture, L"PrevFrameDepth");
+
+		RenderGraphPass_s& RTShadowsDenoisePass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"RT Shadows Denoise")
+		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(DepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ShadowHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		{
+			struct DenoiseUniforms_s
+			{
+				matrix CamToWorld;
+				matrix PrevCamToWorld;
+
+				uint32_t DepthTextureIndex;
+				uint32_t PrevFrameDepthTextureIndex;
+				uint32_t ShadowTextureIndex;
+				uint32_t PrevFrameShadowTextureIndex;
+
+				uint32_t ConfidenceTextureIndex;
+				uint32_t VelocityTextureIndex;
+				float2 ViewportSizeRcp;
+
+				uint32_t ViewportWidth;
+				uint32_t ViewportHeight;
+				float __Pad0[2];
+			} DenoiseUniforms;
+
+			DenoiseUniforms.CamToWorld = InverseMatrix(ViewProjection);
+			DenoiseUniforms.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+			DenoiseUniforms.DepthTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneDepthTexture));
+			DenoiseUniforms.PrevFrameDepthTextureIndex = GetDescriptorIndex(RG.GetSRV(DepthHistoryTexture));
+			DenoiseUniforms.ShadowTextureIndex = GetDescriptorIndex(RG.GetUAV(ShadowTexture));
+			DenoiseUniforms.PrevFrameShadowTextureIndex = GetDescriptorIndex(RG.GetSRV(ShadowHistoryTexture));
+			DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetUAV(ConfidenceTexture));
+			DenoiseUniforms.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
+			DenoiseUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+			DenoiseUniforms.ViewportWidth = G.ScreenWidth;
+			DenoiseUniforms.ViewportHeight = G.ScreenHeight;
+
+			DynamicBuffer_t DenoiseCBuf = CreateDynamicConstantBuffer(&DenoiseUniforms);
+
+			CL->SetRootSignature();
+
+			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+
+			CL->SetPipelineState(G.ShadowDenoisePSO);
+
+			CL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DenoiseCBuf);
+
+			CL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+		});
+
+		//RGBuilder.QueueTextureExtraction(ShadowTexture, G.SceneShadowHistoryRGTexture);
+		//RGBuilder.QueueTextureExtraction(SceneDepthTexture, G.SceneDepthHistoryRGTexture);
+		//RGBuilder.QueueTextureExtraction(ConfidenceTexture, G.SceneConfidenceRGTexture);
+
+		RGBuilder.QueueTextureCopy(ShadowHistoryTexture, ShadowTexture);
+		RGBuilder.QueueTextureCopy(DepthHistoryTexture, SceneDepthTexture);
+	}
+	else
+	{
+		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Clear Shadows")
+		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		{
+			struct ClearUniforms_s
+			{
+				uint32_t UAVIndex;
+				uint32_t Width;
+				uint32_t Height;
+				float __Pad0;
+
+				float ClearVal;
+				float3 __Pad1;
+			} ClearUniforms;
+			ClearUniforms.UAVIndex = GetDescriptorIndex(RG.GetUAV(ShadowTexture));
+			ClearUniforms.Width = G.ScreenWidth;
+			ClearUniforms.Height = G.ScreenHeight;
+			ClearUniforms.ClearVal = 1.0f;
+			DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
+
+			CL->SetRootSignature();
+
+			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+
+			CL->SetPipelineState(G.UAVClearF1PSO);
+
+			CL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
+
+			CL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+		});
+	}
+
+	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(View->GetCurrentBackBufferTexture(), View->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
+
+	// Deferred
+	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
+	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneNormalTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	{
+		struct
+		{
+			matrix CamToWorld;
+			matrix PrevCamToWorld;
+
+			uint32_t SceneColorTextureIndex;
+			uint32_t SceneNormalTextureIndex;
+			uint32_t SceneRoughnessMetallicTextureIndex;
+			uint32_t DepthTextureIndex;
+
+			uint32_t DrawMode;
+			float3 CamPosition;
+
+			uint32_t ShadowTexture;
+			float3 SunDirection;
+
+			uint32_t VelocityTextureIndex;
+			uint32_t ConfidenceTextureIndex;
+			float2 ViewportSizeRcp;
+		} DeferredConsts;
+
+		DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
+		DeferredConsts.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+		DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneColorTexture));
+		DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneNormalTexture));
+		DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneRoughnessMetallicTexture));
+		DeferredConsts.DepthTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneDepthTexture));
+		DeferredConsts.DrawMode = G.DrawMode;
+		DeferredConsts.CamPosition = G.Cam.GetPosition();
+		DeferredConsts.ShadowTexture = GetDescriptorIndex(RG.GetSRV(ShadowTexture));
+		DeferredConsts.SunDirection = SunDirection;
+		DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
+		DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceTexture));
+		DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+
+		DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
+
+		CL->SetRootSignature();
+
+		rl::RenderTargetView_t BackBufferRTV = RG.GetRTV(BackBufferTexture);
+
+		CL->SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
+
+		Viewport vp{ G.ScreenWidth, G.ScreenHeight };
+		CL->SetViewports(&vp, 1);
+		CL->SetDefaultScissor(); // Could also be captured by the command context
+
+		CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+		CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DeferredCBuf);
+
+		CL->SetPipelineState(G.DeferredPSO);
+
+		CL->DrawInstanced(6u, 1u, 0u, 0u);
+	});
+
+	RenderGraph_s Graph = RGBuilder.Build();
+
+	Graph.Execute(clGroup->CreateCommandList());
+
+	G.PrevViewProjection = ViewProjection;
+}
+
 void Render(rl::RenderView* view, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
 {
+	RenderWithGraph(view, clGroup);
+	return;
 	float3 SunDirection = GetSunDirection();
 	matrix ViewProjection = G.Cam.GetView() * G.Cam.GetProjection();
 

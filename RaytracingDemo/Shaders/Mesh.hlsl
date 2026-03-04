@@ -48,7 +48,7 @@ PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
     float3 Position = t_sbuf_f3[c_Mesh.PositionBufSRVIndex][VertexIndex];
     float3 Normal = c_Mesh.NormalBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.NormalBufSRVIndex][VertexIndex] : float3(0, 0, 0);
     float3 Bitangent = c_Mesh.BitangentBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.BitangentBufSRVIndex][VertexIndex] : float3(0, 0, 0);
-    float3 Tangent = c_Mesh.TangentBufSRVIndex != 0 ? t_sbuf_f3[c_Mesh.TangentBufSRVIndex][VertexIndex] : float3(0, 0, 0);
+    float3 Tangent = c_Mesh.TangentBufSRVIndex != 0 ? t_sbuf_f4[c_Mesh.TangentBufSRVIndex][VertexIndex].xyz : float3(0, 0, 0);
     float2 UV = c_Mesh.TexcoordBufSRVIndex != 0 ? t_sbuf_f2[c_Mesh.TexcoordBufSRVIndex][VertexIndex] : float2(0, 0);
 
     PixelInputs_s Out;

@@ -47,7 +47,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 
     // Reconstruct previous sample
     float2 Velocity = t_tex2d_f2[c_G.VelocityTextureIndex].SampleLevel(ClampedSampler, UV, 0u).rg;
-    float2 ReconstructedSVPos = Pixel + Velocity;
+    float2 ReconstructedSVPos = Pixel - Velocity;
     float2 ReconstructedUv = ReconstructedSVPos * c_G.ViewportSizeRcp;
 
     float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0u).r;   
@@ -67,5 +67,5 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy] = lerp(CurrentShadow, ReconstructedShadow, Confidence);
 
     // Output confidence, if similar then we inch towards 1, if unsimilar we reset to 0
-    u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = lerp(Confidence, 1.0f, 0.01f);
+    u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = lerp(Confidence, 1.0f, 0.05f);
 }

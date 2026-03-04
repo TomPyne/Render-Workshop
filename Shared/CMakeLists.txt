@@ -24,6 +24,8 @@ add_library(Shared
             "Noise/Perlin.h"
             "Profiling/ScopeTimer.cpp"
             "Profiling/ScopeTimer.h"
+            "RenderUtils/RenderGraph/RenderGraph.cpp"
+            "RenderUtils/RenderGraph/RenderGraph.h"
             "StringUtils/StringUtils.cpp"
             "StringUtils/StringUtils.h"
             "TextureUtils/DDSTextureLoader.cpp"
