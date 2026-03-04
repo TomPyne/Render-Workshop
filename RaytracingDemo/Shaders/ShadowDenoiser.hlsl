@@ -90,9 +90,5 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     //u_tex2d_f1[c_G.DebugTextureIndex][DispatchThreadId.xy] = Offset.r;
 
     // Output confidence, if similar then we inch towards 1, if unsimilar we reset to 0
-<<<<<<< HEAD
-    u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = lerp(Confidence, 1.0f, 0.05f);
-=======
     u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = Confidence;
->>>>>>> 4d1ed0ef58f9481cc300eeb39fde47a33d447b98
 }

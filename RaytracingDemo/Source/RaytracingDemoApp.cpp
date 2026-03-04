@@ -258,19 +258,14 @@ struct Globals_s
 	SceneTarget_s SceneShadow1 = {};
 	SceneTarget_s SceneDepth0 = {};
 	SceneTarget_s SceneDepth1 = {};
-<<<<<<< HEAD
-	SceneTarget_s SceneConfidence = {};
-	SceneTarget_s SceneDepthHistory = {};
-	SceneTarget_s SceneShadowHistory = {};
-
-	RenderGraphTexturePtr_t SceneConfidenceRGTexture = {};
-	RenderGraphTexturePtr_t SceneShadowHistoryRGTexture = {};
-	RenderGraphTexturePtr_t SceneDepthHistoryRGTexture = {};
-=======
 	SceneTarget_s SceneConfidence0 = {};
 	SceneTarget_s SceneConfidence1 = {};
 	SceneTarget_s Debug = {};
->>>>>>> 4d1ed0ef58f9481cc300eeb39fde47a33d447b98
+	
+	RenderGraphTexturePtr_t SceneConfidenceHistoryRGTexture = {};
+	RenderGraphTexturePtr_t SceneShadowHistoryRGTexture = {};
+	RenderGraphTexturePtr_t SceneDepthHistoryRGTexture = {};
+
 
 	// Camera
 	FlyCamera Cam;
@@ -748,36 +743,21 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.ScreenWidth = width;
 	G.ScreenHeight = height;
 
-<<<<<<< HEAD
-	//G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
-	//G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
-	//G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	//G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
-	//G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
-	//G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
-	//G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
-	//G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
-	//G.SceneConfidence.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence");
-
-	//G.SceneDepthHistory.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, L"SceneDepthHistory");
-	//G.SceneShadowHistory.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadowHistory");
-
-	G.SceneConfidenceRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidence");
+	G.SceneConfidenceHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidenceHistory");
 	G.SceneShadowHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneShadowHistory");
 	G.SceneDepthHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthHistory");
-=======
-	G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
-	G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
-	G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
-	G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
-	G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
-	G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
-	G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
-	G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
-	G.SceneConfidence0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence0");
-	G.SceneConfidence1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence1");
-	G.Debug.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, L"Debug");
->>>>>>> 4d1ed0ef58f9481cc300eeb39fde47a33d447b98
+
+	// G.SceneColor.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneColor");
+	// G.SceneNormal.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, L"SceneNormal");
+	// G.SceneRoughnessMetallic.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneRoughnessMetallic");
+	// G.SceneShadow0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow0");
+	// G.SceneShadow1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneShadow1");
+	// G.SceneVelocity.InitAsRenderTarget(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, L"SceneVelocity");
+	// G.SceneDepth0.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth0");
+	// G.SceneDepth1.InitAsDepth(G.ScreenWidth, G.ScreenHeight, RenderFormat::D32_FLOAT, RenderFormat::R32_FLOAT, L"SceneDepth1");
+	// G.SceneConfidence0.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence0");
+	// G.SceneConfidence1.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, L"SceneConfidence1");
+	// G.Debug.InitAsCompute(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, L"Debug");
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -900,7 +880,7 @@ void RenderWithGraph(rl::RenderView* View, rl::CommandListSubmissionGroup* clGro
 	// Draw RT shadows or clear RT shadows
 
 	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"CurrentFrameShadow");
-	RenderGraphResourceHandle_t ConfidenceTexture = RGBuilder.InjectTexture(G.SceneConfidenceRGTexture, L"SceneConfidencePrevFrame");
+	RenderGraphResourceHandle_t ConfidenceTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidence");
 
 	if (G.ShowShadows)
 	{
@@ -951,20 +931,25 @@ void RenderWithGraph(rl::RenderView* View, rl::CommandListSubmissionGroup* clGro
 
 		RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(G.SceneShadowHistoryRGTexture, L"PrevFrameShadow");
 		RenderGraphResourceHandle_t DepthHistoryTexture = RGBuilder.InjectTexture(G.SceneDepthHistoryRGTexture, L"PrevFrameDepth");
+		RenderGraphResourceHandle_t ConfidenceHistoryTexture = RGBuilder.InjectTexture(G.SceneConfidenceHistoryRGTexture, L"PrevFrameConfidence");
 
 		RenderGraphPass_s& RTShadowsDenoisePass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"RT Shadows Denoise")
 		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(DepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+		.AccessResource(ConfidenceHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 		{
 			struct DenoiseUniforms_s
 			{
 				matrix CamToWorld;
+
 				matrix PrevCamToWorld;
+
+				matrix ClipToPrevClip;
 
 				uint32_t DepthTextureIndex;
 				uint32_t PrevFrameDepthTextureIndex;
@@ -972,22 +957,26 @@ void RenderWithGraph(rl::RenderView* View, rl::CommandListSubmissionGroup* clGro
 				uint32_t PrevFrameShadowTextureIndex;
 
 				uint32_t ConfidenceTextureIndex;
+				uint32_t PrevConfidenceTextureIndex;
 				uint32_t VelocityTextureIndex;
-				float2 ViewportSizeRcp;
+				uint32_t DebugTextureIndex;
 
+				float2 ViewportSizeRcp;
 				uint32_t ViewportWidth;
 				uint32_t ViewportHeight;
-				float __Pad0[2];
 			} DenoiseUniforms;
 
 			DenoiseUniforms.CamToWorld = InverseMatrix(ViewProjection);
 			DenoiseUniforms.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+			DenoiseUniforms.ClipToPrevClip = DenoiseUniforms.PrevCamToWorld * G.PrevViewProjection;
 			DenoiseUniforms.DepthTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneDepthTexture));
 			DenoiseUniforms.PrevFrameDepthTextureIndex = GetDescriptorIndex(RG.GetSRV(DepthHistoryTexture));
 			DenoiseUniforms.ShadowTextureIndex = GetDescriptorIndex(RG.GetUAV(ShadowTexture));
 			DenoiseUniforms.PrevFrameShadowTextureIndex = GetDescriptorIndex(RG.GetSRV(ShadowHistoryTexture));
 			DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetUAV(ConfidenceTexture));
+			DenoiseUniforms.PrevConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceHistoryTexture));
 			DenoiseUniforms.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
+			DenoiseUniforms.DebugTextureIndex = 0;
 			DenoiseUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
 			DenoiseUniforms.ViewportWidth = G.ScreenWidth;
 			DenoiseUniforms.ViewportHeight = G.ScreenHeight;
@@ -1012,6 +1001,7 @@ void RenderWithGraph(rl::RenderView* View, rl::CommandListSubmissionGroup* clGro
 
 		RGBuilder.QueueTextureCopy(ShadowHistoryTexture, ShadowTexture);
 		RGBuilder.QueueTextureCopy(DepthHistoryTexture, SceneDepthTexture);
+		RGBuilder.QueueTextureCopy(ConfidenceHistoryTexture, ConfidenceTexture);
 	}
 	else
 	{
