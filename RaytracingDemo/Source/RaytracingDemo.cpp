@@ -63,7 +63,7 @@ int main()
 
 		const float deltaSeconds = Clock.GetDeltaSeconds();
 
-		Update(deltaSeconds);
+		Update(deltaSeconds > 0.1f ? 0.1f : deltaSeconds);
 
 		Render_BeginFrame();
 
