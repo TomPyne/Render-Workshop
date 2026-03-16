@@ -8,6 +8,7 @@
 #include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
+#include <RenderUtils/RenderPasses/SkyRenderPass.h>
 
 #include <HPModel.h>
 #include <HPWfMtlLib.h>
@@ -17,7 +18,7 @@
 
 using namespace rl;
 
-static const std::wstring s_AssetDirectory = L"Cooked/";
+static const std::wstring s_AssetDirectory = L"RaytracingDemo/Cooked/";
 
 struct RTDTexture_s
 {
@@ -184,6 +185,9 @@ struct Globals_s
 
 	// RG
 	RenderGraphResourcePool_s RenderGraphResourcePool;
+
+	// Renderers
+	SkyRenderer_s SkyRenderer;
 
 	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
 	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
@@ -530,9 +534,9 @@ bool InitializeApp()
 
 	// Mesh PSO
 	{
-		VertexShader_t MeshVS = CreateVertexShader("Shaders/Mesh.hlsl");
-		MeshShader_t MeshMS = CreateMeshShader("Shaders/Mesh.hlsl");
-		PixelShader_t MeshPS = CreatePixelShader("Shaders/Mesh.hlsl");
+		VertexShader_t MeshVS = CreateVertexShader("RaytracingDemo/Shaders/Mesh.hlsl");
+		MeshShader_t MeshMS = CreateMeshShader("RaytracingDemo/Shaders/Mesh.hlsl");
+		PixelShader_t MeshPS = CreatePixelShader("RaytracingDemo/Shaders/Mesh.hlsl");
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -555,19 +559,19 @@ bool InitializeApp()
 	{
 		ComputePipelineStateDesc PsoDesc = {};
 
-		PsoDesc.Cs = CreateComputeShader("Shaders/ClearUAV.hlsl", { "F1" });
+		PsoDesc.Cs = CreateComputeShader("RaytracingDemo/Shaders/ClearUAV.hlsl", { "F1" });
 		PsoDesc.DebugName = L"ClearUAVF1";		
 		G.UAVClearF1PSO = CreateComputePipelineState(PsoDesc);
 
-		PsoDesc.Cs = CreateComputeShader("Shaders/ClearUAV.hlsl", { "F2" });
+		PsoDesc.Cs = CreateComputeShader("RaytracingDemo/Shaders/ClearUAV.hlsl", { "F2" });
 		PsoDesc.DebugName = L"ClearUAVF2";
 		G.UAVClearF2PSO = CreateComputePipelineState(PsoDesc);
 	}
 
 	// Deferred PSO
 	{
-		VertexShader_t DeferredVS = CreateVertexShader("Shaders/Deferred.hlsl");
-		PixelShader_t DeferredPS = CreatePixelShader("Shaders/Deferred.hlsl");
+		VertexShader_t DeferredVS = CreateVertexShader("RaytracingDemo/Shaders/Deferred.hlsl");
+		PixelShader_t DeferredPS = CreatePixelShader("RaytracingDemo/Shaders/Deferred.hlsl");
 
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
@@ -583,7 +587,7 @@ bool InitializeApp()
 
 	// Denoiser PSO
 	{
-		ComputeShader_t ShadowDenoiserCS = CreateComputeShader("Shaders/ShadowDenoiser.hlsl");
+		ComputeShader_t ShadowDenoiserCS = CreateComputeShader("RaytracingDemo/Shaders/ShadowDenoiser.hlsl");
 		ComputePipelineStateDesc PsoDesc = {};
 		PsoDesc.Cs = ShadowDenoiserCS;
 		PsoDesc.DebugName = L"ShadowDenoiser";
@@ -603,8 +607,8 @@ bool InitializeApp()
 		G.RTRootSignature = CreateRootSignature(RTRootSignatureDesc);
 
 		rl::RaytracingPipelineStateDesc RTDesc = {};
-		RTDesc.RayGenShader = rl::CreateRayGenShader("Shaders/RTShadows.hlsl");
-		RTDesc.MissShader = rl::CreateMissShader("Shaders/RTShadows.hlsl");
+		RTDesc.RayGenShader = rl::CreateRayGenShader("RaytracingDemo/Shaders/RTShadows.hlsl");
+		RTDesc.MissShader = rl::CreateMissShader("RaytracingDemo/Shaders/RTShadows.hlsl");
 		RTDesc.DebugName = L"RTShadow";
 		RTDesc.RootSig = G.RTRootSignature;
 		G.RTPSO = CreateRaytracingPipelineState(RTDesc);

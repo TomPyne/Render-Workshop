@@ -232,7 +232,7 @@ bool ImGui_ImplRender_CreateDeviceObjects()
     if(g_FontTexture != Texture_t::INVALID)
         ImGui_ImplRender_InvalidateDeviceObjects();
 
-    const std::string shaderPath = "Shaders/ImGui.hlsl";
+    const std::string shaderPath = "Shared/Shaders/ImGui/ImGui.hlsl";
 
     g_VS = CreateVertexShader(shaderPath.c_str(), {});
     g_PS = CreatePixelShader(shaderPath.c_str(), {});

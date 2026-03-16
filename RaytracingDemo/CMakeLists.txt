@@ -8,7 +8,7 @@ function(create_proj projname rapi)
 	set_target_properties(${projname}${rapi}
 						PROPERTIES
 						RUNTIME_OUTPUT_NAME_DEBUG "${projname}${rapi}_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/${projname}"
+						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 	)
 
 	target_include_directories(${projname}${rapi}

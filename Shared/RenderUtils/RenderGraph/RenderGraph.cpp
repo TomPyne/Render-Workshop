@@ -443,6 +443,18 @@ rl::UnorderedAccessView_t RenderGraph_s::GetUAV(RenderGraphResourceHandle_t Reso
 	return rl::UnorderedAccessView_t::INVALID;
 }
 
+uint2 RenderGraph_s::GetTextureDimensions(RenderGraphResourceHandle_t Resource)
+{
+	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	{
+		if (ActiveResource->Texture)
+		{
+			return uint2(ActiveResource->Texture->Desc.Width, ActiveResource->Texture->Desc.Height);
+		}
+	}
+	return uint2(0u, 0u);
+}
+
 void RenderGraph_s::ExtractTexture(RenderGraphResourceHandle_t Texture)
 {
 	RenderGraphResource_s* ActiveResource = GetResource(Texture);

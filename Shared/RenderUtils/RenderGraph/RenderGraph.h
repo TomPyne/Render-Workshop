@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <Render/Render.h>
+#include <SurfMath.h>
 #include <vector>
 
 enum class RenderGraphResourceHandle_t : uint32_t {NONE};
@@ -204,6 +205,8 @@ struct RenderGraph_s
 	rl::RenderTargetView_t GetRTV(RenderGraphResourceHandle_t Resource);
 	rl::DepthStencilView_t GetDSV(RenderGraphResourceHandle_t Resource);
 	rl::UnorderedAccessView_t GetUAV(RenderGraphResourceHandle_t Resource);
+
+	uint2 GetTextureDimensions(RenderGraphResourceHandle_t Resource);
 
 	void ExtractTexture(RenderGraphResourceHandle_t Texture);
 
