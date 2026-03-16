@@ -1,3 +1,7 @@
+#ifndef CBV_SLOT
+#error Must define CBV_SLOT
+#endif
+
 struct Uniforms
 {
     float4x4 ViewProjectionMatrix;
@@ -5,12 +9,12 @@ struct Uniforms
     float __Pad;
 };
 
-ConstantBuffer<Uniforms> c_G : register(b1);
+ConstantBuffer<Uniforms> c_G : register(CBV_SLOT);
 
 struct PixelInputs
 {
     float4 SVPosition : SV_Position;
-    float3 LocalPos : POSITION;
+    float3 Direction : DIRECTION;
 };
 
 #if _VS
@@ -22,8 +26,9 @@ struct VertexInputs
 
 void main(in VertexInputs Input, out PixelInputs Output)
 {   
-    Output.LocalPos = Input.Position + c_G.CameraPos;
-    Output.SVPosition = mul(c_G.ViewProjectionMatrix, float4(Output.LocalPos, 1.0f));
+    float3 LocalPos = Input.Position + c_G.CameraPos;
+    Output.Direction = normalize(Input.Position);
+    Output.SVPosition = mul(c_G.ViewProjectionMatrix, float4(LocalPos, 1.0f));
 }
 
 #endif
@@ -31,8 +36,8 @@ void main(in VertexInputs Input, out PixelInputs Output)
 #if _PS
 float4 main(in PixelInputs Input) : SV_TARGET
 {   
-    float Height = saturate(normalize(Input.LocalPos.y));
-    return float4(lerp(float3(1, 1, 1), float3(0, 0, 1), Height), 1.0f);
+    float Height = saturate(normalize(Input.Direction).y);
+    return float4(lerp(float3(0.7, 0.7, 0.7), float3(0.2, 0.2, 0.8), Height), 1.0f);
 }
 #endif
 

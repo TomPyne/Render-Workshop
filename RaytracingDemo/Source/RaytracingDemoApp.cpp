@@ -20,118 +20,6 @@
 
 using namespace rl;
 
-<<<<<<< HEAD
-static const std::wstring s_AssetDirectory = L"RaytracingDemo/Cooked/";
-
-struct RTDTexture_s
-{
-	rl::TexturePtr Texture = {};
-	rl::ShaderResourceViewPtr SRV = {};
-
-	bool Init(const HPTexture_s& Asset);
-};
-
-struct RTDMaterialParams_s
-{
-	uint32_t AlbedoTextureIndex = 0;
-	uint32_t NormalTextureIndex = 0;
-	uint32_t RoughnessMetallicTextureIndex = 0;
-	float __Pad;
-};
-
-struct RTDMaterial_s
-{
-	RTDMaterialParams_s Params;
-
-	std::shared_ptr<RTDTexture_s> AlbedoTexture = nullptr;
-	std::shared_ptr<RTDTexture_s> NormalTexture = nullptr;
-	std::shared_ptr<RTDTexture_s> RoughnessMetallicTexture = nullptr;
-
-	rl::ConstantBuffer_t MaterialConstantBuffer = {};
-
-	bool Init(const HPWfMtlLib_s::Material_s& Asset);
-};
-
-struct RTDBuffer_s
-{
-	rl::StructuredBufferPtr StructuredBuffer = {};
-	rl::ShaderResourceViewPtr BufferSRV = {};
-
-	template<typename T>
-	void Init(const T* const Data, size_t Count)
-	{
-		if (Count)
-		{
-			CHECK(Data != nullptr);
-			StructuredBuffer = rl::CreateStructuredBuffer(Data, Count);
-			CHECK(StructuredBuffer);
-			BufferSRV = rl::CreateStructuredBufferSRV(StructuredBuffer, 0u, static_cast<uint32_t>(Count), static_cast<uint32_t>(sizeof(T)));
-			CHECK(BufferSRV);
-		}
-	}
-};
-
-enum RTDDrawConstantSlots_e
-{
-	DCS_INDEX_OFFSET = 0,
-	DCS_MESHLET_OFFSET = 0,
-	DCS_COUNT,
-};
-
-struct RTDMeshConstants_s
-{
-	// Vertex data
-	uint32_t PositionBufSRVIndex = 0;
-	uint32_t NormalBufSRVIndex = 0;
-	uint32_t TangentBufSRVIndex = 0;
-	uint32_t BitangentBufSRVIndex = 0;
-	uint32_t TexcoordBufSRVIndex = 0;
-	uint32_t IndexBufSRVIndex = 0;
-	// Mesh shader data
-	uint32_t MeshletBufSRVIndex = 0;
-	uint32_t UniqueVertexIndexBufSRVIndex = 0;
-	uint32_t PrimitiveIndexBufSRVIndex = 0;
-
-	float __pad[3];
-};
-
-struct RTDMesh_s
-{
-	uint32_t IndexOffset;
-	uint32_t IndexCount;
-
-	uint32_t MeshletOffset;
-	uint32_t MeshletCount;
-
-	RaytracingGeometryPtr RaytracingGeometry = {};
-
-	std::shared_ptr<RTDMaterial_s> Material = nullptr;
-};
-
-struct RTDModel_s
-{
-	RTDBuffer_s PositionBuffer;
-	RTDBuffer_s NormalBuffer;
-	RTDBuffer_s TangentBuffer;
-	RTDBuffer_s BitangentBuffer;
-	RTDBuffer_s TexcoordBuffer;
-	RTDBuffer_s IndexBuffer;
-
-	RTDBuffer_s MeshletBuffer;
-	RTDBuffer_s UniqueVertexIndexBuffer;
-	RTDBuffer_s PrimitiveIndexBuffer;
-
-	rl::ConstantBufferPtr ModelConstantBuffer;
-
-	std::vector<RTDMesh_s> Meshes;
-
-	bool Init(const HPModel_s* Asset);
-
-	void Draw(rl::CommandList* CL) const;
-};
-
-=======
->>>>>>> 17fcef7eec2ad67ea91a5b682763de9ff5fe194e
 namespace GlobalRootSigSlots
 {
 	enum Value
@@ -191,16 +79,9 @@ struct Globals_s
 	// RG
 	RenderGraphResourcePool_s RenderGraphResourcePool;
 
-<<<<<<< HEAD
 	// Renderers
 	SkyRenderer_s SkyRenderer;
 
-	std::map<std::wstring, std::shared_ptr<RTDModel_s>> ModelMap;
-	std::map<std::wstring, std::shared_ptr<RTDMaterial_s>> MaterialMap;
-	std::map<std::wstring, std::shared_ptr<RTDTexture_s>> TextureMap;
-
-=======
->>>>>>> 17fcef7eec2ad67ea91a5b682763de9ff5fe194e
 	RTDMaterial_s DefaultMaterial = {};
 
 	RaytracingShaderTablePtr RaytracingShaderTable = {};
@@ -236,7 +117,7 @@ rl::RenderInitParams GetAppRenderParams()
 	Params.DebugEnabled = false;
 #endif
 
-	Params.RootSigDesc.Flags = RootSignatureFlags::NONE;
+	Params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
 	Params.RootSigDesc.Slots.resize(GlobalRootSigSlots::RS_COUNT);
 	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_DRAWCONSTANTS] = RootSignatureSlot::ConstantsSlot(RTDDrawConstantSlots_e::COUNT, 0);
 	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
@@ -375,6 +256,8 @@ bool InitializeApp()
 		G.RaytracingShaderTable = CreateRaytracingShaderTable(G.RTPSO, ShaderTableLayout);
 	}
 
+	G.SkyRenderer.Init(GlobalRootSigSlots::RS_VIEW_BUF);
+
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
@@ -484,12 +367,14 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
+	G.SkyRenderer.AddPass(RGBuilder, SceneColorTexture, SceneDepthTexture, ViewProjection, G.Cam.GetPosition());
+
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
-	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormalTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
-	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD)
 	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 	{
 		CL->SetRootSignature();

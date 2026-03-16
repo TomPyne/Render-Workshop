@@ -8,9 +8,11 @@
 struct SkyRenderPassUniforms
 {
 	matrix ViewProjection;
+	float3 CamPos;
+	float __Pad;
 };
 
-void SkyRenderer_s::Init()
+void SkyRenderer_s::Init(uint32_t InCBVSlot)
 {
 	{
 		SphereBuilder::SphereMeshDesc_s Desc = {};
@@ -19,7 +21,7 @@ void SkyRenderer_s::Init()
 		Desc.Radius = -1.0f;
 		SphereBuilder::SphereMesh_s SkySphereMesh = SphereBuilder::BuildSphereMesh(Desc);
 
-		if(!ENSUREMSG(SkySphereMesh.Positions.empty(), "[SkyRenderer] Failed to generate a valid sky sphere mesh"))
+		if(!ENSUREMSG(!SkySphereMesh.Positions.empty(), "[SkyRenderer] Failed to generate a valid sky sphere mesh"))
 		{
 			return;
 		}
@@ -35,12 +37,17 @@ void SkyRenderer_s::Init()
 	}
 
 	{
+		CBVSlot = InCBVSlot;
+
+		std::string CBVSlotDef = "b" + std::to_string(CBVSlot);
+		rl::ShaderMacros Macros = { { "CBV_SLOT", CBVSlotDef.c_str() } };
+
 		rl::GraphicsPipelineStateDesc PSODesc = {};
 		PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
-			.DepthDesc(false)
-			.TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
-			.VertexShader(rl::CreateVertexShader("Shared/Shaders/Atmosphere/SkySphere.hlsl"))
-			.PixelShader(rl::CreatePixelShader("Shared/Shaders/Atmosphere/SkySphere.hlsl"));
+			.DepthDesc(false, rl::ComparisionFunc::LESS_EQUAL)
+			.TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
+			.VertexShader(rl::CreateVertexShader("Shared/Shaders/Atmosphere/SkySphere.hlsl", Macros))
+			.PixelShader(rl::CreatePixelShader("Shared/Shaders/Atmosphere/SkySphere.hlsl", Macros));
 
 		rl::InputElementDesc InputLayout[] =
 		{
@@ -57,22 +64,24 @@ void SkyRenderer_s::Init()
 	}
 }
 
-void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, const matrix& ViewProjection, uint32_t CBVSlot)
+void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, RenderGraphResourceHandle_t SceneDepth, const matrix& ViewProjection, const float3& CamPos)
 {
 	if (!Ready)
 		return;
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
-	.AccessResource(SceneColorTarget, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneColorTarget, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, this](RenderGraph_s& RG, rl::CommandList* CL)
 	{
 		CL->SetRootSignature();
 
 		rl::RenderTargetView_t SceneColorRTV = RG.GetRTV(SceneColorTarget);
+		rl::DepthStencilView_t SceneDepthDSV = RG.GetDSV(SceneDepth);
 
 		uint2 SceneColorDim = RG.GetTextureDimensions(SceneColorTarget);
 
-		CL->SetRenderTargets(&SceneColorRTV, 1, rl::DepthStencilView_t::INVALID);
+		CL->SetRenderTargets(&SceneColorRTV, 1, SceneDepthDSV);
 
 		rl::Viewport vp{ SceneColorDim.x, SceneColorDim.y };
 		CL->SetViewports(&vp, 1);
@@ -80,6 +89,7 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 
 		SkyRenderPassUniforms UniformData = {}; // Capture uniforms outside of the lambda.
 		UniformData.ViewProjection = ViewProjection;
+		UniformData.CamPos = CamPos;
 
 		CL->SetGraphicsRootCBV(CBVSlot, rl::CreateDynamicConstantBuffer(&UniformData));
 

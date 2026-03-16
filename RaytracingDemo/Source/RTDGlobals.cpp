@@ -2,7 +2,7 @@
 #include <Render/Raytracing.h>
 
 RTDGlobals_s Glob;
-const std::wstring s_AssetDirectory = L"Cooked/";
+const std::wstring s_AssetDirectory = L"RaytracingDemo/Cooked/";
 
 RTDGlobals_s::~RTDGlobals_s()
 {

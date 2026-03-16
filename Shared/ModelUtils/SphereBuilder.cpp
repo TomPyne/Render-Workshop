@@ -37,7 +37,7 @@ namespace SphereBuilder
 			const float CosPhi = cosf(Phi);
 			for (uint32_t LongIt = 0; LongIt < Desc.LongitudeSegments; LongIt++)
 			{
-				const float Theta = static_cast<float>(LongIt) / Desc.LongitudeSegments * 2.0f * K_PI;
+				const float Theta = (static_cast<float>(LongIt) * 2.0f * K_PI) / static_cast<float>(Desc.LongitudeSegments);
 				const float SinTheta = sinf(Theta);
 				const float CosTheta = cosf(Theta);
 
@@ -56,8 +56,8 @@ namespace SphereBuilder
 			Mesh.Indices.push_back((LongIt + 1) % Desc.LongitudeSegments + 1);
 			Mesh.Indices.push_back(LongIt + 1);
 
-			Mesh.Indices.push_back(1);
-			Mesh.Indices.push_back((LongIt + Desc.LongitudeSegments) * (Desc.LatitudeSegments - 2) + 1);
+			Mesh.Indices.push_back(SouthPoleIndex);
+			Mesh.Indices.push_back(LongIt + Desc.LongitudeSegments * (Desc.LatitudeSegments - 2) + 1);
 			Mesh.Indices.push_back((LongIt + 1) % Desc.LongitudeSegments + Desc.LongitudeSegments * (Desc.LatitudeSegments - 2) + 1);
 		}
 
@@ -67,10 +67,18 @@ namespace SphereBuilder
 			uint32_t Index1 = (LatIt + 1) * Desc.LongitudeSegments + 1;
 			for (uint32_t LongIt = 0; LongIt < Desc.LongitudeSegments; LongIt++)
 			{
-				Mesh.Indices.push_back(Index0 + LongIt);
-				Mesh.Indices.push_back(Index0 + (LongIt + 1) % Desc.LongitudeSegments);
-				Mesh.Indices.push_back(Index1 + (LongIt + 1) % Desc.LongitudeSegments);
-				Mesh.Indices.push_back(Index1 + LongIt);
+				uint32_t V0 = Index0 + LongIt;
+				uint32_t V1 = Index0 + (LongIt + 1) % Desc.LongitudeSegments;
+				uint32_t V2 = Index1 + (LongIt + 1) % Desc.LongitudeSegments;
+				uint32_t V3 = Index1 + LongIt;
+
+				Mesh.Indices.push_back(V0);
+				Mesh.Indices.push_back(V1);
+				Mesh.Indices.push_back(V2);
+
+				Mesh.Indices.push_back(V2);
+				Mesh.Indices.push_back(V3);
+				Mesh.Indices.push_back(V0);
 			}
 		}
 

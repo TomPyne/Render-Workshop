@@ -33,7 +33,7 @@ RenderGraphPass_s& RenderGraphPass_s::AccessResource(RenderGraphResourceHandle_t
 {
 	if (rl::HasEnumFlags(AccessType, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::DSV))
 	{
-		ASSERTMSG(LoadOp == RenderGraphLoadOp_e::CLEAR || LoadOp == RenderGraphLoadOp_e::DONT_CARE, "Only clear and dont care supported for RTV and DSV accesses");
+		ASSERTMSG(LoadOp == RenderGraphLoadOp_e::CLEAR || LoadOp == RenderGraphLoadOp_e::DONT_CARE || LoadOp == RenderGraphLoadOp_e::LOAD, "Unuspported RTV/DSV load access");
 	}
 
 	if (rl::HasEnumFlags(AccessType, RenderGraphResourceAccessType_e::SRV | RenderGraphResourceAccessType_e::COPYSRC))
