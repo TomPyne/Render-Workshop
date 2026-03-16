@@ -24,6 +24,10 @@ function(create_proj projname rapi)
 	PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
 	"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
