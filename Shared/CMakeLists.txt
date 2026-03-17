@@ -26,6 +26,8 @@ add_library(Shared
             "Noise/Perlin.h"
             "Profiling/ScopeTimer.cpp"
             "Profiling/ScopeTimer.h"
+            "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.cpp"
+            "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h"
             "RenderUtils/RenderPasses/SkyRenderPass.cpp"
             "RenderUtils/RenderPasses/SkyRenderPass.h"
             "RenderUtils/RenderGraph/RenderGraph.cpp"
