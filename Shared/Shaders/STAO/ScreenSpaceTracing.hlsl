@@ -40,6 +40,9 @@ float Random(float3 Seed)
 [NumThreads(8, 8, 1)]
 void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 {
+    if(any(DispatchThreadId >= c_G.ScreenDim))
+        return;
+        
     const float MaxDistance = 15.0f;
     const float Resolution = 0.3f;
     int Steps = 10;

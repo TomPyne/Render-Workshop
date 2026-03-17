@@ -443,6 +443,16 @@ rl::UnorderedAccessView_t RenderGraph_s::GetUAV(RenderGraphResourceHandle_t Reso
 	return rl::UnorderedAccessView_t::INVALID;
 }
 
+uint32_t RenderGraph_s::GetSRVIndex(RenderGraphResourceHandle_t Resource)
+{
+	return rl::GetDescriptorIndex(GetSRV(Resource));
+}
+
+uint32_t RenderGraph_s::GetUAVIndex(RenderGraphResourceHandle_t Resource)
+{
+	return rl::GetDescriptorIndex(GetUAV(Resource));
+}
+
 uint2 RenderGraph_s::GetTextureDimensions(RenderGraphResourceHandle_t Resource)
 {
 	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
