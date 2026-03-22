@@ -17,5 +17,5 @@ struct SkyRenderer_s
 
 	void Init(uint32_t InCBVSlot);
 
-	void AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, RenderGraphResourceHandle_t SceneDepth, const matrix& ViewProjection, const float3& CamPos);
+	void AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, RenderGraphResourceHandle_t SceneDepth, const matrix& ViewProjection, const float3& CamPos, const float3& SunDirection);
 };

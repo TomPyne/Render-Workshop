@@ -367,7 +367,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
-	G.SkyRenderer.AddPass(RGBuilder, SceneColorTexture, SceneDepthTexture, ViewProjection, G.Cam.GetPosition());
+	G.SkyRenderer.AddPass(RGBuilder, SceneColorTexture, SceneDepthTexture, ViewProjection, G.Cam.GetPosition(), SunDirection);
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)

@@ -8,8 +8,16 @@
 struct SkyRenderPassUniforms
 {
 	matrix ViewProjection;
+
 	float3 CamPos;
-	float __Pad;
+	float PlanetRadius;
+
+	float AtmosphereRadius;
+	float3 SunDirection;
+
+	float AtmosphereThicknessR;
+	float AtmosphereThicknessM;
+	float2 __Pad;
 };
 
 void SkyRenderer_s::Init(uint32_t InCBVSlot)
@@ -64,7 +72,7 @@ void SkyRenderer_s::Init(uint32_t InCBVSlot)
 	}
 }
 
-void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, RenderGraphResourceHandle_t SceneDepth, const matrix& ViewProjection, const float3& CamPos)
+void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColorTarget, RenderGraphResourceHandle_t SceneDepth, const matrix& ViewProjection, const float3& CamPos, const float3& SunDirection)
 {
 	if (!Ready)
 		return;
@@ -90,6 +98,11 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 		SkyRenderPassUniforms UniformData = {}; // Capture uniforms outside of the lambda.
 		UniformData.ViewProjection = ViewProjection;
 		UniformData.CamPos = CamPos;
+		UniformData.PlanetRadius = 6360e3f;
+		UniformData.AtmosphereRadius = 6420e3;
+		UniformData.SunDirection = SunDirection;
+		UniformData.AtmosphereThicknessR = 7994.0f;
+		UniformData.AtmosphereThicknessM = 1200.0f;
 
 		CL->SetGraphicsRootCBV(CBVSlot, rl::CreateDynamicConstantBuffer(&UniformData));
 
