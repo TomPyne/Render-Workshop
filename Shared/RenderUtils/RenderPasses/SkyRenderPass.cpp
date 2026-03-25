@@ -99,7 +99,7 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 		UniformData.ViewProjection = ViewProjection;
 		UniformData.CamPos = CamPos;
 		UniformData.PlanetRadius = 6360e3f;
-		UniformData.AtmosphereRadius = 6420e3;
+		UniformData.AtmosphereRadius = 6420e3f;
 		UniformData.SunDirection = SunDirection;
 		UniformData.AtmosphereThicknessR = 7994.0f;
 		UniformData.AtmosphereThicknessM = 1200.0f;

@@ -50,36 +50,70 @@ static const float G = 0.76f;
 static const float3 BetaR = float3(3.8e-6f, 13.5e-6f, 33.1e-6f);
 static const float3 BetaM = float3(21e-6f, 21e-6f, 21e-6f);
 
+bool QuadraticSolver(float A, float B, float C, out float2 X)
+{
+    if(B == 0.0f)
+    {
+        if(A == 0.0f)
+        {
+            return false;
+        }
+        X.x = 0.0f;
+        X.y = sqrt(-C / A);
+    }
+
+    float D = B * B - 4.0f * A * C;
+
+    if(D < 0.0f)
+    {
+        X = float2(0, 0);
+        return false;
+    }
+
+    float Dr = sqrt(D);
+    float Q = -0.5f * (B < 0.0f ? B - Dr : B + Dr);
+    X.x = Q / A;
+    X.y = C / Q;
+
+    X = float2(0.0f, 1.0f);
+    return true;
+}
+
 // ray-sphere intersection that assumes
 // the sphere is centered at the origin.
 // No intersection when result.x > result.y
-float2 RaySphereIntersect(float3 Origin, float3 Direction, float Radius)
+bool  RaySphereIntersect(float3 Origin, float3 Direction, float Radius, out float2 T)
 {
-    float a = dot(Direction, Direction);
-    float b = 2.0f * dot(Direction, Origin);
-    float c = dot(Origin, Origin) - (Radius * Radius);
-    float d = (b*b) - 4.0f*a*c;
-    if (d < 0.0f) return float2(1e5,-1e5);
-    return float2(
-        (-b - sqrt(d))/(2.0f*a),
-        (-b + sqrt(d))/(2.0f*a)
-    );
+    T = float2(0.0f, 0.0f);
+    float A = dot(Direction, Direction);
+    float B = 2.0f * dot(Direction, Origin);
+    float C = dot(Origin, Origin) - (Radius * Radius);
+    if(!QuadraticSolver(A, B, C, T))
+        return false;
+
+    if(T.x > T.y)
+        T = T.yx;
+
+    return true;
 }
 
 float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
 {
     float TMin = 0.0f;
-    float TMax = 9999999999.0f;
+    float TMax = 9999.0f;
 
-    float2 T = RaySphereIntersect(Origin, Direction, c_G.AtmosphereRadius);
-    if(T.x > T.y)
+    float2 T;
+    if(!RaySphereIntersect(Origin, Direction, c_G.AtmosphereRadius, T))
+        return 0;
+
+    if(T.y < 0.0f)
         return 0;
 
     if(T.x > TMin && T.x > 0)
         TMin = T.x;
 
-    if(T.y < TMax)
-        TMax = T.y;
+    // if(T.y < TMax)
+    //     TMax = T.y;
 
     float SegmentLength = (TMax - TMin) / NumSamples;
     float TCurrent = TMin;
@@ -96,14 +130,15 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
     for(uint SampIt = 0; SampIt < NumSamples; SampIt++)
     {
         float3 SamplePosition = Origin + (TCurrent + SegmentLength * 0.5f) * Direction;
-        float Height = length(SamplePosition - float3(0, c_G.PlanetRadius, 0)); // Why not just used Y Component?
+        float Height = length(SamplePosition) - c_G.PlanetRadius; // Why not just used Y Component?
         float HR = exp(-Height / c_G.AtmosphereThicknessR) * SegmentLength; // RCP also combine exps?
         float HM = exp(-Height / c_G.AtmosphereThicknessM) * SegmentLength;
 
         OpticalDepthR += HR;
         OpticalDepthM += HM;
 
-        float2 TLight = RaySphereIntersect(SamplePosition, c_G.SunDirection, c_G.AtmosphereRadius); // Assumes intersection?
+        float2 TLight;
+        RaySphereIntersect(SamplePosition, c_G.SunDirection, c_G.AtmosphereRadius, TLight); // Assumes intersection?
         float SegmentLengthLight = TLight.y / NumSamplesLight;
         float TCurrentLight = 0;
         float OpticalDepthLightR = 0.0f;
@@ -112,7 +147,7 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
         for(; LightSampIt < NumSamplesLight; LightSampIt++)
         {
             float3 SamplePositionLight = SamplePosition + (TCurrentLight + SegmentLengthLight * 0.5f) * c_G.SunDirection;
-            float HeightLight = length(SamplePositionLight - float3(0, c_G.PlanetRadius, 0));
+            float HeightLight = length(SamplePositionLight) - c_G.PlanetRadius;
             if(HeightLight < 0)
                 break;
 
@@ -130,13 +165,13 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
         }
         TCurrent += SegmentLength;
     }
-
+    ///return SegmentLength.rrr - 1000;
     return SumR * BetaR * PhaseR + SumM * BetaM * PhaseM;
 }
 
 float4 main(in PixelInputs Input) : SV_TARGET
 {   
-    float3 Pos = c_G.CameraPos + float3(0, c_G.PlanetRadius, 0);
+    float3 Pos = /*(c_G.CameraPos / 1000.0f) + */float3(0, c_G.PlanetRadius + 1.0f,0.0f);
     float3 Color = CalculateAtmosphereLight(Pos, normalize(Input.Direction)) * 20.0f;
     return float4(Color, 1.0f);
 }
