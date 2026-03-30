@@ -2,8 +2,12 @@ struct ViewData_s
 {
     float4x4 ViewProjectionMatrix;
     float4x4 PrevViewProjectionMatrix;
+
     float3 CameraPos;
     uint DebugMeshID;
+
+    float2 ScreenSizeRcp;
+    float2 __Pad;
 };
 
 ConstantBuffer<ViewData_s> c_View : register(b1);
@@ -11,6 +15,8 @@ ConstantBuffer<ViewData_s> c_View : register(b1);
 struct PixelInputs_s
 {
     float4 SVPosition : SV_POSITION;
+    float4 PrevSVPosition : PREV_POSITION;
+    float3 WorldPosition : WORLDPOS;
     float2 UV : TEXCOORD0;
     float3 Normal : NORMAL0;
     float3 Tangent : TANGENT;
@@ -59,9 +65,10 @@ PixelInputs_s GetVertexAttributes(uint MeshletIndex, uint VertexIndex)
     Out.UV = float2(UV.x, 1.0f - UV.y);
     Out.MeshletIndex = MeshletIndex;
 
-    float4 PrevSvPosition = mul(c_View.PrevViewProjectionMatrix, float4(Position, 1.0f));
+    Out.WorldPosition = Position;
+    Out.PrevSVPosition = mul(c_View.PrevViewProjectionMatrix, float4(Position, 1.0f));
     //Out.Velocity = ((Out.SVPosition.xy) / Out.SVPosition.w) - ((PrevSvPosition.xy) / PrevSvPosition.w);
-    Out.Velocity = ((Out.SVPosition.xy) / Out.SVPosition.w) - ((PrevSvPosition.xy) / PrevSvPosition.w);
+    //Out.Velocity = ((Out.SVPosition.xy) / Out.SVPosition.w) - ((PrevSvPosition.xy) / PrevSvPosition.w);
 
     return Out;
 }
@@ -212,7 +219,14 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     Output.Color = float4(Albedo, 1.0f);
     Output.Normal = float4(Normal, 0.0f);
     Output.RoughnessMetallic = float2(Roughness, Metallic);
-    Output.Velocity = Input.Velocity;
+
+    float2 CurrentNDC = (Input.SVPosition.xy * c_View.ScreenSizeRcp) * 2.0f - 1.0f;
+
+    float4 PrevSVPosition = mul(c_View.PrevViewProjectionMatrix, float4(Input.WorldPosition, 1.0f));
+
+    float2 PrevNDC = PrevSVPosition.xy / PrevSVPosition.w;
+    PrevNDC.y *= -1.0f;
+    Output.Velocity = CurrentNDC - PrevNDC;
 }
 
 #endif

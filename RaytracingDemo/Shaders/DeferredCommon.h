@@ -23,6 +23,7 @@ struct DeferredData
 
 float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
 {
+    ScreenPos.y = -ScreenPos.y;
     float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
     float4 Unprojected = mul(CamToWorld, ProjectedPos);
     return Unprojected.xyz / Unprojected.w;

@@ -41,7 +41,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     
     float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
     
-    float3 Position = GetWorldPosFromScreen(c_Deferred.CamToWorld, Input.SVPosition.xy * c_Deferred.ViewportSizeRcp, Depth);
+    float3 Position = GetWorldPosFromScreen(c_Deferred.CamToWorld, (Input.SVPosition.xy * c_Deferred.ViewportSizeRcp) * 2.0f - 1.0f, Depth);
 
     float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
 
@@ -82,6 +82,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     {
         float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
         Output.Color = float4(abs(Velocity) * 10, 0, 1);
+        //Output.Color = float4(length(Velocity * 10).rrr, 1);
     }
     else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
     {

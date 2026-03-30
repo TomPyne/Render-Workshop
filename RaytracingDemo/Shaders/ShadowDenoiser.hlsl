@@ -29,6 +29,7 @@ SamplerState ClampedSampler : register(s1);
 
 float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
 {
+    ScreenPos.y = -ScreenPos.y;
     float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
     float4 Unprojected = mul(CamToWorld, ProjectedPos);
     return Unprojected.xyz / Unprojected.w;
@@ -48,27 +49,24 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     float CurrentDepth = t_tex2d_f1[c_G.DepthTextureIndex][DispatchThreadId.xy].r;
     float CurrentShadow = u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy];
     
-
     // Reconstruct previous sample
     float2 Velocity = t_tex2d_f2[c_G.VelocityTextureIndex][DispatchThreadId.xy].rg;
-    Velocity.y *= -1.0f;
+    //Velocity.y *= -1.0f;
     float2 PrevNDC = NDC - Velocity;
     
-    float3 CurrentWorldPosition = GetWorldPosFromScreen(c_G.CamToWorld, UV, CurrentDepth);
+    float3 CurrentWorldPosition = GetWorldPosFromScreen(c_G.CamToWorld, NDC, CurrentDepth);
     
     float2 ReconstructedUv = (PrevNDC * 0.5f) + 0.5f;
     float2 ReconstructedScreenPos = ReconstructedUv *  c_G.ViewportSize;
 
     int2 ReconstructedPixel = int2(ReconstructedScreenPos);
-    float DebugDepth = 0.0f;
     float Confidence = 0.0f;
     if(all(ReconstructedPixel >= 0) && all(ReconstructedPixel < c_G.ViewportSize))
     {
         float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex][ReconstructedPixel].r;
         float ReconstructedShadow = t_tex2d_f1[c_G.PrevShadowTextureIndex][ReconstructedPixel].r;
-        float3 ReconstructedPosition = GetWorldPosFromScreen(c_G.PrevCamToWorld, ReconstructedUv, ReconstructedDepth);
+        float3 ReconstructedPosition = GetWorldPosFromScreen(c_G.PrevCamToWorld, PrevNDC, ReconstructedDepth);
 
-        DebugDepth = ReconstructedDepth;
         // Compare world pos
         float3 Offset = CurrentWorldPosition - ReconstructedPosition;
 

@@ -307,7 +307,7 @@ bool InitializeApp()
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
-	G.Cam.SetNearFar(0.1f, 1000.0f);
+	G.Cam.SetNearFar(1.0f, 1000.0f);
 
 
 	return true;
@@ -412,21 +412,6 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		G.FramesSinceMove++;
 	}
 
-	struct
-	{
-		matrix ViewProjection;
-		matrix PrevviewProjection;
-		float3 CamPos;
-		uint32_t DebugMeshID;
-	} ViewConsts;
-
-	ViewConsts.ViewProjection = ViewProjection;
-	ViewConsts.PrevviewProjection = G.PrevViewProjection;
-	ViewConsts.CamPos = G.Cam.GetPosition();
-	ViewConsts.DebugMeshID = G.ShowMeshID;
-
-	DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
-
 	RenderGraphBuilder_s RGBuilder(G.RenderGraphResourcePool);
 
 	// Mesh draw pass
@@ -446,6 +431,24 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD)
 	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 	{
+		struct
+		{
+			matrix ViewProjection;
+			matrix PrevviewProjection;
+			float3 CamPos;
+			uint32_t DebugMeshID;
+			float2 ScreenSizeRcp;
+			float __Pad[2];
+		} ViewConsts;
+
+		ViewConsts.ViewProjection = ViewProjection;
+		ViewConsts.PrevviewProjection = G.PrevViewProjection;
+		ViewConsts.CamPos = G.Cam.GetPosition();
+		ViewConsts.DebugMeshID = G.ShowMeshID;
+		ViewConsts.ScreenSizeRcp = float2(1.0f / G.ScreenWidth, 1.0f / G.ScreenHeight);
+
+		DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
+
 		CL->SetRootSignature();
 
 		rl::RenderTargetView_t SceneRTVs[] = 
