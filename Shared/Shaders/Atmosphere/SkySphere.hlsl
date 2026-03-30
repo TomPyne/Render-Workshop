@@ -75,7 +75,6 @@ bool QuadraticSolver(float A, float B, float C, out float2 X)
     X.x = Q / A;
     X.y = C / Q;
 
-    X = float2(0.0f, 1.0f);
     return true;
 }
 
@@ -100,7 +99,7 @@ bool  RaySphereIntersect(float3 Origin, float3 Direction, float Radius, out floa
 float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
 {
     float TMin = 0.0f;
-    float TMax = 9999.0f;
+    float TMax = 999999999999999.0f;
 
     float2 T;
     if(!RaySphereIntersect(Origin, Direction, c_G.AtmosphereRadius, T))
@@ -112,8 +111,8 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
     if(T.x > TMin && T.x > 0)
         TMin = T.x;
 
-    // if(T.y < TMax)
-    //     TMax = T.y;
+    if(T.y < TMax)
+        TMax = T.y;
 
     float SegmentLength = (TMax - TMin) / NumSamples;
     float TCurrent = TMin;
@@ -165,14 +164,14 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
         }
         TCurrent += SegmentLength;
     }
-    ///return SegmentLength.rrr - 1000;
+
     return SumR * BetaR * PhaseR + SumM * BetaM * PhaseM;
 }
 
 float4 main(in PixelInputs Input) : SV_TARGET
 {   
     float3 Pos = /*(c_G.CameraPos / 1000.0f) + */float3(0, c_G.PlanetRadius + 1.0f,0.0f);
-    float3 Color = CalculateAtmosphereLight(Pos, normalize(Input.Direction)) * 20.0f;
+    float3 Color = CalculateAtmosphereLight(Pos, normalize(Input.Direction)) * 10.0f;
     return float4(Color, 1.0f);
 }
 #endif

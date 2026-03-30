@@ -309,7 +309,7 @@ void ImguiUpdate()
 		{
 			G.FramesSinceMove = 0;
 		}
-		if (ImGui::SliderAngle("Sun Pitch", &G.SunPitch, 0.0f, 90.0f))
+		if (ImGui::SliderAngle("Sun Pitch", &G.SunPitch, -90.0f, 90.0f))
 		{
 			G.FramesSinceMove = 0;
 		}
