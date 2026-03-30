@@ -205,7 +205,7 @@ bool InitializeApp()
 
 	// Deferred PSO
 	{
-		VertexShader_t DeferredVS = CreateVertexShader("RaytracingDemo/Shaders/Deferred.hlsl");
+		VertexShader_t DeferredVS = CreateVertexShader("RaytracingDemo/Shaders/ScreenPassVS.hlsl");
 		PixelShader_t DeferredPS = CreatePixelShader("RaytracingDemo/Shaders/Deferred.hlsl");
 
 		GraphicsPipelineStateDesc PsoDesc = {};

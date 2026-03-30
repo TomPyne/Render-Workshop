@@ -1,27 +1,4 @@
-struct PS_INPUT
-{
-    float4 SVPosition : SV_POSITION;
-    float2 UV : TEXCOORD0;
-};
-
-#ifdef _VS
-
-static const float2 Verts[6] = 
-{
-    float2(0, 1), float2(1, 1), float2(1, 0),
-    float2(1, 0), float2(0, 0), float2(0, 1)
-};
-
-void main(uint VertexID : SV_VertexID, out PS_INPUT Output)
-{
-    const float2 Vert = Verts[VertexID];
-
-    Output.SVPosition = float4(Vert * 2 - 1, 0.5f, 1.0f);
-    Output.UV = Vert;
-    Output.UV.y = 1.0f - Output.UV.y;
-}
-
-#endif
+#include "ScreenPassShared.h"
 
 #ifdef _PS
 
@@ -116,24 +93,10 @@ float3 GetWorldPos(float4x4 CamToWorld, float2 UV, float Depth)
 
 float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
 {
-    //ScreenPos.y = -ScreenPos.y;
     float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
     float4 Unprojected = mul(CamToWorld, ProjectedPos);
     return Unprojected.xyz / Unprojected.w;
 }
-
-// float3 ViewPositionFromDepth(float2 UV, float Depth)
-// {
-//     float x = UV.x * 2 - 1;
-//     float y = (1 - UV.y) * 2 - 1;
-//     float4 ProjectedPos = float4(x, y, Depth,  1.0f);
-
-//     ProjectedPos = mul(c_Deferred.InverseProjection, ProjectedPos);
-
-//     ProjectedPos /= ProjectedPos.w;
-
-//     return mul(c_Deferred.InverseView, ProjectedPos).xyz;
-// }
 
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
