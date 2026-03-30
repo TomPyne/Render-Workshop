@@ -69,6 +69,8 @@ struct Globals_s
 	GraphicsPipelineStatePtr MeshMSPSO;
 	GraphicsPipelineStatePtr DeferredPSO;
 	GraphicsPipelineStatePtr DebugViewPSO;
+	GraphicsPipelineStatePtr U2TonemapPSO;
+	GraphicsPipelineStatePtr NoTonemapPSO;
 	ComputePipelineStatePtr UAVClearF1PSO;
 	ComputePipelineStatePtr UAVClearF2PSO;
 	ComputePipelineStatePtr ShadowDenoisePSO;
@@ -95,6 +97,10 @@ struct Globals_s
 	float SunYaw = 0.0f;
 	float SunPitch = 1.0f;
 	float SunSoftAngle = 0.01f;
+
+	float Exposure = 1.0f;
+	float WhitePoint = 11.2f;
+	float ExposureBias = 2.0f;
 
 	float ElapsedTime = 0.0f;
 } G;
@@ -238,6 +244,27 @@ bool InitializeApp()
 		G.DebugViewPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
+	// Tonemapper PSOs
+	{
+		// No tonemapping
+		PixelShader_t NoTonemapPS = CreatePixelShader("RaytracingDemo/Shaders/Tonemapping.hlsl", {"NOTONEMAPPER"});
+
+		GraphicsPipelineStateDesc PsoDesc = {};
+
+		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
+			.DepthDesc(false)
+			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::None() }, RenderFormat::UNKNOWN)
+			.VertexShader(ScreenPassVS)
+			.PixelShader(NoTonemapPS);
+		PsoDesc.DebugName = L"NoTonemapPSO";
+		G.NoTonemapPSO = CreateGraphicsPipelineState(PsoDesc);
+
+		PixelShader_t U2TonemapPS = CreatePixelShader("RaytracingDemo/Shaders/Tonemapping.hlsl", { "U2TONEMAPPER" });
+		PsoDesc.PixelShader(U2TonemapPS);
+		PsoDesc.DebugName = L"U2TonemapPSO";
+		G.U2TonemapPSO = CreateGraphicsPipelineState(PsoDesc);
+	}
+
 	// Denoiser PSO
 	{
 		ComputeShader_t ShadowDenoiserCS = CreateComputeShader("RaytracingDemo/Shaders/ShadowDenoiser.hlsl");
@@ -336,6 +363,10 @@ void ImguiUpdate()
 			G.FramesSinceMove = 0;
 		}
 		ImGui::Separator();
+		ImGui::InputFloat("Exposure", &G.Exposure);
+		ImGui::InputFloat("White Point", &G.WhitePoint);
+		ImGui::InputFloat("Exposure Bias", &G.ExposureBias);
+		ImGui::Separator();
 		if (ImGui::Button("Recompile Shaders"))
 		{
 			ReloadShaders();
@@ -343,6 +374,26 @@ void ImguiUpdate()
 		}
 	}
 	ImGui::End();
+}
+
+static void FullScreenPassVSPS(RenderGraph_s& RG, rl::CommandList* CL, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, DynamicBuffer_t UniformBuffer)
+{
+	CL->SetRootSignature();
+
+	rl::RenderTargetView_t BackBufferRTV = RG.GetRTV(Target);
+
+	CL->SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
+
+	Viewport vp{ G.ScreenWidth, G.ScreenHeight };
+	CL->SetViewports(&vp, 1);
+	CL->SetDefaultScissor(); // Could also be captured by the command context
+
+	CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+	CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, UniformBuffer);
+
+	CL->SetPipelineState(PSO);
+
+	CL->DrawInstanced(6u, 1u, 0u, 0u);
 }
 
 void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
@@ -601,7 +652,8 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		});
 	}
 
-	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(View->GetCurrentBackBufferTexture(), View->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
+	
+	RenderGraphResourceHandle_t SceneColorLDR = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorLDRTexture");
 
 	struct DeferredConstants_s
 	{
@@ -622,7 +674,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		uint32_t VelocityTextureIndex;
 		uint32_t ConfidenceTextureIndex;
 		float2 ViewportSizeRcp;
-	};
+	};	
 
 	if (G.DrawMode != 0)
 	{
@@ -635,7 +687,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 		{
 			DeferredConstants_s DeferredConsts;
@@ -656,22 +708,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			CL->SetRootSignature();
-
-			rl::RenderTargetView_t BackBufferRTV = RG.GetRTV(BackBufferTexture);
-
-			CL->SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
-
-			Viewport vp{ G.ScreenWidth, G.ScreenHeight };
-			CL->SetViewports(&vp, 1);
-			CL->SetDefaultScissor(); // Could also be captured by the command context
-
-			CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
-			CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DeferredCBuf);
-
-			CL->SetPipelineState(G.DebugViewPSO);
-
-			CL->DrawInstanced(6u, 1u, 0u, 0u);
+			FullScreenPassVSPS(RG, CL, SceneColorLDR, G.DebugViewPSO, DeferredCBuf);
 		});
 	}
 	else
@@ -685,7 +722,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 		{
 			DeferredConstants_s DeferredConsts;
@@ -706,24 +743,33 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			CL->SetRootSignature();
-
-			rl::RenderTargetView_t BackBufferRTV = RG.GetRTV(BackBufferTexture);
-
-			CL->SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
-
-			Viewport vp{ G.ScreenWidth, G.ScreenHeight };
-			CL->SetViewports(&vp, 1);
-			CL->SetDefaultScissor(); // Could also be captured by the command context
-
-			CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
-			CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DeferredCBuf);
-
-			CL->SetPipelineState(G.DeferredPSO);
-
-			CL->DrawInstanced(6u, 1u, 0u, 0u);
+			FullScreenPassVSPS(RG, CL, SceneColorLDR, G.DeferredPSO, DeferredCBuf);
 		});
 	}
+
+	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(View->GetCurrentBackBufferTexture(), View->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
+
+	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Tonemapper (U2)")
+	.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	{
+		struct
+		{
+			uint32_t InputTexture;
+			float WhitePoint;
+			float ExposureBias;
+			float __Pad;
+		} Uniforms;
+
+		Uniforms.InputTexture = RG.GetSRVIndex(SceneColorLDR);
+		Uniforms.WhitePoint = G.WhitePoint;
+		Uniforms.ExposureBias = G.ExposureBias;
+
+		DynamicBuffer_t TonemapCBuf = CreateDynamicConstantBuffer(&Uniforms);
+
+		FullScreenPassVSPS(RG, CL, BackBufferTexture, G.U2TonemapPSO, TonemapCBuf);
+	});
 
 	RenderGraph_s Graph = RGBuilder.Build();
 
