@@ -1,39 +1,7 @@
-#include "ScreenPassShared.h"
-
 #ifdef _PS
 
-struct DeferredData
-{
-    float4x4 CamToWorld;
-    float4x4 PrevCamToWorld;
-
-    uint SceneColorTextureIndex;
-    uint SceneNormalTextureIndex;
-    uint SceneRoughnessMetallicTextureIndex;
-    uint DepthTextureIndex;
-
-    uint DrawMode;
-    float3 CamPosition;
-
-    uint ShadowTextureIndex;
-    float3 SunDirection;
-
-    uint SceneVelocityTextureIndex;
-    uint ConfidenceTextureIndex;
-    float2 ViewportSizeRcp;
-};
-
-#define DRAWMODE_LIT 0
-#define DRAWMODE_COLOR 1
-#define DRAWMODE_NORMAL 2
-#define DRAWMODE_ROUGHNESS 3
-#define DRAWMODE_METALLIC 4
-#define DRAWMODE_DEPTH 5
-#define DRAWMODE_POSITION 6
-#define DRAWMODE_LIGHTING 7
-#define DRAWMODE_RTSHADOWS 8
-#define DRAWMODE_VELOCITY 9
-#define DRAWMODE_DISOCCLUSION 10
+#include "DeferredCommon.h"
+#include "ScreenPassShared.h"
 
 ConstantBuffer<DeferredData> c_Deferred : register(b1);
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
@@ -91,13 +59,6 @@ float3 GetWorldPos(float4x4 CamToWorld, float2 UV, float Depth)
     return Unprojected.xyz / Unprojected.w;
 }
 
-float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
-{
-    float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
-    float4 Unprojected = mul(CamToWorld, ProjectedPos);
-    return Unprojected.xyz / Unprojected.w;
-}
-
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
     float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
@@ -117,62 +78,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
 
     float Shadow = t_tex2d_f1[c_Deferred.ShadowTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
 
-    if(c_Deferred.DrawMode != DRAWMODE_LIT)
-    {
-        if(c_Deferred.DrawMode == DRAWMODE_COLOR)
-        {
-            Output.Color = float4(Color.rgb, 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_NORMAL)
-        {
-            Output.Color = float4((Normal + float3(1, 1, 1)) * 0.5f, 1);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_ROUGHNESS)
-        {
-            Output.Color = float4(RoughnessMetallic.rrr, 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_METALLIC)
-        {
-            Output.Color = float4(RoughnessMetallic.ggg, 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_DEPTH)
-        {
-            Output.Color = float4(Depth.rrr, 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_POSITION)
-        {
-            Output.Color = float4(frac(abs(Position)), 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_LIGHTING)
-        {
-            Color = float3(1, 1, 1);
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_RTSHADOWS)
-        {
-            Output.Color = float4(Shadow, Shadow, Shadow, 1.0f);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_VELOCITY)
-        {
-            float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
-            Output.Color = float4(abs(Velocity) * 10, 0, 1);
-            return;
-        }
-        else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
-        {
-            float Confidence =t_tex2d_f1[c_Deferred.ConfidenceTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
-            Output.Color = float4(Confidence.rrr, 1);
-            return;
-        }
-    }
-
-    float Roughness = RoughnessMetallic.r;// * RoughnessMetallic.r;
+    float Roughness = RoughnessMetallic.r;
     float Metallic = RoughnessMetallic.g;
 
     float3 L = c_Deferred.SunDirection;
@@ -197,9 +103,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 DiffuseTerm = Diffuse * Lambert();
 
     float3 Lighting = (SpecularTerm + DiffuseTerm) * Shadow * 5 * NoL;
-    //Lighting += 0.3f * Diffuse;
     
     Output.Color = float4(Lighting + Diffuse, 1.0f);
-    //Output.Color = float4(SpecularTerm, 1.0f);
 }
 #endif
