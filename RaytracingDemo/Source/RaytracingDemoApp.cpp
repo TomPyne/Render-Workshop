@@ -376,6 +376,11 @@ void ImguiUpdate()
 	ImGui::End();
 }
 
+static bool WantsTonemap()
+{
+	return G.DrawMode == 0 || G.DrawMode == 7; // Lit or Lighting
+}
+
 static void FullScreenPassVSPS(RenderGraph_s& RG, rl::CommandList* CL, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, DynamicBuffer_t UniformBuffer)
 {
 	CL->SetRootSignature();
@@ -771,7 +776,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 		DynamicBuffer_t TonemapCBuf = CreateDynamicConstantBuffer(&Uniforms);
 
-		FullScreenPassVSPS(RG, CL, BackBufferTexture, G.U2TonemapPSO, TonemapCBuf);
+		FullScreenPassVSPS(RG, CL, BackBufferTexture, WantsTonemap() ? G.U2TonemapPSO : G.NoTonemapPSO, TonemapCBuf);
 	});
 
 	RenderGraph_s Graph = RGBuilder.Build();
