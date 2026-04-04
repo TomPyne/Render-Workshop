@@ -81,8 +81,8 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     else if(c_Deferred.DrawMode == DRAWMODE_VELOCITY)
     {
         float2 Velocity = t_tex2d_f2[c_Deferred.SceneVelocityTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
-        Output.Color = float4(abs(Velocity) * 10, 0, 1);
-        //Output.Color = float4(length(Velocity * 10).rrr, 1);
+        Output.Color = float4((Velocity * 0.5 + 0.5),0, 1);
+        //Output.Color = float4(abs(Velocity) * 10, 0, 1);
     }
     else if(c_Deferred.DrawMode == DRAWMODE_DISOCCLUSION)
     {

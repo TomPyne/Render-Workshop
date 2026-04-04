@@ -307,7 +307,7 @@ bool InitializeApp()
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
-	G.Cam.SetNearFar(1.0f, 1000.0f);
+	G.Cam.SetNearFar(0.1f, 1000.0f);
 
 
 	return true;

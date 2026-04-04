@@ -51,7 +51,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     
     // Reconstruct previous sample
     float2 Velocity = t_tex2d_f2[c_G.VelocityTextureIndex][DispatchThreadId.xy].rg;
-    //Velocity.y *= -1.0f;
+    Velocity.y *= -1.0f;
     float2 PrevNDC = NDC - Velocity;
     
     float3 CurrentWorldPosition = GetWorldPosFromScreen(c_G.CamToWorld, NDC, CurrentDepth);
@@ -59,12 +59,13 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     float2 ReconstructedUv = (PrevNDC * 0.5f) + 0.5f;
     float2 ReconstructedScreenPos = ReconstructedUv *  c_G.ViewportSize;
 
-    int2 ReconstructedPixel = int2(ReconstructedScreenPos);
+    int2 ReconstructedPixel = int2(ReconstructedScreenPos - 0.5f);
     float Confidence = 0.0f;
     if(all(ReconstructedPixel >= 0) && all(ReconstructedPixel < c_G.ViewportSize))
     {
-        float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex][ReconstructedPixel].r;
-        float ReconstructedShadow = t_tex2d_f1[c_G.PrevShadowTextureIndex][ReconstructedPixel].r;
+        float ReconstructedDepth = t_tex2d_f1[c_G.PrevDepthTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0).r;
+        float ReconstructedShadow = t_tex2d_f1[c_G.PrevShadowTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0).r;
+
         float3 ReconstructedPosition = GetWorldPosFromScreen(c_G.PrevCamToWorld, PrevNDC, ReconstructedDepth);
 
         // Compare world pos
@@ -72,7 +73,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 
         if(dot(Offset, Offset) < 0.1f)
         {
-            Confidence = t_tex2d_f1[c_G.PrevConfidenceTextureIndex][ReconstructedPixel];
+            Confidence = t_tex2d_f1[c_G.PrevConfidenceTextureIndex].SampleLevel(ClampedSampler, ReconstructedUv, 0).r;
 
             Confidence = saturate(Confidence + ((0.99f - Confidence) * 0.1f));
         }
@@ -84,8 +85,6 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         // Accumulate if similar
         u_tex2d_f1[c_G.ShadowTextureIndex][DispatchThreadId.xy] = lerp(CurrentShadow, ReconstructedShadow, Confidence);
     }
-
-    //u_tex2d_f1[c_G.DebugTextureIndex][DispatchThreadId.xy] = Offset.r;
 
     // Output confidence, if similar then we inch towards 1, if unsimilar we reset to 0
     u_tex2d_f1[c_G.ConfidenceTextureIndex][DispatchThreadId.xy] = Confidence;

@@ -220,12 +220,13 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     Output.Normal = float4(Normal, 0.0f);
     Output.RoughnessMetallic = float2(Roughness, Metallic);
 
-    float2 CurrentNDC = (Input.SVPosition.xy * c_View.ScreenSizeRcp) * 2.0f - 1.0f;
+    float4 Clip = mul(c_View.ViewProjectionMatrix, float4(Input.WorldPosition, 1.0f));
 
     float4 PrevSVPosition = mul(c_View.PrevViewProjectionMatrix, float4(Input.WorldPosition, 1.0f));
 
+    float2 CurrentNDC = Clip.xy / Clip.w;
     float2 PrevNDC = PrevSVPosition.xy / PrevSVPosition.w;
-    PrevNDC.y *= -1.0f;
+
     Output.Velocity = CurrentNDC - PrevNDC;
 }
 
