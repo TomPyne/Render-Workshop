@@ -15,6 +15,15 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 
 	bool Ready = false;
 
+	bool MenuOpen = false;
+
+	// Parameters
+	float Thickness = 0.5f;
+	float MaxDistance = 100.0f;
+	int MaxSteps = 30;
+	float Stride = 1.0f;
+	float Jitter = 0.0f;
+
 	void Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, uint32_t InCBVRootSlot, uint32_t InCBVSlot);
 
 	RenderGraphResourceHandle_t GenerateSTAOTexture(
@@ -24,5 +33,8 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 		const matrix& Projection,
 		const matrix& PixelProjection,
 		const matrix& View,
-		uint2 ScreenDim);
+		uint2 ScreenDim,
+		float NearPlane);
+
+	void DrawImGuiMenu();
 };

@@ -111,6 +111,9 @@ static const uint32_t ViewCBVRegister = 1;
 static const uint32_t ModelCBVRegister = 2;
 static const uint32_t MatCBVRegister = 3;
 
+static const float NearPlaneZ = 0.1f;
+static const float FarPlaneZ = 1000.0f;
+
 float3 GetSunDirection()
 {
 	const float CosTheta = cosf(G.SunPitch);
@@ -314,8 +317,7 @@ bool InitializeApp()
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
 	G.Cam.SetPosition(float3(-5, 20, 25));
-	G.Cam.SetNearFar(0.1f, 1000.0f);
-
+	G.Cam.SetNearFar(NearPlaneZ, FarPlaneZ);
 
 	return true;
 }
@@ -349,6 +351,18 @@ void Update(float deltaSeconds)
 
 void ImguiUpdate()
 {
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("Modules"))
+		{
+			ImGui::MenuItem("STAO Renderer", "", &G.STAORenderer.MenuOpen);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+
+	G.STAORenderer.DrawImGuiMenu();
+
 	if (ImGui::Begin("RaytracingDemo"))
 	{
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
@@ -696,7 +710,10 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 	if (G.DrawMode != 0)
 	{
-		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight));
+		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
+		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
+
+		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 		// Debug View
 		RenderGraphPass_s& DebugViewPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Debug View Pass")
