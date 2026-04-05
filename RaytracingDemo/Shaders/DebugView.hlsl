@@ -14,6 +14,7 @@
 #define DRAWMODE_RTSHADOWS 8
 #define DRAWMODE_VELOCITY 9
 #define DRAWMODE_DISOCCLUSION 10
+#define DRAWMODE_STAO 11
 
 ConstantBuffer<DeferredData> c_Deferred : register(b1);
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
@@ -88,6 +89,11 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     {
         float Confidence =t_tex2d_f1[c_Deferred.ConfidenceTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
         Output.Color = float4(Confidence.rrr, 1);
+    }
+    else if(c_Deferred.DrawMode == DRAWMODE_STAO)
+    {
+        float3 AO = t_tex2d_f4[c_Deferred.STAOTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
+        Output.Color = float4(AO, 1);
     }
     else
     {

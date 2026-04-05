@@ -1,79 +1,79 @@
 #include "FlyCamera.h"
 #include <imgui.h>
 
-void FlyCamera::SetView(const float3& position, float pitch, float yaw)
+void FlyCamera::SetView(const float3& InPosition, float Pitch, float Yaw)
 {
-	_position = position;
+	Position = InPosition;
 
-	if (yaw > 360.0f)
-		yaw -= 360.0f;
+	if (Yaw > 360.0f)
+		Yaw -= 360.0f;
 
-	if (yaw < -360.0f)
-		yaw += 360.0f;
+	if (Yaw < -360.0f)
+		Yaw += 360.0f;
 
-	_camPitch = pitch;
-	_camYaw = yaw;
+	CamPitch = Pitch;
+	CamYaw = Yaw;
 
-	pitch = Clamp(pitch, -89.9f, 89.9f);
+	Pitch = Clamp(Pitch, -89.9f, 89.9f);
 
-	yaw = ConvertToRadians(yaw);
-	pitch = ConvertToRadians(pitch);
+	Yaw = ConvertToRadians(Yaw);
+	Pitch = ConvertToRadians(Pitch);
 
-	float cosPitch = cosf(pitch);
+	float CosPitch = cosf(Pitch);
 
-	_lookDir = float3{ cosf(yaw) * cosPitch, sinf(pitch), sinf(yaw) * cosPitch };
+	LookDir = float3{ cosf(Yaw) * CosPitch, sinf(Pitch), sinf(Yaw) * CosPitch };
 
-	_view = MakeMatrixLookToLH(position, _lookDir, float3{ 0, 1, 0 });
+	View = MakeMatrixLookToLH(InPosition, LookDir, float3{ 0, 1, 0 });
 }
 
 void FlyCamera::UpdateView(float delta)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	float camPitch = _camPitch;
-	float camYaw = _camYaw;
+	//float CamPitch = CamPitch;
+	//float CamYaw = CamYaw;
 
 	if (!io.WantCaptureMouse && io.MouseDown[1])
 	{
-		float yaw = ImGui::GetIO().MouseDelta.x;
-		float pitch = ImGui::GetIO().MouseDelta.y;
+		float Yaw = ImGui::GetIO().MouseDelta.x;
+		float Pitch = ImGui::GetIO().MouseDelta.y;
 
-		camPitch -= pitch * 25.0f * delta;
-		camYaw -= yaw * 25.0f * delta;
+		CamPitch -= Pitch * 25.0f * delta;
+		CamYaw -= Yaw * 25.0f * delta;
 	}
 
 	float3 translation = { 0.0f };
 
 	if (!io.WantCaptureKeyboard)
 	{
-		float3 fwd = _lookDir;
-		float3 rgt = Cross(float3{ 0, 1, 0 }, _lookDir);
+		float3 Fwd = LookDir;
+		float3 Rgt = Cross(float3{ 0, 1, 0 }, LookDir);
 
-		constexpr float speed = 5.0f;
+		constexpr float Speed = 5.0f;
 
-		float moveSpeed = speed * delta;
+		float MoveSpeed = Speed * delta;
 
-		float3 translateDir = 0.0f;
+		float3 TranslateDir = 0.0f;
 
-		if (io.KeysDown[ImGuiKey_W]) translateDir += fwd;
-		if (io.KeysDown[ImGuiKey_S]) translateDir -= fwd;
+		if (io.KeysDown[ImGuiKey_W]) TranslateDir += Fwd;
+		if (io.KeysDown[ImGuiKey_S]) TranslateDir -= Fwd;
 
-		if (io.KeysDown[ImGuiKey_D]) translateDir += rgt;
-		if (io.KeysDown[ImGuiKey_A]) translateDir -= rgt;
+		if (io.KeysDown[ImGuiKey_D]) TranslateDir += Rgt;
+		if (io.KeysDown[ImGuiKey_A]) TranslateDir -= Rgt;
 
 		if (io.KeyShift)
-			moveSpeed *= 4.0f;
+			MoveSpeed *= 4.0f;
 
-		translation = Normalize(translateDir) * moveSpeed;
+		translation = Normalize(TranslateDir) * MoveSpeed;
 
-		if (io.KeysDown[ImGuiKey_E]) translation.y += moveSpeed;
-		if (io.KeysDown[ImGuiKey_Q]) translation.y -= moveSpeed;
+		if (io.KeysDown[ImGuiKey_E]) translation.y += MoveSpeed;
+		if (io.KeysDown[ImGuiKey_Q]) translation.y -= MoveSpeed;
 	}
 
-	SetView(_position + translation, camPitch, camYaw);
+	SetView(Position + translation, CamPitch, CamYaw);
 }
 
 Frustum FlyCamera::GetWorldFrustum() const
 {
-	return MakeWorldFrustum(_position, _lookDir, float3(0, 1, 0), ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+	return MakeWorldFrustum(Position, LookDir, float3(0, 1, 0), ConvertToRadians(Fov), AspectRatio, NearZ, FarZ);
 }

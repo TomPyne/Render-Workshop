@@ -4,20 +4,20 @@
 
 struct FlyCamera : public Camera
 {
-	void SetView(const float3& position, float pitch, float yaw);
-	void UpdateView(float delta);
+	void SetView(const float3& InPosition, float Pitch, float Yaw);
+	void UpdateView(float Delta);
 
-	const matrix& GetView() const noexcept { return _view; }
-	const float3& GetPosition() const noexcept { return _position; }
+	const matrix& GetView() const noexcept { return View; }
+	const float3& GetPosition() const noexcept { return Position; }
 
-	void SetPosition(const float3& position) noexcept { _position = position; }
+	void SetPosition(const float3& InPosition) noexcept { Position = InPosition; }
 
 	Frustum GetWorldFrustum() const;
 
 protected:
-	float3 _position;
-	float3 _lookDir;
-	float _camPitch = 0.0f;
-	float _camYaw = 0.0f;
-	matrix _view;
+	float3 Position;
+	float3 LookDir;
+	float CamPitch = 0.0f;
+	float CamYaw = 0.0f;
+	matrix View;
 };

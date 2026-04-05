@@ -11,6 +11,7 @@
 #include <Logging/Logging.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
+#include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
 
 #include <HPModel.h>
 #include <HPWfMtlLib.h>
@@ -84,6 +85,7 @@ struct Globals_s
 
 	// Renderers
 	SkyRenderer_s SkyRenderer;
+	ScreenTracedAmbientOcclusionRenderer_s STAORenderer;
 
 	RTDMaterial_s DefaultMaterial = {};
 
@@ -104,6 +106,10 @@ struct Globals_s
 
 	float ElapsedTime = 0.0f;
 } G;
+
+static const uint32_t ViewCBVRegister = 1;
+static const uint32_t ModelCBVRegister = 2;
+static const uint32_t MatCBVRegister = 3;
 
 float3 GetSunDirection()
 {
@@ -127,9 +133,9 @@ rl::RenderInitParams GetAppRenderParams()
 	Params.RootSigDesc.Flags = RootSignatureFlags::ALLOW_INPUT_LAYOUT;
 	Params.RootSigDesc.Slots.resize(GlobalRootSigSlots::RS_COUNT);
 	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_DRAWCONSTANTS] = RootSignatureSlot::ConstantsSlot(RTDDrawConstantSlots_e::COUNT, 0);
-	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(1, 0);
-	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(2, 0);
-	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MAT_BUF] = RootSignatureSlot::CBVSlot(3, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_VIEW_BUF] = RootSignatureSlot::CBVSlot(ViewCBVRegister, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MODEL_BUF] = RootSignatureSlot::CBVSlot(ModelCBVRegister, 0);
+	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_MAT_BUF] = RootSignatureSlot::CBVSlot(MatCBVRegister, 0);
 	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_SRV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
 	Params.RootSigDesc.Slots[GlobalRootSigSlots::RS_UAV_TABLE] = RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
@@ -301,7 +307,8 @@ bool InitializeApp()
 		G.RaytracingShaderTable = CreateRaytracingShaderTable(G.RTPSO, ShaderTableLayout);
 	}
 
-	G.SkyRenderer.Init(GlobalRootSigSlots::RS_VIEW_BUF);
+	G.SkyRenderer.Init(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
+	G.STAORenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
@@ -347,7 +354,7 @@ void ImguiUpdate()
 		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
 		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
 		ImGui::Checkbox("Show Shadows", &G.ShowShadows);
-		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0Velocity\0Disocclusion\0";
+		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0Velocity\0Disocclusion\0AO\0";
 		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
 		ImGui::Separator();
 		if (ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f))
@@ -682,10 +689,15 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		uint32_t VelocityTextureIndex;
 		uint32_t ConfidenceTextureIndex;
 		float2 ViewportSizeRcp;
-	};	
+
+		uint32_t STAOTextureIndex;
+		float __Pad[3];
+	};
 
 	if (G.DrawMode != 0)
 	{
+		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight));
+
 		// Debug View
 		RenderGraphPass_s& DebugViewPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Debug View Pass")
 		.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -695,6 +707,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(STAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
 		{
@@ -713,6 +726,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
 			DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceTexture));
 			DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+			DeferredConsts.STAOTextureIndex = GetDescriptorIndex(RG.GetSRV(STAOTexture));
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
@@ -748,6 +762,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
 			DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceTexture));
 			DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+			DeferredConsts.STAOTextureIndex = 0;
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 

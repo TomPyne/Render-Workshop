@@ -4,19 +4,23 @@
 
 struct Camera
 {
-	void Resize(u32 w, u32 h);
-	void SetNearFar(float near, float far);
-	void SetFov(float fov);
+	void Resize(u32 InScreenWdith, u32 InScreenHeight);
+	void SetNearFar(float InNearZ, float InFarZ);
+	void SetFov(float InFov);
 
-	const matrix& GetProjection() const noexcept { return _projection; }
+	const matrix& GetProjection() const noexcept { return Projection; }
+	const matrix& GetPixelProjection() const noexcept { return PixelProjection; }
 	Frustum CalculateViewFrustum() const noexcept;
 
 protected:
-	u32 _w = 0;
-	u32 _h = 0;
-	float _nearZ = 0.1f;
-	float _farZ = 10'000.0f;
-	float _fov = 45.0f;
-	float _aspectRatio = 0.0f;
-	matrix _projection;
+	u32 ScreenWidth = 0;
+	u32 ScreenHeight = 0;
+	float NearZ = 0.1f;
+	float FarZ = 10'000.0f;
+	float Fov = 45.0f;
+	float AspectRatio = 0.0f;
+	matrix Projection;
+	matrix PixelProjection;
+
+	void RecalculateMatrices();
 };

@@ -20,7 +20,7 @@ struct SkyRenderPassUniforms
 	float2 __Pad;
 };
 
-void SkyRenderer_s::Init(uint32_t InCBVSlot)
+void SkyRenderer_s::Init(uint32_t InCBVRootSlot, uint32_t InCBVSlot)
 {
 	{
 		SphereBuilder::SphereMeshDesc_s Desc = {};
@@ -45,9 +45,9 @@ void SkyRenderer_s::Init(uint32_t InCBVSlot)
 	}
 
 	{
-		CBVSlot = InCBVSlot;
+		CBVRootSlot = InCBVRootSlot;
 
-		std::string CBVSlotDef = "b" + std::to_string(CBVSlot);
+		std::string CBVSlotDef = "b" + std::to_string(InCBVSlot);
 		rl::ShaderMacros Macros = { { "CBV_SLOT", CBVSlotDef.c_str() } };
 
 		rl::GraphicsPipelineStateDesc PSODesc = {};
@@ -104,7 +104,7 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 		UniformData.AtmosphereThicknessR = 7994.0f;
 		UniformData.AtmosphereThicknessM = 1200.0f;
 
-		CL->SetGraphicsRootCBV(CBVSlot, rl::CreateDynamicConstantBuffer(&UniformData));
+		CL->SetGraphicsRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&UniformData));
 
 		CL->SetPipelineState(SkyPSO);
 

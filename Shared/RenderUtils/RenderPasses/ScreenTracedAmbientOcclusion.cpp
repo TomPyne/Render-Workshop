@@ -17,14 +17,17 @@ struct STAOUniforms_s
 	uint2 ViewportSize;
 };
 
-void ScreenTracedAmbientOcclusionRenderer_s::Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, uint32_t InCBVSlot)
+void ScreenTracedAmbientOcclusionRenderer_s::Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, uint32_t InCBVRootSlot, uint32_t InCBVSlot)
 {
 	UAVTableSlot = InUAVTableSlot;
 	SRVTableSlot = InSRVTableSlot;
-	CBVSlot = InCBVSlot;
+	CBVRootSlot = InCBVRootSlot;
+
+	std::string CBVSlotDef = "b" + std::to_string(InCBVSlot);
+	rl::ShaderMacros Macros = { { "CBV_SLOT", CBVSlotDef.c_str() } };
 
 	rl::ComputePipelineStateDesc PSODesc = {};
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/STAO/ScreenSpaceTracing.hlsl");
+	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/STAO/ScreenSpaceTracing.hlsl", Macros);
 	PSODesc.DebugName = L"ScreenSpaceTracingCS";
 
 	STAOPSO = rl::CreateComputePipelineState(PSODesc);
@@ -37,10 +40,11 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 	RenderGraphResourceHandle_t SceneDepth,
 	RenderGraphResourceHandle_t SceneNormal,
 	const matrix& Projection,
+	const matrix& PixelProjection,
 	const matrix& View,
 	uint2 ScreenDim)
 {
-	RenderGraphResourceHandle_t STAOTexture = RGBuilder.CreateTexture(ScreenDim.x, ScreenDim.y, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"STAOTexture");
+	RenderGraphResourceHandle_t STAOTexture = RGBuilder.CreateTexture(ScreenDim.x, ScreenDim.y, rl::RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"STAOTexture");
 
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"STAO Pass")
 	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -61,7 +65,7 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 		CL->SetRootSignature();
 		CL->SetComputeRootDescriptorTable(UAVTableSlot);
 		CL->SetComputeRootDescriptorTable(SRVTableSlot);
-		CL->SetComputeRootCBV(CBVSlot, rl::CreateDynamicConstantBuffer(&Uniforms));
+		CL->SetComputeRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&Uniforms));
 
 		CL->SetPipelineState(STAOPSO);
 

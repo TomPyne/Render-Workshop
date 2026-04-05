@@ -19,6 +19,9 @@ struct DeferredData
     uint SceneVelocityTextureIndex;
     uint ConfidenceTextureIndex;
     float2 ViewportSizeRcp;
+
+    uint STAOTextureIndex;
+    float3 Pad;
 };
 
 float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)

@@ -1,40 +1,56 @@
 #include "Camera.h"
 
-void Camera::Resize(u32 w, u32 h)
+void Camera::Resize(u32 InScreenWidth, u32 InScreenHeight)
 {
-	if (w == _w && h == _h)
-		return;
-
-	_w = w;
-	_h = h;
-
-	_aspectRatio = (float)w / (float)h;
-
-	_projection = MakeMatrixPerspectiveFovLH(ConvertToRadians( _fov ), _aspectRatio, _nearZ, _farZ);
+	if (InScreenWidth != ScreenWidth || InScreenHeight != ScreenHeight)
+	{
+		ScreenWidth = InScreenWidth;
+		ScreenHeight = InScreenHeight;
+		AspectRatio = (float)InScreenWidth / (float)InScreenHeight;
+		RecalculateMatrices();
+	}
 }
 
-void Camera::SetNearFar(float near, float far)
+void Camera::SetNearFar(float InNearZ, float InFarZ)
 {
-	if (near == _nearZ && far == _farZ)
-		return;
-
-	_nearZ = near;
-	_farZ = far;
-
-	_projection = MakeMatrixPerspectiveFovLH(ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+	if (InNearZ != NearZ || InFarZ != FarZ)
+	{
+		NearZ = InNearZ;
+		FarZ = InFarZ;
+		RecalculateMatrices();
+	}
 }
 
-void Camera::SetFov(float fov)
+void Camera::SetFov(float InFov)
 {
-	if (fov == _fov)
-		return;
-
-	_fov = fov;
-
-	_projection = MakeMatrixPerspectiveFovLH(ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+	if (Fov != InFov)
+	{
+		Fov = InFov;
+		RecalculateMatrices();
+	}
 }
 
 Frustum Camera::CalculateViewFrustum() const noexcept
 {
-	return MakeFrustum(ConvertToRadians(_fov), _aspectRatio, _nearZ, _farZ);
+	return MakeFrustum(ConvertToRadians(Fov), AspectRatio, NearZ, FarZ);
+}
+
+void Camera::RecalculateMatrices()
+{
+	Projection = MakeMatrixPerspectiveFovLH(ConvertToRadians(Fov), AspectRatio, NearZ, FarZ);
+
+	const float YScale = 1.0f / tanf(ConvertToRadians(Fov) * 0.5f);
+	const float XScale = YScale / AspectRatio;
+	const float X2 = (float)ScreenWidth * 0.5f;
+	const float Y2 = (float)ScreenHeight * 0.5f;
+	const float X = XScale * X2;
+	const float Y = -YScale * Y2;
+	const float ZMin = FarZ / (FarZ - NearZ);
+	const float ZMax = -NearZ * FarZ / (FarZ - NearZ);
+
+	PixelProjection = matrix(
+		X, 0, 0,    X2,
+		0, Y, 0,    Y2,
+		0, 0, ZMin, ZMax,
+		0, 0, 1,    0);
 }
