@@ -1294,11 +1294,11 @@ inline matrix MakeMatrixLookToLH(float3 eyePos, float3 eyeDir, float3 up) noexce
     R0 = Normalize(R0);
 
     float3 R1 = Cross(R2, R0);
-    float3 NegEyePos = NegateF3(eyePos);
+    float3 NegEyePos = /*NegateF3*/(eyePos);
 
-    float D0 = Dot(R0, NegEyePos);
-    float D1 = Dot(R1, NegEyePos);
-    float D2 = Dot(R2, NegEyePos);
+    float D0 = -Dot(R0, NegEyePos);
+    float D1 = -Dot(R1, NegEyePos);
+    float D2 = -Dot(R2, NegEyePos);
 
     matrix m;
     m.r[0] = float4(R0, D0);

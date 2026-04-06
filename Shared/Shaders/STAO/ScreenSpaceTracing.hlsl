@@ -1,7 +1,7 @@
 struct ConstantData
 {
     float4x4 Projection;
-    float4x4 InverseProjection;
+    row_major float4x4 InverseProjection;
     row_major float4x4 View;
 
     uint DepthTextureIndex;
@@ -27,6 +27,9 @@ Texture2D<float> t_tex2d_f1[8192] : register(t0, space0); // Depth
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space1); // Normal
 RWTexture2D<float4> u_tex2d_f4[8192] : register(u0, space0); // Output
 
+#define SAMPLE_DEPTH_FUNC(HitPixel) t_tex2d_f1[c_G.DepthTextureIndex].Load(int3(HitPixel, 0))
+#include "../ScreenTracing/ScreenTracing.h"
+
 static const float Pi = 3.141593;
 
 float LinearDepth(float Depth)
@@ -34,19 +37,15 @@ float LinearDepth(float Depth)
 	return c_G.DepthProjection.y / (Depth - c_G.DepthProjection.x);
 }
 
-float3 GetViewPosFromScreen(float4x4 InverseProjection, float2 NDC, float DepthClip)
-{
-    float4 Projected = float4(NDC, DepthClip, 1.0f);
-    float4 Unprojected = mul(InverseProjection, Projected);
-    return Unprojected.xyz / Unprojected.w;
-}
-
 float3 GetViewPosFromScreen(float2 Pixel)
 {
-    float Depth = (t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(Pixel, 0)));
+    float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(Pixel, 0));
     float2 NDC = (Pixel * c_G.ViewportSizeRcp) * 2.0f - 1.0f;
     NDC.y = -NDC.y;
-    return GetViewPosFromScreen(c_G.InverseProjection, NDC.xy, Depth);
+
+    float4 Projected = float4(NDC, Depth, 1.0f);
+    float4 Unprojected = mul( Projected, c_G.InverseProjection);
+    return Unprojected.xyz / Unprojected.w;
 }
 
 float Random(float3 Seed)
@@ -72,6 +71,7 @@ float3x3 ComputeBasisMatrix(float3 Normal)
     return transpose(float3x3(Tangent, Bitangent, Normal));
 }
 
+#if 0
 float SqrDist(float2 A, float2 B)
 {
     const float2 Delta = B - A;
@@ -89,6 +89,7 @@ bool DepthIntersection(float Z, float MinZ, float MaxZ)
 {
     return (MaxZ >= Z) && (MinZ - c_G.Thickness <= Z);
 }
+#endif
 
 [NumThreads(8, 8, 1)]
 void main(uint3 DispatchThreadId : SV_DispatchThreadID)
@@ -101,15 +102,35 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
     const float3x3 TBN = ComputeBasisMatrix(Normal);
 
-    float3 SampleDirWorldSpace = mul(TBN, RandomHemiTangentSpace);
+    float3 SampleDirWorldSpace = Normal;//mul(TBN, RandomHemiTangentSpace);
 
     float3 DirectionViewSpace = normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
 
     float2 StartPixel = float2(DispatchThreadId.xy) + 0.5;
-
     float3 OriginViewSpace = GetViewPosFromScreen(StartPixel);
+
     OriginViewSpace += DirectionViewSpace * 0.01f;
+
+    float3 HitPoint = 0;
+    bool Hit = TraceScreen(
+        c_G.Projection,
+        OriginViewSpace,
+        DirectionViewSpace,
+        c_G.MaxDistance,
+        c_G.ViewportSize,
+        c_G.DepthProjection,
+        c_G.Stride,
+        c_G.Jitter,
+        c_G.Thickness,
+        c_G.MaxSteps,
+        c_G.NearPlaneZ,
+        HitPoint
+    );
+
+        u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(Hit ? 0.0f.rrr : 1.0f.rrr, 1);
+        //u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(DepthIntersection(SceneZMax, RayZMin, RayZMax) ? 0.0f.rrr : 1.0f.rrr, 1);
     
+    #if 0
     float RayLength = ((OriginViewSpace.z + DirectionViewSpace.z * c_G.MaxDistance) < c_G.NearPlaneZ) ? (c_G.NearPlaneZ - OriginViewSpace.z) / DirectionViewSpace.z : c_G.MaxDistance; // FLIPPED COMPARISON
 
     float3 EndPointViewSpace = OriginViewSpace + DirectionViewSpace * RayLength;
@@ -193,7 +214,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 
     Q.xy += DerivQ.xy * StepCount;
     float3 HitPoint = Q * (1.0f / K);
-    bool Hit = (RayZMax >= SceneZMax - c_G.Thickness) && (RayZMin <= SceneZMax);
 
     u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(DepthIntersection(SceneZMax, RayZMin, RayZMax) ? 0.0f.rrr : 1.0f.rrr, 1);
+    #endif
 }
