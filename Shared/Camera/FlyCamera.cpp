@@ -14,7 +14,7 @@ void FlyCamera::SetView(const float3& InPosition, float Pitch, float Yaw)
 	CamPitch = Pitch;
 	CamYaw = Yaw;
 
-	Pitch = Clamp(Pitch, -89.9f, 89.9f);
+	Pitch = Clamp(Pitch, -85.0f, 85.0f);
 
 	Yaw = ConvertToRadians(Yaw);
 	Pitch = ConvertToRadians(Pitch);

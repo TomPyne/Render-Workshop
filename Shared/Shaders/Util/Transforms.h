@@ -9,7 +9,7 @@ float3 GetViewPosFromScreen(float2 Pixel, float Depth, float4x4 InverseProjectio
     float2 NDC = (Pixel * ViewportSizeRcp) * 2.0f - 1.0f;
     NDC.y = -NDC.y;
     float4 Projected = float4(NDC, Depth, 1.0f);
-    float4 Unprojected = mul( Projected, InverseProjection);
+    float4 Unprojected = mul( InverseProjection, Projected);
     return Unprojected.xyz / Unprojected.w;
 }
 

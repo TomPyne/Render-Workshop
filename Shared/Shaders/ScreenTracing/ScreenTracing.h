@@ -6,7 +6,8 @@
 
 bool DepthIntersection(float Z, float MinZ, float MaxZ, float Thickness)
 {
-    return (MaxZ >= Z) && (MinZ - Thickness <= Z);
+    //return (MaxZ >= Z) && (MinZ - Thickness <= Z);
+    return (Z >= MinZ - Thickness) && (Z <= MaxZ + Thickness);
 }
 
 float LinearDepth(float Depth, float2 DepthProjection)
@@ -75,9 +76,12 @@ bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionVi
     float DerivK = (K1 - K0) * InvDx;
     float2 DerivP = float2(StepDir, Delta.y * InvDx);
 
+	Stride = 1.0f + Stride;
+
     DerivP *= Stride;
     DerivQ *= Stride;
     DerivK *= Stride;
+
     P0 += DerivP * Jitter;
     Q0 += DerivQ * Jitter;
     K0 += DerivK * Jitter;
@@ -96,8 +100,6 @@ bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionVi
     
     for(; ((P.x * StepDir) <= End) && (StepCount < MaxSteps) && !DepthIntersection(SceneZMax, RayZMin, RayZMax, Thickness) && (SceneZMax != 0.0f); P += DerivP, Q.z += DerivQ.z, K += DerivK, StepCount += 1.0f)
     {
-        HitPixel = Permute ? P.yx : P;
-
         RayZMin = PrevZMaxEst;
         RayZMax = (DerivQ.z * 0.5f + Q.z) / (DerivK * 0.5f + K);
         PrevZMaxEst = RayZMax;        
@@ -106,12 +108,16 @@ bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionVi
         {
             Swap(RayZMin, RayZMax);
         }
-
+        HitPixel = Permute ? P.yx : P;
+        
         SceneZMax = LinearDepth(SAMPLE_DEPTH_FUNC(HitPixel), DepthProjection);
     }
 
     Q.xy += DerivQ.xy * StepCount;
     HitPoint = Q * (1.0f / K);
 
+    HitPoint = float3((Permute ? P1.yx - P0.yx : P1 - P0) / ViewportSize, 0);
+    HitPoint = float3((Permute ? P1.yx : P1)/ ViewportSize, 0);
+    
     return DepthIntersection(SceneZMax, RayZMin, RayZMax, Thickness);
 }

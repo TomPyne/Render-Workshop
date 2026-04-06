@@ -60,7 +60,7 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
 
         if (Reader.HasNormals)
         {
-            OutModel.Normals[VertIt] = Reader.Vertices[VertIt].Normal;
+            OutModel.Normals[VertIt] = Reader.Vertices[VertIt].Normal * float3(-1.0f, 1.0f, 1.0f);
         }
 
         if (Reader.HasTexcoords)

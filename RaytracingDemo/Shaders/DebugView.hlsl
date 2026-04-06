@@ -71,10 +71,6 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     {
         Output.Color = float4(frac(abs(Position)), 1.0f);
     }
-    else if(c_Deferred.DrawMode == DRAWMODE_LIGHTING)
-    {
-        Color = float3(1, 1, 1);
-    }
     else if(c_Deferred.DrawMode == DRAWMODE_RTSHADOWS)
     {
         Output.Color = float4(Shadow, Shadow, Shadow, 1.0f);

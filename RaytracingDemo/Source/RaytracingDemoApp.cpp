@@ -713,7 +713,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		float __Pad[3];
 	};
 
-	if (G.DrawMode != 0)
+	if (G.DrawMode != 0 && G.DrawMode != 7)
 	{
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);

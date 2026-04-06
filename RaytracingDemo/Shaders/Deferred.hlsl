@@ -59,9 +59,17 @@ float3 GetWorldPos(float4x4 CamToWorld, float2 UV, float Depth)
     return Unprojected.xyz / Unprojected.w;
 }
 
+#define DRAWMODE_LIGHTING 7
+
 void main(in PS_INPUT Input, out PS_OUTPUT Output)
 {
     float3 Color = t_tex2d_f4[c_Deferred.SceneColorTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb;
+
+    if(c_Deferred.DrawMode == DRAWMODE_LIGHTING)
+    {
+        Color = float3(1, 1, 1);
+    }
+
     float Depth = t_tex2d_f1[c_Deferred.DepthTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).r;
     if(Depth >= 1.0f)
     {
@@ -70,7 +78,7 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     }
 
     float3 Normal = (t_tex2d_f4[c_Deferred.SceneNormalTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb);
-    Normal.x *= -1.0f;
+    //Normal.x *= -1.0f;
     
     float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
     

@@ -2,9 +2,9 @@
 
 struct ConstantData
 {
-    float4x4 Projection;
-    row_major float4x4 InverseProjection;
-    row_major float4x4 View;
+    float4x4  Projection;
+    float4x4 InverseProjection;
+    float4x4 View;
 
     uint DepthTextureIndex;
     uint SceneColorTextureIndex;
@@ -29,6 +29,8 @@ Texture2D<float> t_tex2d_f1[8192] : register(t0, space0); // Depth
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space1); // Normal
 RWTexture2D<float4> u_tex2d_f4[8192] : register(u0, space0); // Output
 
+SamplerState s_ClampedSampler : register(s1);
+
 #define SAMPLE_DEPTH_FUNC(HitPixel) t_tex2d_f1[c_G.DepthTextureIndex].Load(int3(HitPixel, 0))
 #include "../ScreenTracing/ScreenTracing.h"
 
@@ -38,7 +40,9 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     if(any(DispatchThreadId.xy >= c_G.ViewportSize))
         return;
 
-    const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
+    float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
+
+    float3 NormalViewSpace = (mul((float3x3)c_G.View, Normal).xyz);
 
     float2 StartPixel = float2(DispatchThreadId.xy) + 0.5;
     float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(DispatchThreadId.xy, 0));
@@ -46,9 +50,10 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     float3 OriginViewSpace = GetViewPosFromScreen(StartPixel, Depth, c_G.InverseProjection, c_G.ViewportSizeRcp);
 
     float3 DirectionViewSpace = normalize(-OriginViewSpace);
-    float3 ReflectViewSpace = reflect(DirectionViewSpace, Normal);
+    float3 ReflectViewSpace = reflect(DirectionViewSpace, NormalViewSpace);
+    ReflectViewSpace.xyz *= -1;
 
-    OriginViewSpace += ReflectViewSpace * 0.01f;
+    OriginViewSpace += ReflectViewSpace * 0.1f;
 
     float3 HitPoint;
     float2 HitPixel;
@@ -68,9 +73,16 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         HitPixel
     );
 
-    float3 SceneCol = t_tex2d_f4[c_G.SceneColorTextureIndex].Load(uint3(HitPixel.xy, 0)).xyz;
+    float3 SceneColOrig = t_tex2d_f4[c_G.SceneColorTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
 
-    //SceneCol = float3(frac(HitPixel.xy), 0);
+    float3 SceneCol = t_tex2d_f4[c_G.SceneColorTextureIndex].SampleLevel(s_ClampedSampler, HitPixel.xy * c_G.ViewportSizeRcp, 0).xyz;
 
-    u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(Hit ? SceneCol : float3(0, 0, 0) ,1);
+    SceneCol *= ReflectViewSpace.z < 0.0f ? 0.0f : 1.0f;
+    SceneCol *= Hit ? 1.0f : 0.0f;
+
+    SceneCol += SceneColOrig;
+    //SceneCol = HitPoint;
+    //SceneCol = t_tex2d_f4[c_G.SceneColorTextureIndex].SampleLevel(s_ClampedSampler, HitPoint.xy, 0).xyz * saturate(ReflectViewSpace.z);
+
+    u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(SceneCol / 2 ,1);
 }
