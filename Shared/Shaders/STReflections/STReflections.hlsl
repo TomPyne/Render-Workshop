@@ -81,8 +81,6 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     SceneCol *= Hit ? 1.0f : 0.0f;
 
     SceneCol += SceneColOrig;
-    //SceneCol = HitPoint;
-    //SceneCol = t_tex2d_f4[c_G.SceneColorTextureIndex].SampleLevel(s_ClampedSampler, HitPoint.xy, 0).xyz * saturate(ReflectViewSpace.z);
 
     u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(SceneCol / 2 ,1);
 }

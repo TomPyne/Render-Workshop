@@ -4,8 +4,8 @@
 struct ConstantData
 {
     float4x4 Projection;
-    row_major float4x4 InverseProjection;
-    row_major float4x4 View;
+    float4x4 InverseProjection;
+    float4x4 View;
 
     uint DepthTextureIndex;
     uint NormalTextureIndex;
@@ -39,20 +39,20 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     if(any(DispatchThreadId.xy >= c_G.ViewportSize))
         return;
 
-    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 16));    
+    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 4));    
 
     const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
     const float3x3 TBN = ComputeBasisMatrix(Normal);
 
     float3 SampleDirWorldSpace = mul(TBN, RandomHemiTangentSpace);
 
-    float3 DirectionViewSpace = normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
+    float3 DirectionViewSpace = -normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
 
     float2 StartPixel = float2(DispatchThreadId.xy) + 0.5;
     float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(DispatchThreadId.xy, 0));
     float3 OriginViewSpace = GetViewPosFromScreen(StartPixel, Depth, c_G.InverseProjection, c_G.ViewportSizeRcp);
 
-    OriginViewSpace += DirectionViewSpace * 0.01f;
+    OriginViewSpace += DirectionViewSpace * 0.1f;
 
     float3 HitPoint;
     float2 HitPixel;
@@ -71,6 +71,8 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         HitPoint,
         HitPixel
     );
+
+    Hit = Hit && DirectionViewSpace.z < 0.0f;
 
     u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(Hit ? 0.0f.rrr : 1.0f.rrr, 1);
 }

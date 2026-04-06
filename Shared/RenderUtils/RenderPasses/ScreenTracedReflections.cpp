@@ -111,11 +111,11 @@ void ScreenTracedReflectionRenderer_s::DrawImGuiMenu()
 
 		if (ImGui::Button("Reset"))
 		{
-			Thickness = 0.5f;
+			Thickness = 0.01f;
 			MaxDistance = 100.0f;
-			MaxSteps = 30;
-			Stride = 1.0f;
-			Jitter = 0.0f;
+			MaxSteps = 500;
+			Stride = 4.0f;
+			Jitter = 3.0f;
 		}
 	}
 	ImGui::End();

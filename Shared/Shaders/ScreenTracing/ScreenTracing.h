@@ -115,9 +115,6 @@ bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionVi
 
     Q.xy += DerivQ.xy * StepCount;
     HitPoint = Q * (1.0f / K);
-
-    HitPoint = float3((Permute ? P1.yx - P0.yx : P1 - P0) / ViewportSize, 0);
-    HitPoint = float3((Permute ? P1.yx : P1)/ ViewportSize, 0);
     
     return DepthIntersection(SceneZMax, RayZMin, RayZMax, Thickness);
 }

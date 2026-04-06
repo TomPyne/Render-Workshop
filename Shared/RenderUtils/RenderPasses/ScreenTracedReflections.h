@@ -18,11 +18,11 @@ struct ScreenTracedReflectionRenderer_s
 	bool MenuOpen = false;
 
 	// Parameters
-	float Thickness = 0.5f;
+	float Thickness = 0.01f;
 	float MaxDistance = 100.0f;
-	int MaxSteps = 30;
-	float Stride = 1.0f;
-	float Jitter = 0.0f;
+	int MaxSteps = 500;
+	float Stride = 4.0f;
+	float Jitter = 3.0f;
 
 	void Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, uint32_t InCBVRootSlot, uint32_t InCBVSlot);
 

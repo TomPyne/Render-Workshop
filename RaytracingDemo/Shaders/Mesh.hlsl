@@ -185,7 +185,7 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     }
 
     float3 Normal = normalize(Input.Normal);
-    if(false && c_Material.NormalTextureIndex != 0)
+    if(c_Material.NormalTextureIndex != 0)
     {
         float3 TexNormal = t_Tex2d[c_Material.NormalTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
         TexNormal = (2.0f * TexNormal) - float3(1.0f, 1.0f, 1.0f);

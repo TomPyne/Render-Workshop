@@ -18,8 +18,8 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 	bool MenuOpen = false;
 
 	// Parameters
-	float Thickness = 0.5f;
-	float MaxDistance = 100.0f;
+	float Thickness = 0.01f;
+	float MaxDistance = 0.5f;
 	int MaxSteps = 30;
 	float Stride = 1.0f;
 	float Jitter = 0.0f;

@@ -108,8 +108,8 @@ void ScreenTracedAmbientOcclusionRenderer_s::DrawImGuiMenu()
 
 		if (ImGui::Button("Reset"))
 		{
-			Thickness = 0.5f;
-			MaxDistance = 100.0f;
+			Thickness = 0.01f;
+			MaxDistance = 0.5f;
 			MaxSteps = 30;
 			Stride = 1.0f;
 			Jitter = 0.0f;
