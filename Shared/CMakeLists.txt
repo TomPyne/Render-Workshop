@@ -28,6 +28,8 @@ add_library(Shared
             "Profiling/ScopeTimer.h"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.cpp"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h"
+            "RenderUtils/RenderPasses/ScreenTracedReflections.cpp"
+            "RenderUtils/RenderPasses/ScreenTracedReflections.h"
             "RenderUtils/RenderPasses/SkyRenderPass.cpp"
             "RenderUtils/RenderPasses/SkyRenderPass.h"
             "RenderUtils/RenderGraph/RenderGraph.cpp"

@@ -12,6 +12,7 @@
 #include <RenderUtils/RenderGraph/RenderGraph.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
 #include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
+#include <RenderUtils/RenderPasses/ScreenTracedReflections.h>
 
 #include <HPModel.h>
 #include <HPWfMtlLib.h>
@@ -86,6 +87,7 @@ struct Globals_s
 	// Renderers
 	SkyRenderer_s SkyRenderer;
 	ScreenTracedAmbientOcclusionRenderer_s STAORenderer;
+	ScreenTracedReflectionRenderer_s STReflectionRenderer;
 
 	RTDMaterial_s DefaultMaterial = {};
 
@@ -312,6 +314,7 @@ bool InitializeApp()
 
 	G.SkyRenderer.Init(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.STAORenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
+	G.STReflectionRenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
@@ -355,13 +358,15 @@ void ImguiUpdate()
 	{
 		if (ImGui::BeginMenu("Modules"))
 		{
-			ImGui::MenuItem("STAO Renderer", "", &G.STAORenderer.MenuOpen);
+			ImGui::MenuItem("ST AO", "", &G.STAORenderer.MenuOpen);
+			ImGui::MenuItem("ST Reflections", "", &G.STReflectionRenderer.MenuOpen);
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
 	}
 
 	G.STAORenderer.DrawImGuiMenu();
+	G.STReflectionRenderer.DrawImGuiMenu();
 
 	if (ImGui::Begin("RaytracingDemo"))
 	{
@@ -713,7 +718,8 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
 
-		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		//RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 		// Debug View
 		RenderGraphPass_s& DebugViewPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Debug View Pass")

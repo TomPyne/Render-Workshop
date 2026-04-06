@@ -1,4 +1,3 @@
-#include "../Util/Random.h"
 #include "../Util/Transforms.h"
 
 struct ConstantData
@@ -8,9 +7,9 @@ struct ConstantData
     row_major float4x4 View;
 
     uint DepthTextureIndex;
+    uint SceneColorTextureIndex;
     uint NormalTextureIndex;
     uint OutputTextureIndex;
-    float __pad0;
 
     float2 ViewportSizeRcp;
     uint2 ViewportSize;
@@ -39,27 +38,24 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     if(any(DispatchThreadId.xy >= c_G.ViewportSize))
         return;
 
-    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 16));    
-
     const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
-    const float3x3 TBN = ComputeBasisMatrix(Normal);
-
-    float3 SampleDirWorldSpace = mul(TBN, RandomHemiTangentSpace);
-
-    float3 DirectionViewSpace = normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
 
     float2 StartPixel = float2(DispatchThreadId.xy) + 0.5;
     float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(DispatchThreadId.xy, 0));
+
     float3 OriginViewSpace = GetViewPosFromScreen(StartPixel, Depth, c_G.InverseProjection, c_G.ViewportSizeRcp);
 
-    OriginViewSpace += DirectionViewSpace * 0.01f;
+    float3 DirectionViewSpace = normalize(-OriginViewSpace);
+    float3 ReflectViewSpace = reflect(DirectionViewSpace, Normal);
+
+    OriginViewSpace += ReflectViewSpace * 0.01f;
 
     float3 HitPoint;
     float2 HitPixel;
     bool Hit = TraceScreen(
         c_G.Projection,
         OriginViewSpace,
-        DirectionViewSpace,
+        ReflectViewSpace,
         c_G.MaxDistance,
         c_G.ViewportSize,
         c_G.DepthProjection,
@@ -72,5 +68,9 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
         HitPixel
     );
 
-    u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(Hit ? 0.0f.rrr : 1.0f.rrr, 1);
+    float3 SceneCol = t_tex2d_f4[c_G.SceneColorTextureIndex].Load(uint3(HitPixel.xy, 0)).xyz;
+
+    //SceneCol = float3(frac(HitPixel.xy), 0);
+
+    u_tex2d_f4[c_G.OutputTextureIndex][DispatchThreadId.xy] = float4(Hit ? SceneCol : float3(0, 0, 0) ,1);
 }

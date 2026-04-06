@@ -27,13 +27,13 @@ void Swap(inout float A, inout float B)
     A = T;
 }
 
-bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionViewSpace, float MaxDistance, uint2 ViewportSize, float2 DepthProjection, float Stride, float Jitter, float Thickness, float MaxSteps, float NearPlaneZ, out float3 HitPoint)
+bool TraceScreen(float4x4 Projection, float3 OriginViewSpace, float3 DirectionViewSpace, float MaxDistance, uint2 ViewportSize, float2 DepthProjection, float Stride, float Jitter, float Thickness, float MaxSteps, float NearPlaneZ, out float3 HitPoint, out float2 HitPixel)
 {
     float RayLength = ((OriginViewSpace.z + DirectionViewSpace.z * MaxDistance) < NearPlaneZ) ? (NearPlaneZ - OriginViewSpace.z) / DirectionViewSpace.z : MaxDistance;
 
     float3 EndPointViewSpace = OriginViewSpace + DirectionViewSpace * RayLength;
 
-    float2 HitPixel = float2(-1, -1);
+    HitPixel = float2(-1, -1);
 
     float4 H0 = mul(Projection, float4(OriginViewSpace, 1.0f));
     float4 H1 = mul(Projection, float4(EndPointViewSpace, 1.0f));
