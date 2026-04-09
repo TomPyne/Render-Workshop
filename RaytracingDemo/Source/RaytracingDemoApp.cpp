@@ -718,8 +718,8 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
 
-		//RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
-		RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		//RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 		// Debug View
 		RenderGraphPass_s& DebugViewPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Debug View Pass")

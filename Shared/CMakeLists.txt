@@ -26,6 +26,8 @@ add_library(Shared
             "Noise/Perlin.h"
             "Profiling/ScopeTimer.cpp"
             "Profiling/ScopeTimer.h"
+            "RenderUtils/GPUContext/GPUContext.cpp"
+            "RenderUtils/GPUContext/GPUContext.h"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.cpp"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h"
             "RenderUtils/RenderPasses/ScreenTracedReflections.cpp"

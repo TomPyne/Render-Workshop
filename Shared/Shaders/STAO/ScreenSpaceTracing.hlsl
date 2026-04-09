@@ -39,7 +39,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     if(any(DispatchThreadId.xy >= c_G.ViewportSize))
         return;
 
-    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 4));    
+    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 8));    
 
     const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
     const float3x3 TBN = ComputeBasisMatrix(Normal);
