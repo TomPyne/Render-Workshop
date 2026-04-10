@@ -4,6 +4,7 @@
 #include "ModelUtils/SphereBuilder.h"
 
 #include <Render/Render.h>
+#include <RenderUtils/GPUContext/GPUContext.h>
 
 struct SkyRenderPassUniforms
 {
@@ -80,20 +81,20 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorTarget, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
-	.SetExecuteCallback([=, this](RenderGraph_s& RG, rl::CommandList* CL)
+	.SetExecuteCallback([=, this](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
-		CL->SetRootSignature();
+		Ctx.SetRootSignature();
 
 		rl::RenderTargetView_t SceneColorRTV = RG.GetRTV(SceneColorTarget);
 		rl::DepthStencilView_t SceneDepthDSV = RG.GetDSV(SceneDepth);
 
 		uint2 SceneColorDim = RG.GetTextureDimensions(SceneColorTarget);
 
-		CL->SetRenderTargets(&SceneColorRTV, 1, SceneDepthDSV);
+		Ctx.SetRenderTargets(&SceneColorRTV, 1, SceneDepthDSV);
 
 		rl::Viewport vp{ SceneColorDim.x, SceneColorDim.y };
-		CL->SetViewports(&vp, 1);
-		CL->SetDefaultScissor(); // Could also be captured by the command context
+		Ctx.SetViewports(&vp, 1);
+		Ctx.SetDefaultScissor(); // Could also be captured by the command context
 
 		SkyRenderPassUniforms UniformData = {}; // Capture uniforms outside of the lambda.
 		UniformData.ViewProjection = ViewProjection;
@@ -104,12 +105,12 @@ void SkyRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResource
 		UniformData.AtmosphereThicknessR = 7994.0f;
 		UniformData.AtmosphereThicknessM = 1200.0f;
 
-		CL->SetGraphicsRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&UniformData));
+		Ctx.SetGraphicsRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&UniformData));
 
-		CL->SetPipelineState(SkyPSO);
+		Ctx.SetPipelineState(SkyPSO);
 
-		CL->SetVertexBuffer(0, SkySphereVertexBuffer, static_cast<uint32_t>(sizeof(float3)), 0u);
-		CL->SetIndexBuffer(SkySphereIndexBuffer, rl::RenderFormat::R16_UINT, 0u);
-		CL->DrawIndexedInstanced(NumIndices, 1u, 0u, 0u, 0u);
+		Ctx.SetVertexBuffer(0, SkySphereVertexBuffer, static_cast<uint32_t>(sizeof(float3)), 0u);
+		Ctx.SetIndexBuffer(SkySphereIndexBuffer, rl::RenderFormat::R16_UINT, 0u);
+		Ctx.DrawIndexedInstanced(NumIndices, 1u, 0u, 0u, 0u);
 	});
 }

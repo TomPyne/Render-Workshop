@@ -30,10 +30,11 @@ enum class RenderGraphResourceAccessType_e : uint8_t
 };
 IMPLEMENT_FLAGS(RenderGraphResourceAccessType_e, uint8_t)
 
+struct GPUContext_s;
 struct RenderGraph_s;
 struct RenderGraphBuilder_s;
 
-using RenderGraphCallback_Func = std::function<void(RenderGraph_s&, rl::CommandList* cl)>;
+using RenderGraphCallback_Func = std::function<void(RenderGraph_s&, struct GPUContext_s&)>;
 
 struct RenderGraphExternalTexture_s
 {
@@ -199,7 +200,7 @@ struct RenderGraph_s
 	std::vector<RenderGraphPass_s> Passes;
 	std::vector<RenderGraphResource_s> Resources;
 
-	void Execute(rl::CommandList* CommandList);
+	void Execute(rl::CommandListSubmissionGroup* CLGroup);
 
 	rl::ShaderResourceView_t GetSRV(RenderGraphResourceHandle_t Resource);
 	rl::RenderTargetView_t GetRTV(RenderGraphResourceHandle_t Resource);

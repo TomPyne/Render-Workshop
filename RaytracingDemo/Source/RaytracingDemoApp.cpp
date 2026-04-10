@@ -9,6 +9,7 @@
 #include <Camera/FlyCamera.h>
 #include <FileUtils/FileStream.h>
 #include <Logging/Logging.h>
+#include <RenderUtils/GPUContext/GPUContext.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
 #include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
@@ -407,24 +408,24 @@ static bool WantsTonemap()
 	return G.DrawMode == 0 || G.DrawMode == 7; // Lit or Lighting
 }
 
-static void FullScreenPassVSPS(RenderGraph_s& RG, rl::CommandList* CL, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, DynamicBuffer_t UniformBuffer)
+static void FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, DynamicBuffer_t UniformBuffer)
 {
-	CL->SetRootSignature();
+	Ctx.SetRootSignature();
 
 	rl::RenderTargetView_t BackBufferRTV = RG.GetRTV(Target);
 
-	CL->SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
+	Ctx.SetRenderTargets(&BackBufferRTV, 1, {}); // TODO: this should be set by the graph
 
 	Viewport vp{ G.ScreenWidth, G.ScreenHeight };
-	CL->SetViewports(&vp, 1);
-	CL->SetDefaultScissor(); // Could also be captured by the command context
+	Ctx.SetViewports(&vp, 1);
+	Ctx.SetDefaultScissor(); // Could also be captured by the command context
 
-	CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
-	CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, UniformBuffer);
+	Ctx.SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+	Ctx.SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, UniformBuffer);
 
-	CL->SetPipelineState(PSO);
+	Ctx.SetPipelineState(PSO);
 
-	CL->DrawInstanced(6u, 1u, 0u, 0u);
+	Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 }
 
 void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float deltaSeconds)
@@ -460,7 +461,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD)
-	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct
 		{
@@ -480,7 +481,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 		DynamicBuffer_t ViewCBuf = CreateDynamicConstantBuffer(&ViewConsts);
 
-		CL->SetRootSignature();
+		Ctx.SetRootSignature();
 
 		rl::RenderTargetView_t SceneRTVs[] = 
 		{ 
@@ -490,41 +491,41 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			RG.GetRTV(SceneVelocityTexture)
 		};
 		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
-		CL->SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), SceneDSV); // TODO: this should be set by the graph
+		Ctx.SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), SceneDSV); // TODO: this should be set by the graph
 
 		Viewport vp{ G.ScreenWidth, G.ScreenHeight };
-		CL->SetViewports(&vp, 1);
-		CL->SetDefaultScissor(); // Could also be captured by the command context
+		Ctx.SetViewports(&vp, 1);
+		Ctx.SetDefaultScissor(); // Could also be captured by the command context
 
-		CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBuf);
-		CL->SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
+		Ctx.SetGraphicsRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBuf);
+		Ctx.SetGraphicsRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
 
-		CL->SetPipelineState(G.UseMeshShaders ? G.MeshMSPSO : G.MeshVSPSO);
+		Ctx.SetPipelineState(G.UseMeshShaders ? G.MeshMSPSO : G.MeshVSPSO);
 
 		for (const RTDModel_s& Model : G.Models)
 		{
-			CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MODEL_BUF, Model.ModelConstantBuffer);
+			Ctx.SetGraphicsRootCBV(GlobalRootSigSlots::RS_MODEL_BUF, Model.ModelConstantBuffer);
 
 			if (G.UseMeshShaders)
 			{
 				for (const RTDMesh_s& Mesh : Model.Meshes)
 				{
-					CL->SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, RTDDrawConstantSlots_e::MESHLET_OFFSET, Mesh.MeshletOffset);
+					Ctx.SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, RTDDrawConstantSlots_e::MESHLET_OFFSET, Mesh.MeshletOffset);
 
-					CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
+					Ctx.SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
 
-					CL->DispatchMesh(Mesh.MeshletCount, 1u, 1u);
+					Ctx.DispatchMesh(Mesh.MeshletCount, 1u, 1u);
 				}
 			}
 			else
 			{
 				for (const RTDMesh_s& Mesh : Model.Meshes)
 				{
-					CL->SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, RTDDrawConstantSlots_e::INDEX_OFFSET, Mesh.IndexOffset);
+					Ctx.SetGraphicsRootValue(GlobalRootSigSlots::RS_DRAWCONSTANTS, RTDDrawConstantSlots_e::INDEX_OFFSET, Mesh.IndexOffset);
 
-					CL->SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
+					Ctx.SetGraphicsRootCBV(GlobalRootSigSlots::RS_MAT_BUF, Mesh.Material ? Mesh.Material->MaterialConstantBuffer : G.DefaultMaterial.MaterialConstantBuffer);
 
-					CL->DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
+					Ctx.DrawInstanced(Mesh.IndexCount, 1u, 0u, 0u);
 				}
 			}
 		}
@@ -540,7 +541,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::RAYTRACING, L"RT Shadows")
 		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			struct RayUniforms_s
 			{
@@ -569,17 +570,17 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t RayCBuf = CreateDynamicConstantBuffer(&RayUniforms);
 
-			CL->SetComputeRootSignature(G.RTRootSignature);
+			Ctx.SetComputeRootSignature(G.RTRootSignature);
 
-			CL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
-			CL->SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(RTRootSigSlots::RS_UAV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(RTRootSigSlots::RS_SRV_TABLE);
 
-			CL->SetPipelineState(G.RTPSO);
+			Ctx.SetPipelineState(G.RTPSO);
 
-			CL->SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
-			CL->SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, Glob.RaytracingScene);
+			Ctx.SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
+			Ctx.SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, Glob.RaytracingScene);
 
-			CL->DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
+			Ctx.DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
 		});
 
 		RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(G.SceneShadowHistoryRGTexture, L"PrevFrameShadow");
@@ -594,7 +595,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
 		.AccessResource(ConfidenceHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			struct DenoiseUniforms_s
 			{
@@ -636,16 +637,16 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DenoiseCBuf = CreateDynamicConstantBuffer(&DenoiseUniforms);
 
-			CL->SetRootSignature();
+			Ctx.SetRootSignature();
 
-			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
-			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 
-			CL->SetPipelineState(G.ShadowDenoisePSO);
+			Ctx.SetPipelineState(G.ShadowDenoisePSO);
 
-			CL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DenoiseCBuf);
+			Ctx.SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DenoiseCBuf);
 
-			CL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+			Ctx.Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
 		});
 
 		RGBuilder.QueueTextureCopy(ShadowHistoryTexture, ShadowTexture);
@@ -656,7 +657,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	{
 		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Clear Shadows")
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			struct ClearUniforms_s
 			{
@@ -674,15 +675,15 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			ClearUniforms.ClearVal = 1.0f;
 			DynamicBuffer_t ClearBuf = CreateDynamicConstantBuffer(&ClearUniforms);
 
-			CL->SetRootSignature();
+			Ctx.SetRootSignature();
 
-			CL->SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
 
-			CL->SetPipelineState(G.UAVClearF1PSO);
+			Ctx.SetPipelineState(G.UAVClearF1PSO);
 
-			CL->SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
+			Ctx.SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, ClearBuf);
 
-			CL->Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+			Ctx.Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
 		});
 	}
 
@@ -732,7 +733,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(STAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			DeferredConstants_s DeferredConsts;
 
@@ -753,7 +754,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			FullScreenPassVSPS(RG, CL, SceneColorLDR, G.DebugViewPSO, DeferredCBuf);
+			FullScreenPassVSPS(RG, Ctx, SceneColorLDR, G.DebugViewPSO, DeferredCBuf);
 		});
 	}
 	else
@@ -768,7 +769,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			DeferredConstants_s DeferredConsts;
 
@@ -789,7 +790,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			FullScreenPassVSPS(RG, CL, SceneColorLDR, G.DeferredPSO, DeferredCBuf);
+			FullScreenPassVSPS(RG, Ctx, SceneColorLDR, G.DeferredPSO, DeferredCBuf);
 		});
 	}
 
@@ -798,7 +799,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Tonemapper (U2)")
 	.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
-	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct
 		{
@@ -814,12 +815,12 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 		DynamicBuffer_t TonemapCBuf = CreateDynamicConstantBuffer(&Uniforms);
 
-		FullScreenPassVSPS(RG, CL, BackBufferTexture, WantsTonemap() ? G.U2TonemapPSO : G.NoTonemapPSO, TonemapCBuf);
+		FullScreenPassVSPS(RG, Ctx, BackBufferTexture, WantsTonemap() ? G.U2TonemapPSO : G.NoTonemapPSO, TonemapCBuf);
 	});
 
 	RenderGraph_s Graph = RGBuilder.Build();
 
-	Graph.Execute(clGroup->CreateCommandList());
+	Graph.Execute(clGroup);
 
 	G.PrevViewProjection = ViewProjection;
 }

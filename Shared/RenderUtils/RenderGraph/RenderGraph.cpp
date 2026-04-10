@@ -1,5 +1,6 @@
 #include "RenderGraph.h"
 #include <Logging/Logging.h>
+#include <RenderUtils/GPUContext/GPUContext.h>
 
 static bool ResourceReads(RenderGraphResourceAccessType_e AccessType, RenderGraphLoadOp_e LoadOp)
 {
@@ -153,7 +154,7 @@ void RenderGraphBuilder_s::QueueTextureExtraction(RenderGraphResourceHandle_t Re
 	const std::wstring PassName = L"Texture Extraction - " + GetResourceDesc(Resource).ResourceName;
 	RenderGraphPass_s& ExtractionPass = AddPass(RenderGraphPassType_e::MISC, PassName.c_str())
 	.ExtractResource(Resource)
-	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		RG.ExtractTexture(Resource);
 	});
@@ -165,9 +166,9 @@ void RenderGraphBuilder_s::QueueTextureCopy(RenderGraphResourceHandle_t DstResou
 	RenderGraphPass_s& CopyPass = AddPass(RenderGraphPassType_e::MISC, PassName.c_str())
 	.AccessResource(DstResource, RenderGraphResourceAccessType_e::COPYDST, RenderGraphLoadOp_e::DONT_CARE)
 	.AccessResource(SrcResouce, RenderGraphResourceAccessType_e::COPYSRC, RenderGraphLoadOp_e::LOAD)
-	.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
-		CL->CopyTexture(RG.GetResource(DstResource)->Texture->Texture, RG.GetResource(SrcResouce)->Texture->Texture);
+		Ctx.CopyTexture(RG.GetResource(DstResource)->Texture->Texture, RG.GetResource(SrcResouce)->Texture->Texture);
 	});
 }
 
@@ -350,13 +351,17 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::AllocateResourceDesc(RenderGra
 	return Handle;
 }
 
-void RenderGraph_s::Execute(rl::CommandList* CommandList)
+void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 {
-	CHECK(CommandList);
+	CHECK(CLGroup);
+
+	GPUContext_s Ctx;
 
 	for (RenderGraphPass_s& Pass : Passes)
 	{		
 		//rl::CommandListEventScope PassEvent(CommandList, Pass.PassName.c_str());
+
+		Ctx.BeginPass();
 
 		for (ResourceUsage_s& ResourceUsage : Pass.Resources)
 		{
@@ -366,13 +371,13 @@ void RenderGraph_s::Execute(rl::CommandList* CommandList)
 			{
 				if (BackBufferTransitionState != ResourceUsage.DesiredState)
 				{
-					CommandList->TransitionResource(BackBufferTexture, BackBufferTransitionState, ResourceUsage.DesiredState);
+					Ctx.TransitionResource(BackBufferTexture, BackBufferTransitionState, ResourceUsage.DesiredState);
 					BackBufferTransitionState = ResourceUsage.DesiredState;
 				}
 				if (rl::HasEnumFlags(ResourceUsage.AccessType, RenderGraphResourceAccessType_e::RTV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 				{
 					const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-					CommandList->ClearRenderTarget(BackBufferRTV, ClearColor);
+					Ctx.ClearRenderTarget(BackBufferRTV, ClearColor);
 				}
 				continue;
 			}
@@ -380,7 +385,7 @@ void RenderGraph_s::Execute(rl::CommandList* CommandList)
 			// Transitions
 			if(Resource.Texture->CurrentState != ResourceUsage.DesiredState && !ResourceUsage.IsExtracted)
 			{
-				CommandList->TransitionResource(Resource.Texture->Texture, Resource.Texture->CurrentState, ResourceUsage.DesiredState);
+				Ctx.TransitionResource(Resource.Texture->Texture, Resource.Texture->CurrentState, ResourceUsage.DesiredState);
 				Resource.Texture->CurrentState = ResourceUsage.DesiredState;
 			}
 
@@ -388,16 +393,20 @@ void RenderGraph_s::Execute(rl::CommandList* CommandList)
 			if (rl::HasEnumFlags(ResourceUsage.AccessType,RenderGraphResourceAccessType_e::RTV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 			{
 				const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				CommandList->ClearRenderTarget(Resource.Texture->RTV, ClearColor);
+				Ctx.ClearRenderTarget(Resource.Texture->RTV, ClearColor);
 			}
 			else if (rl::HasEnumFlags(ResourceUsage.AccessType, RenderGraphResourceAccessType_e::DSV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 			{
-				CommandList->ClearDepth(Resource.Texture->DSV, 1.0f);
+				Ctx.ClearDepth(Resource.Texture->DSV, 1.0f);
 			}
 		}		
 
-		Pass.Callback(*this, CommandList);
+		Pass.Callback(*this, Ctx);
+
+		Ctx.EndPass();
 	}
+
+	Ctx.Execute(CLGroup);
 }
 
 rl::ShaderResourceView_t RenderGraph_s::GetSRV(RenderGraphResourceHandle_t Resource)

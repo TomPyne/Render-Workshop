@@ -1,5 +1,6 @@
 #include "GPUContext.h"
 
+#include <Logging/Logging.h>
 #include <Render/Render.h>
 #include <SurfMath.h>
 #include <thread>
@@ -244,6 +245,28 @@ public:
 	}
 };
 
+class GPUCommand_DrawIndexedInstanced_c : public GPUCommand_c
+{
+	uint32_t IndexCountPerInstance;
+	uint32_t InstanceCount;
+	uint32_t StartIndexLocation;
+	int32_t BaseVertexLocation;
+	uint32_t StartInstanceLocation;
+
+public:
+	GPUCommand_DrawIndexedInstanced_c(uint32_t InIndexCountPerInstance, uint32_t InInstanceCount, uint32_t InStartIndexLocation, int32_t InBaseVertexLocation, uint32_t InStartInstanceLocation)
+		: IndexCountPerInstance(InIndexCountPerInstance)
+		, InstanceCount(InInstanceCount)
+		, StartIndexLocation(InStartIndexLocation)
+		, BaseVertexLocation(InBaseVertexLocation)
+		, StartInstanceLocation(InStartInstanceLocation)
+	{}
+	void Execute(rl::CommandList* CL)
+	{
+		CL->DrawIndexedInstanced(IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
+	}
+};
+
 class GPUCommand_Dispatch_c : public GPUCommand_c
 {
 	uint32_t ThreadGroupCountX;
@@ -373,35 +396,133 @@ public:
 	}
 };
 
+class GPUCommand_SetVertexBuffers_c : public GPUCommand_c
+{
+	uint32_t StartSlot;
+	uint32_t NumBuffers;
+	rl::VertexBuffer_t VertexBuffers[8];
+	uint32_t Strides[8];
+	uint32_t Offsets[8];
+
+public:
+	GPUCommand_SetVertexBuffers_c(uint32_t InStartSlot, uint32_t InNumBuffers, const rl::VertexBuffer_t* InVertexBuffers, const uint32_t* InStrides, const uint32_t* InOffsets)
+		: StartSlot(InStartSlot)
+		, NumBuffers(InNumBuffers)
+	{
+		memcpy(VertexBuffers, InVertexBuffers, sizeof(rl::VertexBuffer_t) * InNumBuffers);
+		memcpy(Strides, InStrides, sizeof(uint32_t) * InNumBuffers);
+		memcpy(Offsets, InOffsets, sizeof(uint32_t) * InNumBuffers);
+	}
+	void Execute(rl::CommandList* CL)
+	{
+		CL->SetVertexBuffers(StartSlot, NumBuffers, VertexBuffers, Strides, Offsets);
+	}
+};
+
+class GPUCommand_SetIndexBuffer_c : public GPUCommand_c
+{
+	rl::IndexBuffer_t Buffer;
+	rl::RenderFormat Format;
+	uint32_t IndexCount;
+
+public:
+	GPUCommand_SetIndexBuffer_c(rl::IndexBuffer_t InBuffer, rl::RenderFormat InFormat, uint32_t InIndexCount)
+		: Buffer(InBuffer)
+		, Format(InFormat)
+		, IndexCount(InIndexCount)
+	{}
+	void Execute(rl::CommandList* CL)
+	{
+		CL->SetIndexBuffer(Buffer, Format, IndexCount);
+	}
+};
+
+class GPUPass_c
+{
+	uint32_t StartCommandIndex;
+	uint32_t CommandCount;
+public:
+
+	GPUPass_c(uint32_t InStartCommandIndex, uint32_t InCommandCount)
+		: StartCommandIndex(InStartCommandIndex)
+		, CommandCount(InCommandCount)
+	{
+	}
+
+	uint32_t GetStartCommandIndex() const { return StartCommandIndex; }
+	uint32_t GetCommandCount() const { return CommandCount; }
+};
+
+void GPUContext_s::AddPass(uint32_t StartCommandIndex, uint32_t CommandCount)
+{
+	Passes.push_back(new GPUPass_c(StartCommandIndex, CommandCount));
+}
+
 GPUContext_s::~GPUContext_s()
 {
 	for (GPUCommand_c* Command : Commands)
 	{
 		delete Command;
-	};
+	}
+
+	for(GPUPass_c * Pass : Passes)
+	{
+		delete Pass;
+	}
 }
 
 void GPUContext_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 {
 	const size_t CommandCount = Commands.size();
 	const size_t CommandsPerList = 100;
-	const size_t NumCommandLists = CommandCount / CommandsPerList;
-	const size_t LeftoverCommands = CommandCount % CommandsPerList;
+
+	struct ThreadInfo
+	{
+		size_t StartCommandIndex;
+		size_t CommandCount;
+	};
+	std::vector<ThreadInfo> ThreadInfos;
+
+	// Theoretical upper bound if all passes fit perfectly.
+	ThreadInfos.reserve(DivideRoundUp(CommandCount, CommandsPerList));
+
+	size_t CurrentStartCommandIndex = 0;
+	size_t CurrentCommandCount = 0;
+	for(GPUPass_c* Pass : Passes)
+	{
+		const size_t PassStartCommandIndex = Pass->GetStartCommandIndex();
+		const size_t PassCommandCount = Pass->GetCommandCount();
+
+		CurrentCommandCount += PassCommandCount;
+
+		if (CurrentCommandCount >= CommandsPerList)
+		{
+			ThreadInfos.emplace_back(CurrentStartCommandIndex, CurrentCommandCount);
+			CurrentStartCommandIndex += CurrentCommandCount;
+			CurrentCommandCount = 0;
+		}
+	}
+	
+	// Handle any leftover commands that didn't fill a full command list
+	if (CurrentCommandCount > 0)
+	{
+		ThreadInfos.emplace_back(CurrentStartCommandIndex, CurrentCommandCount);
+	}
+
+	const size_t NumCommandLists = ThreadInfos.size();
 
 	std::vector<std::thread> CommandListThreads;
 	CommandListThreads.reserve(NumCommandLists);
 
-	// Kick off command list recording
-	for (size_t ThreadIt = 0; ThreadIt < NumCommandLists; ++ThreadIt)
+	for (size_t ThreadIt = 0; ThreadIt < ThreadInfos.size(); ++ThreadIt)
 	{
 		rl::CommandList* CL = CLGroup->CreateCommandList();
-		CommandListThreads.emplace_back([=, this]()
+		CommandListThreads.emplace_back([&ThreadInfos, ThreadIt, CL, this]()
 		{
-			const size_t StartCommandIndex = ThreadIt * CommandsPerList;
-			const size_t NumCommandsToExecute = ThreadIt == (NumCommandLists - 1) ? (CommandsPerList + LeftoverCommands) : CommandsPerList;
-			const size_t EndCommandIndex = StartCommandIndex + NumCommandsToExecute;
+			const size_t StartCommandIndex = ThreadInfos[ThreadIt].StartCommandIndex;
+			const size_t EndCommandIndex = StartCommandIndex + ThreadInfos[ThreadIt].CommandCount;
 
-			for(size_t CommandIt = StartCommandIndex; CommandIt < EndCommandIndex; ++CommandIt)
+			for (size_t CommandIt = StartCommandIndex; CommandIt < EndCommandIndex; ++CommandIt)
 			{
 				Commands[CommandIt]->Execute(CL);
 			}
@@ -413,6 +534,21 @@ void GPUContext_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 	{
 		CommandListThread.join();
 	}
+}
+
+void GPUContext_s::BeginPass()
+{
+	ASSERTMSG(CurrentPassIndex == -1, "Cannot begin a new pass before ending the current one.");
+	CurrentPassIndex = static_cast<int32_t>(Commands.size());
+}
+
+void GPUContext_s::EndPass()
+{
+	ASSERTMSG(CurrentPassIndex != -1, "Cannot end a pass before beginning one.");
+	const uint32_t StartCommandIndex = static_cast<uint32_t>(CurrentPassIndex);
+	const uint32_t EndCommandIndex = static_cast<uint32_t>(Commands.size());
+	AddPass(StartCommandIndex, EndCommandIndex - StartCommandIndex);
+	CurrentPassIndex = -1;
 }
 
 void GPUContext_s::SetRootSignature()
@@ -432,11 +568,13 @@ void GPUContext_s::SetComputeRootSignature(rl::RootSignature_t RootSignature)
 
 void GPUContext_s::SetRenderTargets(rl::RenderTargetView_t* RTVs, size_t NumRTVs, rl::DepthStencilView_t DSV)
 {
+	ASSERTMSG(NumRTVs <= 8, "NumRTVs must be 8 max");
 	AddCommand<GPUCommand_SetRenderTargets_c>(RTVs, NumRTVs, DSV);
 }
 
 void GPUContext_s::SetViewports(rl::Viewport* Viewports, size_t NumViewports)
 {
+	ASSERTMSG(NumViewports <= 8, "NumViewports must be 8 max");
 	AddCommand<GPUCommand_SetViewports_c>(Viewports, NumViewports);
 }
 
@@ -452,6 +590,7 @@ void GPUContext_s::SetDefaultScissor()
 
 void GPUContext_s::SetScissorRects(rl::ScissorRect* ScissorRects, size_t NumScissorRects)
 {
+	ASSERTMSG(NumScissorRects <= 8, "NumScissorRects must be 8 max");
 	AddCommand<GPUCommand_SetScissorRects_c>(ScissorRects, NumScissorRects);
 }
 
@@ -473,6 +612,11 @@ void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, rl::ConstantBu
 void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, rl::DynamicBuffer_t CBV)
 {
 	AddCommand<GPUCommand_SetComputeRootCBV_c<rl::DynamicBuffer_t>>(RootParameterIndex, CBV);
+}
+
+void GPUContext_s::SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV)
+{
+	AddCommand<GPUCommand_SetComputeRootSRV_c<rl::RaytracingScene_t>>(RootParameterIndex, SRV);
 }
 
 void GPUContext_s::SetGraphicsRootValue(uint32_t RootParameterIndex, uint32_t OffsetIn32BitValues, uint32_t Value)
@@ -500,9 +644,19 @@ void GPUContext_s::SetPipelineState(rl::ComputePipelineState_t PSO)
 	AddCommand<GPUCommand_SetPipelineState_c<rl::ComputePipelineState_t>>(PSO);
 }
 
+void GPUContext_s::SetPipelineState(rl::RaytracingPipelineState_t PSO)
+{
+	AddCommand<GPUCommand_SetPipelineState_c<rl::RaytracingPipelineState_t>>(PSO);
+}
+
 void GPUContext_s::DrawInstanced(uint32_t VertexCountPerInstance, uint32_t InstanceCount, uint32_t StartVertexLocation, uint32_t StartInstanceLocation)
 {
 	AddCommand<GPUCommand_DrawInstanced_c>(VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation);
+}
+
+void GPUContext_s::DrawIndexedInstanced(uint32_t IndexCountPerInstance, uint32_t InstanceCount, uint32_t StartIndexLocation, int32_t BaseVertexLocation, uint32_t StartInstanceLocation)
+{
+	AddCommand<GPUCommand_DrawIndexedInstanced_c>(IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
 }
 
 void GPUContext_s::Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ)
@@ -538,4 +692,20 @@ void GPUContext_s::ClearRenderTarget(rl::RenderTargetView_t RTV, const float Col
 void GPUContext_s::ClearDepth(rl::DepthStencilView_t DSV, float Depth)
 {
 	AddCommand<GPUCommand_ClearDepth_c>(DSV, Depth);
+}
+
+void GPUContext_s::SetVertexBuffer(uint32_t Slot, rl::VertexBuffer_t VertexBuffer, uint32_t Stride, uint32_t Offset)
+{
+	AddCommand<GPUCommand_SetVertexBuffers_c>(Slot, 1, &VertexBuffer, &Stride, &Offset);
+}
+
+void GPUContext_s::SetVertexBuffers(uint32_t StartSlot, uint32_t NumBuffers, const rl::VertexBuffer_t* VertexBuffers, const uint32_t* Strides, const uint32_t* Offsets)
+{
+	ASSERTMSG(NumBuffers <= 8, "StartSlot must be 8 max");
+	AddCommand<GPUCommand_SetVertexBuffers_c>(StartSlot, NumBuffers, VertexBuffers, Strides, Offsets);
+}
+
+void GPUContext_s::SetIndexBuffer(rl::IndexBuffer_t Buffer, rl::RenderFormat Format, uint32_t Indexcount)
+{
+	AddCommand<GPUCommand_SetIndexBuffer_c>(Buffer, Format, Indexcount);
 }

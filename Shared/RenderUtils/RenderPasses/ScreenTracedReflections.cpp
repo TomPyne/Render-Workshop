@@ -2,6 +2,7 @@
 
 #include <imgui.h>
 #include <Render/Render.h>
+#include <RenderUtils/GPUContext/GPUContext.h>
 
 struct STRUniforms_s
 {
@@ -63,7 +64,7 @@ RenderGraphResourceHandle_t ScreenTracedReflectionRenderer_s::GenerateSTRTexture
 		.AccessResource(SceneColor, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneNormal, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(STRTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-		.SetExecuteCallback([=](RenderGraph_s& RG, rl::CommandList* CL)
+		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			STRUniforms_s Uniforms;
 			Uniforms.Projection = Projection;
@@ -83,14 +84,14 @@ RenderGraphResourceHandle_t ScreenTracedReflectionRenderer_s::GenerateSTRTexture
 			Uniforms.Jitter = Jitter;
 			Uniforms.NearPlane = NearPlane;
 
-			CL->SetRootSignature();
-			CL->SetComputeRootDescriptorTable(UAVTableSlot);
-			CL->SetComputeRootDescriptorTable(SRVTableSlot);
-			CL->SetComputeRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&Uniforms));
+			Ctx.SetRootSignature();
+			Ctx.SetComputeRootDescriptorTable(UAVTableSlot);
+			Ctx.SetComputeRootDescriptorTable(SRVTableSlot);
+			Ctx.SetComputeRootCBV(CBVRootSlot, rl::CreateDynamicConstantBuffer(&Uniforms));
 
-			CL->SetPipelineState(STRPSO);
+			Ctx.SetPipelineState(STRPSO);
 
-			CL->Dispatch(DivideRoundUp(ScreenDim.x, 8u), DivideRoundUp(ScreenDim.y, 8u), 1u);
+			Ctx.Dispatch(DivideRoundUp(ScreenDim.x, 8u), DivideRoundUp(ScreenDim.y, 8u), 1u);
 		});
 
 	return STRTexture;
