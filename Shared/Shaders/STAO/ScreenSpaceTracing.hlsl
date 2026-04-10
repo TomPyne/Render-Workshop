@@ -10,7 +10,7 @@ struct ConstantData
     uint DepthTextureIndex;
     uint NormalTextureIndex;
     uint OutputTextureIndex;
-    float __pad0;
+    uint FrameCount;
 
     float2 ViewportSizeRcp;
     uint2 ViewportSize;
@@ -39,14 +39,14 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     if(any(DispatchThreadId.xy >= c_G.ViewportSize))
         return;
 
-    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2(DispatchThreadId.xy % 8));    
+    const float3 RandomHemiTangentSpace = GetRandomHemisphere_Cosine(float2((DispatchThreadId.xy % 8) + c_G.FrameCount));    
 
     const float3 Normal = t_tex2d_f4[c_G.NormalTextureIndex].Load(uint3(DispatchThreadId.xy, 0)).xyz;
     const float3x3 TBN = ComputeBasisMatrix(Normal);
 
     float3 SampleDirWorldSpace = mul(TBN, RandomHemiTangentSpace);
 
-    float3 DirectionViewSpace = -normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
+    float3 DirectionViewSpace = normalize(mul((float3x3)c_G.View, SampleDirWorldSpace).xyz);
 
     float2 StartPixel = float2(DispatchThreadId.xy) + 0.5;
     float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(DispatchThreadId.xy, 0));

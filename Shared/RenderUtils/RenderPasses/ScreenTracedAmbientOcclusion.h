@@ -24,6 +24,8 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 	float Stride = 1.0f;
 	float Jitter = 0.0f;
 
+	uint32_t FrameCount = 0;
+
 	void Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, uint32_t InCBVRootSlot, uint32_t InCBVSlot);
 
 	RenderGraphResourceHandle_t GenerateSTAOTexture(

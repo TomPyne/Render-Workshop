@@ -548,7 +548,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 				matrix CamToWorld;
 
 				float3 SunDirection;
-				float SunSoftAngle;;
+				float SunSoftAngle;
 
 				float2 ScreenResolution;
 				uint32_t SceneDepthTextureIndex;

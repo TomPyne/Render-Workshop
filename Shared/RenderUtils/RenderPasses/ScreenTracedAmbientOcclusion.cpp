@@ -13,7 +13,7 @@ struct STAOUniforms_s
 	uint32_t DepthTextureIndex;
 	uint32_t NormalTextureIndex;
 	uint32_t OutputTextureIndex;
-	float __Pad0;
+	uint32_t FrameCount;
 
 	float2 ViewportSizeRcp;
 	uint2 ViewportSize;
@@ -56,6 +56,8 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 	uint2 ScreenDim,
 	float NearPlane)
 {
+	FrameCount++;
+
 	RenderGraphResourceHandle_t STAOTexture = RGBuilder.CreateTexture(ScreenDim.x, ScreenDim.y, rl::RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"STAOTexture");
 
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"STAO Pass")
@@ -71,6 +73,7 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 		Uniforms.DepthTextureIndex = RG.GetSRVIndex(SceneDepth);
 		Uniforms.NormalTextureIndex = RG.GetSRVIndex(SceneNormal);
 		Uniforms.OutputTextureIndex = RG.GetUAVIndex(STAOTexture);
+		Uniforms.FrameCount = FrameCount;
 		Uniforms.ViewportSizeRcp = float2(1.0f / (float)ScreenDim.x, 1.0f / (float)ScreenDim.y);
 		Uniforms.ViewportSize = ScreenDim;
 		Uniforms.Thickness = Thickness;
