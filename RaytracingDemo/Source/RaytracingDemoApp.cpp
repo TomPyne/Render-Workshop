@@ -11,6 +11,7 @@
 #include <Logging/Logging.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
+#include <RenderUtils/RenderPasses/DisocclusionRenderPass.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
 #include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
 #include <RenderUtils/RenderPasses/ScreenTracedReflections.h>
@@ -77,6 +78,7 @@ struct Globals_s
 	ComputePipelineStatePtr UAVClearF1PSO;
 	ComputePipelineStatePtr UAVClearF2PSO;
 	ComputePipelineStatePtr ShadowDenoisePSO;
+	ComputePipelineStatePtr ShadowTemporalRecombinePSO;
 	RaytracingPipelineStatePtr RTPSO;
 
 	// RT Root Signature
@@ -89,12 +91,13 @@ struct Globals_s
 	SkyRenderer_s SkyRenderer;
 	ScreenTracedAmbientOcclusionRenderer_s STAORenderer;
 	ScreenTracedReflectionRenderer_s STReflectionRenderer;
+	DisocclusionRenderPass_s DisocclusionPass;
 
 	RTDMaterial_s DefaultMaterial = {};
 
 	RaytracingShaderTablePtr RaytracingShaderTable = {};
 
-	bool UseMeshShaders = false;
+	bool UseMeshShaders = true;
 	bool ShowMeshID = false;
 	bool ShowShadows = true;
 	int32_t DrawMode = 0;
@@ -287,6 +290,15 @@ bool InitializeApp()
 		G.ShadowDenoisePSO = CreateComputePipelineState(PsoDesc);
 	}
 
+	// Shadow Temporal Recombine PSO
+	{
+		ComputeShader_t ShadowTemporalRecombineCS = CreateComputeShader("RaytracingDemo/Shaders/ShadowTemporalRecombine.hlsl");
+		ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = ShadowTemporalRecombineCS;
+		PsoDesc.DebugName = L"ShadowTemporalRecombine";
+		G.ShadowTemporalRecombinePSO = CreateComputePipelineState(PsoDesc);
+	}
+
 	// RT PSO
 	{
 		RootSignatureDesc RTRootSignatureDesc = {};
@@ -316,6 +328,7 @@ bool InitializeApp()
 	G.SkyRenderer.Init(GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.STAORenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.STReflectionRenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
+	G.DisocclusionPass.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
@@ -342,6 +355,8 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneConfidenceHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidenceHistory");
 	G.SceneShadowHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneShadowHistory");
 	G.SceneDepthHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthHistory");
+
+	G.DisocclusionPass.Resize(G.ScreenWidth, G.ScreenHeight);
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -533,8 +548,10 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 	// Draw RT shadows or clear RT shadows
 
+	RenderGraphResourceHandle_t DepthHistoryTexture = RGBuilder.InjectTexture(G.SceneDepthHistoryRGTexture, L"PrevFrameDepth");
 	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"CurrentFrameShadow");
-	RenderGraphResourceHandle_t ConfidenceTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidence");
+
+	RenderGraphResourceHandle_t ConfidenceTexture = G.DisocclusionPass.AddPass(RGBuilder, SceneDepthTexture, DepthHistoryTexture, SceneVelocityTexture, ViewProjection, G.PrevViewProjection, uint2(G.ScreenWidth, G.ScreenHeight));
 
 	if (G.ShowShadows)
 	{
@@ -583,75 +600,52 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			Ctx.DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
 		});
 
-		RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(G.SceneShadowHistoryRGTexture, L"PrevFrameShadow");
-		RenderGraphResourceHandle_t DepthHistoryTexture = RGBuilder.InjectTexture(G.SceneDepthHistoryRGTexture, L"PrevFrameDepth");
-		RenderGraphResourceHandle_t ConfidenceHistoryTexture = RGBuilder.InjectTexture(G.SceneConfidenceHistoryRGTexture, L"PrevFrameConfidence");
+		RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(G.SceneShadowHistoryRGTexture, L"PrevFrameShadow");		
 
-		RenderGraphPass_s& RTShadowsDenoisePass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"RT Shadows Denoise")
-		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(DepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		RenderGraphPass_s& RTShadowTemporalRecombinePass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"RT Shadow Temporal Recombine")
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-		.AccessResource(ConfidenceHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
-			struct DenoiseUniforms_s
+			struct TemporalRecombineUniforms_s
 			{
-				matrix CamToWorld;
-
-				matrix PrevCamToWorld;
-
-				matrix ClipToPrevClip;
-
-				uint32_t DepthTextureIndex;
-				uint32_t PrevFrameDepthTextureIndex;
+				uint32_t ConfidenceTextureIndex;
 				uint32_t ShadowTextureIndex;
 				uint32_t PrevFrameShadowTextureIndex;
-
-				uint32_t ConfidenceTextureIndex;
-				uint32_t PrevConfidenceTextureIndex;
 				uint32_t VelocityTextureIndex;
-				uint32_t DebugTextureIndex;
 
 				float2 ViewportSizeRcp;
-				uint32_t ViewportWidth;
-				uint32_t ViewportHeight;
-			} DenoiseUniforms;
+				uint2 ViewportSize;
+					
+			} TemporalRecombineUniforms;
 
-			DenoiseUniforms.CamToWorld = InverseMatrix(ViewProjection);
-			DenoiseUniforms.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
-			DenoiseUniforms.ClipToPrevClip = DenoiseUniforms.PrevCamToWorld * G.PrevViewProjection;
-			DenoiseUniforms.DepthTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneDepthTexture));
-			DenoiseUniforms.PrevFrameDepthTextureIndex = GetDescriptorIndex(RG.GetSRV(DepthHistoryTexture));
-			DenoiseUniforms.ShadowTextureIndex = GetDescriptorIndex(RG.GetUAV(ShadowTexture));
-			DenoiseUniforms.PrevFrameShadowTextureIndex = GetDescriptorIndex(RG.GetSRV(ShadowHistoryTexture));
-			DenoiseUniforms.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetUAV(ConfidenceTexture));
-			DenoiseUniforms.PrevConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceHistoryTexture));
-			DenoiseUniforms.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
-			DenoiseUniforms.DebugTextureIndex = 0;
-			DenoiseUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
-			DenoiseUniforms.ViewportWidth = G.ScreenWidth;
-			DenoiseUniforms.ViewportHeight = G.ScreenHeight;
+			TemporalRecombineUniforms.ConfidenceTextureIndex = RG.GetSRVIndex(ConfidenceTexture);
+			TemporalRecombineUniforms.ShadowTextureIndex = RG.GetUAVIndex(ShadowTexture);
+			TemporalRecombineUniforms.PrevFrameShadowTextureIndex = RG.GetSRVIndex(ShadowHistoryTexture);
+			TemporalRecombineUniforms.VelocityTextureIndex = RG.GetSRVIndex(SceneVelocityTexture);
+			TemporalRecombineUniforms.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
+			TemporalRecombineUniforms.ViewportSize = uint2(G.ScreenWidth, G.ScreenHeight);
 
-			DynamicBuffer_t DenoiseCBuf = CreateDynamicConstantBuffer(&DenoiseUniforms);
+			DynamicBuffer_t TemporalRecombineCBuf = CreateDynamicConstantBuffer(&TemporalRecombineUniforms);
 
 			Ctx.SetRootSignature();
+
+			Ctx.RWBarrier(RG.GetTexture(ShadowTexture)); // TODO: this should be handled by the graph
 
 			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
 			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 
-			Ctx.SetPipelineState(G.ShadowDenoisePSO);
+			Ctx.SetPipelineState(G.ShadowTemporalRecombinePSO);
 
-			Ctx.SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, DenoiseCBuf);
+			Ctx.SetComputeRootCBV(GlobalRootSigSlots::RS_VIEW_BUF, TemporalRecombineCBuf);
 
-			Ctx.Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1u);
+			Ctx.Dispatch(DivideRoundUp(G.ScreenWidth, 8u), DivideRoundUp(G.ScreenHeight, 8u), 1);
 		});
 
 		RGBuilder.QueueTextureCopy(ShadowHistoryTexture, ShadowTexture);
-		RGBuilder.QueueTextureCopy(DepthHistoryTexture, SceneDepthTexture);
-		RGBuilder.QueueTextureCopy(ConfidenceHistoryTexture, ConfidenceTexture);
+		RGBuilder.QueueTextureCopy(DepthHistoryTexture, SceneDepthTexture);		
 	}
 	else
 	{

@@ -1,6 +1,10 @@
 #include "../Util/Random.h"
 #include "../Util/Transforms.h"
 
+#ifndef CBV_SLOT
+#error Please define CBV_SLOT
+#endif
+
 struct ConstantData
 {
     float4x4 Projection;

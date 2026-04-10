@@ -14,6 +14,7 @@ private:
 	template<class CommandType, class... Args>
 	void AddCommand(Args&&... args)
 	{
+		// Allocation strategy could be better if we alloc in chunks
 		Commands.push_back(new CommandType(std::forward<Args>(args)...));
 	}
 
@@ -55,6 +56,7 @@ public:
 	void DispatchRays(rl::RaytracingShaderTable_t ShaderTable, uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
 	void CopyTexture(rl::Texture_t Dst, rl::Texture_t Src);
 	void TransitionResource(rl::Texture_t Texture, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState);
+	void RWBarrier(rl::Texture_t Texture);
 	void ClearRenderTarget(rl::RenderTargetView_t RTV, const float Color[4]);
 	void ClearDepth(rl::DepthStencilView_t DSV, float Depth);
 	void SetVertexBuffer(uint32_t Slot, rl::VertexBuffer_t VertexBuffer, uint32_t Stride, uint32_t Offset);

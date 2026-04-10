@@ -361,6 +361,21 @@ public:
 	}
 };
 
+class GPUCommand_RWBarrier_c : public GPUCommand_c
+{
+	rl::Texture_t Texture;
+
+public:
+	GPUCommand_RWBarrier_c(rl::Texture_t InTexture)
+		: Texture(InTexture)
+	{}
+
+	void Execute(rl::CommandList* CL)
+	{
+		CL->UAVBarrier(Texture);
+	}
+};
+
 class GPUCommand_ClearRenderTarget_c : public GPUCommand_c
 {
 	rl::RenderTargetView_t RTV;
@@ -682,6 +697,11 @@ void GPUContext_s::CopyTexture(rl::Texture_t Dst, rl::Texture_t Src)
 void GPUContext_s::TransitionResource(rl::Texture_t Texture, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState)
 {
 	AddCommand<GPUCommand_TransitionResource_c>(Texture, BeforeState, AfterState);
+}
+
+void GPUContext_s::RWBarrier(rl::Texture_t Texture)
+{
+	AddCommand<GPUCommand_RWBarrier_c>(Texture);
 }
 
 void GPUContext_s::ClearRenderTarget(rl::RenderTargetView_t RTV, const float Color[4])

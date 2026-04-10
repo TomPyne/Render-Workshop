@@ -206,6 +206,7 @@ struct RenderGraph_s
 	rl::RenderTargetView_t GetRTV(RenderGraphResourceHandle_t Resource);
 	rl::DepthStencilView_t GetDSV(RenderGraphResourceHandle_t Resource);
 	rl::UnorderedAccessView_t GetUAV(RenderGraphResourceHandle_t Resource);
+	rl::Texture_t GetTexture(RenderGraphResourceHandle_t Resource);
 
 	uint32_t GetSRVIndex(RenderGraphResourceHandle_t Resource);
 	uint32_t GetUAVIndex(RenderGraphResourceHandle_t Resource);

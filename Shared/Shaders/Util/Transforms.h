@@ -4,6 +4,14 @@
 * Library of general transforms
 */
 
+float3 GetWorldPosFromScreen(float4x4 CamToWorld, float2 ScreenPos, float Depth)
+{
+    ScreenPos.y = -ScreenPos.y;
+    float4 ProjectedPos = float4(ScreenPos, Depth,  1.0f);
+    float4 Unprojected = mul(CamToWorld, ProjectedPos);
+    return Unprojected.xyz / Unprojected.w;
+}
+
 float3 GetViewPosFromScreen(float2 Pixel, float Depth, float4x4 InverseProjection, float2 ViewportSizeRcp)
 {    
     float2 NDC = (Pixel * ViewportSizeRcp) * 2.0f - 1.0f;

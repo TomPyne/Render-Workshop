@@ -28,6 +28,8 @@ add_library(Shared
             "Profiling/ScopeTimer.h"
             "RenderUtils/GPUContext/GPUContext.cpp"
             "RenderUtils/GPUContext/GPUContext.h"
+            "RenderUtils/RenderPasses/DisocclusionRenderPass.cpp"
+            "RenderUtils/RenderPasses/DisocclusionRenderPass.h"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.cpp"
             "RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h"
             "RenderUtils/RenderPasses/ScreenTracedReflections.cpp"
