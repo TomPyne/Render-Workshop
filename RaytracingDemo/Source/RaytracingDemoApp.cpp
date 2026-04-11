@@ -357,6 +357,7 @@ void ResizeApp(uint32_t width, uint32_t height)
 	G.SceneDepthHistoryRGTexture = CreateRenderGraphTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthHistory");
 
 	G.DisocclusionPass.Resize(G.ScreenWidth, G.ScreenHeight);
+	G.STAORenderer.Resize(G.ScreenWidth, G.ScreenHeight);
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -713,7 +714,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
 
-		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, SceneVelocityTexture, ConfidenceTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 		//RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 		// Debug View

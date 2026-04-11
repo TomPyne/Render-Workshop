@@ -13,6 +13,8 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 	uint32_t SRVTableSlot = 0;
 	uint32_t CBVRootSlot = 0;
 
+	RenderGraphTexturePtr_t AOHistory = {};
+
 	bool Ready = false;
 
 	bool MenuOpen = false;
@@ -32,11 +34,14 @@ struct ScreenTracedAmbientOcclusionRenderer_s
 		RenderGraphBuilder_s& RGBuilder, 
 		RenderGraphResourceHandle_t SceneDepth,
 		RenderGraphResourceHandle_t SceneNormal,
+		RenderGraphResourceHandle_t SceneVelocity,
+		RenderGraphResourceHandle_t Confidence,
 		const matrix& Projection,
-		const matrix& PixelProjection,
 		const matrix& View,
 		uint2 ScreenDim,
 		float NearPlane);
+
+	void Resize(uint32_t Width, uint32_t Height);
 
 	void DrawImGuiMenu();
 };

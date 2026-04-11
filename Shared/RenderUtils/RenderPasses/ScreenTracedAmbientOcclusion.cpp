@@ -15,6 +15,11 @@ struct STAOUniforms_s
 	uint32_t OutputTextureIndex;
 	uint32_t FrameCount;
 
+	uint32_t VelocityTextureIndex;
+	uint32_t ConfidenceTextureIndex;
+	uint32_t HistoryTextureIndex;
+	float __Pad0;
+
 	float2 ViewportSizeRcp;
 	uint2 ViewportSize;
 
@@ -50,19 +55,24 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 	RenderGraphBuilder_s& RGBuilder,
 	RenderGraphResourceHandle_t SceneDepth,
 	RenderGraphResourceHandle_t SceneNormal,
+	RenderGraphResourceHandle_t SceneVelocity,
+	RenderGraphResourceHandle_t Confidence,
 	const matrix& Projection,
-	const matrix& PixelProjection,
 	const matrix& View,
 	uint2 ScreenDim,
 	float NearPlane)
 {
 	FrameCount++;
 
-	RenderGraphResourceHandle_t STAOTexture = RGBuilder.CreateTexture(ScreenDim.x, ScreenDim.y, rl::RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"STAOTexture");
+	RenderGraphResourceHandle_t STAOTexture = RGBuilder.CreateTexture(ScreenDim.x, ScreenDim.y, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"STAOTexture");
+	RenderGraphResourceHandle_t AOHistoryTexture = RGBuilder.InjectTexture(AOHistory, L"AOHistory");
 
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"STAO Pass")
 	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormal, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneVelocity, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(Confidence, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(AOHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(STAOTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -74,6 +84,9 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 		Uniforms.NormalTextureIndex = RG.GetSRVIndex(SceneNormal);
 		Uniforms.OutputTextureIndex = RG.GetUAVIndex(STAOTexture);
 		Uniforms.FrameCount = FrameCount;
+		Uniforms.VelocityTextureIndex = RG.GetSRVIndex(SceneVelocity);
+		Uniforms.ConfidenceTextureIndex = RG.GetSRVIndex(Confidence);
+		Uniforms.HistoryTextureIndex = RG.GetSRVIndex(AOHistoryTexture);
 		Uniforms.ViewportSizeRcp = float2(1.0f / (float)ScreenDim.x, 1.0f / (float)ScreenDim.y);
 		Uniforms.ViewportSize = ScreenDim;
 		Uniforms.Thickness = Thickness;
@@ -94,7 +107,14 @@ RenderGraphResourceHandle_t ScreenTracedAmbientOcclusionRenderer_s::GenerateSTAO
 		Ctx.Dispatch(DivideRoundUp(ScreenDim.x, 8u), DivideRoundUp(ScreenDim.y, 8u), 1u);
 	});
 
+	RGBuilder.QueueTextureCopy(AOHistoryTexture, STAOTexture);
+
 	return STAOTexture;
+}
+
+void ScreenTracedAmbientOcclusionRenderer_s::Resize(uint32_t Width, uint32_t Height)
+{
+	AOHistory = CreateRenderGraphTexture(Width, Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"SceneConfidenceHistory");
 }
 
 void ScreenTracedAmbientOcclusionRenderer_s::DrawImGuiMenu()
