@@ -81,9 +81,8 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     }
 
     float3 Normal = (t_tex2d_f4[c_Deferred.SceneNormalTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rgb);
-    //Normal.x *= -1.0f;
     
-    float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg * float2(0.9, 1.0);
+    float2 RoughnessMetallic = t_tex2d_f2[c_Deferred.SceneRoughnessMetallicTextureIndex].SampleLevel(ClampedSampler, Input.UV, 0u).rg;
     
     float3 Position = GetWorldPosFromScreen(c_Deferred.CamToWorld, Input.SVPosition.xy * c_Deferred.ViewportSizeRcp, Depth);
 
@@ -114,7 +113,11 @@ void main(in PS_INPUT Input, out PS_OUTPUT Output)
     float3 DiffuseTerm = Diffuse * Lambert();
 
     float3 Lighting = (SpecularTerm + DiffuseTerm) * Shadow * 5 * NoL;
+
+    float3 Ambient = lerp(0.5f, 1.5f, saturate(Normal.y)) * DiffuseTerm;
+
+    float3 FinalLighting = Lighting + Ambient;
     
-    Output.Color = float4(Lighting + Diffuse, 1.0f);
+    Output.Color = float4(FinalLighting, 1.0f);
 }
 #endif

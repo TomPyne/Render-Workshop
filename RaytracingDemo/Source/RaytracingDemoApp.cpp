@@ -452,6 +452,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 {
 	float3 SunDirection = GetSunDirection();
 	matrix ViewProjection = G.Cam.GetView() * G.Cam.GetProjection();
+	matrix InverseViewProjection = InverseMatrix(ViewProjection);
 
 	const bool bCameraMoved = ViewProjection != G.PrevViewProjection;
 
@@ -581,7 +582,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 				float __pad[2];
 			} RayUniforms;
 
-			RayUniforms.CamToWorld = InverseMatrix(ViewProjection);
+			RayUniforms.CamToWorld = InverseViewProjection;
 			RayUniforms.SunDirection = SunDirection;
 			RayUniforms.SunSoftAngle = G.SunSoftAngle;
 			RayUniforms.ScreenResolution = float2((float)G.ScreenWidth, (float)G.ScreenHeight);
@@ -689,7 +690,6 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	struct DeferredConstants_s
 	{
 		matrix CamToWorld;
-		matrix PrevCamToWorld;
 
 		uint32_t SceneColorTextureIndex;
 		uint32_t SceneNormalTextureIndex;
@@ -717,8 +717,6 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
 
-		//RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
-
 		// Debug View
 		RenderGraphPass_s& DebugViewPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Debug View Pass")
 		.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -734,8 +732,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		{
 			DeferredConstants_s DeferredConsts;
 
-			DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
-			DeferredConsts.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+			DeferredConsts.CamToWorld = InverseViewProjection;
 			DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneColorTexture));
 			DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneNormalTexture));
 			DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneRoughnessMetallicTexture));
@@ -769,8 +766,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		{
 			DeferredConstants_s DeferredConsts;
 
-			DeferredConsts.CamToWorld = InverseMatrix(ViewProjection);
-			DeferredConsts.PrevCamToWorld = InverseMatrix(G.PrevViewProjection);
+			DeferredConsts.CamToWorld = InverseViewProjection;
 			DeferredConsts.SceneColorTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneColorTexture));
 			DeferredConsts.SceneNormalTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneNormalTexture));
 			DeferredConsts.SceneRoughnessMetallicTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneRoughnessMetallicTexture));
@@ -789,6 +785,9 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			FullScreenPassVSPS(RG, Ctx, SceneLit, G.DeferredPSO, DeferredCBuf);
 		});
 	}
+
+	RenderGraphResourceHandle_t SSRTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneLit, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+	G.STReflectionRenderer.CombineSTR(RGBuilder, SceneLit, SceneDepthTexture, SceneNormalTexture, SceneRoughnessMetallicTexture, SSRTexture, InverseViewProjection, G.Cam.GetPosition(), uint2(G.ScreenWidth, G.ScreenHeight));
 
 	G.BloomPass.AddPass(RGBuilder, SceneLit);
 

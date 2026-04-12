@@ -3,7 +3,6 @@
 struct DeferredData
 {
     float4x4 CamToWorld;
-    float4x4 PrevCamToWorld;
 
     uint SceneColorTextureIndex;
     uint SceneNormalTextureIndex;

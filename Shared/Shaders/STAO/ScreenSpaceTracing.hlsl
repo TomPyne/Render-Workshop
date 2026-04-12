@@ -64,7 +64,7 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     float Depth = t_tex2d_f1[c_G.DepthTextureIndex].Load(uint3(DispatchThreadId.xy, 0));
     float3 OriginViewSpace = GetViewPosFromScreen(StartPixel, Depth, c_G.InverseProjection, c_G.ViewportSizeRcp);
 
-    OriginViewSpace += DirectionViewSpace * 0.1f;
+    OriginViewSpace += DirectionViewSpace * 0.05f;
 
     float3 HitPoint;
     float2 HitPixel;

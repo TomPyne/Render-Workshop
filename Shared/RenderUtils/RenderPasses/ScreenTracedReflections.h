@@ -8,6 +8,7 @@
 struct ScreenTracedReflectionRenderer_s
 {
 	rl::ComputePipelineStatePtr STRPSO = {};
+	rl::ComputePipelineStatePtr STRCombinePSO = {};
 
 	uint32_t UAVTableSlot = 0;
 	uint32_t SRVTableSlot = 0;
@@ -32,10 +33,20 @@ struct ScreenTracedReflectionRenderer_s
 		RenderGraphResourceHandle_t SceneColor,
 		RenderGraphResourceHandle_t SceneNormal,
 		const matrix& Projection,
-		const matrix& PixelProjection,
 		const matrix& View,
 		uint2 ScreenDim,
 		float NearPlane);
+
+	void CombineSTR(
+		RenderGraphBuilder_s& RGBuilder,
+		RenderGraphResourceHandle_t SceneLit,
+		RenderGraphResourceHandle_t SceneDepth,
+		RenderGraphResourceHandle_t SceneNormal,
+		RenderGraphResourceHandle_t SceneRoughnessMetallic,
+		RenderGraphResourceHandle_t Reflection,
+		const matrix& InverseViewProjection,
+		const float3& CamPosition,
+		uint2 ScreenDim);
 
 	void DrawImGuiMenu();
 };
