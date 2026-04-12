@@ -178,19 +178,27 @@ SamplerState s_WrappedSampler : register(s0);
 
 void main(in PixelInputs_s Input, out PixelOutputs_s Output)
 {            
-    float3 Albedo =float3(1.0f, 1.0f, 1.0f);
+    float3 Albedo = float3(1.0f, 1.0f, 1.0f);
+    float Alpha = 1.0f;
     if(c_Material.AlbedoTextureIndex != 0)
     {
-        Albedo *= t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
+        float4 AlbedoAlphaTex = t_Tex2d[c_Material.AlbedoTextureIndex].Sample(s_WrappedSampler, Input.UV);
+        Albedo *= AlbedoAlphaTex.rgb;
+        Alpha *= AlbedoAlphaTex.a;
+    }
+
+    if(Alpha < 0.7)
+    {
+        discard;
     }
 
     float3 Normal = normalize(Input.Normal);
-    if(c_Material.NormalTextureIndex != 0)
+    if(false && c_Material.NormalTextureIndex != 0) // Disabled as this produces NaNs
     {
         float3 TexNormal = t_Tex2d[c_Material.NormalTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
         TexNormal = (2.0f * TexNormal) - float3(1.0f, 1.0f, 1.0f);
 
-        TexNormal.z = sqrt(1.0f - TexNormal.r * TexNormal.r - TexNormal.g * TexNormal.g);
+        TexNormal.z = sqrt(1.0f - (TexNormal.r * TexNormal.r) - TexNormal.g * TexNormal.g);
         float3x3 TangentMatrix = float3x3(normalize(Input.Tangent), normalize(Input.Bitangent), Normal);
 
         Normal = normalize(mul(TexNormal, TangentMatrix));

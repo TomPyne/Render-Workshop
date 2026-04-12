@@ -11,6 +11,7 @@
 #include <Logging/Logging.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
+#include <RenderUtils/RenderPasses/BloomRenderPass.h>
 #include <RenderUtils/RenderPasses/DisocclusionRenderPass.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
 #include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
@@ -92,6 +93,7 @@ struct Globals_s
 	ScreenTracedAmbientOcclusionRenderer_s STAORenderer;
 	ScreenTracedReflectionRenderer_s STReflectionRenderer;
 	DisocclusionRenderPass_s DisocclusionPass;
+	BloomRenderPass_s BloomPass;
 
 	RTDMaterial_s DefaultMaterial = {};
 
@@ -234,7 +236,7 @@ bool InitializeApp()
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
 			.DepthDesc(false)
-			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::None() }, RenderFormat::UNKNOWN)
+			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT }, { BlendMode::None() }, RenderFormat::UNKNOWN)
 			.VertexShader(ScreenPassVS)
 			.PixelShader(DeferredPS);
 
@@ -250,7 +252,7 @@ bool InitializeApp()
 		GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(PrimitiveTopologyType::TRIANGLE, FillMode::SOLID, CullMode::BACK)
 			.DepthDesc(false)
-			.TargetBlendDesc({ RenderFormat::R8G8B8A8_UNORM }, { BlendMode::None() }, RenderFormat::UNKNOWN)
+			.TargetBlendDesc({ RenderFormat::R16G16B16A16_FLOAT }, { BlendMode::None() }, RenderFormat::UNKNOWN)
 			.VertexShader(ScreenPassVS)
 			.PixelShader(DebugViewPS);
 
@@ -329,6 +331,7 @@ bool InitializeApp()
 	G.STAORenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.STReflectionRenderer.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.DisocclusionPass.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
+	G.BloomPass.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
@@ -358,6 +361,7 @@ void ResizeApp(uint32_t width, uint32_t height)
 
 	G.DisocclusionPass.Resize(G.ScreenWidth, G.ScreenHeight);
 	G.STAORenderer.Resize(G.ScreenWidth, G.ScreenHeight);
+	G.BloomPass.Resize(G.ScreenWidth, G.ScreenHeight);
 
 	G.Cam.Resize(G.ScreenWidth, G.ScreenHeight);
 }
@@ -633,8 +637,6 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			Ctx.SetRootSignature();
 
-			Ctx.RWBarrier(RG.GetTexture(ShadowTexture)); // TODO: this should be handled by the graph
-
 			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_UAV_TABLE);
 			Ctx.SetComputeRootDescriptorTable(GlobalRootSigSlots::RS_SRV_TABLE);
 
@@ -682,8 +684,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		});
 	}
 
-	
-	RenderGraphResourceHandle_t SceneColorLDR = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorLDRTexture");
+	RenderGraphResourceHandle_t SceneLit = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV | RenderGraphResourceAccessType_e::UAV, L"SceneLit");
 
 	struct DeferredConstants_s
 	{
@@ -709,12 +710,13 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		float __Pad[3];
 	};
 
+	RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, SceneVelocityTexture, ConfidenceTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+
 	if (G.DrawMode != 0 && G.DrawMode != 7)
 	{
 		static const float ProjectionA = 1000.0f / (1000.0f - 0.1f);
 		static const float ProjectionB = (-1000.0f * 0.1f) / (1000.0f - 0.1f);
 
-		RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, SceneVelocityTexture, ConfidenceTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 		//RenderGraphResourceHandle_t STAOTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneColorTexture, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetPixelProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 		// Debug View
@@ -727,7 +729,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(STAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+		.AccessResource(SceneLit, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			DeferredConstants_s DeferredConsts;
@@ -749,7 +751,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			FullScreenPassVSPS(RG, Ctx, SceneColorLDR, G.DebugViewPSO, DeferredCBuf);
+			FullScreenPassVSPS(RG, Ctx, SceneLit, G.DebugViewPSO, DeferredCBuf);
 		});
 	}
 	else
@@ -761,9 +763,8 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(ConfidenceTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-		.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+		.AccessResource(STAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+		.AccessResource(SceneLit, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 		{
 			DeferredConstants_s DeferredConsts;
@@ -778,21 +779,23 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			DeferredConsts.CamPosition = G.Cam.GetPosition();
 			DeferredConsts.ShadowTexture = GetDescriptorIndex(RG.GetSRV(ShadowTexture));
 			DeferredConsts.SunDirection = SunDirection;
-			DeferredConsts.VelocityTextureIndex = GetDescriptorIndex(RG.GetSRV(SceneVelocityTexture));
-			DeferredConsts.ConfidenceTextureIndex = GetDescriptorIndex(RG.GetSRV(ConfidenceTexture));
+			DeferredConsts.VelocityTextureIndex = 0;// Unused
+			DeferredConsts.ConfidenceTextureIndex = 0; // Unused
 			DeferredConsts.ViewportSizeRcp = float2(1.0f / (float)G.ScreenWidth, 1.0f / (float)G.ScreenHeight);
-			DeferredConsts.STAOTextureIndex = 0;
+			DeferredConsts.STAOTextureIndex = GetDescriptorIndex(RG.GetSRV(STAOTexture));
 
 			DynamicBuffer_t DeferredCBuf = CreateDynamicConstantBuffer(&DeferredConsts);
 
-			FullScreenPassVSPS(RG, Ctx, SceneColorLDR, G.DeferredPSO, DeferredCBuf);
+			FullScreenPassVSPS(RG, Ctx, SceneLit, G.DeferredPSO, DeferredCBuf);
 		});
 	}
+
+	G.BloomPass.AddPass(RGBuilder, SceneLit);
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(View->GetCurrentBackBufferTexture(), View->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Tonemapper (U2)")
-	.AccessResource(SceneColorLDR, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneLit, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(BackBufferTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -804,7 +807,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			float __Pad;
 		} Uniforms;
 
-		Uniforms.InputTexture = RG.GetSRVIndex(SceneColorLDR);
+		Uniforms.InputTexture = RG.GetSRVIndex(SceneLit);
 		Uniforms.WhitePoint = G.WhitePoint;
 		Uniforms.ExposureBias = G.ExposureBias;
 

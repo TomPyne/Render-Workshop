@@ -207,17 +207,12 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 		{
 			if (Resource.Resource != RenderGraphResourceHandle_t::NONE)
 			{
-				
 				if (ResourceReads(Resource.AccessType, Resource.LoadOp) || Resource.IsExtracted)
 				{
-					if (GetResourceDesc(Resource.Resource).IsInjected)
-					{
-						Resource.Producer = RenderGraphPassHandle_t::NONE;
-					}
-					else
-					{
-						Resource.Producer = LastWrittenBy[static_cast<uint32_t>(Resource.Resource) - 1];
+					Resource.Producer = LastWrittenBy[static_cast<uint32_t>(Resource.Resource) - 1];
 
+					if (!GetResourceDesc(Resource.Resource).IsInjected)
+					{
 						ENSUREMSG(Resource.Producer != RenderGraphPassHandle_t::NONE, "Pass failed to find a valid producer for a read");
 					}
 				}
@@ -382,7 +377,11 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 				continue;
 			}
 
-			// Transitions
+			if (Resource.Texture->CurrentState == rl::ResourceTransitionState::UNORDERED_ACCESS && ResourceUsage.DesiredState == rl::ResourceTransitionState::UNORDERED_ACCESS)
+			{
+				Ctx.RWBarrier(Resource.Texture->Texture);
+			}
+
 			if(Resource.Texture->CurrentState != ResourceUsage.DesiredState && !ResourceUsage.IsExtracted)
 			{
 				Ctx.TransitionResource(Resource.Texture->Texture, Resource.Texture->CurrentState, ResourceUsage.DesiredState);
