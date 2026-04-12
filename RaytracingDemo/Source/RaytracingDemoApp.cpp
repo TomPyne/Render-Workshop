@@ -529,11 +529,11 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	}
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
-	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, G.ShowSky ? RenderGraphLoadOp_e::LOAD : RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneNormalTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneRoughnessMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
-	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, G.ShowSky ? RenderGraphLoadOp_e::LOAD : RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct
