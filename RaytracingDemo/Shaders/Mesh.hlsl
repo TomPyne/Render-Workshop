@@ -193,13 +193,16 @@ void main(in PixelInputs_s Input, out PixelOutputs_s Output)
     }
 
     float3 Normal = normalize(Input.Normal);
-    if(false && c_Material.NormalTextureIndex != 0) // Disabled as this produces NaNs
+    if(c_Material.NormalTextureIndex != 0) // Disabled as this produces NaNs
     {
         float3 TexNormal = t_Tex2d[c_Material.NormalTextureIndex].Sample(s_WrappedSampler, Input.UV).rgb;
-        TexNormal = (2.0f * TexNormal) - float3(1.0f, 1.0f, 1.0f);
+        TexNormal.xy = 2.0f * TexNormal.xy - 1.0f;
 
-        TexNormal.z = sqrt(1.0f - (TexNormal.r * TexNormal.r) - TexNormal.g * TexNormal.g);
+        TexNormal.z = sqrt(max(1.0f - (TexNormal.r * TexNormal.r) - TexNormal.g * TexNormal.g, 0.0f));
+        TexNormal = normalize(TexNormal);
         float3x3 TangentMatrix = float3x3(normalize(Input.Tangent), normalize(Input.Bitangent), Normal);
+
+        TexNormal.y *= -1.0f;
 
         Normal = normalize(mul(TexNormal, TangentMatrix));
     }
