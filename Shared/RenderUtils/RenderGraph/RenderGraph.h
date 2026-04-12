@@ -228,3 +228,4 @@ private:
 };
 
 RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
+RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const void* const Data, const wchar_t* ResourceName);

@@ -63,6 +63,8 @@ struct Globals_s
 	RenderGraphTexturePtr_t SceneShadowHistoryRGTexture = {};
 	RenderGraphTexturePtr_t SceneDepthHistoryRGTexture = {};
 
+	RenderGraphTexturePtr_t WhiteRGTexture = {};
+
 	// Camera
 	FlyCamera Cam;
 
@@ -104,13 +106,22 @@ struct Globals_s
 	bool ShowShadows = true;
 	int32_t DrawMode = 0;
 
+	bool SunMenuOpen = false;
 	float SunYaw = 0.0f;
 	float SunPitch = 1.0f;
 	float SunSoftAngle = 0.01f;
 
+	bool TonemappingMenuOpen = false;
 	float Exposure = 1.0f;
 	float WhitePoint = 11.2f;
 	float ExposureBias = 2.0f;
+
+	bool ShowImGui = true;
+	bool ShowSky = true;
+	bool ShowAO = true;
+	bool ShowReflections = true;
+	bool ShowBloom = true;
+	bool ShowTonemapping = true;
 
 	float ElapsedTime = 0.0f;
 } G;
@@ -333,6 +344,10 @@ bool InitializeApp()
 	G.DisocclusionPass.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 	G.BloomPass.Init(GlobalRootSigSlots::RS_UAV_TABLE, GlobalRootSigSlots::RS_SRV_TABLE, GlobalRootSigSlots::RS_VIEW_BUF, ViewCBVRegister);
 
+	std::vector<uint8_t> WhiteTextureData(16 * 16 * 4, 255);
+
+	G.WhiteRGTexture = CreateRenderGraphTexture(16u, 16u, RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::SRV, WhiteTextureData.data(), L"WhiteTexture");
+
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
@@ -375,12 +390,48 @@ void Update(float deltaSeconds)
 
 void ImguiUpdate()
 {
+	if(ImGui::IsKeyPressed(ImGuiKey_F1))
+	{
+		G.ShowImGui = !G.ShowImGui;
+	}
+
+	if (!G.ShowImGui)
+		return;
+
 	if (ImGui::BeginMainMenuBar())
 	{
+		if (ImGui::BeginMenu("Menu"))
+		{
+			const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0Velocity\0Disocclusion\0AO\0";
+			ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
+			ImGui::Separator();
+			if (ImGui::Button("Recompile Shaders"))
+			{
+				ReloadShaders();
+				ReloadPipelines();
+			}
+			ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
+			ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
+			ImGui::EndMenu();
+		}
+
+		if(ImGui::BeginMenu("Show"))
+		{
+			ImGui::MenuItem("Shadows", "", &G.ShowShadows);
+			ImGui::MenuItem("Sky", "", &G.ShowSky);
+			ImGui::MenuItem("Ambient Occlusion", "", &G.ShowAO);
+			ImGui::MenuItem("Reflections", "", &G.ShowReflections);
+			ImGui::MenuItem("Bloom", "", &G.ShowBloom);
+			ImGui::MenuItem("Tonemapping", "", &G.ShowTonemapping);
+			ImGui::EndMenu();
+		}
+
 		if (ImGui::BeginMenu("Modules"))
 		{
 			ImGui::MenuItem("ST AO", "", &G.STAORenderer.MenuOpen);
 			ImGui::MenuItem("ST Reflections", "", &G.STReflectionRenderer.MenuOpen);
+			ImGui::MenuItem("Tonemapping", "", &G.TonemappingMenuOpen);
+			ImGui::MenuItem("Sun/Shadows", "", &G.SunMenuOpen);
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -389,43 +440,41 @@ void ImguiUpdate()
 	G.STAORenderer.DrawImGuiMenu();
 	G.STReflectionRenderer.DrawImGuiMenu();
 
-	if (ImGui::Begin("RaytracingDemo"))
+	if (G.TonemappingMenuOpen)
 	{
-		ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
-		ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
-		ImGui::Checkbox("Show Shadows", &G.ShowShadows);
-		const char* DrawModeNames = "Lit\0Color\0Normal\0Roughness\0Metallic\0Depth\0Position\0Lighting\0RTShadows\0Velocity\0Disocclusion\0AO\0";
-		ImGui::Combo("Draw Mode", &G.DrawMode, DrawModeNames);
-		ImGui::Separator();
-		if (ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f))
+		if(ImGui::Begin("Tonemapping"), &G.TonemappingMenuOpen)
 		{
-			G.FramesSinceMove = 0;
+			ImGui::InputFloat("Exposure", &G.Exposure);
+			ImGui::InputFloat("White Point", &G.WhitePoint);
+			ImGui::InputFloat("Exposure Bias", &G.ExposureBias);
 		}
-		if (ImGui::SliderAngle("Sun Pitch", &G.SunPitch, -90.0f, 90.0f))
-		{
-			G.FramesSinceMove = 0;
-		}
-		if (ImGui::SliderAngle("Sun Soft Angle", &G.SunSoftAngle, 0.0f, 5.0f))
-		{
-			G.FramesSinceMove = 0;
-		}
-		ImGui::Separator();
-		ImGui::InputFloat("Exposure", &G.Exposure);
-		ImGui::InputFloat("White Point", &G.WhitePoint);
-		ImGui::InputFloat("Exposure Bias", &G.ExposureBias);
-		ImGui::Separator();
-		if (ImGui::Button("Recompile Shaders"))
-		{
-			ReloadShaders();
-			ReloadPipelines();
-		}
+		ImGui::End();
 	}
-	ImGui::End();
+
+	if (G.SunMenuOpen)
+	{
+		if (ImGui::Begin("Sun/Shadows"), &G.SunMenuOpen)
+		{
+			if (ImGui::SliderAngle("Sun Yaw", &G.SunYaw, 0.0f, 360.0f))
+			{
+				G.FramesSinceMove = 0;
+			}
+			if (ImGui::SliderAngle("Sun Pitch", &G.SunPitch, -90.0f, 90.0f))
+			{
+				G.FramesSinceMove = 0;
+			}
+			if (ImGui::SliderAngle("Sun Soft Angle", &G.SunSoftAngle, 0.0f, 5.0f))
+			{
+				G.FramesSinceMove = 0;
+			}
+		}
+		ImGui::End();
+	}
 }
 
 static bool WantsTonemap()
 {
-	return G.DrawMode == 0 || G.DrawMode == 7; // Lit or Lighting
+	return G.ShowTonemapping && (G.DrawMode == 0 || G.DrawMode == 7); // Lit or Lighting
 }
 
 static void FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, DynamicBuffer_t UniformBuffer)
@@ -474,7 +523,10 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
-	G.SkyRenderer.AddPass(RGBuilder, SceneColorTexture, SceneDepthTexture, ViewProjection, G.Cam.GetPosition(), SunDirection);
+	if (G.ShowSky)
+	{
+		G.SkyRenderer.AddPass(RGBuilder, SceneColorTexture, SceneDepthTexture, ViewProjection, G.Cam.GetPosition(), SunDirection);
+	}
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
@@ -685,6 +737,16 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		});
 	}
 
+	RenderGraphResourceHandle_t STAOTexture;
+	if (G.ShowAO)
+	{
+		STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, SceneVelocityTexture, ConfidenceTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+	}
+	else
+	{
+		STAOTexture = RGBuilder.InjectTexture(G.WhiteRGTexture, L"WhiteTexture");
+	}	
+	
 	RenderGraphResourceHandle_t SceneLit = RGBuilder.CreateTexture(G.ScreenWidth, G.ScreenHeight, RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV | RenderGraphResourceAccessType_e::UAV, L"SceneLit");
 
 	struct DeferredConstants_s
@@ -709,8 +771,6 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		uint32_t STAOTextureIndex;
 		float __Pad[3];
 	};
-
-	RenderGraphResourceHandle_t STAOTexture = G.STAORenderer.GenerateSTAOTexture(RGBuilder, SceneDepthTexture, SceneNormalTexture, SceneVelocityTexture, ConfidenceTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
 
 	if (G.DrawMode != 0 && G.DrawMode != 7)
 	{
@@ -786,10 +846,16 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 		});
 	}
 
-	RenderGraphResourceHandle_t SSRTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneLit, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
-	G.STReflectionRenderer.CombineSTR(RGBuilder, SceneLit, SceneDepthTexture, SceneNormalTexture, SceneRoughnessMetallicTexture, SSRTexture, InverseViewProjection, G.Cam.GetPosition(), uint2(G.ScreenWidth, G.ScreenHeight));
+	if (G.ShowReflections)
+	{
+		RenderGraphResourceHandle_t SSRTexture = G.STReflectionRenderer.GenerateSTRTexture(RGBuilder, SceneDepthTexture, SceneLit, SceneNormalTexture, G.Cam.GetProjection(), G.Cam.GetView(), uint2(G.ScreenWidth, G.ScreenHeight), NearPlaneZ);
+		G.STReflectionRenderer.CombineSTR(RGBuilder, SceneLit, SceneDepthTexture, SceneNormalTexture, SceneRoughnessMetallicTexture, SSRTexture, InverseViewProjection, G.Cam.GetPosition(), uint2(G.ScreenWidth, G.ScreenHeight));
+	}
 
-	G.BloomPass.AddPass(RGBuilder, SceneLit);
+	if (G.ShowBloom)
+	{
+		G.BloomPass.AddPass(RGBuilder, SceneLit);
+	}
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(View->GetCurrentBackBufferTexture(), View->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
 

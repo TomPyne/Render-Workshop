@@ -542,13 +542,18 @@ void RenderGraphResourcePool_s::FinishFrame()
 
 RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
 {
+	return CreateRenderGraphTexture(Width, Height, Format, AccessTypes, nullptr, ResourceName);
+}
+
+RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const void* const Data, const wchar_t* ResourceName)
+{
 	if (Width == 0 || Width > 16238 || Height == 0 || Height > 16238)
 	{
 		ENSUREMSG(false, "Invalid texture dimensions");
 		return nullptr;
 	}
 
-	if(Format == rl::RenderFormat::UNKNOWN)
+	if (Format == rl::RenderFormat::UNKNOWN)
 	{
 		ENSUREMSG(false, "Invalid texture format");
 		return nullptr;
@@ -571,6 +576,9 @@ RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height
 	TexDesc.Width = Width;
 	TexDesc.Height = Height;
 	TexDesc.Format = Format;
+	
+	rl::MipData mipData{ Data, Format, Width, Height };
+	TexDesc.Data = Data ? &mipData : nullptr;
 
 	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::SRV))
 	{
