@@ -1,0 +1,81 @@
+#include "GameApp.h"
+
+#include "WindowsPlatform.h"
+
+#include <Render/Render.h>
+
+bool GameApp_c::Init()
+{
+	rl::RenderInitParams Params = GetAppRenderParams();
+
+	Params.DebugEnabled = true;
+
+	if (!rl::Render_Init(Params))
+	{
+		return false;
+	}
+
+	HWND Hwnd = (HWND)GetMainWindowHandle();
+
+	MainRenderView = rl::CreateRenderViewPtr((intptr_t)Hwnd);
+
+	Clock = {};
+
+	//InitializeApp();
+
+	return true;
+}
+
+void GameApp_c::Shutdown()
+{
+	rl::Render_ShutDown();
+}
+
+void GameApp_c::Update()
+{
+	Clock.Tick();
+	const float DeltaSeconds = Clock.GetDeltaSeconds();
+
+	Render();
+}
+
+void GameApp_c::Render()
+{
+	rl::Render_BeginFrame();
+
+	rl::Render_BeginRenderFrame();
+
+	rl::CommandListSubmissionGroup CLGroup(rl::CommandListType::GRAPHICS);
+
+	rl::CommandList* MainCL = CLGroup.CreateCommandList();
+
+	rl::UploadBuffers(MainCL);
+
+	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::PRESENT, rl::ResourceTransitionState::RENDER_TARGET);
+
+	MainRenderView->ClearCurrentBackBufferTarget(MainCL);
+
+	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
+
+	CLGroup.Submit();
+
+	rl::Render_EndFrame();
+
+	MainRenderView->Present(true);
+}
+
+void GameApp_c::Resize(int Width, int Height)
+{
+	MainRenderView->Resize(Width, Height);
+}
+
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+}
+
+rl::RenderInitParams GameApp_c::GetAppRenderParams() const
+{
+	return rl::RenderInitParams();
+}

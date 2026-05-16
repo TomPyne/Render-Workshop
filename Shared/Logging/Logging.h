@@ -11,6 +11,7 @@ void _LogDebugfLF(const char* fmt, ...);
 bool _EnsureMsg(bool condition, const char* fmt, ...);
 void _AssertMsg(bool condition, const char* fmt, ...);
 bool _FailMsg(const char* fmt, ...);
+bool _WinCheck(const bool cond);
 
 //#define FAST_ENSURES
 
@@ -30,6 +31,8 @@ bool _FailMsg(const char* fmt, ...);
 #define LOGDEBUG(...) 		_LogDebugfLF(__VA_ARGS__)
 
 #define FAILMSG(...)		_FailMsg(__VA_ARGS__)
+
+#define WINCHECK(cond) 
 
 // Common fail conditions
 #define RET_OUT_OF_MEM			FAILMSG("Out of memory!")

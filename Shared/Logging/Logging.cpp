@@ -126,3 +126,20 @@ bool _FailMsg(const char* fmt, ...)
 	PlatformFormatLogMessageLf(LogError);
 	return false;
 }
+
+bool _WinCheck(const bool cond)
+{
+	if (cond)
+	{
+		const DWORD LastError = GetLastError();
+		if (LastError != ERROR_SUCCESS)
+		{
+			LPSTR messageBuffer = nullptr;
+			size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				NULL, LastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+			LogError(messageBuffer);
+			LocalFree(messageBuffer);
+		}
+	}
+	return cond;
+}
