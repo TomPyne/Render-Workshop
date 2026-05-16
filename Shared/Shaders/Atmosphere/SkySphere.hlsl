@@ -150,8 +150,8 @@ float3 CalculateAtmosphereLight(float3 Origin, float3 Direction)
             if(HeightLight < 0)
                 break;
 
-            OpticalDepthLightR += exp(-HeightLight / HR) * SegmentLengthLight;
-            OpticalDepthLightM += exp(-HeightLight / HM) * SegmentLengthLight;
+            OpticalDepthLightR += exp(-HeightLight / c_G.AtmosphereThicknessR) * SegmentLengthLight;
+            OpticalDepthLightM += exp(-HeightLight / c_G.AtmosphereThicknessM) * SegmentLengthLight;
             TCurrentLight += SegmentLengthLight;
         }
 
