@@ -1,14 +1,20 @@
 add_library(Game
-        "Core/WindowsPlatform.cpp"
-		"Core/WindowsPlatform.h"
         "Core/GameApp.cpp"
 		"Core/GameApp.h"
+        "Core/WindowsPlatform.cpp"
+		"Core/WindowsPlatform.h"
 		"Entity/Entity.cpp"
 		"Entity/Entity.h"
 		"Entity/EntityFragments.cpp"
 		"Entity/EntityFragments.h"
-		"Entity/TransformFragment.cpp"
-		"Entity/TransformFragment.h"
+		"Entity/Fragments/CameraFragment.cpp"
+		"Entity/Fragments/CameraFragment.h"
+		"Entity/Fragments/DirectionalLightFragment.cpp"
+		"Entity/Fragments/DirectionalLightFragment.h"
+		"Entity/Fragments/TransformFragment.cpp"
+		"Entity/Fragments/TransformFragment.h"
+		"Rendering/GameRenderer.cpp"
+		"Rendering/GameRenderer.h"
 )
 
 set_target_properties(Game PROPERTIES OUTPUT_NAME_DEBUG Game_Debug)

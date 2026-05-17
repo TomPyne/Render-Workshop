@@ -1,12 +1,18 @@
 #pragma once
 
+#include "Entity.h"
+
 #include <cmath>
 #include <vector>
 
-enum class Entity_t : uint32_t { INVALID };
-
 struct EntityBitField_s
 {
+	EntityBitField_s() = default;
+
+	EntityBitField_s(uint32_t PageCount)
+		: Pages(PageCount, 0)
+	{}
+
 	std::vector<uint64_t> Pages;
 
 	void SetBit(uint32_t Index, bool Value) noexcept
@@ -37,6 +43,21 @@ struct EntityBitField_s
 		}
 		return false;
 	}
+
+	inline EntityBitField_s& operator&(const EntityBitField_s& Other)
+	{
+		if (Other.Pages.size() > Pages.size())
+		{
+			Pages.resize(Other.Pages.size(), 0);
+		}
+
+		for (size_t i = 0; i < Pages.size(); i++)
+		{
+			Pages[i] = Pages[i] & Other.Pages[i];
+		}
+
+		return *this;
+	}
 };
 
 struct EntityFragmentEntry_s
@@ -58,6 +79,17 @@ struct EntityFragmentRegister_s
 	enum class Fragment_t : uint32_t { INVALID };
 
 	Fragment_t LastFragmentID = Fragment_t::INVALID;
+
+	static EntityFragmentRegister_s Get()
+	{
+		static EntityFragmentRegister_s Instance;
+		return Instance;
+	}
+
+	const EntityBitField_s& GetFragmentBitField() const noexcept
+	{
+		return ActiveFragments;
+	}
 
 	Fragment_t CreateFragment(Entity_t Entity, const FragmentType& Fragment)
 	{
@@ -113,6 +145,16 @@ struct EntityFragmentRegister_s
 		}
 	}
 
+	void NumFragments() const noexcept
+	{
+		return Fragments.size();
+	}
+
+	void FragmentValid(uint32_t Index) const noexcept
+	{
+		return ActiveFragments.GetBit(Index);
+	}
+
 	template<typename F>
 	void ForEachFragment(F&& Func)
 	{
@@ -134,26 +176,33 @@ struct EntityFragmentRegister_s
 				CurrentPageIt = 0;
 			}
 
-			if (Page & (1ull << CurrentPageIt)) != 0;)
+			if ((Page & (1ull << CurrentPageIt)) != 0)
 			{
-				Func(Fragments[FragIt]);
+				if(!Func(Fragments[FragIt]))
+				{
+					break;
+				}
 			}
 		}
 	}
 };
 
-struct EntityRegistry_s
+template<typename FragmentType>
+FragmentType* GetFirstFragment(Entity_t* OptEntity = nullptr)
 {
-	uint32_t LastEntity = 0;
-
-	Entity_t CreateEntity()
+	EntityFragmentRegister_s::Get().ForEachFragment([&](FragmentType& Fragment)
 	{
-		LastEntity++;
-		return (Entity_t)LastEntity;
-	}
+		if (OptEntity)
+		{
+			// Find entity for fragment
+		}
+		return false; // Stop after first
+	});
+}
 
-	void DestroyEntity(Entity_t Entity)
-	{
-		// Notify fragments
-	}
-};
+template<typename... FragmentTypes>
+Entity_t GetEntityWithFragments()
+{
+	EntityBitField_s RequiredFragmentsBitField;
+	((RequiredFragmentsBitField &= EntityFragmentRegister_s<FragmentTypes>::Get().GetBitField()), ...);
+}
