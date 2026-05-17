@@ -72,7 +72,7 @@ void GameApp_c::Resize(int Width, int Height)
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+	return ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 }
 
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const
