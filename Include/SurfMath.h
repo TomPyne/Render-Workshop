@@ -1016,6 +1016,14 @@ inline constexpr matrix3x4 MakeMatrix3x4(matrix m) noexcept
     return matrix3x4(m.r[0], m.r[1], m.r[2]);
 }
 
+// Rotations
+inline float3 GetEulerFromDirection(float3 Direction)
+{
+    const float Yaw = atan2f(Direction.x, Direction.z);
+    const float Pitch = atan2f(-Direction.y, sqrtf(Direction.x * Direction.x + Direction.z * Direction.z));
+    return float3{ Pitch, Yaw, 0.0f };
+}
+
 // Matrix
 inline constexpr matrix MakeMatrixIdentity() noexcept
 {

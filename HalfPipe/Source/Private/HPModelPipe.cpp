@@ -136,8 +136,8 @@ bool LoadModelFromWavefront(const std::wstring& SourceDir, const std::wstring& O
 
                 std::swap(OutModel.Texcoords, UVReorder);
             }
-
-            OutModel.VertexCount += DupedVerts.size();
+            ASSERTMSG(DupedVerts.size() < UINT_MAX, "Number of Verts won't fit in index buffer");
+            OutModel.VertexCount += static_cast<uint32_t>(DupedVerts.size());
         }
 
         if (!ENSUREMSG(MeshProcessing::AttributeSort(TriCount, Attributes.data(), FaceRemap.data()), "AttributeSort failed"))
