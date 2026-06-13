@@ -1,26 +1,13 @@
 function(create_proj projname rapi)
-	
-	
 
 	set(
 		source_list
 		"Source/${projname}.cpp"
 		"Source/SimpleGameApp.cpp"
 		"Source/SimpleGameApp.h"
-		"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui_demo.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui_internal.h"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.cpp"
-		"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.h"
 	)
 
 	add_executable(${projname}${rapi} ${source_list})
-	#add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
 
 	foreach(source IN LISTS source_list)
 		get_filename_component(source_path "${source}" PATH)
@@ -28,7 +15,7 @@ function(create_proj projname rapi)
 		source_group("${source_path_msvc}" FILES "${source}")
 	endforeach()
 
-	target_link_libraries(${projname}${rapi} Game)
+	target_link_libraries(${projname}${rapi} Game${rapi})
 	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
 	target_link_libraries(${projname}${rapi} Shared)
@@ -42,15 +29,12 @@ function(create_proj projname rapi)
 	target_include_directories(${projname}${rapi}
 	PRIVATE
 	"${PROJECT_SOURCE_DIR}"
-	"${PROJECT_SOURCE_DIR}/imgui"
 	"${PROJECT_SOURCE_DIR}/Include"	
 	"${PROJECT_SOURCE_DIR}/Render"
+	"${PROJECT_SOURCE_DIR}/RenderImGui"
 	"${PROJECT_SOURCE_DIR}/Shared"
 	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
-
-
-	#target_sources(${projname}${rapi} PUBLIC ${source_list})
 
 endfunction()
 

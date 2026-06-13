@@ -11,8 +11,6 @@ add_library(Shared
             "FileUtils/FileStream.h"
             "FileUtils/PathUtils.cpp"
             "FileUtils/PathUtils.h"
-            "ImGui/Imgui_Impl_Render.cpp"
-            "ImGui/Imgui_Impl_Render.h"
             "Logging/Logging.cpp"
             "Logging/Logging.h"
             "Materials/Materials.cpp"
@@ -52,7 +50,7 @@ set_target_properties(Shared PROPERTIES OUTPUT_NAME_DEBUG Shared_Debug)
 
 target_include_directories(Shared
 	PRIVATE 
-    "${PROJECT_SOURCE_DIR}/imgui"
+    "${PROJECT_SOURCE_DIR}/RenderImGui/imgui"
 	"${PROJECT_SOURCE_DIR}/Include"
     "${PROJECT_SOURCE_DIR}/Render"
     "${PROJECT_SOURCE_DIR}/Shared"

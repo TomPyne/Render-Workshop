@@ -3,6 +3,7 @@ function(create_proj projname rapi)
 
 	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
+	target_link_libraries(${projname}${rapi} RenderImGui${rapi})
 	target_link_libraries(${projname}${rapi} Shared)
 
 	set_target_properties(${projname}${rapi}
@@ -13,9 +14,9 @@ function(create_proj projname rapi)
 
 	target_include_directories(${projname}${rapi}
 	PRIVATE 
-	"${PROJECT_SOURCE_DIR}/imgui"
 	"${PROJECT_SOURCE_DIR}/Include"	
 	"${PROJECT_SOURCE_DIR}/Render"
+	"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
 	"${PROJECT_SOURCE_DIR}/Shared"
 	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
@@ -28,16 +29,6 @@ function(create_proj projname rapi)
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_demo.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_internal.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.h"
 	)
 endfunction()
 
