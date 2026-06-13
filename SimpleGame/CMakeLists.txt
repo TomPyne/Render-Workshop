@@ -1,6 +1,33 @@
 function(create_proj projname rapi)
-	add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
 	
+	
+
+	set(
+		source_list
+		"Source/${projname}.cpp"
+		"Source/SimpleGameApp.cpp"
+		"Source/SimpleGameApp.h"
+		"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui_demo.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui_internal.h"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.cpp"
+		"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.h"
+	)
+
+	add_executable(${projname}${rapi} ${source_list})
+	#add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
+
+	foreach(source IN LISTS source_list)
+		get_filename_component(source_path "${source}" PATH)
+		string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+		source_group("${source_path_msvc}" FILES "${source}")
+	endforeach()
+
 	target_link_libraries(${projname}${rapi} Game)
 	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
@@ -22,21 +49,9 @@ function(create_proj projname rapi)
 	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
 
-	target_sources(${projname}${rapi}
-	PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/SimpleGameApp.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/SimpleGameApp.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imconfig.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_demo.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_draw.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_internal.h"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_tables.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/imgui_widgets.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.cpp"
-	"${PROJECT_SOURCE_DIR}/imgui/backends/imgui_impl_win32.h"
-	)
+
+	#target_sources(${projname}${rapi} PUBLIC ${source_list})
+
 endfunction()
 
 create_proj(SimpleGame Dx12)

@@ -10,6 +10,7 @@ public:
 
 	ObjectComponent_c(const std::shared_ptr<Object_c>& InOwner);
 
+	virtual void Load() {}
 	virtual void OnCreate() {}
 	virtual void Update(float Delta) {}
 	virtual void PreDestroy() {}

@@ -1,5 +1,7 @@
 set(
 	source_list
+	"Assets/MeshAsset.cpp"
+	"Assets/MeshAsset.h"
 	"Core/GameApp.cpp"
 	"Core/GameApp.h"
     "Core/WindowsPlatform.cpp"
@@ -26,6 +28,8 @@ set(
 	"Object/Object.h"
 	"Object/ObjectComponent.cpp"
 	"Object/ObjectComponent.h"
+	"Object/RuntimeMeshComponent.cpp"
+	"Object/RuntimeMeshComponent.h"
 	"Object/SpatialObject.cpp"
 	"Object/SpatialObject.h"
 	"Object/SpatialObjectComponent.cpp"
