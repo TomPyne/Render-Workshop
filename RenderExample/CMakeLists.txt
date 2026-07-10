@@ -22,6 +22,20 @@ target_include_directories(RenderExampleDx12 PRIVATE "${PROJECT_SOURCE_DIR}/Incl
 target_include_directories(RenderExampleDx11 PRIVATE "${PROJECT_SOURCE_DIR}/Render")
 target_include_directories(RenderExampleDx12 PRIVATE "${PROJECT_SOURCE_DIR}/Render")
 
+set(
+	shader_list
+	"Shaders/Mesh.hlsl"
+)
 
+foreach(source IN LISTS shader_list)
+	get_filename_component(source_path "${source}" PATH)
+	string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+	source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
 
+# Loaded and compiled at runtime - keep them as HLSL items (so VS keeps IntelliSense/colorization)
+# but excluded from the actual VS build step.
+set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
+target_sources(RenderExampleDx11 PRIVATE ${shader_list})
+target_sources(RenderExampleDx12 PRIVATE ${shader_list})

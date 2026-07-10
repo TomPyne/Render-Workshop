@@ -1,3 +1,28 @@
+set(
+	shader_list
+	"Shaders/BallData.h"
+	"Shaders/BallMovementCompute.hlsl"
+	"Shaders/ClearIndirectDrawIndexed.hlsl"
+	"Shaders/ImGui.hlsl"
+	"Shaders/IndirectArguments.h"
+	"Shaders/Mesh.hlsl"
+	"Shaders/Samplers.h"
+	"Shaders/Scene.h"
+	"Shaders/ShapeMesh.hlsl"
+	"Shaders/Terrain.hlsl"
+	"Shaders/View.h"
+)
+
+foreach(source IN LISTS shader_list)
+	get_filename_component(source_path "${source}" PATH)
+	string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+	source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
+
+# Loaded and compiled at runtime - keep them as HLSL items (so VS keeps IntelliSense/colorization)
+# but excluded from the actual VS build step.
+set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
+
 function(create_compute_seminar_proj rapi)
 	add_executable(ComputeSeminar${rapi} ${PROJECT_SOURCE_DIR}/ComputeSeminar/ComputeSeminar.cpp)
 
@@ -24,6 +49,11 @@ function(create_compute_seminar_proj rapi)
 		PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.h"
+	)
+
+	target_sources(ComputeSeminar${rapi}
+		PRIVATE
+		${shader_list}
 	)
 endfunction()
 

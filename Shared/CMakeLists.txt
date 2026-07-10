@@ -35,13 +35,22 @@ set(
     "TextureUtils/TextureManager.h"
 )
 
-foreach(source IN LISTS source_list)
+set(
+	shader_list
+    "Shaders/ImGui/ImGui.hlsl"
+)
+
+foreach(source IN LISTS source_list shader_list)
 	get_filename_component(source_path "${source}" PATH)
 	string(REPLACE "/" "\\" source_path_msvc "${source_path}")
 	source_group("${source_path_msvc}" FILES "${source}")
 endforeach()
 
-add_library(Shared ${source_list})
+# Loaded and compiled at runtime - keep them as HLSL items (so VS keeps IntelliSense/colorization)
+# but excluded from the actual VS build step.
+set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
+
+add_library(Shared ${source_list} ${shader_list})
 
 set_target_properties(Shared PROPERTIES OUTPUT_NAME_DEBUG Shared_Debug)
 
