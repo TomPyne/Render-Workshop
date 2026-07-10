@@ -26,5 +26,8 @@ protected:
 
 	std::shared_ptr<rl::RenderView> MainRenderView;
 
+	std::shared_ptr<class Space_c> Space;
+	std::shared_ptr<class SpaceRenderer_c> SpaceRenderer;
+
 	SurfClock Clock;
 };

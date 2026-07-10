@@ -1,6 +1,8 @@
 #include "GameApp.h"
 
 #include "Game/Input/Input.h"
+#include "Game/Rendering/SpaceRenderer.h"
+#include "Game/Space/Space.h"
 #include "WindowsPlatform.h"
 
 #include <Render/Render.h>
@@ -33,12 +35,20 @@ void GameApp_c::Shutdown()
 }
 
 void GameApp_c::Load()
-{}
+{
+	Space = std::make_shared<Space_c>();
+	SpaceRenderer = std::make_shared<SpaceRenderer_c>();
+}
 
 void GameApp_c::Update()
 {
 	Clock.Tick();
 	const float DeltaSeconds = Clock.GetDeltaSeconds();
+
+	if (Space)
+	{
+		Space->Update(DeltaSeconds);
+	}
 
 	Render();
 }
@@ -58,6 +68,11 @@ void GameApp_c::Render()
 	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::PRESENT, rl::ResourceTransitionState::RENDER_TARGET);
 
 	MainRenderView->ClearCurrentBackBufferTarget(MainCL);
+
+	if (Space && SpaceRenderer)
+	{
+		SpaceRenderer->RenderSpace(Space.get(), CLGroup);
+	}
 
 	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
 

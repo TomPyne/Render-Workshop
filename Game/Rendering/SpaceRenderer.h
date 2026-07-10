@@ -42,5 +42,6 @@ struct SpatialRenderingCollector_s
 
 class SpaceRenderer_c
 {
-
+public:
+	void RenderSpace(class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
 };
