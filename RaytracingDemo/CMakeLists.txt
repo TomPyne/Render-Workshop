@@ -4,6 +4,7 @@ function(create_proj projname rapi)
 	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
 	target_link_libraries(${projname}${rapi} RenderImGui${rapi})
+	target_link_libraries(${projname}${rapi} RenderUtils)
 	target_link_libraries(${projname}${rapi} Shared)
 
 	set_target_properties(${projname}${rapi}
@@ -13,8 +14,9 @@ function(create_proj projname rapi)
 	)
 
 	target_include_directories(${projname}${rapi}
-	PRIVATE 
-	"${PROJECT_SOURCE_DIR}/Include"	
+	PRIVATE
+	"${PROJECT_SOURCE_DIR}"
+	"${PROJECT_SOURCE_DIR}/Include"
 	"${PROJECT_SOURCE_DIR}/Render"
 	"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
 	"${PROJECT_SOURCE_DIR}/Shared"

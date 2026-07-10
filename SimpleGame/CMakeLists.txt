@@ -20,6 +20,7 @@ function(create_proj projname rapi)
 	target_link_libraries(${projname}${rapi} Game${rapi})
 	target_link_libraries(${projname}${rapi} HalfPipe)
 	target_link_libraries(${projname}${rapi} Render${rapi})
+	target_link_libraries(${projname}${rapi} RenderUtils)
 	target_link_libraries(${projname}${rapi} Shared)
 
 	set_target_properties(${projname}${rapi}

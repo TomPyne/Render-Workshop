@@ -55,8 +55,8 @@ void SkyRenderer_s::Init(uint32_t InCBVRootSlot, uint32_t InCBVSlot)
 		PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
 			.DepthDesc(false, rl::ComparisionFunc::LESS_EQUAL)
 			.TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
-			.VertexShader(rl::CreateVertexShader("Shared/Shaders/Atmosphere/SkySphere.hlsl", Macros))
-			.PixelShader(rl::CreatePixelShader("Shared/Shaders/Atmosphere/SkySphere.hlsl", Macros));
+			.VertexShader(rl::CreateVertexShader("RenderUtils/Shaders/Atmosphere/SkySphere.hlsl", Macros))
+			.PixelShader(rl::CreatePixelShader("RenderUtils/Shaders/Atmosphere/SkySphere.hlsl", Macros));
 
 		rl::InputElementDesc InputLayout[] =
 		{

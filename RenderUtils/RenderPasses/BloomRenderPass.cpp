@@ -12,15 +12,15 @@ void BloomRenderPass_s::Init(uint32_t InUAVTableSlot, uint32_t InSRVTableSlot, u
 
 	rl::ComputePipelineStateDesc PSODesc = {};
 
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/Bloom/BloomDownsample.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/Bloom/BloomDownsample.hlsl", Macros);
 	PSODesc.DebugName = L"BloomDownsampleCS";
 	BloomDownsamplePSO = rl::CreateComputePipelineState(PSODesc);
 
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/Bloom/BloomUpsample.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/Bloom/BloomUpsample.hlsl", Macros);
 	PSODesc.DebugName = L"BloomUpsampleCS";
 	BloomUpsamplePSO = rl::CreateComputePipelineState(PSODesc);
 
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/Bloom/BloomApply.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/Bloom/BloomApply.hlsl", Macros);
 	PSODesc.DebugName = L"BloomApplyCS";
 	BloomApplyPSO = rl::CreateComputePipelineState(PSODesc);
 

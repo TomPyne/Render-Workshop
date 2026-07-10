@@ -30,7 +30,7 @@ void DisocclusionRenderPass_s::Init(uint32_t InUAVTableSlot, uint32_t InSRVTable
 	rl::ShaderMacros Macros = { { "CBV_SLOT", InCBVSlot } };
 
 	rl::ComputePipelineStateDesc PSODesc = {};
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/Denoising/GenerateDisocclusion.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/Denoising/GenerateDisocclusion.hlsl", Macros);
 	PSODesc.DebugName = L"DisocclusionCS";
 
 	DisocclusionPSO = rl::CreateComputePipelineState(PSODesc);

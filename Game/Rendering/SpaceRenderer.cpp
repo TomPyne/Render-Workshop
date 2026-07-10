@@ -15,7 +15,7 @@ void SpaceRenderer_c::RenderSpace(Space_c* Space, rl::CommandListSubmissionGroup
 	{
 		for (std::shared_ptr<ObjectComponent_c>& Component : Object->Components)
 		{
-			if (IRenderable_c* Renderable = dynamic_cast<IRenderable_c>(Component.get()))
+			if (IRenderable_c* Renderable = dynamic_cast<IRenderable_c*>(Component.get()))
 			{
 				Renderable->Render(Collector);
 			}

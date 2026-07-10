@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Render/Render.h>
-#include <Shared/RenderUtils/RenderGraph/RenderGraph.h>
+#include <RenderUtils/RenderGraph/RenderGraph.h>
 
 struct GBuffer_s
 {

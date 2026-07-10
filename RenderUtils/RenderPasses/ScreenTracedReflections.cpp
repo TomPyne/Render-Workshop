@@ -38,11 +38,11 @@ void ScreenTracedReflectionRenderer_s::Init(uint32_t InUAVTableSlot, uint32_t In
 
 	rl::ComputePipelineStateDesc PSODesc = {};
 
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/STReflections/STReflections.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/STReflections/STReflections.hlsl", Macros);
 	PSODesc.DebugName = L"ScreenSpaceReflectionCS";
 	STRPSO = rl::CreateComputePipelineState(PSODesc);
 
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/STReflections/STReflectionCombine.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/STReflections/STReflectionCombine.hlsl", Macros);
 	PSODesc.DebugName = L"ScreenSpaceReflectionCombineCS";
 	STRCombinePSO = rl::CreateComputePipelineState(PSODesc);
 

@@ -43,7 +43,7 @@ void ScreenTracedAmbientOcclusionRenderer_s::Init(uint32_t InUAVTableSlot, uint3
 	rl::ShaderMacros Macros = { { "CBV_SLOT", CBVSlotDef.c_str() } };
 
 	rl::ComputePipelineStateDesc PSODesc = {};
-	PSODesc.Cs = rl::CreateComputeShader("Shared/Shaders/STAO/ScreenSpaceTracing.hlsl", Macros);
+	PSODesc.Cs = rl::CreateComputeShader("RenderUtils/Shaders/STAO/ScreenSpaceTracing.hlsl", Macros);
 	PSODesc.DebugName = L"ScreenSpaceTracingCS";
 
 	STAOPSO = rl::CreateComputePipelineState(PSODesc);
