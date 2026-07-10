@@ -9,8 +9,13 @@
 class GameApp_c
 {
 public:
+	virtual ~GameApp_c() = default;
+
 	virtual bool Init();
 	virtual void Shutdown();
+
+	virtual void Load(); // Called after init and before first frame
+
 	virtual void Update();
 	virtual void Render();
 	virtual void Resize(int Width, int Height);

@@ -3,6 +3,7 @@
 #include <Render/RenderTypes.h>
 
 #include <map>
+#include <SurfMath.h>
 
 enum class MaterialVertexFlags_e : uint32_t
 {
@@ -40,3 +41,13 @@ public:
 	virtual const char* GetShaderPath() const override;
 	virtual rl::GraphicsPipelineStatePtr GetPSO(MaterialVertexFlags_e VertexFlags) const override;
 };
+
+class BasicMaterial_c
+{
+public:
+	rl::GraphicsPipelineStatePtr PSO;
+	rl::ConstantBufferPtr MaterialConstants;
+};
+
+BasicMaterial_c* MakeBasicMaterial(float3 Color);
+void DestroyBasicMaterial(BasicMaterial_c* Material);

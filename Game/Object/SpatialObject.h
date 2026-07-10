@@ -9,7 +9,17 @@
 class SpatialObject_c : public Object_c
 {
 public:
-	virtual ~SpatialObject_c() = default;	
+	SpatialObject_c(const ObjectArgs_s& Args);
+	virtual ~SpatialObject_c() = default;
+
+	template<class ComponentType, class... Args>
+	ComponentType* AddSpatialComponent(Args&&... InArgs)
+	{
+		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(MakeShared<SpatialObject_c>(), std::forward<Args>(InArgs)...);
+		Components.push_back(NewComponent);
+		NewComponent->OnCreate();
+		return NewComponent.get();
+	}
 
 	const Transform_s& GetTransform() const { return Transform; }
 

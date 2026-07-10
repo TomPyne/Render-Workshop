@@ -20,6 +20,8 @@ function(create_proj projname rapi)
 		"Entity/Fragments/TransformFragment.h"
 		"Input/Input.h"
 		"Input/Input.cpp"
+		"Level/Level.cpp"
+		"Level/Level.h"
 		"Object/CameraComponent.cpp"
 		"Object/CameraComponent.h"
 		"Object/FlyControllerComponent.cpp"

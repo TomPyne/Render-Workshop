@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/Object/Object.h"
+
 #include <SurfMath.h>
 
 #include <memory>
@@ -17,41 +19,50 @@ struct SpaceView_s
 	matrix ViewMatrix;
 };
 
-class Space_c
+class CameraComponent_c;
+class Level_c;
+
+class Space_c : public std::enable_shared_from_this<Space_c>
 {
 public:
 
-	std::vector<std::shared_ptr<class Object_c>> Objects;
+	std::vector<std::shared_ptr<Object_c>> Objects;
+	std::vector<std::shared_ptr<Level_c>> Levels;
 
 	void Update(float Delta);
 
 	template<class ObjectType>
-	Object_c* CreateObject()
+	std::shared_ptr<ObjectType> CreateObject()
 	{
-		std::shared_ptr<ObjectType> NewObject = std::make_shared<ObjectType>();
+		std::shared_ptr<ObjectType> NewObject = std::make_shared<ObjectType>(ObjectArgs_s{this});
 		Objects.push_back(NewObject);
-		return NewObject.get();
+		return NewObject;
 	}
 
 	// TODO: Defer destruction until end of frame.
-	void DestroyObject(Object_c* Object)
+	void DestroyObject(Object_c* Object);
+
+	template<class LevelType>
+	void LoadLevel()
 	{
-		for (size_t i = 0; i < Objects.size(); i++)
-		{
-			if (Objects[i].get() == Object)
-			{
-				Objects.erase(Objects.begin() + i);
-				return;
-			}
-		}
+		std::shared_ptr<LevelType> NewLevel = std::make_shared<LevelType>();
+		Levels.push_back(NewLevel);
+		LoadLevelInternal(NewLevel.get());
+		return NewLevel.get();
 	}
+
+	void UnloadLevel(Level_c* InLevel);
 
 	// Camera
 
 	SpaceView_s PrimaryView;
 	
-	std::weak_ptr<class CameraComponent_c> PrimaryCamera;
+	std::weak_ptr<CameraComponent_c> PrimaryCamera;
 
 	void RegisterCameraComponent(CameraComponent_c* Camera);
 	void UnregisterCameraComponent(CameraComponent_c* Camera);
+
+protected:
+
+	void LoadLevelInternal(Level_c* InLevel);
 };

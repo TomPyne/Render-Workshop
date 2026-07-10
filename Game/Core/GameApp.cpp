@@ -32,6 +32,9 @@ void GameApp_c::Shutdown()
 	rl::Render_ShutDown();
 }
 
+void GameApp_c::Load()
+{}
+
 void GameApp_c::Update()
 {
 	Clock.Tick();

@@ -7,13 +7,16 @@
 
 class Space_c;
 
-class Object_c
+struct ObjectArgs_s
+{
+	Space_c* OwningSpace;
+};
+
+class Object_c : public std::enable_shared_from_this<Object_c>
 {	
 public:
 
-	Object_c(const std::shared_ptr<Space_c>& InOwningSpace)
-		: OwningSpace(InOwningSpace)
-	{}
+	Object_c(const ObjectArgs_s& Args);
 
 	virtual ~Object_c() = default;
 
@@ -24,7 +27,7 @@ public:
 	template<class ComponentType, class... Args>
 	ComponentType* AddComponent(Args&&... InArgs)
 	{
-		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(std::forward<Args>(InArgs)...);
+		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(shared_from_this(), std::forward<Args>(InArgs)...);
 		Components.push_back(NewComponent);
 		NewComponent->OnCreate();
 		return NewComponent.get();
@@ -108,6 +111,12 @@ public:
 	Space_c* GetSpace() const
 	{
 		return OwningSpace.lock().get();
+	}
+
+	template<class T> 
+	std::shared_ptr<T> MakeShared()
+	{
+		return std::dynamic_pointer_cast<T>(shared_from_this());
 	}
 
 private:
