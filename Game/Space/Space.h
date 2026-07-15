@@ -36,6 +36,7 @@ public:
 	{
 		std::shared_ptr<ObjectType> NewObject = std::make_shared<ObjectType>(ObjectArgs_s{this});
 		Objects.push_back(NewObject);
+		NewObject->OnCreate();
 		return NewObject;
 	}
 
@@ -43,9 +44,9 @@ public:
 	void DestroyObject(Object_c* Object);
 
 	template<class LevelType>
-	void LoadLevel()
+	Level_c* LoadLevel()
 	{
-		std::shared_ptr<LevelType> NewLevel = std::make_shared<LevelType>();
+		std::shared_ptr<LevelType> NewLevel = std::make_shared<LevelType>(shared_from_this());
 		Levels.push_back(NewLevel);
 		LoadLevelInternal(NewLevel.get());
 		return NewLevel.get();

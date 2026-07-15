@@ -1,3 +1,9 @@
+#ifdef __INTELLISENSE__
+#define _VS
+#define _MS
+#define _PS
+#endif
+
 struct ViewData_s
 {
     float4x4 ViewProjectionMatrix;

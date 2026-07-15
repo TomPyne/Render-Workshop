@@ -11,6 +11,8 @@ struct SpatialRenderingBatch_s
 	rl::ConstantBuffer_t MeshUniforms;
 	rl::ConstantBuffer_t MaterialUniforms;
 	rl::IndexBuffer_t IndexBuffer;
+	rl::RenderFormat IndexBufferFormat;
+	uint32_t IndexCount;
 	rl::GraphicsPipelineState_t PSO;
 };
 
@@ -40,8 +42,14 @@ struct SpatialRenderingCollector_s
 	SpatialRenderingMeshPass_s MainPass;
 };
 
+struct SpaceRendererScreenInfo_s
+{
+	uint32_t Width;
+	uint32_t Height;
+};
+
 class SpaceRenderer_c
 {
 public:
-	void RenderSpace(class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
+	void RenderSpace(const SpaceRendererScreenInfo_s& Screen, class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
 };

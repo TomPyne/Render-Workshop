@@ -20,6 +20,8 @@ public:
 
 	virtual ~Object_c() = default;
 
+	virtual void OnCreate() {}
+
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
 
 	void Update(float Delta);

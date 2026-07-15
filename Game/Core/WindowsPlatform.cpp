@@ -32,6 +32,8 @@ void WindowsPlatformMain(const char* WindowTitle, int Width, int Height, GameApp
 	::ShowWindow(GMainWindowHandle, SW_SHOWDEFAULT);
 	::UpdateWindow(GMainWindowHandle);
 
+	GApp->Load();
+
 	// Main loop
 	bool bQuit = false;
 	MSG msg;

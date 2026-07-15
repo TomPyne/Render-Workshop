@@ -71,7 +71,10 @@ void GameApp_c::Render()
 
 	if (Space && SpaceRenderer)
 	{
-		SpaceRenderer->RenderSpace(Space.get(), CLGroup);
+		SpaceRendererScreenInfo_s Info = {};
+		Info.Width = MainRenderView->Width;
+		Info.Height = MainRenderView->Height;
+		SpaceRenderer->RenderSpace(Info, Space.get(), CLGroup);
 	}
 
 	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);

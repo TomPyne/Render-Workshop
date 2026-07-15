@@ -33,6 +33,7 @@ public:
 	rl::StructuredBufferPtr PositionBuffer = {};
 	rl::ShaderResourceViewPtr PositionBufferSRV = {};
 	rl::IndexBufferPtr IndexBuffer = {};
+	uint32_t IndexCount = 0;
 	rl::ConstantBuffer_t MeshUniforms = {};
 
 	class BasicMaterial_c* Material = nullptr;
@@ -41,8 +42,9 @@ public:
 class RuntimeMeshObject_c : public SpatialObject_c
 {
 public:
-	RuntimeMeshObject_c(const ObjectArgs_s& Args);
-	virtual ~RuntimeMeshObject_c() = default;
+	using SpatialObject_c::SpatialObject_c;
+
+	virtual void OnCreate() override;
 
 	RuntimeMeshComponent_c* MeshComponent = nullptr;
 };

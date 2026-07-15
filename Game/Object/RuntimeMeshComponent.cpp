@@ -21,6 +21,8 @@ void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 		SpatialRenderingBatch_s& Batch = Collector.MainPass.AddBatch();
 		Batch.PSO = Material->PSO;
 		Batch.IndexBuffer = IndexBuffer;
+		Batch.IndexBufferFormat = rl::RenderFormat::R32_UINT;
+		Batch.IndexCount = IndexCount;
 		Batch.MeshUniforms = MeshUniforms;
 		Batch.MaterialUniforms = Material->MaterialConstants;
 	}
@@ -43,14 +45,14 @@ void RuntimeMeshComponent_c::UpdateMesh(const RuntimeMeshDesc_s& Desc)
 	PositionBufferSRV = rl::CreateStructuredBufferSRV(PositionBuffer, 0, static_cast<uint32_t>(Desc.Positions->size()), static_cast<uint32_t>(sizeof(float3)));
 
 	IndexBuffer = rl::CreateIndexBufferFromArray(Desc.Indices->data(), Desc.Indices->size());
+	IndexCount = static_cast<uint32_t>(Desc.Indices->size());
 
 	MeshUniforms_s MeshData = {};
 	MeshData.PositionBufferIndex = rl::GetDescriptorIndex(PositionBufferSRV);
 	MeshUniforms = rl::CreateConstantBuffer(&MeshData);
 }
 
-RuntimeMeshObject_c::RuntimeMeshObject_c(const ObjectArgs_s& Args)
-	: SpatialObject_c(Args)
+void RuntimeMeshObject_c::OnCreate()
 {
 	MeshComponent = AddSpatialComponent<RuntimeMeshComponent_c>();
 }

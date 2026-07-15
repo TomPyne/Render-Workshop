@@ -1,8 +1,13 @@
 #include "SimpleGameApp.h"
 
+#include "Levels/SimpleLevel.h"
+
 void SimpleGameApp_c::Load()
 {
-	// Create space
+	GameApp_c::Load();
 
-	// Load level into world
+	if (Space)
+	{
+		Space->LoadLevel<SimpleLevel_c>();
+	}
 }

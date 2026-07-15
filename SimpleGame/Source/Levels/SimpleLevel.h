@@ -5,7 +5,8 @@
 class SimpleLevel_c : public Level_c
 {
 public:
-	virtual ~SimpleLevel_c() = default;
+
+	using Level_c::Level_c;
 
 	virtual void Load() override;
 };

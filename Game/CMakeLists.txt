@@ -50,13 +50,23 @@ function(create_proj projname rapi)
 		"Utility/Transform.h"
 	)
 
-	add_library(${projname}${rapi} ${source_list})
+	set(
+		shader_list
+		"Shaders/BasicMaterial.hlsl"
+		"Shaders/ShaderDefines.h"
+	)
 
-	foreach(source IN LISTS source_list)
+	foreach(source IN LISTS source_list shader_list)
 		get_filename_component(source_path "${source}" PATH)
 		string(REPLACE "/" "\\" source_path_msvc "${source_path}")
 		source_group("${source_path_msvc}" FILES "${source}")
 	endforeach()
+
+	# Loaded and compiled at runtime (see rl::CreateXShader calls) - keep them as HLSL items
+	# (so VS keeps IntelliSense/colorization) but excluded from the actual VS build step.
+	set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
+
+	add_library(${projname}${rapi} ${source_list} ${shader_list})
 
 	target_link_libraries(${projname}${rapi} PUBLIC RenderImGui${rapi})
 
