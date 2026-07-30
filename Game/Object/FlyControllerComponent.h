@@ -7,7 +7,7 @@
 class FlyControllerComponent_c : public ObjectComponent_c
 {
 public:
-
+	using ObjectComponent_c::ObjectComponent_c;
 	virtual ~FlyControllerComponent_c() = default;
 
 	virtual void Update(float Delta) override;

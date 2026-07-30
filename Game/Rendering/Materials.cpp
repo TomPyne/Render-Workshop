@@ -1,5 +1,7 @@
 #include "Materials.h"
 
+#include "Game/Rendering/SpaceRenderer.h"
+
 #include <Render/Render.h>
 
 // ## BasicShader
@@ -70,7 +72,8 @@ BasicMaterial_c* MakeBasicMaterial(float3 Color)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
         .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16_FLOAT, rl::RenderFormat::R16G16_FLOAT }, { rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
         .VertexShader(MeshVS)
-        .PixelShader(MeshPS);
+        .PixelShader(MeshPS)
+        .RootSignature(SpaceRendererGlobals_c::Get()->RootSignature);
 
     PsoDesc.DebugName = L"BasicMaterialPSO";
     NewMaterial->PSO = CreateGraphicsPipelineState(PsoDesc);

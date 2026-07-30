@@ -9,9 +9,7 @@
 
 bool GameApp_c::Init()
 {
-	rl::RenderInitParams Params = GetAppRenderParams();
-
-	Params.DebugEnabled = true;
+	rl::RenderInitParams Params = GetAppRenderParams();	
 
 	if (!rl::Render_Init(Params))
 	{
@@ -101,5 +99,7 @@ LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const
 {
-	return rl::RenderInitParams();
+	rl::RenderInitParams Params = {};
+	Params.DebugEnabled = true;
+	return Params;
 }

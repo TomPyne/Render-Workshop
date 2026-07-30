@@ -4,7 +4,8 @@
 
 class CameraComponent_c : public SpatialObjectComponent_c
 {
-public:	
+public:
+	using SpatialObjectComponent_c::SpatialObjectComponent_c;
 	virtual ~CameraComponent_c() = default;
 
 	virtual void OnCreate() override;

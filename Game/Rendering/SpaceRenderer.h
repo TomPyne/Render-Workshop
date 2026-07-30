@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <RenderUtils/RenderGraph/RenderGraph.h>
 
 #include <unordered_map>
 #include <vector>
@@ -48,8 +49,18 @@ struct SpaceRendererScreenInfo_s
 	uint32_t Height;
 };
 
+struct SpaceRendererGlobals_c
+{
+	rl::RootSignaturePtr RootSignature = {};
+	static SpaceRendererGlobals_c* Get();
+};
+
 class SpaceRenderer_c
 {
 public:
 	void RenderSpace(const SpaceRendererScreenInfo_s& Screen, class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
+
+protected:
+
+	RenderGraphResourcePool_s RenderGraphResourcePool;
 };

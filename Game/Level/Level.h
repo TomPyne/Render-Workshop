@@ -1,11 +1,10 @@
 #pragma once
 
+#include "Game/Object/SpatialObject.h"
 #include "Game/Space/Space.h"
 
 #include <memory>
 #include <vector>
-
-class Object_c;
 
 class Level_c : public std::enable_shared_from_this<Level_c>
 {
@@ -27,6 +26,20 @@ public:
 		{
 			std::shared_ptr<ObjectType> Object = Space->CreateObject<ObjectType>();
 			Objects.push_back(Object);
+			return Object;
+		}
+
+		return nullptr;
+	}
+
+	template<class ComponentType>
+	std::shared_ptr<SpatialObject_c> AddSpatialComponentToLevel()
+	{
+		if (Space_c* Space = GetSpace())
+		{
+			std::shared_ptr<SpatialObject_c> Object = Space->CreateObject<SpatialObject_c>();
+			Objects.push_back(Object);
+			Object->AddSpatialComponent<ComponentType>();
 			return Object;
 		}
 
