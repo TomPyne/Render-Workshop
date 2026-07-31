@@ -73,7 +73,7 @@ BasicMaterial_c* MakeBasicMaterial(float3 Color)
         .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16_FLOAT, rl::RenderFormat::R16G16_FLOAT }, { rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
         .VertexShader(MeshVS)
         .PixelShader(MeshPS)
-        .RootSignature(SpaceRendererGlobals_c::Get()->RootSignature);
+        .RootSignature(SpaceRenderer_c::GetRootSignature());
 
     PsoDesc.DebugName = L"BasicMaterialPSO";
     NewMaterial->PSO = CreateGraphicsPipelineState(PsoDesc);

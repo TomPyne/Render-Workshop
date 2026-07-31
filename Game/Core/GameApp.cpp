@@ -36,6 +36,7 @@ void GameApp_c::Load()
 {
 	Space = std::make_shared<Space_c>();
 	SpaceRenderer = std::make_shared<SpaceRenderer_c>();
+	SpaceRenderer->Init();
 }
 
 void GameApp_c::Update()
@@ -72,6 +73,7 @@ void GameApp_c::Render()
 		SpaceRendererScreenInfo_s Info = {};
 		Info.Width = MainRenderView->Width;
 		Info.Height = MainRenderView->Height;
+		Info.RenderView = MainRenderView.get();
 		SpaceRenderer->RenderSpace(Info, Space.get(), CLGroup);
 	}
 

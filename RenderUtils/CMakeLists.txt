@@ -14,6 +14,8 @@ set(
     "RenderPasses/ScreenTracedReflections.h"
     "RenderPasses/SkyRenderPass.cpp"
     "RenderPasses/SkyRenderPass.h"
+    "RenderPasses/Tonemapping.cpp"
+    "RenderPasses/Tonemapping.h"
 )
 
 set(
@@ -26,7 +28,10 @@ set(
     "Shaders/STAO/ScreenSpaceTracing.hlsl"
     "Shaders/STReflections/STReflectionCombine.hlsl"
     "Shaders/STReflections/STReflections.hlsl"
+    "Shaders/ScreenPass/ScreenPassShared.h"
+    "Shaders/ScreenPass/ScreenPassVS.hlsl"
     "Shaders/ScreenTracing/ScreenTracing.h"
+    "Shaders/Tonemapping/Tonemapping.hlsl"
     "Shaders/Util/Macros.h"
     "Shaders/Util/Random.h"
     "Shaders/Util/Transforms.h"

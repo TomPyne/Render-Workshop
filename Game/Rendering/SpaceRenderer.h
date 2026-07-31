@@ -47,19 +47,16 @@ struct SpaceRendererScreenInfo_s
 {
 	uint32_t Width;
 	uint32_t Height;
-};
-
-struct SpaceRendererGlobals_c
-{
-	rl::RootSignaturePtr RootSignature = {};
-	static SpaceRendererGlobals_c* Get();
+	rl::RenderView* RenderView = nullptr;
 };
 
 class SpaceRenderer_c
 {
 public:
+	void Init();
 	void RenderSpace(const SpaceRendererScreenInfo_s& Screen, class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
 
+	static rl::RootSignature_t GetRootSignature();
 protected:
 
 	RenderGraphResourcePool_s RenderGraphResourcePool;

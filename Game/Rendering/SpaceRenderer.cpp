@@ -5,10 +5,17 @@
 #include "Game/Space/Space.h"
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
+#include <RenderUtils/RenderPasses/Tonemapping.h>
+#include <Shared/Logging/Logging.h>
 
 #include <SurfMath.h>
 
-static SpaceRendererGlobals_c* G = nullptr;
+static struct SpaceRendererPrivate_s
+{
+	rl::RootSignaturePtr RootSignature;
+	TonemapRenderer_s TonemapRenderer;
+	bool Initialized = false;
+} G;
 
 namespace SpaceRendererRootSigSlots
 {
@@ -27,6 +34,34 @@ struct SpaceViewUniforms_s
 {
 	matrix ViewProjection;
 };
+
+void SpaceRenderer_c::Init()
+{
+	ASSERTMSG(G.Initialized == false, "Space Renderer has already been initialized");
+	static const uint32_t DrawCBVRegister = 0;
+	static const uint32_t ViewCBVRegister = 1;
+	static const uint32_t ModelCBVRegister = 2;
+	static const uint32_t MatCBVRegister = 3;
+
+	rl::RootSignatureDesc RootSigDesc = {};
+	RootSigDesc.Slots.resize(SpaceRendererRootSigSlots::RS_COUNT);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::CBVSlot(DrawCBVRegister, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(ViewCBVRegister, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(ModelCBVRegister, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(MatCBVRegister, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_UAV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
+
+	RootSigDesc.GlobalSamplers.resize(2);
+	RootSigDesc.GlobalSamplers[0].AddressModeUVW(rl::SamplerAddressMode::WRAP).FilterModeMinMagMip(rl::SamplerFilterMode::ANISOTROPIC);
+	RootSigDesc.GlobalSamplers[1].AddressModeUVW(rl::SamplerAddressMode::CLAMP).FilterModeMinMagMip(rl::SamplerFilterMode::LINEAR);
+
+	G.RootSignature = rl::CreateRootSignature(RootSigDesc);
+
+	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewCBVRegister, SpaceRendererRootSigSlots::RS_SRV_TABLE);
+
+	G.Initialized = true;
+}
 
 void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space_c* Space, rl::CommandListSubmissionGroup& clGroup)
 {
@@ -61,7 +96,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
-		Ctx.SetRootSignature(G->RootSignature);
+		Ctx.SetRootSignature(G.RootSignature);
 		rl::RenderTargetView_t SceneRTVs[] =
 		{
 			RG.GetRTV(SceneColorTexture),
@@ -87,34 +122,19 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, 0, 0, 0);
 		}
 	});
+
+	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
+
+	G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, SceneColorTexture, BackBufferTexture);
+
+	RenderGraph_s Graph = RGBuilder.Build();
+
+	Graph.Execute(&clGroup);
 }
 
-SpaceRendererGlobals_c* SpaceRendererGlobals_c::Get()
+rl::RootSignature_t SpaceRenderer_c::GetRootSignature()
 {
-	if (!G)
-	{
-		G = new SpaceRendererGlobals_c;
+	ASSERTMSG(G.Initialized, "SpaceRenderer has not been initialized");
 
-		static const uint32_t DrawCBVRegister = 0;
-		static const uint32_t ViewCBVRegister = 1;
-		static const uint32_t ModelCBVRegister = 2;
-		static const uint32_t MatCBVRegister = 3;
-
-		rl::RootSignatureDesc RootSigDesc = {};
-		RootSigDesc.Slots.resize(SpaceRendererRootSigSlots::RS_COUNT);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::CBVSlot(DrawCBVRegister, 0);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(ViewCBVRegister, 0);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(ModelCBVRegister, 0);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(MatCBVRegister, 0);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
-		RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_UAV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
-
-		RootSigDesc.GlobalSamplers.resize(2);
-		RootSigDesc.GlobalSamplers[0].AddressModeUVW(rl::SamplerAddressMode::WRAP).FilterModeMinMagMip(rl::SamplerFilterMode::ANISOTROPIC);
-		RootSigDesc.GlobalSamplers[1].AddressModeUVW(rl::SamplerAddressMode::CLAMP).FilterModeMinMagMip(rl::SamplerFilterMode::LINEAR);
-
-		G->RootSignature = rl::CreateRootSignature(RootSigDesc);
-	}
-
-	return G;
+	return G.RootSignature;
 }
