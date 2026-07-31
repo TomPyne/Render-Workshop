@@ -22,7 +22,7 @@ ConstantBuffer<ViewUniforms_s> c_View : register(b1);
 ConstantBuffer<ModelUniforms_s> c_Model : register(b2);
 ConstantBuffer<MaterialUniforms_s> c_Material : register(b3);
 
-StructuredBuffer<float3> t_sbuf_f3 : register(t0, space0);
+StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space0);
 
 struct Interpolants_s
 {

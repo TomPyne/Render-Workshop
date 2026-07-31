@@ -61,5 +61,5 @@ public:
 	void ClearDepth(rl::DepthStencilView_t DSV, float Depth);
 	void SetVertexBuffer(uint32_t Slot, rl::VertexBuffer_t VertexBuffer, uint32_t Stride, uint32_t Offset);
 	void SetVertexBuffers(uint32_t StartSlot, uint32_t NumBuffers, const rl::VertexBuffer_t* VertexBuffers, const uint32_t* Strides, const uint32_t* Offsets);
-	void SetIndexBuffer(rl::IndexBuffer_t Buffer, rl::RenderFormat Format, uint32_t Indexcount);
+	void SetIndexBuffer(rl::IndexBuffer_t Buffer, rl::RenderFormat Format, uint32_t IndexOffset);
 };

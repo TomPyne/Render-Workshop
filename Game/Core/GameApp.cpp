@@ -77,7 +77,9 @@ void GameApp_c::Render()
 		SpaceRenderer->RenderSpace(Info, Space.get(), CLGroup);
 	}
 
-	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
+	rl::CommandList* PostCL = CLGroup.CreateCommandList();
+
+	PostCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
 
 	CLGroup.Submit();
 

@@ -438,17 +438,17 @@ class GPUCommand_SetIndexBuffer_c : public GPUCommand_c
 {
 	rl::IndexBuffer_t Buffer;
 	rl::RenderFormat Format;
-	uint32_t IndexCount;
+	uint32_t IndexOffset;
 
 public:
-	GPUCommand_SetIndexBuffer_c(rl::IndexBuffer_t InBuffer, rl::RenderFormat InFormat, uint32_t InIndexCount)
+	GPUCommand_SetIndexBuffer_c(rl::IndexBuffer_t InBuffer, rl::RenderFormat InFormat, uint32_t InIndexOffset)
 		: Buffer(InBuffer)
 		, Format(InFormat)
-		, IndexCount(InIndexCount)
+		, IndexOffset(InIndexOffset)
 	{}
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetIndexBuffer(Buffer, Format, IndexCount);
+		CL->SetIndexBuffer(Buffer, Format, IndexOffset);
 	}
 };
 
@@ -725,7 +725,7 @@ void GPUContext_s::SetVertexBuffers(uint32_t StartSlot, uint32_t NumBuffers, con
 	AddCommand<GPUCommand_SetVertexBuffers_c>(StartSlot, NumBuffers, VertexBuffers, Strides, Offsets);
 }
 
-void GPUContext_s::SetIndexBuffer(rl::IndexBuffer_t Buffer, rl::RenderFormat Format, uint32_t Indexcount)
+void GPUContext_s::SetIndexBuffer(rl::IndexBuffer_t Buffer, rl::RenderFormat Format, uint32_t IndexOffset)
 {
-	AddCommand<GPUCommand_SetIndexBuffer_c>(Buffer, Format, Indexcount);
+	AddCommand<GPUCommand_SetIndexBuffer_c>(Buffer, Format, IndexOffset);
 }

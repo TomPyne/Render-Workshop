@@ -6,6 +6,7 @@
 
 struct MeshUniforms_s
 {
+	matrix ModelMatrix;
 	uint32_t PositionBufferIndex;
 	float __pad[3];
 };
@@ -48,6 +49,7 @@ void RuntimeMeshComponent_c::UpdateMesh(const RuntimeMeshDesc_s& Desc)
 	IndexCount = static_cast<uint32_t>(Desc.Indices->size());
 
 	MeshUniforms_s MeshData = {};
+	MeshData.ModelMatrix = MakeMatrixIdentity();
 	MeshData.PositionBufferIndex = rl::GetDescriptorIndex(PositionBufferSRV);
 	MeshUniforms = rl::CreateConstantBuffer(&MeshData);
 }

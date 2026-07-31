@@ -118,7 +118,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Batch.MeshUniforms);
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, Batch.MaterialUniforms);
 
-			Ctx.SetIndexBuffer(Batch.IndexBuffer, Batch.IndexBufferFormat, Batch.IndexCount);
+			Ctx.SetIndexBuffer(Batch.IndexBuffer, Batch.IndexBufferFormat, 0);
 			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, 0, 0, 0);
 		}
 	});
