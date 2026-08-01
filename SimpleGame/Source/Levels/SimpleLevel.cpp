@@ -11,13 +11,14 @@ void SimpleLevel_c::Load()
 	if (std::shared_ptr<SpatialObject_c> CameraObject = AddSpatialComponentToLevel<CameraComponent_c>())
 	{
 		CameraObject->AddComponent<FlyControllerComponent_c>();
+		CameraObject->SetPosition(float3(0, 5, -10));
 	}
 
 	if (std::shared_ptr<RuntimeMeshObject_c> FloorMeshObject = AddObjectToLevel<RuntimeMeshObject_c>())
 	{
 		if (FloorMeshObject->MeshComponent)
 		{
-			PlaneBuilder::PlaneMesh_s<uint32_t> PlaneMesh = PlaneBuilder::BuildPlaneMesh32(float2(10.0f, 10.0f));
+			PlaneBuilder::PlaneMesh_s<uint32_t> PlaneMesh = PlaneBuilder::BuildPlaneMesh32(float2(1000.0f, 1000.0f));
 
 			RuntimeMeshDesc_s FloorMeshDesc;
 			FloorMeshDesc.Positions = &PlaneMesh.Positions;

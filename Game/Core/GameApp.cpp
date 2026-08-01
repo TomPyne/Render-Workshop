@@ -44,6 +44,8 @@ void GameApp_c::Update()
 	Clock.Tick();
 	const float DeltaSeconds = Clock.GetDeltaSeconds();
 
+	Input::NewFrame();
+
 	if (Space)
 	{
 		Space->Update(DeltaSeconds);

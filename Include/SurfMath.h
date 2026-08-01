@@ -1024,6 +1024,18 @@ inline float3 GetEulerFromDirection(float3 Direction)
     return float3{ Pitch, Yaw, 0.0f };
 }
 
+// Inverse of GetEulerFromDirection. Matches row 2 of MakeMatrixRotationFromVector,
+// so it is independent of roll and already unit length.
+inline float3 GetDirectionFromEuler(float3 Euler)
+{
+    const float cp = cosf(Euler.x);
+    const float sp = sinf(Euler.x);
+    const float cy = cosf(Euler.y);
+    const float sy = sinf(Euler.y);
+
+    return float3{ cp * sy, -sp, cp * cy };
+}
+
 // Matrix
 inline constexpr matrix MakeMatrixIdentity() noexcept
 {
@@ -1033,10 +1045,10 @@ inline constexpr matrix MakeMatrixIdentity() noexcept
 inline constexpr matrix MakeMatrixTranslation(float x, float y, float z) noexcept
 {
     return matrix(
-        K_IdentityR0 + float4(0, 0, 0, x),
-        K_IdentityR1 + float4(0, 0, 0, y),
-        K_IdentityR2 + float4(0, 0, 0, z),
-        K_IdentityR3
+        K_IdentityR0,
+        K_IdentityR1,
+        K_IdentityR2,
+        float4(x, y, z, 1.0f)
     );
 }
 

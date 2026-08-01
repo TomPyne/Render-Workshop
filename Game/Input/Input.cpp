@@ -15,6 +15,7 @@ struct InputData
 {
 	bool KeyStates[(uint32_t)KeyCode_e::MAX] = {0};
 	float2 MousePosition = float2(0.0f);
+	float2 MousePrevPosition = float2(0.0f);
 	float2 MouseDelta = float2(0.0f);
 	uint8_t MouseButtonStates = 0;
 	float MouseWheelDelta = 0.0f;
@@ -71,6 +72,14 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 	}
 }
 
+void Input::NewFrame()
+{
+	g_InputData.MouseDelta.x = g_InputData.MousePosition.x - g_InputData.MousePrevPosition.x;
+	g_InputData.MouseDelta.y = g_InputData.MousePosition.y - g_InputData.MousePrevPosition.y;
+
+	g_InputData.MousePrevPosition = g_InputData.MousePosition;
+}
+
 bool Input::IsKeyDown(KeyCode_e Key)
 {
 	return g_InputData.KeyStates[(uint32_t)Key];
@@ -95,8 +104,6 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 	{
 		POINT MousePos = { (LONG)GET_X_LPARAM(lParam), (LONG)GET_Y_LPARAM(lParam) };
 
-		g_InputData.MouseDelta.x = static_cast<float>(MousePos.x) - g_InputData.MousePosition.x;
-		g_InputData.MouseDelta.y = static_cast<float>(MousePos.y) - g_InputData.MousePosition.y;
 		g_InputData.MousePosition.x = static_cast<float>(MousePos.x);
 		g_InputData.MousePosition.y = static_cast<float>(MousePos.y);
 

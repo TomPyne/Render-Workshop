@@ -12,6 +12,11 @@ public:
 
 	virtual void PreDestroy() override;
 
+	matrix CalculateViewMatrix() const;
+
+	matrix CalculateProjectionMatrix(float AspectRatio) const;
+	matrix CalculateProjectionMatrix(u32 ScreenWidth, u32 ScreenHeight) const;
+
 	float NearZ = 0.1f;
 	float FarZ = 10'000.0f;
 	float Fov = 45.0f;

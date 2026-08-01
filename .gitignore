@@ -12,6 +12,7 @@ imgui.ini
 #files
 *.exe
 *.pdb
+*.stackdump
 
 #cooked assets
 *.hp_mdl

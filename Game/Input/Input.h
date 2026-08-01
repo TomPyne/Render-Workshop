@@ -13,6 +13,8 @@ enum class KeyCode_e : uint32_t
 
 namespace Input
 {
+	void NewFrame();
+
 	bool IsKeyDown(KeyCode_e Key);
 	bool IsMouseButtonDown(int Button);
 	float2 GetMouseDelta();

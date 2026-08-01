@@ -9,8 +9,10 @@ void FlyControllerComponent_c::Update(float Delta)
 	if (Input::IsMouseButtonDown(1))
 	{
 		float2 MouseDelta = Input::GetMouseDelta();
-		ViewPitch -= MouseDelta.y * 25.0f * Delta;
+		ViewPitch += MouseDelta.y * 25.0f * Delta;
 		ViewYaw -= MouseDelta.x * 25.0f * Delta;
+
+		//printf("Delta %.2f / %.2f\n", MouseDelta.x, MouseDelta.y);
 	}
 
 	float3 Translation = { 0.0f };

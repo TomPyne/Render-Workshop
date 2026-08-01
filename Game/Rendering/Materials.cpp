@@ -68,7 +68,7 @@ BasicMaterial_c* MakeBasicMaterial(float3 Color)
     rl::PixelShader_t MeshPS = rl::CreatePixelShader(ShaderPath);
 
     rl::GraphicsPipelineStateDesc PsoDesc = {};
-    PsoDesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
+    PsoDesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::NONE)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
         .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16B16A16_FLOAT, rl::RenderFormat::R16G16_FLOAT, rl::RenderFormat::R16G16_FLOAT }, { rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None(), rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
         .VertexShader(MeshVS)

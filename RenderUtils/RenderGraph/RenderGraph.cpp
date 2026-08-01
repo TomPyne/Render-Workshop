@@ -112,20 +112,22 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::RefExternalTexture(RenderGraph
 	return Handle;
 }
 
-RenderGraphResourceHandle_t RenderGraphBuilder_s::RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState)
+RenderGraphResourceHandle_t RenderGraphBuilder_s::RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState, uint32_t Width, uint32_t Height)
 {
 	if (!ENSUREMSG(rl::IsValid(Texture) && rl::IsValid(RTV), "RenderGraphBuilder_s::RefBackBufferTexture Texture or RTV are not valid"))
 	{
 		return RenderGraphResourceHandle_t::NONE;
 	}
 	
-	if(rl::IsValid(BackBufferTexture) || rl::IsValid(BackBufferRTV))
+	if(rl::IsValid(Backbuffer.BackBufferTexture) || rl::IsValid(Backbuffer.BackBufferRTV))
 	{
 		LOGWARNING("RenderGraphBuilder_s::RefBackBufferTexture Back buffer texture or RTV already set, overwriting previous values");
 	}
-	BackBufferTexture = Texture;
-	BackBufferRTV = RTV;
-	BackBufferTransitionState = TransitionState;
+	Backbuffer.BackBufferTexture = Texture;
+	Backbuffer.BackBufferRTV = RTV;
+	Backbuffer.BackBufferTransitionState = TransitionState;
+	Backbuffer.BackbufferWidth = Width;
+	Backbuffer.BackbufferHeight = Height;
 
 	RenderGraphResourceDesc_s* Resource = nullptr;
 	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, L"BackbufferTexture");
@@ -322,9 +324,7 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 	}
 
 	RenderGraph.ExtractedTextures = std::move(ExtractedTextures);
-	RenderGraph.BackBufferRTV = BackBufferRTV;
-	RenderGraph.BackBufferTexture = BackBufferTexture;
-	RenderGraph.BackBufferTransitionState = BackBufferTransitionState;
+	RenderGraph.Backbuffer = Backbuffer;
 
 	ResourcePool.FinishFrame();
 
@@ -364,15 +364,15 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 
 			if (Resource.IsBackBuffer)
 			{
-				if (BackBufferTransitionState != ResourceUsage.DesiredState)
+				if (Backbuffer.BackBufferTransitionState != ResourceUsage.DesiredState)
 				{
-					Ctx.TransitionResource(BackBufferTexture, BackBufferTransitionState, ResourceUsage.DesiredState);
-					BackBufferTransitionState = ResourceUsage.DesiredState;
+					Ctx.TransitionResource(Backbuffer.BackBufferTexture, Backbuffer.BackBufferTransitionState, ResourceUsage.DesiredState);
+					Backbuffer.BackBufferTransitionState = ResourceUsage.DesiredState;
 				}
 				if (rl::HasEnumFlags(ResourceUsage.AccessType, RenderGraphResourceAccessType_e::RTV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 				{
 					const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-					Ctx.ClearRenderTarget(BackBufferRTV, ClearColor);
+					Ctx.ClearRenderTarget(Backbuffer.BackBufferRTV, ClearColor);
 				}
 				continue;
 			}
@@ -423,7 +423,7 @@ rl::RenderTargetView_t RenderGraph_s::GetRTV(RenderGraphResourceHandle_t Resourc
 	{
 		if (ActiveResource->IsBackBuffer)
 		{
-			return BackBufferRTV;
+			return Backbuffer.BackBufferRTV;
 		}
 		else
 		{
@@ -474,7 +474,11 @@ uint2 RenderGraph_s::GetTextureDimensions(RenderGraphResourceHandle_t Resource)
 {
 	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
 	{
-		if (ActiveResource->Texture)
+		if (ActiveResource->IsBackBuffer)
+		{
+			return uint2(Backbuffer.BackbufferWidth, Backbuffer.BackbufferHeight);
+		}
+		else if (ActiveResource->Texture)
 		{
 			return uint2(ActiveResource->Texture->Desc.Width, ActiveResource->Texture->Desc.Height);
 		}

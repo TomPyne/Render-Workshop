@@ -1,5 +1,6 @@
 #include "SpaceRenderer.h"
 
+#include "Game/Object/CameraComponent.h"
 #include "Game/Object/ObjectComponent.h"
 #include "Game/Rendering/IRenderable.h"
 #include "Game/Space/Space.h"
@@ -68,6 +69,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (!Space)
 		return;
 
+	auto Cam = Space->PrimaryCamera.lock();
+	if (!Cam)
+		return;
+
+	matrix ProjectionMatrix = Cam->CalculateProjectionMatrix(Screen.Width, Screen.Height);
+	matrix ViewMatrix = Cam->CalculateViewMatrix();
+
 	SpatialRenderingCollector_s Collector = {};
 
 	for (std::shared_ptr<Object_c>& Object : Space->Objects)
@@ -82,7 +90,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 
 	SpaceViewUniforms_s ViewUniforms = {};
-	ViewUniforms.ViewProjection = Space->PrimaryView.ViewMatrix * Space->PrimaryView.ProjectionMatrix;
+	ViewUniforms.ViewProjection = ViewMatrix * ProjectionMatrix;
 
 	rl::DynamicBuffer_t ViewUniformsBuffer = rl::CreateDynamicConstantBuffer(&ViewUniforms);
 
@@ -123,7 +131,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		}
 	});
 
-	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET);
+	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
 	G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, SceneColorTexture, BackBufferTexture);
 

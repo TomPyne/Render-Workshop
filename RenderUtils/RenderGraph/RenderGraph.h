@@ -148,6 +148,15 @@ struct RenderGraphResourceDesc_s
 	std::wstring ResourceName;
 };
 
+struct RenderGraphBackbufferDesc_s
+{
+	rl::Texture_t BackBufferTexture = {};
+	rl::RenderTargetView_t BackBufferRTV = {};
+	rl::ResourceTransitionState BackBufferTransitionState = rl::ResourceTransitionState::COMMON;
+	uint32_t BackbufferWidth = 0u;
+	uint32_t BackbufferHeight = 0u;
+};
+
 struct RenderGraphBuilder_s
 {
 	RenderGraphBuilder_s(RenderGraphResourcePool_s& InResourcePool)
@@ -157,7 +166,7 @@ struct RenderGraphBuilder_s
 
 	RenderGraphResourceHandle_t CreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName);
-	RenderGraphResourceHandle_t RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState);
+	RenderGraphResourceHandle_t RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState, uint32_t Width, uint32_t Height);
 
 	// TODO: Support dynamic release and injection, for now use copy
 	RenderGraphResourceHandle_t InjectTexture(RenderGraphTexturePtr_t& ExtractedTexture, const wchar_t* ResourceName);
@@ -178,9 +187,7 @@ protected:
 	std::vector<RenderGraphPass_s> Passes;
 	std::vector<RenderGraphResourceDesc_s> ResourceDescs;
 
-	rl::Texture_t BackBufferTexture = {};
-	rl::RenderTargetView_t BackBufferRTV = {};
-	rl::ResourceTransitionState BackBufferTransitionState = rl::ResourceTransitionState::COMMON;
+	RenderGraphBackbufferDesc_s Backbuffer = {};
 
 	std::map<RenderGraphResourceHandle_t, RenderGraphTexturePtr_t> ExtractedTextures;
 
@@ -218,9 +225,7 @@ struct RenderGraph_s
 private:
 	RenderGraphResource_s* GetResource(RenderGraphResourceHandle_t Resource);
 
-	rl::Texture_t BackBufferTexture = {};
-	rl::RenderTargetView_t BackBufferRTV = {};
-	rl::ResourceTransitionState BackBufferTransitionState = rl::ResourceTransitionState::COMMON;
+	RenderGraphBackbufferDesc_s Backbuffer = {};
 
 	std::map<RenderGraphResourceHandle_t, RenderGraphTexturePtr_t> ExtractedTextures;
 

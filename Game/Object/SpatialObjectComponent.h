@@ -13,10 +13,7 @@ public:
 	SpatialObjectComponent_c(const std::shared_ptr<SpatialObject_c>& InSpatialOwner);
 	virtual ~SpatialObjectComponent_c() = default;
 
-	float3 GetPosition() const;
-	float3 GetRotation() const;
-	float GetScale() const;
-	matrix GetTransform() const;
+	const struct Transform_s& GetTransform() const;
 
 	SpatialObject_c* GetSpatialOwner() const
 	{

@@ -7,18 +7,6 @@
 #include <memory>
 #include <vector>
 
-struct SpaceView_s
-{
-	float2 ScreenSize;
-	float NearZ;
-	float FarZ;
-	float Fov;
-	float3 Position;
-	float3 LookDir;
-	matrix ProjectionMatrix;
-	matrix ViewMatrix;
-};
-
 class CameraComponent_c;
 class Level_c;
 
@@ -55,8 +43,6 @@ public:
 	void UnloadLevel(Level_c* InLevel);
 
 	// Camera
-
-	SpaceView_s PrimaryView;
 	
 	std::weak_ptr<CameraComponent_c> PrimaryCamera;
 

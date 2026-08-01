@@ -7,26 +7,9 @@ SpatialObjectComponent_c::SpatialObjectComponent_c(const std::shared_ptr<Spatial
 	, SpatialOwner(InSpatialOwner)
 {}
 
-float3 SpatialObjectComponent_c::GetPosition() const
+const Transform_s& SpatialObjectComponent_c::GetTransform() const
 {
+	static const Transform_s DefaultTransform = {};
 	const SpatialObject_c* Owner = GetSpatialOwner();
-	return Owner ? Owner->GetTransform().GetPosition() : float3(0.0f);
-}
-
-float3 SpatialObjectComponent_c::GetRotation() const
-{
-	const SpatialObject_c* Owner = GetSpatialOwner();
-	return Owner ? Owner->GetTransform().GetRotation() : float3(0.0f);
-}
-
-float SpatialObjectComponent_c::GetScale() const
-{
-	const SpatialObject_c* Owner = GetSpatialOwner();
-	return Owner ? Owner->GetTransform().GetScale() : 0.0f;
-}
-
-matrix SpatialObjectComponent_c::GetTransform() const
-{
-	const SpatialObject_c* Owner = GetSpatialOwner();
-	return Owner ? Owner->GetTransform().GetMatrix() : MakeMatrixIdentity();
+	return Owner ? Owner->GetTransform() : DefaultTransform;
 }
