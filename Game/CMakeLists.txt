@@ -43,6 +43,8 @@ function(create_proj projname rapi)
 		"Rendering/GameRenderer.h"
 		"Rendering/Materials.cpp"
 		"Rendering/Materials.h"
+		"Rendering/Mesh.cpp"
+		"Rendering/Mesh.h"
 		"Rendering/SpaceRenderer.cpp"
 		"Rendering/SpaceRenderer.h"
 		"Space/Space.cpp"

@@ -13,6 +13,7 @@ struct SpatialRenderingBatch_s
 	rl::ConstantBuffer_t MaterialUniforms;
 	rl::IndexBuffer_t IndexBuffer;
 	rl::RenderFormat IndexBufferFormat;
+	uint32_t IndexOffset;
 	uint32_t IndexCount;
 	rl::GraphicsPipelineState_t PSO;
 };

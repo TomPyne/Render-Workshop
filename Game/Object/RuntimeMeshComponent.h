@@ -2,6 +2,7 @@
 
 #include "SpatialObjectComponent.h"
 #include "Game/Rendering/IRenderable.h"
+#include "Game/Rendering/Mesh.h"
 #include "SpatialObject.h"
 
 #include <Render/RenderTypes.h>
@@ -28,15 +29,9 @@ public:
 	// ~IRenderable_c
 
 	void UpdateMesh(const RuntimeMeshDesc_s& Desc);
-	void SetMaterial(class BasicMaterial_c* InMaterial) { Material = InMaterial; }
+	void SetMaterial(class BasicMaterial_c* InMaterial);
 
-	rl::StructuredBufferPtr PositionBuffer = {};
-	rl::ShaderResourceViewPtr PositionBufferSRV = {};
-	rl::IndexBufferPtr IndexBuffer = {};
-	uint32_t IndexCount = 0;
-	rl::ConstantBuffer_t MeshUniforms = {};
-
-	class BasicMaterial_c* Material = nullptr;
+	Mesh_s Mesh = {};
 };
 
 class RuntimeMeshObject_c : public SpatialObject_c
