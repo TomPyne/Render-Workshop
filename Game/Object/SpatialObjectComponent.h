@@ -10,7 +10,7 @@ class SpatialObject_c;
 class SpatialObjectComponent_c : public ObjectComponent_c
 {
 public:
-	SpatialObjectComponent_c(const std::shared_ptr<SpatialObject_c>& InSpatialOwner);
+	SpatialObjectComponent_c(const ObjectComponentArgs_s& Args);
 	virtual ~SpatialObjectComponent_c() = default;
 
 	const struct Transform_s& GetTransform() const;

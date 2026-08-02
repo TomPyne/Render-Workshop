@@ -16,6 +16,7 @@ public:
 
 	virtual ~Level_c() = default;
 
+	virtual void Deserialize(const std::wstring& LevelPath);
 	virtual void Load() {}
 	virtual void Unload();
 
@@ -39,7 +40,7 @@ public:
 		{
 			std::shared_ptr<SpatialObject_c> Object = Space->CreateObject<SpatialObject_c>();
 			Objects.push_back(Object);
-			Object->AddSpatialComponent<ComponentType>();
+			Object->AddComponent<ComponentType>();
 			return Object;
 		}
 

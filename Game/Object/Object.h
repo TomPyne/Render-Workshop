@@ -26,10 +26,11 @@ public:
 
 	void Update(float Delta);
 
-	template<class ComponentType, class... Args>
-	ComponentType* AddComponent(Args&&... InArgs)
+	template<class ComponentType>
+	ComponentType* AddComponent()
 	{
-		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(shared_from_this(), std::forward<Args>(InArgs)...);
+		const ObjectComponentArgs_s Args(shared_from_this());
+		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(Args);
 		Components.push_back(NewComponent);
 		NewComponent->OnCreate();
 		return NewComponent.get();

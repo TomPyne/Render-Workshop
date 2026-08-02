@@ -9,26 +9,16 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
 {
 public:
 
+	using SpatialObjectComponent_c::SpatialObjectComponent_c;
 	virtual ~MeshComponent_c() = default;
 
 	// Begin IRenderable_c interface
-	virtual void Render(struct SpatialRenderingCollector_s& Collector) override {}
+	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
 	// End IRenderable_c interface
 
-	void SetMesh(const std::wstring& InMeshPath);
+	virtual void SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh);
 
 protected:
 
-	std::wstring MeshPath;
-
-	struct Surface
-	{
-		// Material
-		// Buffers
-	};
-
-	struct Mesh
-	{
-
-	};
+	std::shared_ptr<struct Mesh_s> Mesh = {};
 };

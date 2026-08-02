@@ -1,0 +1,63 @@
+{
+    "Version": 1,
+    "Objects":
+    [
+        {
+            "Class": "SpatialObject",
+            "Position": "0, 5, -10",
+            "Components":
+            [
+                {
+                    "Class": "CameraComponent"
+                },
+                {
+                    "Class": "FlyControllerComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Plane.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "-9, 3, 36"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "0, 3, 36"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "-9, 3, 24"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "0, 3, 24"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "-9, 3, 12"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "0, 3, 12"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "-9, 3, 0"
+        },
+        {
+            "Class": "MeshObject",
+            "Mesh": "Meshes/Column.hp_mdl",
+            "Position": "0, 3, 0"
+        }
+    ]
+}

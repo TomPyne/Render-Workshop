@@ -21,9 +21,46 @@ void Space_c::DestroyObject(Object_c* Object)
 	}
 }
 
-void Space_c::LoadLevelInternal(Level_c* InLevel)
+std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName)
+{
+	auto It = ObjectFactoryCallbacks.find(ClassName);
+	if (!ENSUREMSG(It != ObjectFactoryCallbacks.end(), "No object class registered for name '%S'", ClassName.c_str()))
+	{
+		return nullptr;
+	}
+
+	std::shared_ptr<Object_c> NewObject = It->second(ObjectArgs_s{ this });
+	Objects.push_back(NewObject);
+	NewObject->OnCreate();
+	return NewObject;
+}
+
+std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owner, const std::wstring& ClassName)
+{
+	if (!Owner)
+		return nullptr;
+
+	auto It = ComponentFactoryCallbacks.find(ClassName);
+	if (!ENSUREMSG(It != ComponentFactoryCallbacks.end(), "No component class registered for name '%S'", ClassName.c_str()))
+	{
+		return nullptr;
+	}
+
+	std::shared_ptr<ObjectComponent_c> NewComponent = It->second(ObjectComponentArgs_s{ Owner->shared_from_this() });
+	Owner->Components.push_back(NewComponent);
+	NewComponent->OnCreate();
+	return NewComponent;
+}
+
+void Space_c::LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath)
 {
 	CHECK(InLevel);
+
+	if (!LevelPath.empty())
+	{
+		InLevel->Deserialize(LevelPath);
+	}
+
 	InLevel->Load();
 }
 

@@ -4,7 +4,10 @@
 
 #include <SurfMath.h>
 
+#include <functional>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 class CameraComponent_c;
@@ -31,12 +34,35 @@ public:
 	// TODO: Defer destruction until end of frame.
 	void DestroyObject(Object_c* Object);
 
+	// Factory functions ////////////////////////////////////////////////////////////////
+	template<class ObjectType>
+	void RegisterObjectClass(const std::wstring& ClassName)
+	{
+		ObjectFactoryCallbacks[ClassName] = [](const ObjectArgs_s& Args) -> std::shared_ptr<Object_c>
+		{
+			return std::make_shared<ObjectType>(Args);
+		};
+	}
+
+	template<class ComponentType>
+	void RegisterComponentClass(const std::wstring& ClassName)
+	{
+		ComponentFactoryCallbacks[ClassName] = [](const ObjectComponentArgs_s& Args) -> std::shared_ptr<ObjectComponent_c>
+		{
+			return std::make_shared<ComponentType>(Args);
+		};
+	}
+
+	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName);
+	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName);
+
+	// Level functions ////////////////////////////////////////////////////////////////
 	template<class LevelType>
-	Level_c* LoadLevel()
+	Level_c* LoadLevel(const std::wstring& LevelPath = L"")
 	{
 		std::shared_ptr<LevelType> NewLevel = std::make_shared<LevelType>(shared_from_this());
 		Levels.push_back(NewLevel);
-		LoadLevelInternal(NewLevel.get());
+		LoadLevelInternal(NewLevel.get(), LevelPath);
 		return NewLevel.get();
 	}
 
@@ -51,5 +77,10 @@ public:
 
 protected:
 
-	void LoadLevelInternal(Level_c* InLevel);
+	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
+
+private:
+
+	std::unordered_map<std::wstring, std::function<std::shared_ptr<Object_c>(const ObjectArgs_s&)>> ObjectFactoryCallbacks;
+	std::unordered_map<std::wstring, std::function<std::shared_ptr<ObjectComponent_c>(const ObjectComponentArgs_s&)>> ComponentFactoryCallbacks;
 };

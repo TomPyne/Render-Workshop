@@ -2,10 +2,14 @@
 
 #include "SpatialObject.h"
 
-SpatialObjectComponent_c::SpatialObjectComponent_c(const std::shared_ptr<SpatialObject_c>& InSpatialOwner)
-	: ObjectComponent_c(InSpatialOwner)
-	, SpatialOwner(InSpatialOwner)
-{}
+#include <Shared/Logging/Logging.h>
+
+SpatialObjectComponent_c::SpatialObjectComponent_c(const ObjectComponentArgs_s& Args)
+	: ObjectComponent_c(Args)
+{
+	SpatialOwner = std::dynamic_pointer_cast<SpatialObject_c>(Args.Owner.lock());
+	ENSUREMSG(!SpatialOwner.expired(), "Failed to correctly create component for spatial object. Owner is not a SpatialObject_c.");
+}
 
 const Transform_s& SpatialObjectComponent_c::GetTransform() const
 {

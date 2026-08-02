@@ -1,6 +1,10 @@
 #include "GameApp.h"
 
 #include "Game/Input/Input.h"
+#include "Game/Object/CameraComponent.h"
+#include "Game/Object/FlyControllerComponent.h"
+#include "Game/Object/MeshComponent.h"
+#include "Game/Object/RuntimeMeshComponent.h"
 #include "Game/Rendering/SpaceRenderer.h"
 #include "Game/Space/Space.h"
 #include "WindowsPlatform.h"
@@ -22,7 +26,7 @@ bool GameApp_c::Init()
 
 	Clock = {};
 
-	//InitializeApp();
+	//*InitializeApp();
 
 	return true;
 }
@@ -32,9 +36,25 @@ void GameApp_c::Shutdown()
 	rl::Render_ShutDown();
 }
 
+void GameApp_c::RegisterClasses()
+{
+	if (!Space)
+		return;
+
+	Space->RegisterObjectClass<Object_c>(L"Object");
+	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
+	Space->RegisterObjectClass<RuntimeMeshObject_c>(L"RuntimeMesh");
+
+	Space->RegisterComponentClass<CameraComponent_c>(L"CameraComponent");
+	Space->RegisterComponentClass<FlyControllerComponent_c>(L"FlyControllerComponent");
+	Space->RegisterComponentClass<MeshComponent_c>(L"MeshComponent");
+}
+
 void GameApp_c::Load()
 {
 	Space = std::make_shared<Space_c>();
+	RegisterClasses();
+
 	SpaceRenderer = std::make_shared<SpaceRenderer_c>();
 	SpaceRenderer->Init();
 }

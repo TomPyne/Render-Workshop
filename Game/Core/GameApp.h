@@ -14,6 +14,8 @@ public:
 	virtual bool Init();
 	virtual void Shutdown();
 
+	virtual void RegisterClasses();
+
 	virtual void Load(); // Called after init and before first frame
 
 	virtual void Update();

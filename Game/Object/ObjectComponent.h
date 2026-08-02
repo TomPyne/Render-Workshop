@@ -4,11 +4,19 @@
 
 class Object_c;
 
+struct ObjectComponentArgs_s
+{
+	ObjectComponentArgs_s(const std::shared_ptr<Object_c>& InOwner)
+		: Owner(InOwner)
+	{}
+	std::weak_ptr<Object_c> Owner;
+};
+
 class ObjectComponent_c : public std::enable_shared_from_this<ObjectComponent_c>
 {
 public:
 
-	ObjectComponent_c(const std::shared_ptr<Object_c>& InOwner);
+	ObjectComponent_c(const ObjectComponentArgs_s& Args);
 
 	virtual void Load() {}
 	virtual void OnCreate() {}

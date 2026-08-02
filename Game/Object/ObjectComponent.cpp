@@ -2,8 +2,8 @@
 
 #include "Object.h"
 
-ObjectComponent_c::ObjectComponent_c(const std::shared_ptr<Object_c>& InOwner)
-	: Owner(InOwner)
+ObjectComponent_c::ObjectComponent_c(const ObjectComponentArgs_s& Args)
+	: Owner(Args.Owner)
 {}
 
 Space_c* ObjectComponent_c::GetSpace() const

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "SpatialObjectComponent.h"
+
 #include "Game/Rendering/IRenderable.h"
 #include "Game/Rendering/Mesh.h"
 #include "SpatialObject.h"
+#include "SpatialObjectComponent.h"
 
 #include <Render/RenderTypes.h>
 
@@ -21,7 +22,7 @@ struct RuntimeMeshDesc_s
 class RuntimeMeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
 {
 public:
-	RuntimeMeshComponent_c(const std::shared_ptr<SpatialObject_c>& InSpatialOwner);
+	using SpatialObjectComponent_c::SpatialObjectComponent_c;
 	virtual ~RuntimeMeshComponent_c() = default;
 
 	// IRenderable_c
@@ -31,13 +32,14 @@ public:
 	void UpdateMesh(const RuntimeMeshDesc_s& Desc);
 	void SetMaterial(class BasicMaterial_c* InMaterial);
 
-	Mesh_s Mesh = {};
+	std::shared_ptr<Mesh_s> Mesh = {};
 };
 
 class RuntimeMeshObject_c : public SpatialObject_c
 {
 public:
 	using SpatialObject_c::SpatialObject_c;
+	~RuntimeMeshObject_c() = default;
 
 	virtual void OnCreate() override;
 
