@@ -13,6 +13,10 @@ public:
 	SpatialObject_c(const ObjectArgs_s& Args);
 	virtual ~SpatialObject_c() = default;
 
+	// Begin Object_c interface
+	virtual void Deserialize(const JsonValue_s& Data) override;
+	// End Object_c interface
+
 	const Transform_s& GetTransform() const { return Transform; }
 
 	void SetPosition(const float3& NewPosition) { Transform.SetPosition(NewPosition); }

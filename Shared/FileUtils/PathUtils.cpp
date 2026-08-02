@@ -54,3 +54,41 @@ bool CreateDirectories(const std::wstring& Path)
 	std::filesystem::path ParentPath = std::filesystem::path(Path).parent_path();
 	return std::filesystem::create_directories(ParentPath);
 }
+
+std::wstring Path_s::DefaultProjectName;
+
+Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InPath)
+{
+	if (ENSUREMSG(!DefaultProjectName.empty(), "[Path_s] Default project name is not set, cannot construct path"))
+	{
+		Path = ConstructPathPrefix(InDirectory, DefaultProjectName) + InPath;
+	}	
+}
+
+Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const std::wstring& InPath)
+{
+	Path = ConstructPathPrefix(InDirectory, InProject) + InPath;
+}
+
+void Path_s::SetDefaultProject(const std::wstring& InProjectName)
+{
+	DefaultProjectName = InProjectName;
+}
+
+std::wstring Path_s::ConstructPathPrefix(PathDirectory_e Directory, const std::wstring& Project)
+{
+	switch (Directory)
+	{
+	case PathDirectory_e::Root:
+		return L"";
+	case PathDirectory_e::Project:
+		return Project + L"/";
+	case PathDirectory_e::Assets:
+		return Project + L"/Assets/";
+	case PathDirectory_e::Shaders:
+		return Project + L"/Shaders/";
+	default:
+		LOGERROR("[Path_s] Invalid directory enum value");
+		return L"";
+	}
+}

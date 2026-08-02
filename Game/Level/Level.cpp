@@ -3,10 +3,13 @@
 #include "Game/Space/Space.h"
 
 #include <Shared/Logging/Logging.h>
-#include <Shared/StringUtils/StringUtils.h>
+#include <Shared/FileUtils/JsonHelpers.h>
+#include <Shared/FileUtils/JsonValue.h>
 
-#include <json.hpp>
 #include <fstream>
+
+#define LEVEL_VERSION_INITIAL 1
+#define LEVEL_VERSION_CURRENT LEVEL_VERSION_INITIAL
 
 struct LevelData_s
 {
@@ -35,79 +38,6 @@ struct LevelData_s
 namespace
 {
 
-// Reads an optional string field, leaving Out untouched if the field is absent
-bool TryParseString(const nlohmann::json& Node, const char* Field, std::wstring& Out)
-{
-	auto It = Node.find(Field);
-	if (It == Node.end())
-	{
-		return false;
-	}
-
-	if (!It->is_string())
-	{
-		LOGWARNING("[Level] Field '%s' is not a string", Field);
-		return false;
-	}
-
-	Out = NarrowToWide(It->get<std::string>());
-	return true;
-}
-
-// Positions are authored as "x, y, z" strings rather than json arrays
-bool TryParseFloat3(const nlohmann::json& Node, const char* Field, float3& Out)
-{
-	auto It = Node.find(Field);
-	if (It == Node.end())
-	{
-		return false;
-	}
-
-	if (!It->is_string())
-	{
-		LOGWARNING("[Level] Field '%s' is not a string", Field);
-		return false;
-	}
-
-	const std::string Value = It->get<std::string>();
-
-	float Components[3] = { 0.0f, 0.0f, 0.0f };
-	const char* Cursor = Value.c_str();
-
-	for (int32_t Index = 0; Index < 3; Index++)
-	{
-		char* End = nullptr;
-		Components[Index] = strtof(Cursor, &End);
-
-		if (End == Cursor)
-		{
-			LOGWARNING("[Level] Field '%s' expects 3 comma separated floats, got '%s'", Field, Value.c_str());
-			return false;
-		}
-
-		Cursor = End;
-
-		while (*Cursor == ' ' || *Cursor == '\t')
-		{
-			Cursor++;
-		}
-
-		if (Index < 2)
-		{
-			if (*Cursor != ',')
-			{
-				LOGWARNING("[Level] Field '%s' expects 3 comma separated floats, got '%s'", Field, Value.c_str());
-				return false;
-			}
-
-			Cursor++;
-		}
-	}
-
-	Out = float3(Components[0], Components[1], Components[2]);
-	return true;
-}
-
 bool ParseComponent(const nlohmann::json& Node, LevelData_s::ComponentData_s& Out)
 {
 	if (!Node.is_object())
@@ -116,7 +46,7 @@ bool ParseComponent(const nlohmann::json& Node, LevelData_s::ComponentData_s& Ou
 		return false;
 	}
 
-	if (!TryParseString(Node, "Class", Out.Class) || Out.Class.empty())
+	if (!JsonHelpers::ParseWString(Node, "Class", Out.Class) || Out.Class.empty())
 	{
 		LOGWARNING("[Level] Component entry requires a 'Class' field");
 		return false;
@@ -134,13 +64,13 @@ bool ParseObject(const nlohmann::json& Node, LevelData_s::ObjectData_s& Out)
 		return false;
 	}
 
-	if (!TryParseString(Node, "Class", Out.Class) || Out.Class.empty())
+	if (!JsonHelpers::ParseWString(Node, "Class", Out.Class) || Out.Class.empty())
 	{
 		LOGWARNING("[Level] Object entry requires a 'Class' field");
 		return false;
 	}
 
-	TryParseFloat3(Node, "Position", Out.Position);
+	JsonHelpers::ParseFloat3(Node, "Position", Out.Position);
 
 	auto ComponentsIt = Node.find("Components");
 	if (ComponentsIt != Node.end())
@@ -176,14 +106,17 @@ bool ParseLevel(const nlohmann::json& Root, LevelData_s& Out)
 		return false;
 	}
 
-	auto VersionIt = Root.find("Version");
-	if (VersionIt == Root.end() || !VersionIt->is_number_integer())
+	if (!JsonHelpers::ParseInt(Root, "Version", Out.Version))
 	{
 		LOGERROR("[Level] Requires an integer 'Version' field");
 		return false;
 	}
 
-	Out.Version = VersionIt->get<int32_t>();
+	if (Out.Version != LEVEL_VERSION_CURRENT)
+	{
+		LOGERROR("[Level] Unsupported version %d, expected %d", Out.Version, LEVEL_VERSION_CURRENT);
+		return false;
+	}
 
 	auto ObjectsIt = Root.find("Objects");
 	if (ObjectsIt == Root.end())
@@ -216,8 +149,6 @@ bool ParseLevel(const nlohmann::json& Root, LevelData_s& Out)
 
 void Level_c::Deserialize(const std::wstring& LevelPath)
 {
-	using json = nlohmann::json;
-
 	// Note: narrow stream, nlohmann only provides an input adapter for std::istream
 	std::ifstream AssetFile(LevelPath.c_str());
 
@@ -228,7 +159,7 @@ void Level_c::Deserialize(const std::wstring& LevelPath)
 	}
 
 	constexpr bool AllowExceptions = false;
-	json Data = json::parse(AssetFile, nullptr, AllowExceptions);
+	nlohmann::json Data = nlohmann::json::parse(AssetFile, nullptr, AllowExceptions);
 
 	if (Data.is_discarded())
 	{

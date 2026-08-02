@@ -19,3 +19,31 @@ std::wstring MakePathAbsolute(const std::wstring& Path);
 std::wstring MakePathRelativeTo(const std::wstring& Path, const std::wstring& Base);
 
 bool CreateDirectories(const std::wstring& Path);
+
+enum class PathDirectory_e
+{
+	Root,		// E.g. Git/MyRepo
+	Project,	// E.g. Git/MyRepo/ProjectName
+	Assets,		// E.g. Git/MyRepo/ProjectName/Assets
+	Shaders,	// E.g. Git/MyRepo/ProjectName/Assets/Shaders
+	Count
+};
+
+struct Path_s
+{
+	Path_s(PathDirectory_e Directory, const std::wstring& Path); // Uses global path project, for final projects
+	Path_s(PathDirectory_e Directory, const std::wstring& Project, const std::wstring& Path); // Uses specified project, for libraries
+
+	std::wstring ToWString() const;
+	std::string ToString() const;
+
+	static void SetDefaultProject(const std::wstring& InProjectName);
+
+private:
+
+	static std::wstring ConstructPathPrefix(PathDirectory_e Directory, const std::wstring& Project);
+
+	std::wstring Path;
+
+	static std::wstring DefaultProjectName;
+};

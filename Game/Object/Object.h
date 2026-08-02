@@ -6,6 +6,7 @@
 #include <memory>
 
 class Space_c;
+struct JsonValue_s;
 
 struct ObjectArgs_s
 {
@@ -20,6 +21,7 @@ public:
 
 	virtual ~Object_c() = default;
 
+	virtual void Deserialize(const JsonValue_s& Data) {}
 	virtual void OnCreate() {}
 
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
