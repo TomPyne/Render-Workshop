@@ -53,8 +53,8 @@ public:
 		};
 	}
 
-	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName);
-	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName);
+	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
+	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 
 	// Level functions ////////////////////////////////////////////////////////////////
 	template<class LevelType>

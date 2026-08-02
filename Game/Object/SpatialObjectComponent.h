@@ -13,6 +13,10 @@ public:
 	SpatialObjectComponent_c(const ObjectComponentArgs_s& Args);
 	virtual ~SpatialObjectComponent_c() = default;
 
+	// Begin ObjectComponent_c interface
+	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	// End ObjectComponent_c interface
+
 	const struct Transform_s& GetTransform() const;
 
 	SpatialObject_c* GetSpatialOwner() const

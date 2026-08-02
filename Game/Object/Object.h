@@ -2,8 +2,9 @@
 
 #include "ObjectComponent.h"
 
-#include <vector>
 #include <memory>
+#include <string>
+#include <vector>
 
 class Space_c;
 struct JsonValue_s;
@@ -21,7 +22,7 @@ public:
 
 	virtual ~Object_c() = default;
 
-	virtual void Deserialize(const JsonValue_s& Data) {}
+	virtual void Deserialize(const JsonValue_s& Data);
 	virtual void OnCreate() {}
 
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
@@ -37,6 +38,8 @@ public:
 		NewComponent->OnCreate();
 		return NewComponent.get();
 	}
+
+	void AddComponentByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 
 	template<typename Func>
 	void ForEachComponent(Func&& Function)

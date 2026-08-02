@@ -177,6 +177,15 @@ void Level_c::Deserialize(const std::wstring& LevelPath)
 	LOGINFO("[Level] Deserialized %S, version %d, %zu objects", LevelPath.c_str(), LevelData.Version, LevelData.Objects.size());
 
 	// TODO: Spawn the objects described by LevelData
+
+	if (Space_c* Space = GetSpace())
+	{
+		for (LevelData_s::ObjectData_s& Object : LevelData.Objects)
+		{
+			JsonValue_s ObjectData(Object.Data);
+			Space->CreateObjectByName(Object.Class, &ObjectData);
+		}
+	}
 }
 
 void Level_c::Unload()

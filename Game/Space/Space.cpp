@@ -21,7 +21,7 @@ void Space_c::DestroyObject(Object_c* Object)
 	}
 }
 
-std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName)
+std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data)
 {
 	auto It = ObjectFactoryCallbacks.find(ClassName);
 	if (!ENSUREMSG(It != ObjectFactoryCallbacks.end(), "No object class registered for name '%S'", ClassName.c_str()))
@@ -31,11 +31,17 @@ std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassN
 
 	std::shared_ptr<Object_c> NewObject = It->second(ObjectArgs_s{ this });
 	Objects.push_back(NewObject);
+
+	if (Data)
+	{
+		NewObject->Deserialize(*Data);
+	}
+
 	NewObject->OnCreate();
 	return NewObject;
 }
 
-std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owner, const std::wstring& ClassName)
+std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data)
 {
 	if (!Owner)
 		return nullptr;
@@ -48,6 +54,12 @@ std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owne
 
 	std::shared_ptr<ObjectComponent_c> NewComponent = It->second(ObjectComponentArgs_s{ Owner->shared_from_this() });
 	Owner->Components.push_back(NewComponent);
+
+	if (Data)
+	{
+		NewComponent->Deserialize(*Data);
+	}
+
 	NewComponent->OnCreate();
 	return NewComponent;
 }

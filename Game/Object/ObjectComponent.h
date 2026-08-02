@@ -17,7 +17,9 @@ class ObjectComponent_c : public std::enable_shared_from_this<ObjectComponent_c>
 public:
 
 	ObjectComponent_c(const ObjectComponentArgs_s& Args);
+	virtual ~ObjectComponent_c() = default;
 
+	virtual void Deserialize(const struct JsonValue_s& Data) {}
 	virtual void Load() {}
 	virtual void OnCreate() {}
 	virtual void Update(float Delta) {}
@@ -33,5 +35,4 @@ public:
 private:
 
 	std::weak_ptr<Object_c> Owner;
-
 };
