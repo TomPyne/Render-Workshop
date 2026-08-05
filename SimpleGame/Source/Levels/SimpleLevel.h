@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Game/Level/Level.h>
+#include <Level/Level.h>
 
 class SimpleLevel_c : public Level_c
 {

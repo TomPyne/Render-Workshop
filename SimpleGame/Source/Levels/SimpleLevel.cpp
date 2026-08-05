@@ -1,9 +1,9 @@
 #include "SimpleLevel.h"
 
-#include <Game/Object/CameraComponent.h>
-#include <Game/Object/FlyControllerComponent.h>
-#include <Game/Object/RuntimeMeshComponent.h>
-#include <Game/Rendering/Materials.h>
+#include <Object/CameraComponent.h>
+#include <Object/FlyControllerComponent.h>
+#include <Object/RuntimeMeshComponent.h>
+#include <Rendering/Materials.h>
 #include <Shared/ModelUtils/PlaneBuilder.h>
 
 void SimpleLevel_c::Load()

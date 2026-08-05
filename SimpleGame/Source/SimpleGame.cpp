@@ -1,6 +1,6 @@
 #include "SimpleGameApp.h"
 
-#include <Game/Core/WindowsPlatform.h>
+#include <Core/WindowsPlatform.h>
 #include <Shared/FileUtils/PathUtils.h>
 
 int main()

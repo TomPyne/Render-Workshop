@@ -1,0 +1,131 @@
+#include "Core/GameApp.h"
+
+#include "Input/Input.h"
+#include "Object/CameraComponent.h"
+#include "Object/FlyControllerComponent.h"
+#include "Object/MeshComponent.h"
+#include "Object/RuntimeMeshComponent.h"
+#include "Rendering/SpaceRenderer.h"
+#include "Space/Space.h"
+#include "Core/WindowsPlatform.h"
+
+#include <Render/Render.h>
+
+bool GameApp_c::Init()
+{
+	rl::RenderInitParams Params = GetAppRenderParams();	
+
+	if (!rl::Render_Init(Params))
+	{
+		return false;
+	}
+
+	HWND Hwnd = (HWND)GetMainWindowHandle();
+
+	MainRenderView = rl::CreateRenderViewPtr((intptr_t)Hwnd);
+
+	Clock = {};
+
+	//*InitializeApp();
+
+	return true;
+}
+
+void GameApp_c::Shutdown()
+{
+	rl::Render_ShutDown();
+}
+
+void GameApp_c::RegisterClasses()
+{
+	if (!Space)
+		return;
+
+	Space->RegisterObjectClass<Object_c>(L"Object");
+	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
+	Space->RegisterObjectClass<RuntimeMeshObject_c>(L"RuntimeMesh");
+
+	Space->RegisterComponentClass<CameraComponent_c>(L"CameraComponent");
+	Space->RegisterComponentClass<FlyControllerComponent_c>(L"FlyControllerComponent");
+	Space->RegisterComponentClass<MeshComponent_c>(L"MeshComponent");
+}
+
+void GameApp_c::Load()
+{
+	Space = std::make_shared<Space_c>();
+	RegisterClasses();
+
+	SpaceRenderer = std::make_shared<SpaceRenderer_c>();
+	SpaceRenderer->Init();
+}
+
+void GameApp_c::Update()
+{
+	Clock.Tick();
+	const float DeltaSeconds = Clock.GetDeltaSeconds();
+
+	Input::NewFrame();
+
+	if (Space)
+	{
+		Space->Update(DeltaSeconds);
+	}
+
+	Render();
+}
+
+void GameApp_c::Render()
+{
+	rl::Render_BeginFrame();
+
+	rl::Render_BeginRenderFrame();
+
+	rl::CommandListSubmissionGroup CLGroup(rl::CommandListType::GRAPHICS);
+
+	rl::CommandList* MainCL = CLGroup.CreateCommandList();
+
+	rl::UploadBuffers(MainCL);
+
+	MainCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::PRESENT, rl::ResourceTransitionState::RENDER_TARGET);
+
+	MainRenderView->ClearCurrentBackBufferTarget(MainCL);
+
+	if (Space && SpaceRenderer)
+	{
+		SpaceRendererScreenInfo_s Info = {};
+		Info.Width = MainRenderView->Width;
+		Info.Height = MainRenderView->Height;
+		Info.RenderView = MainRenderView.get();
+		SpaceRenderer->RenderSpace(Info, Space.get(), CLGroup);
+	}
+
+	rl::CommandList* PostCL = CLGroup.CreateCommandList();
+
+	PostCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
+
+	CLGroup.Submit();
+
+	rl::Render_EndFrame();
+
+	MainRenderView->Present(true);
+}
+
+void GameApp_c::Resize(int Width, int Height)
+{
+	MainRenderView->Resize(Width, Height);
+}
+
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	Input::Win_InputHandler((void*)hWnd, msg, wParam, lParam);
+	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+	return 0;
+}
+
+rl::RenderInitParams GameApp_c::GetAppRenderParams() const
+{
+	rl::RenderInitParams Params = {};
+	Params.DebugEnabled = true;
+	return Params;
+}
