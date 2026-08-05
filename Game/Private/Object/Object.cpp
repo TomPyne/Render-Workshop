@@ -12,14 +12,14 @@ Object_c::Object_c(const ObjectArgs_s& Args)
 
 void Object_c::Deserialize(const JsonValue_s& Data)
 {
-	const nlohmann::json& Node = Data.Json;
+	const Json_t& Node = Data.Json;
 	auto ComponentsIt = Node.find("Components");
 	if (ComponentsIt != Node.end())
 	{
 		if (ComponentsIt->is_array())
 		{
 			std::wstring Class;
-			for (const nlohmann::json& ComponentNode : *ComponentsIt)
+			for (const Json_t& ComponentNode : *ComponentsIt)
 			{
 				if (ENSUREMSG(JsonHelpers::ParseWString(Node, "Class", Class), "[Object] Deserialized component entry does not have a 'Class'"))
 				{

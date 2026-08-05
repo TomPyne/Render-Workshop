@@ -1,5 +1,7 @@
 #include "Assets/MeshManager.h"
 
+#include "Assets/MaterialManager.h"
+#include "Rendering/Materials.h"
 #include "Rendering/Mesh.h"
 
 #include <HalfPipe/Source/Public/WaveFrontReader.h>
@@ -89,6 +91,32 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	MeshUniformData.PositionBufferIndex = rl::GetDescriptorIndex(NewMesh->PositionBufferSRV);
 	NewMesh->MeshUniforms = rl::CreateConstantBuffer(&MeshUniformData);
 
+	std::vector<std::shared_ptr<Material_s>> Materials;
+	Materials.reserve(SurfaceIndices.size());
+	auto MaterialsIt = Data.Json.find("Materials");
+	if (MaterialsIt != Data.Json.end())
+	{
+		if (MaterialsIt->is_array())
+		{
+			for (const Json_t& MaterialNode : *MaterialsIt)
+			{
+				std::wstring MaterialAssetPath;
+				if (JsonHelpers::ParseWString(MaterialNode, "MaterialAssetPath", MaterialAssetPath))
+				{
+					Materials.push_back(MaterialManager::RequestMaterial(MaterialAssetPath));
+				}
+				else
+				{
+					Materials.push_back(nullptr);
+				}
+			}
+		}
+		else
+		{
+			LOGWARNING("[MeshManager::RequestMesh] Materials field is not an array");
+		}
+	}
+
 	uint32_t CurrentIndexOffset = 0;
 	for (const std::vector<uint32_t> Surface : SurfaceIndices)
 	{
@@ -103,6 +131,16 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 
 	NewMesh->Ready = true;
 	return NewMesh;
+}
+
+std::shared_ptr<Mesh_s> RequestMesh(const Path_s& Path)
+{
+	Json_t Json;
+	if (ENSUREMSG(LoadJsonFromFile(Path.ToWString(), Json), "[MeshManager::RequestMesh] Failed to load Mesh json from path %S", Path.ToWString().c_str()))
+	{
+		return RequestMesh(Json);
+	}
+	return nullptr;
 }
 
 std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data)
@@ -130,4 +168,5 @@ std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data)
 		return nullptr;
 	}
 }
+
 }

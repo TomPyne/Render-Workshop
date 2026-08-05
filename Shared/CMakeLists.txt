@@ -12,6 +12,7 @@ set(
     "FileUtils/FileStream.h"
     "FileUtils/JsonHelpers.cpp"
     "FileUtils/JsonHelpers.h"
+    "FileUtils/JsonValue.cpp"
     "FileUtils/JsonValue.h"
     "FileUtils/PathUtils.cpp"
     "FileUtils/PathUtils.h"
@@ -58,9 +59,10 @@ add_library(Shared ${source_list} ${shader_list})
 set_target_properties(Shared PROPERTIES OUTPUT_NAME_DEBUG Shared_Debug)
 
 target_include_directories(Shared
-	PRIVATE 
+	PUBLIC
+    "${PROJECT_SOURCE_DIR}/Shared"
+	PRIVATE
     "${PROJECT_SOURCE_DIR}/RenderImGui/imgui"
 	"${PROJECT_SOURCE_DIR}/Include"
     "${PROJECT_SOURCE_DIR}/Render"
-    "${PROJECT_SOURCE_DIR}/Shared"
 	)

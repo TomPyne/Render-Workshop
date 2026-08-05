@@ -51,3 +51,16 @@ public:
 
 BasicMaterial_c* MakeBasicMaterial(float3 Color);
 void DestroyBasicMaterial(BasicMaterial_c* Material);
+
+struct Shader_s
+{
+	bool Ready = false;
+
+	rl::GraphicsPipelineStatePtr PSO;
+};
+
+struct Material_s
+{
+	std::shared_ptr<Shader_s> Shader;
+	float3 Color = float3(1.0f, 1.0f, 1.0f);
+};

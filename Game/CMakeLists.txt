@@ -2,6 +2,8 @@ function(create_proj projname rapi)
 
 	set(
 		source_list
+		"Public/Assets/MaterialManager.h"
+		"Private/Assets/MaterialManager.cpp"		
 		"Private/Assets/MeshAsset.cpp"
 		"Public/Assets/MeshAsset.h"
 		"Private/Assets/MeshManager.cpp"

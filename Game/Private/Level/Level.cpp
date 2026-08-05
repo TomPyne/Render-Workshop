@@ -18,7 +18,7 @@ struct LevelData_s
 		std::wstring Class;
 
 		// The whole component node, for the component to parse its own fields from
-		nlohmann::json Data;
+		Json_t Data;
 	};
 
 	struct ObjectData_s
@@ -28,7 +28,7 @@ struct LevelData_s
 		std::vector<ComponentData_s> Components;
 
 		// The whole object node, for the object to parse its own fields from
-		nlohmann::json Data;
+		Json_t Data;
 	};
 
 	int32_t Version = 0;
@@ -38,7 +38,7 @@ struct LevelData_s
 namespace
 {
 
-bool ParseComponent(const nlohmann::json& Node, LevelData_s::ComponentData_s& Out)
+bool ParseComponent(const Json_t& Node, LevelData_s::ComponentData_s& Out)
 {
 	if (!Node.is_object())
 	{
@@ -56,7 +56,7 @@ bool ParseComponent(const nlohmann::json& Node, LevelData_s::ComponentData_s& Ou
 	return true;
 }
 
-bool ParseObject(const nlohmann::json& Node, LevelData_s::ObjectData_s& Out)
+bool ParseObject(const Json_t& Node, LevelData_s::ObjectData_s& Out)
 {
 	if (!Node.is_object())
 	{
@@ -79,7 +79,7 @@ bool ParseObject(const nlohmann::json& Node, LevelData_s::ObjectData_s& Out)
 		{
 			Out.Components.reserve(ComponentsIt->size());
 
-			for (const nlohmann::json& ComponentNode : *ComponentsIt)
+			for (const Json_t& ComponentNode : *ComponentsIt)
 			{
 				LevelData_s::ComponentData_s ComponentData;
 				if (ParseComponent(ComponentNode, ComponentData))
@@ -98,7 +98,7 @@ bool ParseObject(const nlohmann::json& Node, LevelData_s::ObjectData_s& Out)
 	return true;
 }
 
-bool ParseLevel(const nlohmann::json& Root, LevelData_s& Out)
+bool ParseLevel(const Json_t& Root, LevelData_s& Out)
 {
 	if (!Root.is_object())
 	{
@@ -133,7 +133,7 @@ bool ParseLevel(const nlohmann::json& Root, LevelData_s& Out)
 
 	Out.Objects.reserve(ObjectsIt->size());
 
-	for (const nlohmann::json& ObjectNode : *ObjectsIt)
+	for (const Json_t& ObjectNode : *ObjectsIt)
 	{
 		LevelData_s::ObjectData_s ObjectData;
 		if (ParseObject(ObjectNode, ObjectData))
@@ -149,21 +149,10 @@ bool ParseLevel(const nlohmann::json& Root, LevelData_s& Out)
 
 void Level_c::Deserialize(const std::wstring& LevelPath)
 {
-	// Note: narrow stream, nlohmann only provides an input adapter for std::istream
-	std::ifstream AssetFile(LevelPath.c_str());
-
-	if (!AssetFile.is_open())
+	Json_t Data;
+	if (!LoadJsonFromFile(LevelPath, Data))
 	{
-		LOGERROR("[Level] Failed to open file %S", LevelPath.c_str());
-		return;
-	}
-
-	constexpr bool AllowExceptions = false;
-	nlohmann::json Data = nlohmann::json::parse(AssetFile, nullptr, AllowExceptions);
-
-	if (Data.is_discarded())
-	{
-		LOGERROR("[Level] Failed to parse json in file %S", LevelPath.c_str());
+		LOGERROR("[Level] Failed to load json from file %S", LevelPath.c_str());
 		return;
 	}
 

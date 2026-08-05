@@ -11,7 +11,7 @@ namespace JsonHelpers
 {
 
 // Returns null if the field is absent, which is not an error - callers treat it as "unset"
-static const nlohmann::json* FindField(const JsonValue_s& Node, const char* Field)
+static const Json_t* FindField(const JsonValue_s& Node, const char* Field)
 {
 	if (!Node.Json.is_object())
 	{
@@ -30,7 +30,7 @@ static const nlohmann::json* FindField(const JsonValue_s& Node, const char* Fiel
 
 bool ParseBool(const JsonValue_s& Node, const char* Field, bool& Out)
 {
-	const nlohmann::json* Value = FindField(Node, Field);
+	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
 	{
 		return false;
@@ -48,7 +48,7 @@ bool ParseBool(const JsonValue_s& Node, const char* Field, bool& Out)
 
 bool ParseInt(const JsonValue_s& Node, const char* Field, int64_t& Out)
 {
-	const nlohmann::json* Value = FindField(Node, Field);
+	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
 	{
 		return false;
@@ -80,7 +80,7 @@ bool ParseInt(const JsonValue_s& Node, const char* Field, int64_t& Out)
 
 bool ParseInt(const JsonValue_s& Node, const char* Field, uint64_t& Out)
 {
-	const nlohmann::json* Value = FindField(Node, Field);
+	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
 	{
 		return false;
@@ -140,7 +140,7 @@ bool ParseInt(const JsonValue_s& Node, const char* Field, uint32_t& Out)
 
 bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out)
 {
-	const nlohmann::json* Value = FindField(Node, Field);
+	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
 	{
 		return false;
@@ -158,7 +158,7 @@ bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out)
 
 bool ParseString(const JsonValue_s& Node, const char* Field, std::string& Out)
 {
-	const nlohmann::json* Value = FindField(Node, Field);
+	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
 	{
 		return false;
@@ -281,7 +281,7 @@ bool ParseFloat4(const JsonValue_s& Node, const char* Field, float4& Out)
 
 uint64_t Hash(const JsonValue_s& Node)
 {
-	std::vector<uint8_t> Bytes = nlohmann::json::to_cbor(Node.Json);
+	std::vector<uint8_t> Bytes = Json_t::to_cbor(Node.Json);
 
 	uint64_t Hash = 0xcbf29ce484222325ull; // FNV-1a 64
 	for (uint8_t Byte : Bytes)
