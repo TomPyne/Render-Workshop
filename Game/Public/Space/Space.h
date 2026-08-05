@@ -12,6 +12,7 @@
 
 class CameraComponent_c;
 class Level_c;
+class MaterialShader_c;
 
 class Space_c : public std::enable_shared_from_this<Space_c>
 {
@@ -52,9 +53,19 @@ public:
 			return std::make_shared<ComponentType>(Args);
 		};
 	}
+	
+	template<class MaterialShaderType>
+	void RegisterMaterialShaderClass(const std::wstring& ClassName)
+	{
+		MaterialShaderFactoryCallbacks[ClassName] = []() -> std::shared_ptr<MaterialShader_c>
+		{
+			return std::make_shared<MaterialShaderType>();
+		};
+	}
 
 	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
+	std::shared_ptr<MaterialShader_c> CreateMaterialShaderByName(const std::wstring& ClassName);
 
 	// Level functions ////////////////////////////////////////////////////////////////
 	template<class LevelType>
@@ -85,4 +96,5 @@ private:
 
 	std::unordered_map<std::wstring, std::function<std::shared_ptr<Object_c>(const ObjectArgs_s&)>> ObjectFactoryCallbacks;
 	std::unordered_map<std::wstring, std::function<std::shared_ptr<ObjectComponent_c>(const ObjectComponentArgs_s&)>> ComponentFactoryCallbacks;
+	std::unordered_map<std::wstring, std::function<std::shared_ptr<MaterialShader_c>()>> MaterialShaderFactoryCallbacks;
 };

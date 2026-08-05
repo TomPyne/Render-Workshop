@@ -5,6 +5,7 @@
 #include "Object/FlyControllerComponent.h"
 #include "Object/MeshComponent.h"
 #include "Object/RuntimeMeshComponent.h"
+#include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
 #include "Space/Space.h"
 #include "Core/WindowsPlatform.h"
@@ -36,6 +37,11 @@ void GameApp_c::Shutdown()
 	rl::Render_ShutDown();
 }
 
+std::shared_ptr<SpaceRenderer_c> GameApp_c::CreateSpaceRenderer() const
+{
+	return std::make_shared<SpaceRenderer_c>();
+}
+
 void GameApp_c::RegisterClasses()
 {
 	if (!Space)
@@ -50,12 +56,18 @@ void GameApp_c::RegisterClasses()
 	Space->RegisterComponentClass<MeshComponent_c>(L"MeshComponent");
 }
 
+void GameApp_c::RegisterMaterials()
+{
+	Space->RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
+}
+
 void GameApp_c::Load()
 {
 	Space = std::make_shared<Space_c>();
 	RegisterClasses();
+	RegisterMaterials();
 
-	SpaceRenderer = std::make_shared<SpaceRenderer_c>();
+	SpaceRenderer = CreateSpaceRenderer();
 	SpaceRenderer->Init();
 }
 

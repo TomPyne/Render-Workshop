@@ -2,44 +2,75 @@
 
 #include <Render/RenderTypes.h>
 
-#include <map>
+#include <unordered_map>
 #include <SurfMath.h>
 
-enum class MaterialVertexFlags_e : uint32_t
-{
-	HAS_POSITION = 0, // Will always have position
-	HAS_UV = 1 << 0,
-	HAS_NORMAL = 1 << 1,
-	HAS_TANGENTS = 1 << 2,
-	HAS_COLOR = 1 << 3,
-	COUNT
-};
-IMPLEMENT_FLAGS(MaterialVertexFlags_e, uint32_t)
+#define SHADER_PARAM(Type, Name) { offsetof(Parameters_s, Name), sizeof(Type) }
 
-class Material_c
+class MaterialShader_c
 {
 public:
 
-	virtual ~Material_c() = default;
+	struct ShaderParam_s
+	{
+		ShaderParam_s() = default;
+		ShaderParam_s(size_t InOffset, size_t InSize)
+			: Offset(static_cast<uint16_t>(InOffset))
+			, Size(static_cast<uint16_t>(InSize))
+		{}
+		uint16_t Offset = 0u;
+		uint16_t Size = 0u;
+	};
 
-	virtual const char* GetShaderPath() const = 0;
-	virtual rl::GraphicsPipelineStatePtr GetPSO(MaterialVertexFlags_e VertexFlags) const = 0;
+	virtual ~MaterialShader_c() = default;
 
-	const rl::GraphicsPipelineState_t FindVertexPSO(MaterialVertexFlags_e VertexFlags) const;
+	virtual void Init() {}
+	virtual rl::GraphicsPipelineState_t GetPSO();
 
-	void CacheVertexPSO(MaterialVertexFlags_e VertexFlags, const rl::GraphicsPipelineStatePtr& PSO) const;
+	virtual uint32_t GetShaderParamBufferSizeFloats() const { return 0u; }
+	virtual uint32_t GetShaderParamBufferSize() const;
 
-	std::map<MaterialVertexFlags_e, rl::GraphicsPipelineStatePtr> VertexPSOMap;
+	const ShaderParam_s* GetShaderParam(const std::string& Param) const;
+
+protected:
+
+	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;
 };
 
-class SimpleMaterial_c : public Material_c
+class DefaultMaterialShader_c : public MaterialShader_c
 {
+	struct Parameters_s
+	{
+		float3 Color;
+		float __Pad;
+	};
 public:
 
-	virtual ~SimpleMaterial_c() = default;
+	virtual ~DefaultMaterialShader_c() = default;
 
-	virtual const char* GetShaderPath() const override;
-	virtual rl::GraphicsPipelineStatePtr GetPSO(MaterialVertexFlags_e VertexFlags) const override;
+	virtual void Init() override;
+	virtual rl::GraphicsPipelineState_t GetPSO() override;
+	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
+
+private:
+	rl::GraphicsPipelineStatePtr PSO;
+};
+
+class MaterialShaderInstance_c
+{
+public:
+	void SetParent(const std::shared_ptr<MaterialShader_c>& InParent);
+
+	void SetFloat(const std::string& Param, float Value);
+	void SetFloat2(const std::string& Param, float2 Value);
+	void SetFloat3(const std::string& Param, float3 Value);
+	void SetFloat4(const std::string& Param, float4 Value);
+
+	const MaterialShader_c::ShaderParam_s* FindParam(const std::string& Param) const;
+
+private:
+	std::shared_ptr<MaterialShader_c> Parent;
+	std::vector<uint8_t> ParamData;
 };
 
 class BasicMaterial_c
@@ -61,6 +92,8 @@ struct Shader_s
 
 struct Material_s
 {
+	bool Ready = false;
+
 	std::shared_ptr<Shader_s> Shader;
 	float3 Color = float3(1.0f, 1.0f, 1.0f);
 };
