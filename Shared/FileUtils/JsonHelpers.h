@@ -29,4 +29,7 @@ namespace JsonHelpers
 	bool ParseFloat2(const JsonValue_s& Node, const char* Field, float2& Out);
 	bool ParseFloat3(const JsonValue_s& Node, const char* Field, float3& Out);
 	bool ParseFloat4(const JsonValue_s& Node, const char* Field, float4& Out);
+
+	uint64_t Hash(const JsonValue_s& Node);
+
 }

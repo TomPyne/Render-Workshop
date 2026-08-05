@@ -31,8 +31,9 @@ enum class PathDirectory_e
 
 struct Path_s
 {
-	Path_s(PathDirectory_e Directory, const std::wstring& Path); // Uses global path project, for final projects
-	Path_s(PathDirectory_e Directory, const std::wstring& Project, const std::wstring& Path); // Uses specified project, for libraries
+	Path_s(const std::wstring& InPath); // Uses Root/DefaultProject, for final projects
+	Path_s(PathDirectory_e Directory, const std::wstring& InPath); // Uses global path project, for final projects
+	Path_s(PathDirectory_e Directory, const std::wstring& Project, const std::wstring& InPath); // Uses specified project, for libraries
 
 	std::wstring ToWString() const;
 	std::string ToString() const;

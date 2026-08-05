@@ -279,4 +279,17 @@ bool ParseFloat4(const JsonValue_s& Node, const char* Field, float4& Out)
 	return true;
 }
 
+uint64_t Hash(const JsonValue_s& Node)
+{
+	std::vector<uint8_t> Bytes = nlohmann::json::to_cbor(Node.Json);
+
+	uint64_t Hash = 0xcbf29ce484222325ull; // FNV-1a 64
+	for (uint8_t Byte : Bytes)
+	{
+		Hash ^= Byte;
+		Hash *= 0x100000001b3ull;
+	}
+	return Hash;
+}
+
 }

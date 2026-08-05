@@ -1,0 +1,5 @@
+{
+    "Version": 1,
+    "SourceVertexFilePath": "Game/Assets/Shaders/BasicMaterial.hlsl",
+    "SourcePixelFilePath": "Game/Assets/Shaders/BasicMaterial.hlsl",
+}

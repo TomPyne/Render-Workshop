@@ -3,6 +3,7 @@
 #include "Game/Object/Object.h"
 #include "Game/Level/Level.h"
 
+#include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
 void Space_c::Update(float Delta)
@@ -74,6 +75,14 @@ void Space_c::LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath)
 	}
 
 	InLevel->Load();
+}
+
+Level_c* Space_c::LoadLevel(const Path_s& Path)
+{
+	std::shared_ptr<Level_c> NewLevel = std::make_shared<Level_c>(shared_from_this());
+	Levels.push_back(NewLevel);
+	LoadLevelInternal(NewLevel.get(), Path.ToWString());
+	return NewLevel.get();
 }
 
 void Space_c::UnloadLevel(Level_c* InLevel)

@@ -4,6 +4,8 @@ function(create_proj projname rapi)
 		source_list
 		"Assets/MeshAsset.cpp"
 		"Assets/MeshAsset.h"
+		"Assets/MeshManager.cpp"
+		"Assets/MeshManager.h"
 		"Core/GameApp.cpp"
 		"Core/GameApp.h"
 		"Core/WindowsPlatform.cpp"
@@ -71,6 +73,8 @@ function(create_proj projname rapi)
 	add_library(${projname}${rapi} ${source_list} ${shader_list})
 
 	target_link_libraries(${projname}${rapi} PUBLIC RenderImGui${rapi})
+	target_link_libraries(${projname}${rapi} PRIVATE Shared)
+	target_link_libraries(${projname}${rapi} PRIVATE HalfPipe)
 
 	set_target_properties(${projname}${rapi} PROPERTIES OUTPUT_NAME_DEBUG "${projname}${rapi}_Debug")
 

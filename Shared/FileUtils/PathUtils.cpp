@@ -1,6 +1,8 @@
 #include "PathUtils.h"
 
 #include "Logging/Logging.h"
+#include "StringUtils/StringUtils.h"
+
 #include <filesystem>
 
 std::wstring GetPathExtension(const wchar_t* Path)
@@ -57,6 +59,14 @@ bool CreateDirectories(const std::wstring& Path)
 
 std::wstring Path_s::DefaultProjectName;
 
+Path_s::Path_s(const std::wstring& InPath)
+{
+	if (ENSUREMSG(!DefaultProjectName.empty(), "[Path_s] Default project name is not set, cannot construct path"))
+	{
+		Path = ConstructPathPrefix(PathDirectory_e::Root, DefaultProjectName) + InPath;
+	}
+}
+
 Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InPath)
 {
 	if (ENSUREMSG(!DefaultProjectName.empty(), "[Path_s] Default project name is not set, cannot construct path"))
@@ -68,6 +78,16 @@ Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InPath)
 Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const std::wstring& InPath)
 {
 	Path = ConstructPathPrefix(InDirectory, InProject) + InPath;
+}
+
+std::wstring Path_s::ToWString() const
+{
+	return Path;
+}
+
+std::string Path_s::ToString() const
+{
+	return WideToNarrow(Path);
 }
 
 void Path_s::SetDefaultProject(const std::wstring& InProjectName)

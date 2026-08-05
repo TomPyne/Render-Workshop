@@ -13,4 +13,23 @@ struct JsonValue_s
 	{}
 
 	const nlohmann::json& Json;
+
+	// Lazy compute and cache of hash
+	uint64_t GetHash() const
+	{
+		if (Hash == -1)
+		{
+			std::vector<uint8_t> Bytes = nlohmann::json::to_cbor(Json);
+
+			uint64_t Hash = 0xcbf29ce484222325ull; // FNV-1a 64
+			for (uint8_t Byte : Bytes)
+			{
+				Hash ^= Byte;
+				Hash *= 0x100000001b3ull;
+			}
+		}
+		return Hash;
+	}
+private:
+	mutable uint64_t Hash = -1;
 };

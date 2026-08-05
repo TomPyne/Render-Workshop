@@ -6,6 +6,9 @@
 
 void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms) const
 {
+	if (!Ready)
+		return;
+
 	for (const Surface_s& Surface : Surfaces)
 	{
 		if (Surface.Material)

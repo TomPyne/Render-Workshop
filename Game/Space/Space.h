@@ -58,13 +58,15 @@ public:
 
 	// Level functions ////////////////////////////////////////////////////////////////
 	template<class LevelType>
-	Level_c* LoadLevel(const std::wstring& LevelPath = L"")
+	Level_c* LoadLevel()
 	{
 		std::shared_ptr<LevelType> NewLevel = std::make_shared<LevelType>(shared_from_this());
 		Levels.push_back(NewLevel);
-		LoadLevelInternal(NewLevel.get(), LevelPath);
+		LoadLevelInternal(NewLevel.get(), L"");
 		return NewLevel.get();
 	}
+
+	Level_c* LoadLevel(const struct Path_s& Path);
 
 	void UnloadLevel(Level_c* InLevel);
 

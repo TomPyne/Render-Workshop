@@ -20,6 +20,8 @@ struct MeshUniformData_s
 
 struct Mesh_s
 {
+	bool Ready = false;
+
 	std::vector<Surface_s> Surfaces;
 
 	rl::StructuredBufferPtr PositionBuffer = {};
