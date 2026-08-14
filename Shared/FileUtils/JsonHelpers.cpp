@@ -1,8 +1,8 @@
 #include "JsonHelpers.h"
 
 #include "JsonValue.h"
-
 #include "Logging/Logging.h"
+#include "PathUtils.h"
 #include "StringUtils/StringUtils.h"
 
 #include <cstdlib>
@@ -277,6 +277,17 @@ bool ParseFloat4(const JsonValue_s& Node, const char* Field, float4& Out)
 
 	Out = float4(Components[0], Components[1], Components[2], Components[3]);
 	return true;
+}
+
+bool ParsePath(const JsonValue_s& Node, const char* Field, Path_s& Out)
+{
+	std::wstring PathStr;
+	if (ParseWString(Node, Field, PathStr))
+	{
+		Out = Path_s::FromTokenised(PathStr);
+		return true;
+	}
+	return false;
 }
 
 uint64_t Hash(const JsonValue_s& Node)

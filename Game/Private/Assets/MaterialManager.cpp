@@ -15,59 +15,100 @@
 
 namespace MaterialManager
 {
+struct MaterialManagerGlobals_s
+{
+	std::unordered_map<std::wstring, std::shared_ptr<MaterialShader_c>> RegisteredMaterials;
+	std::unordered_map<uint64_t, std::shared_ptr<MaterialShaderInstance_c>> LoadedMaterialInstances;
+} G;
 
-std::shared_ptr<Material_s> RequestMaterial(const Path_s& Path)
+std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const Path_s& Path)
 {
 	Json_t Json;
-	if (ENSUREMSG(LoadJsonFromFile(Path.ToWString(), Json), "[MaterialManager::RequestMaterial] Failed to load Material json from path %S", Path.ToWString().c_str()))
+	if (ENSUREMSG(LoadJsonFromFile(Path.ToWString(), Json), "[MaterialManager::RequestMaterialInstance] Failed to load Material json from path %S", Path.ToWString().c_str()))
 	{
-		return RequestMaterial(Json);
+		return RequestMaterialInstance(Json);
 	}
 	return nullptr;
 }
 
-std::shared_ptr<Material_s> RequestMaterial(const JsonValue_s& Data)
+std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const JsonValue_s& Data)
 {
+	// Compute hash of data to use as a key for caching
+	auto It = G.LoadedMaterialInstances.find(Data.GetHash());
+	if (It != G.LoadedMaterialInstances.end())
+	{
+		return It->second;
+	}
+
 	int32_t Version = -1;
 	JsonHelpers::ParseInt(Data, "Version", Version);
-	if (!ENSUREMSG(Version == MATERIAL_ASSET_VERSION_CURRENT, "[MaterialManager::RequestMaterial] Unsupported material asset version: %d, curremt: %d", Version, MATERIAL_ASSET_VERSION_CURRENT))
+	if (!ENSUREMSG(Version == MATERIAL_ASSET_VERSION_CURRENT, "[MaterialManager::RequestMaterialInstance] Unsupported material asset version: %d, curremt: %d", Version, MATERIAL_ASSET_VERSION_CURRENT))
 	{
 		return nullptr;
 	}
 
-	std::wstring ShaderAssetPath;
-	if (!ENSUREMSG(JsonHelpers::ParseWString(Data, "ShaderAssetPath", ShaderAssetPath), "[MaterialManager::RequestMaterial] No ShaderAssetPath supplied"))
+	std::wstring MaterialShaderClass;
+	if (!ENSUREMSG(JsonHelpers::ParseWString(Data, "MaterialShaderClass", MaterialShaderClass), "[MaterialManager::RequestMaterialInstance] No MaterialShaderClass supplied"))
 	{
 		return nullptr;
 	}
+
+	std::shared_ptr<MaterialShader_c> Parent;
+	auto FoundMaterialIt = G.RegisteredMaterials.find(MaterialShaderClass);
+	if (FoundMaterialIt == G.RegisteredMaterials.end())
+	{
+		std::shared_ptr<MaterialShader_c> NewMaterialShader = MaterialShaderFactory_s::Get().CreateShaderMaterial(MaterialShaderClass);
+		if (ENSUREMSG(NewMaterialShader != nullptr, "[MaterialManager::RequestMaterialInstance] No valid MaterialShaderClass found %S", MaterialShaderClass.c_str()))
+		{
+			Parent = NewMaterialShader;
+		}
+	}
+	else
+	{
+		Parent = FoundMaterialIt->second;
+	}
+
+	if (!ENSUREMSG(Parent != nullptr, "[MaterialManager::RequestMaterialInstance] No valid parent found %S", MaterialShaderClass.c_str()))
+	{
+		return nullptr;
+	}
+
+	std::shared_ptr<MaterialShaderInstance_c> NewMaterialInstance = std::make_shared<MaterialShaderInstance_c>();
+
+	NewMaterialInstance->SetParent(Parent);
 
 	float3 Color = float3(0.5f);
 	JsonHelpers::ParseFloat3(Data, "Color", Color);
 
-	CHECK(false); // TODO
-	return nullptr; 
+	NewMaterialInstance->SetFloat3("Color", Color);
+
+	NewMaterialInstance->Update();
+
+	G.LoadedMaterialInstances[Data.GetHash()] = NewMaterialInstance;
+
+	return NewMaterialInstance;
 }
 
-std::shared_ptr<Shader_s> RequestShader(const Path_s& Path)
+MaterialShaderFactory_s& MaterialShaderFactory_s::Get()
 {
-	Json_t Json;
-	if (ENSUREMSG(LoadJsonFromFile(Path.ToWString(), Json), "[MaterialManager::RequestShader] Failed to load Shader json from path %S", Path.ToWString().c_str()))
-	{
-		return RequestShader(Json);
-	}
-	return nullptr;
+	static MaterialShaderFactory_s MaterialShaderFactory;
+	return MaterialShaderFactory;
 }
 
-std::shared_ptr<Shader_s> RequestShader(const JsonValue_s& Data)
+std::shared_ptr<MaterialShader_c> MaterialShaderFactory_s::CreateShaderMaterial(const std::wstring& ClassName)
 {
-	int32_t Version = -1;
-	JsonHelpers::ParseInt(Data, "Version", Version);
-	if (!ENSUREMSG(Version == SHADER_ASSET_VERSION_INITIAL, "[MaterialManager::RequestShader] Unsupported shader asset version: %d, curremt: %d", Version, SHADER_ASSET_VERSION_CURRENT))
+	auto It = MaterialShaderFactoryCallbacks.find(ClassName);
+	if (!ENSUREMSG(It != MaterialShaderFactoryCallbacks.end(), "No material shader class registered for name %S", ClassName.c_str()))
 	{
 		return nullptr;
 	}
 
-	CHECK(false); // TODO
+	std::shared_ptr<MaterialShader_c> NewMaterialShader = It->second();
+	if (NewMaterialShader && NewMaterialShader->Compile())
+	{
+		return NewMaterialShader;
+	}
+
 	return nullptr;
 }
 

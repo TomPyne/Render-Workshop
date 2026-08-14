@@ -33,6 +33,8 @@ std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassN
 	std::shared_ptr<Object_c> NewObject = It->second(ObjectArgs_s{ this });
 	Objects.push_back(NewObject);
 
+	NewObject->OnConstruct();
+
 	if (Data)
 	{
 		NewObject->Deserialize(*Data);

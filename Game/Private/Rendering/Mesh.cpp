@@ -3,6 +3,7 @@
 #include "Rendering/SpaceRenderer.h"
 #include "Rendering/Materials.h"
 #include <Render/Render.h>
+#include <Shared/Logging/Logging.h>
 
 void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms) const
 {
@@ -23,8 +24,8 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t 
 			Batch.DynamicUniforms = DynamicUniforms;
 			Batch.MeshUniforms = MeshUniforms;
 
-			Batch.PSO = Surface.Material->PSO;
-			Batch.MaterialUniforms = Surface.Material->MaterialConstants;
+			Batch.PSO = Surface.Material->GetPSO();
+			Batch.MaterialUniforms = Surface.Material->GetConstantBuffer();
 		}
 	}
 }

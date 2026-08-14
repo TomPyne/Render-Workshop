@@ -8,7 +8,7 @@ void SimpleGameApp_c::Load()
 {
 	GameApp_c::Load();
 
-	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SimpleLevel.json");
+	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SimpleLevel.hp_lvl");
 
 	if (Space)
 	{

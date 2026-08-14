@@ -30,7 +30,6 @@ public:
 	// ~IRenderable_c
 
 	void UpdateMesh(const RuntimeMeshDesc_s& Desc);
-	void SetMaterial(class BasicMaterial_c* InMaterial);
 
 	std::shared_ptr<Mesh_s> Mesh = {};
 };
@@ -39,9 +38,11 @@ class RuntimeMeshObject_c : public SpatialObject_c
 {
 public:
 	using SpatialObject_c::SpatialObject_c;
-	~RuntimeMeshObject_c() = default;
+	virtual ~RuntimeMeshObject_c() = default;
 
-	virtual void OnCreate() override;
+	// Begin SpatialObject_c
+	virtual void OnConstruct() override;
+	// End SpatialObject_c
 
 	RuntimeMeshComponent_c* MeshComponent = nullptr;
 };

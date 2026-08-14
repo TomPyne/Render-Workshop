@@ -1,5 +1,7 @@
 #include "Core/GameApp.h"
 
+#include "Assets/MaterialManager.h"
+#include "Core/WindowsPlatform.h"
 #include "Input/Input.h"
 #include "Object/CameraComponent.h"
 #include "Object/FlyControllerComponent.h"
@@ -8,7 +10,6 @@
 #include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
 #include "Space/Space.h"
-#include "Core/WindowsPlatform.h"
 
 #include <Render/Render.h>
 
@@ -47,9 +48,11 @@ void GameApp_c::RegisterClasses()
 	if (!Space)
 		return;
 
+	Space->RegisterObjectClass<MeshObject_c>(L"MeshObject");
 	Space->RegisterObjectClass<Object_c>(L"Object");
-	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
 	Space->RegisterObjectClass<RuntimeMeshObject_c>(L"RuntimeMesh");
+	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
+	
 
 	Space->RegisterComponentClass<CameraComponent_c>(L"CameraComponent");
 	Space->RegisterComponentClass<FlyControllerComponent_c>(L"FlyControllerComponent");
@@ -58,7 +61,7 @@ void GameApp_c::RegisterClasses()
 
 void GameApp_c::RegisterMaterials()
 {
-	Space->RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
 }
 
 void GameApp_c::Load()

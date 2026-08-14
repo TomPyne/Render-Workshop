@@ -35,22 +35,20 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		return It->second;
 	}
 
-	std::wstring Path;
-	if (!ENSUREMSG(JsonHelpers::ParseWString(Data, "SourceFilePath", Path), "[MeshManager::RequestMesh] Missing SourceFile field"))
+	Path_s Path;
+	if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", Path), "[MeshManager::RequestMesh] Missing SourceFile field"))
 	{
 		return nullptr;
 	}
 
-	Path_s FullPath = Path_s(Path);
-
-	LOGINFO("[MeshManager::RequestMesh] Building mesh: %s", FullPath.ToString().c_str());
+	LOGINFO("[MeshManager::RequestMesh] Building mesh: %s", Path.ToString().c_str());
 
 	std::shared_ptr<Mesh_s> NewMesh = std::make_shared<Mesh_s>();	
 
 	WaveFrontReader_c Reader;
-	if (!Reader.Load(FullPath.ToWString().c_str()))
+	if (!Reader.Load(Path.ToWString().c_str()))
 	{
-		LOGWARNING("[MeshManager::RequestMesh] Failed to load mesh: %s", FullPath.ToString().c_str());
+		LOGWARNING("[MeshManager::RequestMesh] Failed to load mesh: %s", Path.ToString().c_str());
 		return nullptr;
 	}
 
@@ -91,7 +89,7 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	MeshUniformData.PositionBufferIndex = rl::GetDescriptorIndex(NewMesh->PositionBufferSRV);
 	NewMesh->MeshUniforms = rl::CreateConstantBuffer(&MeshUniformData);
 
-	std::vector<std::shared_ptr<Material_s>> Materials;
+	std::vector<std::shared_ptr<MaterialShaderInstance_c>> Materials;
 	Materials.reserve(SurfaceIndices.size());
 	auto MaterialsIt = Data.Json.find("Materials");
 	if (MaterialsIt != Data.Json.end())
@@ -100,10 +98,10 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		{
 			for (const Json_t& MaterialNode : *MaterialsIt)
 			{
-				std::wstring MaterialAssetPath;
-				if (JsonHelpers::ParseWString(MaterialNode, "MaterialAssetPath", MaterialAssetPath))
+				Path_s MaterialAssetPath;
+				if (JsonHelpers::ParsePath(MaterialNode, "MaterialAssetPath", MaterialAssetPath))
 				{
-					Materials.push_back(MaterialManager::RequestMaterial(MaterialAssetPath));
+					Materials.push_back(MaterialManager::RequestMaterialInstance(MaterialAssetPath));
 				}
 				else
 				{
@@ -117,14 +115,17 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		}
 	}
 
+	CHECK(SurfaceIndices.size() == Materials.size());
+
 	uint32_t CurrentIndexOffset = 0;
-	for (const std::vector<uint32_t> Surface : SurfaceIndices)
+	for (size_t SurfaceIt = 0; SurfaceIt < SurfaceIndices.size(); SurfaceIt++)
 	{
 		Surface_s NewSurface = {};
-		NewSurface.Material = nullptr; // Assign Materials later
+		NewSurface.Material = Materials[SurfaceIt];
 		NewSurface.IndexOffset = CurrentIndexOffset;
-		NewSurface.IndexCount = static_cast<uint32_t>(Surface.size());
+		NewSurface.IndexCount = static_cast<uint32_t>(SurfaceIndices[SurfaceIt].size());
 		CurrentIndexOffset += NewSurface.IndexCount;
+		NewMesh->Surfaces.push_back(NewSurface);
 	}
 
 	G.LoadedMeshes[Data.GetHash()] = NewMesh;

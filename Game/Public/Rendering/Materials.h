@@ -24,11 +24,14 @@ public:
 
 	virtual ~MaterialShader_c() = default;
 
-	virtual void Init() {}
+	virtual bool Compile() { return true; }
 	virtual rl::GraphicsPipelineState_t GetPSO();
+	virtual rl::ConstantBuffer_t GetConstantBuffer();
 
 	virtual uint32_t GetShaderParamBufferSizeFloats() const { return 0u; }
 	virtual uint32_t GetShaderParamBufferSize() const;
+
+	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const {}
 
 	const ShaderParam_s* GetShaderParam(const std::string& Param) const;
 
@@ -46,11 +49,13 @@ class DefaultMaterialShader_c : public MaterialShader_c
 	};
 public:
 
+	DefaultMaterialShader_c();
 	virtual ~DefaultMaterialShader_c() = default;
 
-	virtual void Init() override;
+	virtual bool Compile() override;
 	virtual rl::GraphicsPipelineState_t GetPSO() override;
 	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
+	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const;
 
 private:
 	rl::GraphicsPipelineStatePtr PSO;
@@ -59,41 +64,25 @@ private:
 class MaterialShaderInstance_c
 {
 public:
+	~MaterialShaderInstance_c();
+
 	void SetParent(const std::shared_ptr<MaterialShader_c>& InParent);
+
+	void SetValue(const MaterialShader_c::ShaderParam_s* Param, const void* Data, size_t DataSize);
 
 	void SetFloat(const std::string& Param, float Value);
 	void SetFloat2(const std::string& Param, float2 Value);
 	void SetFloat3(const std::string& Param, float3 Value);
 	void SetFloat4(const std::string& Param, float4 Value);
-
 	const MaterialShader_c::ShaderParam_s* FindParam(const std::string& Param) const;
+
+	void Update();
+
+	rl::GraphicsPipelineState_t GetPSO();
+	rl::ConstantBuffer_t GetConstantBuffer();
 
 private:
 	std::shared_ptr<MaterialShader_c> Parent;
 	std::vector<uint8_t> ParamData;
-};
-
-class BasicMaterial_c
-{
-public:
-	rl::GraphicsPipelineStatePtr PSO;
-	rl::ConstantBufferPtr MaterialConstants;
-};
-
-BasicMaterial_c* MakeBasicMaterial(float3 Color);
-void DestroyBasicMaterial(BasicMaterial_c* Material);
-
-struct Shader_s
-{
-	bool Ready = false;
-
-	rl::GraphicsPipelineStatePtr PSO;
-};
-
-struct Material_s
-{
-	bool Ready = false;
-
-	std::shared_ptr<Shader_s> Shader;
-	float3 Color = float3(1.0f, 1.0f, 1.0f);
+	rl::ConstantBufferPtr ConstantBuffer;
 };

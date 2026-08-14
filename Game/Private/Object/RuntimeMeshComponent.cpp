@@ -40,15 +40,7 @@ void RuntimeMeshComponent_c::UpdateMesh(const RuntimeMeshDesc_s& Desc)
 	Mesh->MeshUniforms = rl::CreateConstantBuffer(&MeshData);
 }
 
-void RuntimeMeshComponent_c::SetMaterial(BasicMaterial_c* InMaterial)
-{
-	if (!Mesh->Surfaces.empty())
-	{
-		Mesh->Surfaces[0].Material = InMaterial;
-	}
-}
-
-void RuntimeMeshObject_c::OnCreate()
+void RuntimeMeshObject_c::OnConstruct()
 {
 	MeshComponent = AddComponent<RuntimeMeshComponent_c>();
 }

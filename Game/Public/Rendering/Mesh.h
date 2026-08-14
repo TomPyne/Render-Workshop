@@ -7,7 +7,7 @@
 
 struct Surface_s
 {
-	class BasicMaterial_c* Material = nullptr;
+	std::shared_ptr<class MaterialShaderInstance_c> Material = nullptr;
 	uint32_t IndexOffset = 0;
 	uint32_t IndexCount = 0;
 };

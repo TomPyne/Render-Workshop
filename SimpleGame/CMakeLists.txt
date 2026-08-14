@@ -5,8 +5,6 @@ function(create_proj projname rapi)
 		"Source/${projname}.cpp"
 		"Source/SimpleGameApp.cpp"
 		"Source/SimpleGameApp.h"
-		"Source/Levels/SimpleLevel.cpp"
-		"Source/Levels/SimpleLevel.h"
 	)
 
 	add_executable(${projname}${rapi} ${source_list})

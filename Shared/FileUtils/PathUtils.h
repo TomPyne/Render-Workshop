@@ -25,18 +25,25 @@ enum class PathDirectory_e
 	Root,		// E.g. Git/MyRepo
 	Project,	// E.g. Git/MyRepo/ProjectName
 	Assets,		// E.g. Git/MyRepo/ProjectName/Assets
-	Shaders,	// E.g. Git/MyRepo/ProjectName/Assets/Shaders
+	Shaders,	// E.g. Git/MyRepo/ProjectName/Shaders
+	Raw,		// E.g. Git/MyRepo/ProjectName/Raw
 	Count
 };
 
 struct Path_s
 {
+	Path_s() = default;
 	Path_s(const std::wstring& InPath); // Uses Root/DefaultProject, for final projects
 	Path_s(PathDirectory_e Directory, const std::wstring& InPath); // Uses global path project, for final projects
 	Path_s(PathDirectory_e Directory, const std::wstring& Project, const std::wstring& InPath); // Uses specified project, for libraries
 
+	// Take a macro path and replace macros with correct path, uses default project
+	static Path_s FromTokenised(const std::wstring& InPath);
+
 	std::wstring ToWString() const;
 	std::string ToString() const;
+
+	bool IsValid() const { return !Path.empty(); }
 
 	static void SetDefaultProject(const std::wstring& InProjectName);
 

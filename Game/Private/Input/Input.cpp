@@ -67,7 +67,6 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 	case '9': return KeyCode_e::_9;
 	case '0': return KeyCode_e::_0;
 	default:
-		ASSERT0MSG("Unmapped virtual key: %d", VirtualKey);
 		return (KeyCode_e)0; // Invalid key
 	}
 }

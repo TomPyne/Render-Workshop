@@ -80,6 +80,34 @@ Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const
 	Path = ConstructPathPrefix(InDirectory, InProject) + InPath;
 }
 
+Path_s Path_s::FromTokenised(const std::wstring& InPath)
+{
+	constexpr std::wstring_view ProjectToken = L"%PROJECT%";
+	constexpr std::wstring_view AssetsToken = L"%ASSETS%";
+	constexpr std::wstring_view ShadersToken = L"%SHADERS%";
+	constexpr std::wstring_view RawToken = L"%RAW%";
+
+	std::wstring ModifiedPath = InPath;
+	if (InPath.starts_with(ProjectToken))
+	{		
+		ModifiedPath.replace(0, ProjectToken.length(), ConstructPathPrefix(PathDirectory_e::Project, DefaultProjectName));
+	}
+	else if (InPath.starts_with(AssetsToken))
+	{
+		ModifiedPath.replace(0, AssetsToken.length(), ConstructPathPrefix(PathDirectory_e::Assets, DefaultProjectName));
+	}
+	else if (InPath.starts_with(ShadersToken))
+	{
+		ModifiedPath.replace(0, ShadersToken.length(), ConstructPathPrefix(PathDirectory_e::Shaders, DefaultProjectName));
+	}
+	else if (InPath.starts_with(RawToken))
+	{
+		ModifiedPath.replace(0, RawToken.length(), ConstructPathPrefix(PathDirectory_e::Raw, DefaultProjectName));
+	}
+
+	return Path_s(PathDirectory_e::Root, ModifiedPath);
+}
+
 std::wstring Path_s::ToWString() const
 {
 	return Path;
@@ -107,6 +135,8 @@ std::wstring Path_s::ConstructPathPrefix(PathDirectory_e Directory, const std::w
 		return Project + L"/Assets/";
 	case PathDirectory_e::Shaders:
 		return Project + L"/Shaders/";
+	case PathDirectory_e::Raw:
+		return Project + L"/Raw/";
 	default:
 		LOGERROR("[Path_s] Invalid directory enum value");
 		return L"";

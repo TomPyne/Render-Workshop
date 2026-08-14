@@ -35,8 +35,8 @@ public:
 	virtual ~MeshObject_c() = default;
 
 	// Begin Object_c interface
+	virtual void OnConstruct() override;
 	virtual void Deserialize(const struct JsonValue_s& Data) override;
-	virtual void OnCreate() override;
 	// End Object_c interface
 
 	MeshComponent_c* MeshComponent = nullptr;

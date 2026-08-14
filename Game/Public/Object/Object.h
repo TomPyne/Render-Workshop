@@ -22,7 +22,13 @@ public:
 
 	virtual ~Object_c() = default;
 
+	// Set up any class defaults before serialization
+	virtual void OnConstruct() {}
+
+	// Parse serialized data into object
 	virtual void Deserialize(const JsonValue_s& Data);
+
+	// Called after deserialization
 	virtual void OnCreate() {}
 
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;

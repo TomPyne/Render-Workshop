@@ -21,7 +21,7 @@ void Object_c::Deserialize(const JsonValue_s& Data)
 			std::wstring Class;
 			for (const Json_t& ComponentNode : *ComponentsIt)
 			{
-				if (ENSUREMSG(JsonHelpers::ParseWString(Node, "Class", Class), "[Object] Deserialized component entry does not have a 'Class'"))
+				if (ENSUREMSG(JsonHelpers::ParseWString(ComponentNode, "Class", Class), "[Object] Deserialized component entry does not have a 'Class'"))
 				{
 					JsonValue_s ComponentData(ComponentNode);
 					AddComponentByName(Class, &ComponentData);
