@@ -6,23 +6,36 @@
 
 void FlyControllerComponent_c::Update(float Delta)
 {
-	if (Input::IsMouseButtonDown(1))
-	{
-		float2 MouseDelta = Input::GetMouseDelta();
-		ViewPitch += MouseDelta.y * 25.0f * Delta;
-		ViewYaw -= MouseDelta.x * 25.0f * Delta;
+	const bool Looking = Input::IsMouseButtonDown(1);
 
-		//printf("Delta %.2f / %.2f\n", MouseDelta.x, MouseDelta.y);
+	Input::SetMouseCaptured(Looking);
+
+	if (Looking)
+	{
+		constexpr float Sensitivity = 0.25f;
+
+		float2 MouseDelta = Input::GetMouseDelta();
+		ViewPitch += MouseDelta.y * Sensitivity;
+		ViewYaw += MouseDelta.x * Sensitivity;
 	}
 
-	float3 Translation = { 0.0f };
+	ViewYaw = fmodf(ViewYaw, 360.0f);
+	ViewPitch = Clamp(ViewPitch, -85.0f, 85.0f);
 
-	float3 Fwd = LookDir;
-	float3 Rgt = Cross(float3{ 0, 1, 0 }, LookDir);
+	const float YawRad = ConvertToRadians(ViewYaw);
+	const float PitchRad = ConvertToRadians(ViewPitch);
+
+	const float3 Rotation = float3{ PitchRad, YawRad, 0.0f };
+
+	const float3 Fwd = GetDirectionFromEuler(Rotation);
+	const float3 Rgt = Normalize(Cross(float3{ 0, 1, 0 }, Fwd));
 
 	constexpr float Speed = 5.0f;
 
 	float MoveSpeed = Speed * Delta;
+
+	if (Input::IsKeyDown(KeyCode_e::_SHIFT))
+		MoveSpeed *= 4.0f;
 
 	float3 TranslateDir = 0.0f;
 
@@ -32,32 +45,14 @@ void FlyControllerComponent_c::Update(float Delta)
 	if (Input::IsKeyDown(KeyCode_e::_D)) TranslateDir += Rgt;
 	if (Input::IsKeyDown(KeyCode_e::_A)) TranslateDir -= Rgt;
 
-	if (Input::IsKeyDown(KeyCode_e::_SHIFT))
-		MoveSpeed *= 4.0f;
+	if (Input::IsKeyDown(KeyCode_e::_E)) TranslateDir.y += 1.0f;
+	if (Input::IsKeyDown(KeyCode_e::_Q)) TranslateDir.y -= 1.0f;
 
-	Translation = Normalize(TranslateDir) * MoveSpeed;
-
-	if (Input::IsKeyDown(KeyCode_e::_E)) Translation.y += MoveSpeed;
-	if (Input::IsKeyDown(KeyCode_e::_Q)) Translation.y -= MoveSpeed;
-
-	if (ViewYaw > 360.0f)
-		ViewYaw -= 360.0f;
-
-	if (ViewYaw < -360.0f)
-		ViewYaw += 360.0f;
-
-	ViewPitch = Clamp(ViewPitch, -85.0f, 85.0f);
-
-	float YawRad = ConvertToRadians(ViewYaw);
-	float PitchRad = ConvertToRadians(ViewPitch);
-
-	float CosPitch = cosf(PitchRad);
-
-	LookDir = float3{ cosf(YawRad) * CosPitch, sinf(PitchRad), sinf(YawRad) * CosPitch };
+	const float3 Translation = Normalize(TranslateDir) * MoveSpeed;
 
 	if (SpatialObject_c* SpatialOwner = dynamic_cast<SpatialObject_c*>(GetOwner()))
 	{
 		SpatialOwner->Translate(Translation);
-		SpatialOwner->SetRotation(float3{ PitchRad, YawRad, 0.0f });
+		SpatialOwner->SetRotation(Rotation);
 	}
 }

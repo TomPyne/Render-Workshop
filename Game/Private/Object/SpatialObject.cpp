@@ -17,7 +17,7 @@ void SpatialObject_c::Deserialize(const JsonValue_s& Data)
 	float3 Rotation = {};
 	float Scale = 1.0f;
 	JsonHelpers::ParseFloat3(Data, "Position", Position);
-	JsonHelpers::ParseFloat3(Data, "Rotation", Position);
+	JsonHelpers::ParseFloat3(Data, "Rotation", Rotation);
 	JsonHelpers::ParseFloat(Data, "Scale", Scale);
 	Transform.Set(Position, Rotation, Scale);
 }

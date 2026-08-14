@@ -19,5 +19,10 @@ namespace Input
 	bool IsMouseButtonDown(int Button);
 	float2 GetMouseDelta();
 
+	// While captured the cursor is hidden and recentred every frame, so mouse
+	// deltas keep accumulating instead of stopping at the window edge.
+	void SetMouseCaptured(bool Captured);
+	bool IsMouseCaptured();
+
 	int Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wParam, int64_t lParam);
 }

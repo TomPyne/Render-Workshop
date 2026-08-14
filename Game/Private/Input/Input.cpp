@@ -19,8 +19,25 @@ struct InputData
 	float2 MouseDelta = float2(0.0f);
 	uint8_t MouseButtonStates = 0;
 	float MouseWheelDelta = 0.0f;
+	HWND WindowHandle = nullptr;
+	bool MouseCaptured = false;
+	POINT RestoreCursorPosition = {};
 };
 InputData g_InputData;
+
+static bool Win_GetWindowCentre(HWND Window, POINT& OutCentre)
+{
+	RECT ClientRect;
+	if (!Window || !GetClientRect(Window, &ClientRect))
+	{
+		return false;
+	}
+
+	OutCentre.x = (ClientRect.left + ClientRect.right) / 2;
+	OutCentre.y = (ClientRect.top + ClientRect.bottom) / 2;
+
+	return ClientToScreen(Window, &OutCentre) != FALSE;
+}
 
 static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 {
@@ -73,10 +90,69 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 
 void Input::NewFrame()
 {
+	POINT Centre;
+	if (g_InputData.MouseCaptured && Win_GetWindowCentre(g_InputData.WindowHandle, Centre))
+	{
+		POINT Cursor;
+		if (GetCursorPos(&Cursor))
+		{
+			g_InputData.MouseDelta.x = static_cast<float>(Cursor.x - Centre.x);
+			g_InputData.MouseDelta.y = static_cast<float>(Cursor.y - Centre.y);
+
+			SetCursorPos(Centre.x, Centre.y);
+		}
+		else
+		{
+			g_InputData.MouseDelta = float2(0.0f);
+		}
+
+		// Keep the uncaptured path's baseline fresh so releasing capture doesn't
+		// produce a delta spike from a stale previous position.
+		g_InputData.MousePrevPosition = g_InputData.MousePosition;
+
+		return;
+	}
+
 	g_InputData.MouseDelta.x = g_InputData.MousePosition.x - g_InputData.MousePrevPosition.x;
 	g_InputData.MouseDelta.y = g_InputData.MousePosition.y - g_InputData.MousePrevPosition.y;
 
 	g_InputData.MousePrevPosition = g_InputData.MousePosition;
+}
+
+void Input::SetMouseCaptured(bool Captured)
+{
+	if (Captured == g_InputData.MouseCaptured)
+	{
+		return;
+	}
+
+	POINT Centre;
+	if (Captured)
+	{
+		if (!Win_GetWindowCentre(g_InputData.WindowHandle, Centre))
+		{
+			return;
+		}
+
+		GetCursorPos(&g_InputData.RestoreCursorPosition);
+		SetCapture(g_InputData.WindowHandle);
+		ShowCursor(FALSE);
+		SetCursorPos(Centre.x, Centre.y);
+	}
+	else
+	{
+		ReleaseCapture();
+		ShowCursor(TRUE);
+		SetCursorPos(g_InputData.RestoreCursorPosition.x, g_InputData.RestoreCursorPosition.y);
+	}
+
+	g_InputData.MouseDelta = float2(0.0f);
+	g_InputData.MouseCaptured = Captured;
+}
+
+bool Input::IsMouseCaptured()
+{
+	return g_InputData.MouseCaptured;
 }
 
 bool Input::IsKeyDown(KeyCode_e Key)
@@ -96,6 +172,8 @@ float2 Input::GetMouseDelta()
 
 int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wParam, int64_t lParam)
 {
+	g_InputData.WindowHandle = static_cast<HWND>(WindowHandle);
+
 	switch (Message)
 	{
 	case WM_MOUSEMOVE:
@@ -138,6 +216,11 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 	}
 	case WM_MOUSEWHEEL:
 		g_InputData.MouseWheelDelta = (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
+		return 0;
+	case WM_KILLFOCUS:
+		SetMouseCaptured(false);
+		g_InputData.MouseButtonStates = 0;
+		memset(g_InputData.KeyStates, 0, sizeof(g_InputData.KeyStates));
 		return 0;
 	case WM_KEYDOWN:
 	case WM_KEYUP:
