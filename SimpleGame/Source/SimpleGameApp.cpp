@@ -37,7 +37,6 @@ void SimpleGameApp_c::PreUpdate()
 
 	if (Input::IsKeyPressed(KeyCode_e::_F8))
 	{
-		LOGINFO("Debug cam toggled");
 		ToggleDebugCamera(DebugCamera == nullptr);
 	}
 }
@@ -48,9 +47,11 @@ void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
 		return;
 
 	ASSERTMSG(Enabled == (DebugCamera == nullptr), "[ToggleDebugCamera] Toggle mismatch");
-
+	
 	if (Enabled)
 	{
+		LOGINFO("Debug cam enabled");
+
 		float3 Position = float3(0.0f);
 		float3 Rotation = float3(0.0f);
 		if (CameraComponent_c* CurrentCamera = Space->GetCamera())
@@ -64,6 +65,8 @@ void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
 	}
 	else
 	{
+		LOGINFO("Debug cam disabled");
+
 		Space->DestroyObject(DebugCamera.get());
 		DebugCamera = {};
 	}

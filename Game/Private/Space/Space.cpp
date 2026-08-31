@@ -1,5 +1,6 @@
 #include "Space/Space.h"
 #include "Object/CameraComponent.h"
+#include "Object/ControllerComponent.h"
 #include "Object/Object.h"
 #include "Level/Level.h"
 #include "Utility/SharedPtr.h"
@@ -15,6 +16,8 @@ void Space_c::Update(float Delta)
 	}
 }
 
+// Objects ////////////////////////////////////////////////////////////////////////////////////
+
 void Space_c::DestroyObject(Object_c* Object)
 {
 	if (Object)
@@ -23,6 +26,8 @@ void Space_c::DestroyObject(Object_c* Object)
 		std::erase(Objects, Object->shared_from_this());
 	}
 }
+
+// Factory ////////////////////////////////////////////////////////////////////////////////////
 
 std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data)
 {
@@ -71,6 +76,8 @@ std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owne
 	return NewComponent;
 }
 
+// Level //////////////////////////////////////////////////////////////////////////////////////
+
 void Space_c::LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath)
 {
 	CHECK(InLevel);
@@ -100,11 +107,14 @@ void Space_c::UnloadLevel(Level_c* InLevel)
 	}	
 }
 
+// Camera /////////////////////////////////////////////////////////////////////////////////////
+
 void Space_c::PushCameraComponent(CameraComponent_c* Camera)
 {
 	if(Camera)
-	{
+	{		
 		CameraStack.push_back(SharedFrom(Camera));
+		LOGINFO("[Space] Camera pushed to stack - %d", CameraStack.size());
 	}
 }
 
@@ -112,11 +122,17 @@ void Space_c::PopCameraComponent(CameraComponent_c* Camera)
 {
 	if (Camera)
 	{
+		const size_t CameraCount = CameraStack.size();
 		std::erase_if(CameraStack, [Camera](const std::weak_ptr<CameraComponent_c>& Registered)
 		{
-			const std::shared_ptr<CameraComponent_c> RegisteredShard = Registered.lock();
-			return RegisteredShard && RegisteredShard.get() == Camera;			
+			const std::shared_ptr<CameraComponent_c> RegisteredShared = Registered.lock();
+			return RegisteredShared && RegisteredShared.get() == Camera;
 		});
+
+		if (CameraStack.size() != CameraCount)
+		{
+			LOGINFO("[Space] Camera popped from stack - %d", CameraStack.size());
+		}
 	}
 }
 
@@ -126,4 +142,47 @@ CameraComponent_c* Space_c::GetCamera() const
 		return nullptr;
 
 	return CameraStack.back().lock().get();
+}
+
+// Controllers ////////////////////////////////////////////////////////////////////////////////
+
+void Space_c::PushControllerComponent(ControllerComponent_c* Controller)
+{
+	if (Controller)
+	{
+		ControllerStack.push_back(SharedFrom(Controller));
+		LOGINFO("[Space] Controller pushed to stack - %d", ControllerStack.size());
+	}
+}
+
+void Space_c::PopControllerComponent(ControllerComponent_c* Controller)
+{
+	if (Controller)
+	{
+		const size_t ControllerCount = ControllerStack.size();
+		std::erase_if(ControllerStack, [Controller](const std::weak_ptr<ControllerComponent_c>& Registered)
+		{
+			const std::shared_ptr<ControllerComponent_c> RegisteredShared = Registered.lock();
+			return RegisteredShared && RegisteredShared.get() == Controller;
+		});
+
+		if (ControllerStack.size() != ControllerCount)
+		{
+			LOGINFO("[Space] Controller popped from stack - %d", ControllerStack.size());
+		}
+	}
+}
+
+ControllerComponent_c* Space_c::GetController() const
+{
+	if (ControllerStack.empty())
+		return nullptr;
+
+	return ControllerStack.back().lock().get();
+}
+
+bool Space_c::IsControllerActive(const ControllerComponent_c* Controller) const
+{
+	const ControllerComponent_c* CurrentController = GetController();
+	return Controller && CurrentController == Controller;
 }

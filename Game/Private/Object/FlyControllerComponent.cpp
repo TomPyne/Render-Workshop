@@ -6,6 +6,11 @@
 
 void FlyControllerComponent_c::Update(float Delta)
 {
+	Super::Update(Delta);
+
+	if (!IsActiveController())
+		return;
+
 	const bool Looking = Input::IsMouseButtonDown(1);
 
 	Input::SetMouseCaptured(Looking);

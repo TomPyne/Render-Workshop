@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Object/ObjectComponent.h>
+#include <Object/ControllerComponent.h>
 
-class FighterControllerComponent_c : public ObjectComponent_c
+class FighterControllerComponent_c : public ControllerComponent_c
 {
-	OBJECTCOMPONENT_BODY(FighterControllerComponent_c, ObjectComponent_c)
+	OBJECTCOMPONENT_BODY(FighterControllerComponent_c, ControllerComponent_c)
 
 	virtual void OnCreate() override;
 	virtual void Update(float Delta) override;

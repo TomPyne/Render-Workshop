@@ -12,6 +12,7 @@
 #include <vector>
 
 class CameraComponent_c;
+class ControllerComponent_c;
 class Level_c;
 class MaterialShader_c;
 
@@ -24,6 +25,7 @@ public:
 
 	void Update(float Delta);
 
+	// Objects ////////////////////////////////////////////////////////////////////////////////////
 	template<class ObjectType>
 	std::shared_ptr<ObjectType> CreateObject()
 	{
@@ -39,7 +41,7 @@ public:
 	// TODO: Defer destruction until end of frame.
 	void DestroyObject(Object_c* Object);
 
-	// Factory functions ////////////////////////////////////////////////////////////////
+	// Factory ////////////////////////////////////////////////////////////////////////////////////
 	template<class ObjectType>
 	void RegisterObjectClass()
 	{
@@ -65,7 +67,7 @@ public:
 	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 
-	// Level functions ////////////////////////////////////////////////////////////////
+	// Level //////////////////////////////////////////////////////////////////////////////////////
 	template<class LevelType>
 	Level_c* LoadLevel()
 	{
@@ -79,15 +81,24 @@ public:
 
 	void UnloadLevel(Level_c* InLevel);
 
-	// Camera
-
-	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
-
+	// Camera /////////////////////////////////////////////////////////////////////////////////////
 	void PushCameraComponent(CameraComponent_c* Camera);
 	void PopCameraComponent(CameraComponent_c* Camera);
 	CameraComponent_c* GetCamera() const;
 
+	// Controllers ////////////////////////////////////////////////////////////////////////////////
+	void PushControllerComponent(ControllerComponent_c* Controller);
+	void PopControllerComponent(ControllerComponent_c* Controller);
+	ControllerComponent_c* GetController() const;
+	bool IsControllerActive(const ControllerComponent_c* Controller) const;
+
 protected:
+
+	// Camera
+	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
+
+	// Controllers
+	std::vector<std::weak_ptr<ControllerComponent_c>> ControllerStack;
 
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
 

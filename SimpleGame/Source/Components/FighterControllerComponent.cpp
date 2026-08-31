@@ -42,6 +42,8 @@ namespace
 
 void FighterControllerComponent_c::OnCreate()
 {
+	Super::OnCreate();
+
 	if (GetOwner())
 	{
 		SpatialOwner = SharedCast<SpatialObject_c>(GetOwner()).get();
@@ -50,9 +52,12 @@ void FighterControllerComponent_c::OnCreate()
 
 void FighterControllerComponent_c::Update(float Delta)
 {
-	ObjectComponent_c::Update(Delta);
+	Super::Update(Delta);
 
 	if (!SpatialOwner)
+		return;
+
+	if (!IsActiveController())
 		return;
 
 	if (FighterMeshComp == nullptr)

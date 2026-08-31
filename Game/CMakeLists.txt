@@ -28,6 +28,8 @@ function(create_proj projname rapi)
 		"Public/Level/Level.h"
 		"Private/Object/CameraComponent.cpp"
 		"Public/Object/CameraComponent.h"
+		"Private/Object/ControllerComponent.cpp"
+		"Public/Object/ControllerComponent.h"
 		"Public/Object/DebugCameraObject.h"
 		"Private/Object/DebugCameraObject.cpp"
 		"Private/Object/FlyControllerComponent.cpp"
