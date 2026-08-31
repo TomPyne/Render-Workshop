@@ -66,7 +66,7 @@ void SimpleGameApp_c::PreUpdate()
 			{
 				const float3 HitPosition = Trace.GetHit().Location;
 
-				SelectionCursor->SetHit(HitPosition);
+				SelectionCursor->SetHit(HitPosition, 0.1f);
 			}
 		}
 	}

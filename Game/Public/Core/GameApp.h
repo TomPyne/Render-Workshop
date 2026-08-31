@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#define IMGUI_ENABLE 0
+#define IMGUI_ENABLE 1
 
 class GameApp_c
 {
