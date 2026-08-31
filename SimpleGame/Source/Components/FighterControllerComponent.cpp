@@ -4,6 +4,7 @@
 #include <Object/Object.h>
 #include <Object/SpatialObject.h>
 #include <Object/MeshComponent.h>
+#include <Utility/SharedPtr.h>
 
 namespace
 {
@@ -43,7 +44,7 @@ void FighterControllerComponent_c::OnCreate()
 {
 	if (GetOwner())
 	{
-		SpatialOwner = GetOwner()->MakeShared<SpatialObject_c>().get();
+		SpatialOwner = SharedCast<SpatialObject_c>(GetOwner()).get();
 	}
 }
 

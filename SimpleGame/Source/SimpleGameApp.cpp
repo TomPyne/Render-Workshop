@@ -1,6 +1,7 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
+#include "Input/Input.h"
 #include "Levels/SimpleLevel.h"
 
 #include <Shared/FileUtils/PathUtils.h>
@@ -24,5 +25,26 @@ void SimpleGameApp_c::Load()
 	if (Space)
 	{
 		Space->LoadLevel(Path);
+	}
+}
+
+void SimpleGameApp_c::PreUpdate()
+{
+	GameApp_c::PreUpdate();
+
+	if (Input::IsKeyPressed(KeyCode_e::_F8))
+	{
+
+	}
+}
+
+void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
+{
+	if (!Space)
+		return;
+
+	if (CameraComponent_c* Camera = Space->GetCamera())
+	{
+
 	}
 }

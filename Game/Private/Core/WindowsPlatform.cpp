@@ -47,7 +47,7 @@ void WindowsPlatformMain(const char* WindowTitle, int Width, int Height, GameApp
 			continue;
 		}
 
-		GApp->Update();
+		GApp->Main();
 	}
 
 	GApp->Shutdown();

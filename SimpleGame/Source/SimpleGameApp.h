@@ -10,5 +10,8 @@ public:
 	// Begin GameApp_c interface
 	virtual void RegisterClasses() override;
 	virtual void Load() override;
+	virtual void PreUpdate() override;
 	// Endf GameApp_c interface
+
+	void ToggleDebugCamera(bool Enabled);
 };

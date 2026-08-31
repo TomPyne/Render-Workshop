@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/ObjectComponent.h"
+#include "Object/ObjectMacros.h"
 
 #include <memory>
 #include <string>
@@ -18,9 +19,15 @@ class Object_c : public std::enable_shared_from_this<Object_c>
 {	
 public:
 
+	// Object_c is the root of the hierarchy, so it has no Super and declares Self by hand.
+	using Self = Object_c;
+
 	Object_c(const ObjectArgs_s& Args);
 
 	virtual ~Object_c() = default;
+
+	// Pure so that a derived class missing its OBJECT_BODY stays abstract and cannot be created.
+	virtual const wchar_t* GetClassName() const = 0;
 
 	// Set up any class defaults before serialization
 	virtual void OnConstruct() {}
@@ -35,13 +42,22 @@ public:
 
 	void Update(float Delta);
 
+	// Constructs and adds component to object. If Deferred is true, OnCreate must be called manually after params are applied.
 	template<class ComponentType>
-	ComponentType* AddComponent()
+	ComponentType* AddComponent(bool Deferred = false)
 	{
 		const ObjectComponentArgs_s Args(shared_from_this());
+
 		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(Args);
 		Components.push_back(NewComponent);
-		NewComponent->OnCreate();
+
+		NewComponent->OnConstruct();
+
+		if (!Deferred)
+		{
+			NewComponent->OnCreate();
+		}
+		
 		return NewComponent.get();
 	}
 
@@ -125,12 +141,6 @@ public:
 	Space_c* GetSpace() const
 	{
 		return OwningSpace.lock().get();
-	}
-
-	template<class T> 
-	std::shared_ptr<T> MakeShared()
-	{
-		return std::dynamic_pointer_cast<T>(shared_from_this());
 	}
 
 private:

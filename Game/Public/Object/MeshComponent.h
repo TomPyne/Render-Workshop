@@ -30,9 +30,7 @@ protected:
 
 class MeshObject_c : public SpatialObject_c
 {
-public:
-	using SpatialObject_c::SpatialObject_c;
-	virtual ~MeshObject_c() = default;
+	OBJECT_BODY(MeshObject_c, SpatialObject_c)
 
 	// Begin Object_c interface
 	virtual void OnConstruct() override;

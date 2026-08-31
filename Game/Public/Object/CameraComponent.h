@@ -4,13 +4,12 @@
 
 class CameraComponent_c : public SpatialObjectComponent_c
 {
-public:
-	using SpatialObjectComponent_c::SpatialObjectComponent_c;
-	virtual ~CameraComponent_c() = default;
+	OBJECTCOMPONENT_BODY(SpatialObjectComponent_c)
 
+	// Begin SpatialObjectComponent_c
 	virtual void OnCreate() override;
-
 	virtual void PreDestroy() override;
+	// End SpatialObjectComponent_c
 
 	matrix CalculateViewMatrix() const;
 
@@ -20,4 +19,6 @@ public:
 	float NearZ = 0.1f;
 	float FarZ = 10'000.0f;
 	float Fov = 45.0f;
+
+	bool Enabled = true;
 };

@@ -2,6 +2,7 @@
 #include "Object/CameraComponent.h"
 #include "Object/Object.h"
 #include "Level/Level.h"
+#include "Utility/SharedPtr.h"
 
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
@@ -58,6 +59,8 @@ std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owne
 	std::shared_ptr<ObjectComponent_c> NewComponent = It->second(ObjectComponentArgs_s{ Owner->shared_from_this() });
 	Owner->Components.push_back(NewComponent);
 
+	NewComponent->OnConstruct();
+
 	if (Data)
 	{
 		NewComponent->Deserialize(*Data);
@@ -96,24 +99,30 @@ void Space_c::UnloadLevel(Level_c* InLevel)
 	}	
 }
 
-void Space_c::RegisterCameraComponent(CameraComponent_c* Camera)
+void Space_c::PushCameraComponent(CameraComponent_c* Camera)
 {
 	if(Camera)
 	{
-		if (ENSUREMSG(PrimaryCamera.expired(), "Multiple camera components registered to space. Only one is supported."))
-		{
-			PrimaryCamera = std::dynamic_pointer_cast<CameraComponent_c>(Camera->shared_from_this());
-		}
+		CameraStack.push_back(SharedFrom(Camera));
 	}
 }
 
-void Space_c::UnregisterCameraComponent(CameraComponent_c* Camera)
+void Space_c::PopCameraComponent(CameraComponent_c* Camera)
 {
 	if (Camera)
 	{
-		if (ENSUREMSG(Camera == PrimaryCamera.lock().get(), "Unregistering a camera that has not been registered."))
+		std::erase_if(CameraStack, [Camera](const std::weak_ptr<CameraComponent_c>& Registered)
 		{
-			PrimaryCamera.reset();
-		}
+			const std::shared_ptr<CameraComponent_c> RegisteredShard = Registered.lock();
+			return RegisteredShard && RegisteredShard.get() == Camera;			
+		});
 	}
+}
+
+CameraComponent_c* Space_c::GetCamera() const
+{
+	if (CameraStack.empty())
+		return nullptr;
+
+	return CameraStack.back().lock().get();
 }

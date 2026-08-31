@@ -11,9 +11,16 @@
 // I have been using ImGui for my input so far, this is a step away so that I don't need ImGui running to be able to handle input.
 // However this is created by lifting the relevant code from imgui_impl_win32.cpp, so it is still very much based on that and may be changed in the future to be more custom to my needs.
 
+enum class KeyState_e : uint8_t
+{
+	UNPRESSED,
+	PRESSED,
+	HELD,
+};
+
 struct InputData
 {
-	bool KeyStates[(uint32_t)KeyCode_e::MAX] = {0};
+	KeyState_e KeyStates[(uint32_t)KeyCode_e::MAX] = { KeyState_e::UNPRESSED };
 	float2 MousePosition = float2(0.0f);
 	float2 MousePrevPosition = float2(0.0f);
 	float2 MouseDelta = float2(0.0f);
@@ -47,6 +54,18 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 	case VK_SHIFT: return KeyCode_e::_SHIFT;
 	case VK_MENU: return KeyCode_e::_ALT;
 	case VK_ESCAPE: return KeyCode_e::_ESC;
+	case VK_F1: return KeyCode_e::_F1;
+	case VK_F2: return KeyCode_e::_F2;
+	case VK_F3: return KeyCode_e::_F3;
+	case VK_F4: return KeyCode_e::_F4;
+	case VK_F5: return KeyCode_e::_F5;
+	case VK_F6: return KeyCode_e::_F6;
+	case VK_F7: return KeyCode_e::_F7;
+	case VK_F8: return KeyCode_e::_F8;
+	case VK_F9: return KeyCode_e::_F9;
+	case VK_F10: return KeyCode_e::_F10;
+	case VK_F11: return KeyCode_e::_F11;
+	case VK_F12: return KeyCode_e::_F12;
 	case 'A': return KeyCode_e::_A;
 	case 'B': return KeyCode_e::_B;
 	case 'C': return KeyCode_e::_C;
@@ -157,7 +176,12 @@ bool Input::IsMouseCaptured()
 
 bool Input::IsKeyDown(KeyCode_e Key)
 {
-	return g_InputData.KeyStates[(uint32_t)Key];
+	return g_InputData.KeyStates[(uint32_t)Key] > KeyState_e::UNPRESSED;
+}
+
+bool Input::IsKeyPressed(KeyCode_e Key)
+{
+	return g_InputData.KeyStates[(uint32_t)Key] == KeyState_e::PRESSED;
 }
 
 bool Input::IsMouseButtonDown(int Button)
@@ -227,10 +251,21 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 	case WM_SYSKEYDOWN:
 	case WM_SYSKEYUP:
 	{
-		const bool is_key_down = (Message == WM_KEYDOWN || Message == WM_SYSKEYDOWN);
+		const bool KeyDown = (Message == WM_KEYDOWN || Message == WM_SYSKEYDOWN);
 		const KeyCode_e Key = Win_VirtualKeyToKeyCode(wParam);
 
-		g_InputData.KeyStates[(uint32_t)Key] = is_key_down;
+		if (!KeyDown)
+		{
+			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::UNPRESSED;
+		}
+		else if(g_InputData.KeyStates[(uint32_t)Key] == KeyState_e::UNPRESSED)
+		{
+			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::PRESSED;
+		}
+		else if (g_InputData.KeyStates[(uint32_t)Key] == KeyState_e::PRESSED)
+		{
+			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::HELD;
+		}
 
 		return 0;
 	}

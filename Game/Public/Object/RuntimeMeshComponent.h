@@ -36,9 +36,7 @@ public:
 
 class RuntimeMeshObject_c : public SpatialObject_c
 {
-public:
-	using SpatialObject_c::SpatialObject_c;
-	virtual ~RuntimeMeshObject_c() = default;
+	OBJECT_BODY(RuntimeMeshObject_c, SpatialObject_c)
 
 	// Begin SpatialObject_c
 	virtual void OnConstruct() override;

@@ -28,12 +28,15 @@ function(create_proj projname rapi)
 		"Public/Level/Level.h"
 		"Private/Object/CameraComponent.cpp"
 		"Public/Object/CameraComponent.h"
+		"Public/Object/DebugCameraObject.h"
+		"Private/Object/DebugCameraObject.cpp"
 		"Private/Object/FlyControllerComponent.cpp"
 		"Public/Object/FlyControllerComponent.h"
 		"Public/Object/MeshComponent.h"
 		"Private/Object/MeshComponent.cpp"
 		"Private/Object/Object.cpp"
 		"Public/Object/Object.h"
+		"Public/Object/ObjectMacros.h"
 		"Private/Object/ObjectComponent.cpp"
 		"Public/Object/ObjectComponent.h"
 		"Private/Object/RuntimeMeshComponent.cpp"
@@ -53,6 +56,7 @@ function(create_proj projname rapi)
 		"Public/Rendering/SpaceRenderer.h"
 		"Private/Space/Space.cpp"
 		"Public/Space/Space.h"
+		"Public/Utility/SharedPtr.h"
 		"Public/Utility/Transform.h"
 	)
 

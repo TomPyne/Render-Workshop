@@ -12,6 +12,7 @@ public:
 	virtual ~GameApp_c() = default;
 
 	virtual bool Init();
+	virtual void Main();
 	virtual void Shutdown();
 
 	virtual std::shared_ptr<class SpaceRenderer_c> CreateSpaceRenderer() const;
@@ -20,6 +21,7 @@ public:
 
 	virtual void Load(); // Called after init and before first frame
 
+	virtual void PreUpdate(); // Init frame
 	virtual void Update();
 	virtual void Render();
 

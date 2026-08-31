@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -26,6 +27,8 @@ public:
 	template<class ObjectType>
 	std::shared_ptr<ObjectType> CreateObject()
 	{
+		static_assert(std::is_same_v<ObjectType, typename ObjectType::Self>, "Object class is missing an OBJECT_BODY declaration");
+
 		std::shared_ptr<ObjectType> NewObject = std::make_shared<ObjectType>(ObjectArgs_s{this});
 		Objects.push_back(NewObject);
 		NewObject->OnConstruct();
@@ -40,6 +43,8 @@ public:
 	template<class ObjectType>
 	void RegisterObjectClass(const std::wstring& ClassName)
 	{
+		static_assert(std::is_same_v<ObjectType, typename ObjectType::Self>, "Object class is missing an OBJECT_BODY declaration");
+
 		ObjectFactoryCallbacks[ClassName] = [](const ObjectArgs_s& Args) -> std::shared_ptr<Object_c>
 		{
 			return std::make_shared<ObjectType>(Args);
@@ -73,11 +78,12 @@ public:
 	void UnloadLevel(Level_c* InLevel);
 
 	// Camera
-	
-	std::weak_ptr<CameraComponent_c> PrimaryCamera;
 
-	void RegisterCameraComponent(CameraComponent_c* Camera);
-	void UnregisterCameraComponent(CameraComponent_c* Camera);
+	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
+
+	void PushCameraComponent(CameraComponent_c* Camera);
+	void PopCameraComponent(CameraComponent_c* Camera);
+	CameraComponent_c* GetCamera() const;
 
 protected:
 

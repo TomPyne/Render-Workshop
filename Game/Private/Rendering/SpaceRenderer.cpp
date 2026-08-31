@@ -69,12 +69,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (!Space)
 		return;
 
-	auto Cam = Space->PrimaryCamera.lock();
-	if (!Cam)
+	CameraComponent_c* PrimaryCamera = Space->GetCamera();
+	if (!PrimaryCamera)
 		return;
 
-	matrix ProjectionMatrix = Cam->CalculateProjectionMatrix(Screen.Width, Screen.Height);
-	matrix ViewMatrix = Cam->CalculateViewMatrix();
+	matrix ProjectionMatrix = PrimaryCamera->CalculateProjectionMatrix(Screen.Width, Screen.Height);
+	matrix ViewMatrix = PrimaryCamera->CalculateViewMatrix();
 
 	SpatialRenderingCollector_s Collector = {};
 

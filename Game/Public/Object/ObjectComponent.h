@@ -2,6 +2,11 @@
 
 #include <memory>
 
+#define OBJECTCOMPONENT_BODY(BaseClass)      \
+public:                             \
+    using Super = BaseClass;        \
+    using BaseClass::BaseClass;
+
 class Object_c;
 
 struct ObjectComponentArgs_s
@@ -19,6 +24,7 @@ public:
 	ObjectComponent_c(const ObjectComponentArgs_s& Args);
 	virtual ~ObjectComponent_c() = default;
 
+	virtual void OnConstruct() {}
 	virtual void Deserialize(const struct JsonValue_s& Data) {}
 	virtual void Load() {}
 	virtual void OnCreate() {}

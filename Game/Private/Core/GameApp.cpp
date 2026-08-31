@@ -42,6 +42,18 @@ bool GameApp_c::Init()
 	return true;
 }
 
+void GameApp_c::Main()
+{
+
+	PreUpdate();
+
+	Update();
+
+	ImGuiUpdate();
+
+	Render();
+}
+
 void GameApp_c::Shutdown()
 {
 	rl::Render_ShutDown();
@@ -58,7 +70,6 @@ void GameApp_c::RegisterClasses()
 		return;
 
 	Space->RegisterObjectClass<MeshObject_c>(L"MeshObject");
-	Space->RegisterObjectClass<Object_c>(L"Object");
 	Space->RegisterObjectClass<RuntimeMeshObject_c>(L"RuntimeMesh");
 	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
 	
@@ -83,21 +94,20 @@ void GameApp_c::Load()
 	SpaceRenderer->Init();
 }
 
-void GameApp_c::Update()
+void GameApp_c::PreUpdate()
 {
 	Clock.Tick();
-	const float DeltaSeconds = Clock.GetDeltaSeconds();
-
 	Input::NewFrame();
+}
+
+void GameApp_c::Update()
+{
+	const float DeltaSeconds = Clock.GetDeltaSeconds();
 
 	if (Space)
 	{
 		Space->Update(DeltaSeconds);
 	}
-
-	ImGuiUpdate();
-
-	Render();
 }
 
 void GameApp_c::Render()
@@ -159,8 +169,6 @@ void GameApp_c::ImGuiUpdate()
 	ImGui_ImplWin32_NewFrame();
 
 	ImGui::NewFrame();
-
-	ImGui::ShowDemoWindow();
 }
 
 void GameApp_c::Resize(int Width, int Height)

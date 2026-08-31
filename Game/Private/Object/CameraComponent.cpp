@@ -6,10 +6,12 @@
 
 void CameraComponent_c::OnCreate()
 {
+	Super::OnCreate();
+
 	// Register camera component
 	if (Space_c* Space = GetSpace())
 	{
-		Space->RegisterCameraComponent(this);
+		Space->PushCameraComponent(this);
 	}
 }
 
@@ -18,8 +20,10 @@ void CameraComponent_c::PreDestroy()
 	// Unregister
 	if (Space_c* Space = GetSpace())
 	{
-		Space->UnregisterCameraComponent(this);
+		Space->PopCameraComponent(this);
 	}
+
+	Super::PreDestroy();
 }
 
 matrix CameraComponent_c::CalculateViewMatrix() const
