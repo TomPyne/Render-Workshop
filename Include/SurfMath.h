@@ -1169,6 +1169,174 @@ inline matrix MakeMatrixRotationFromQuaternion(float4 quaternion)
     };
 }
 
+// Quaternion
+//
+// Conventions, matching the matrix code above:
+//   Component order is (x, y, z, w), so MakeMatrixRotationFromQuaternion reads w last.
+//   Mul(A, B) is A followed by B, the same order as Local * Parent.
+//   Left handed, and stored quaternions are assumed unit length.
+struct quat
+{
+    float x, y, z, w;
+
+    constexpr quat() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+    constexpr quat(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
+
+    static constexpr quat Identity() noexcept { return quat(0.0f, 0.0f, 0.0f, 1.0f); }
+};
+
+inline constexpr quat Mul(quat A, quat B) noexcept
+{
+    return quat(
+        (B.w * A.x) + (B.x * A.w) + (B.y * A.z) - (B.z * A.y),
+        (B.w * A.y) - (B.x * A.z) + (B.y * A.w) + (B.z * A.x),
+        (B.w * A.z) + (B.x * A.y) - (B.y * A.x) + (B.z * A.w),
+        (B.w * A.w) - (B.x * A.x) - (B.y * A.y) - (B.z * A.z)
+    );
+}
+
+// The inverse, for a unit quaternion.
+inline constexpr quat Conjugate(quat Q) noexcept
+{
+    return quat(-Q.x, -Q.y, -Q.z, Q.w);
+}
+
+inline quat Normalize(quat Q) noexcept
+{
+    float Length = sqrtf((Q.x * Q.x) + (Q.y * Q.y) + (Q.z * Q.z) + (Q.w * Q.w));
+
+    if (Length > 0.0f)
+    {
+        Length = 1.0f / Length;
+    }
+
+    return quat(Q.x * Length, Q.y * Length, Q.z * Length, Q.w * Length);
+}
+
+inline float3 Rotate(quat Q, float3 V) noexcept
+{
+    const float3 Axis{ Q.x, Q.y, Q.z };
+    const float3 T = Cross(Axis, V) * 2.0f;
+
+    return V + (T * Q.w) + Cross(Axis, T);
+}
+
+inline quat QuatFromAxisAngle(float3 Axis, float Radians) noexcept
+{
+    const float Half = Radians * 0.5f;
+    const float Sin = sinf(Half);
+    const float3 Normal = Normalize(Axis);
+
+    return quat(Normal.x * Sin, Normal.y * Sin, Normal.z * Sin, cosf(Half));
+}
+
+// Applies Z, then X, then Y, so this is an exact match for MakeMatrixRotationFromVector.
+inline quat QuatFromEuler(float3 Euler) noexcept
+{
+    Euler *= 0.5f;
+    const float cp = cosf(Euler.x);
+    const float sp = sinf(Euler.x);
+    const float cy = cosf(Euler.y);
+    const float sy = sinf(Euler.y);
+    const float cr = cosf(Euler.z);
+    const float sr = sinf(Euler.z);
+
+    return quat(
+        (cr * sp * cy) + (sr * cp * sy),
+        (cr * cp * sy) - (sr * sp * cy),
+        (sr * cp * cy) - (cr * sp * sy),
+        (cr * cp * cy) + (sr * sp * sy)
+    );
+}
+
+// Display and serialization only. A euler triple cannot hold the yaw/roll split
+// at +-90 degrees of pitch, so the round trip is lossy there by construction.
+inline float3 QuatToEuler(quat Q) noexcept
+{
+    const float SinPitch = Clamp(2.0f * ((Q.x * Q.w) - (Q.y * Q.z)), -1.0f, 1.0f);
+    const float Pitch = asinf(SinPitch);
+
+    if (fabsf(SinPitch) < 0.9999f)
+    {
+        const float Yaw = atan2f(2.0f * ((Q.x * Q.z) + (Q.y * Q.w)), 1.0f - (2.0f * ((Q.x * Q.x) + (Q.y * Q.y))));
+        const float Roll = atan2f(2.0f * ((Q.x * Q.y) + (Q.z * Q.w)), 1.0f - (2.0f * ((Q.x * Q.x) + (Q.z * Q.z))));
+
+        return float3{ Pitch, Yaw, Roll };
+    }
+
+    // Yaw and roll share an axis here, so fold both into yaw and zero the roll.
+    const float Yaw = atan2f(-2.0f * ((Q.x * Q.z) - (Q.y * Q.w)), 1.0f - (2.0f * ((Q.y * Q.y) + (Q.z * Q.z))));
+
+    return float3{ Pitch, Yaw, 0.0f };
+}
+
+inline quat QuatFromDirection(float3 Forward, float3 Up) noexcept
+{
+    const float3 F = Normalize(Forward);
+    const float3 R = Normalize(Cross(Up, F));
+    const float3 U = Cross(F, R);
+
+    // R, U and F are the rows of the rotation matrix.
+    const float Trace = R.x + U.y + F.z;
+
+    if (Trace > 0.0f)
+    {
+        const float S = sqrtf(Trace + 1.0f) * 2.0f;
+        return Normalize(quat((U.z - F.y) / S, (F.x - R.z) / S, (R.y - U.x) / S, S * 0.25f));
+    }
+
+    if (R.x > U.y && R.x > F.z)
+    {
+        const float S = sqrtf(1.0f + R.x - U.y - F.z) * 2.0f;
+        return Normalize(quat(S * 0.25f, (U.x + R.y) / S, (F.x + R.z) / S, (U.z - F.y) / S));
+    }
+
+    if (U.y > F.z)
+    {
+        const float S = sqrtf(1.0f + U.y - R.x - F.z) * 2.0f;
+        return Normalize(quat((U.x + R.y) / S, S * 0.25f, (F.y + U.z) / S, (F.x - R.z) / S));
+    }
+
+    const float S = sqrtf(1.0f + F.z - R.x - U.y) * 2.0f;
+    return Normalize(quat((F.x + R.z) / S, (F.y + U.z) / S, S * 0.25f, (R.y - U.x) / S));
+}
+
+inline quat Slerp(quat A, quat B, float Alpha) noexcept
+{
+    float CosOmega = (A.x * B.x) + (A.y * B.y) + (A.z * B.z) + (A.w * B.w);
+
+    // Double cover, so negate B to take the short way round.
+    if (CosOmega < 0.0f)
+    {
+        B = quat(-B.x, -B.y, -B.z, -B.w);
+        CosOmega = -CosOmega;
+    }
+
+    float WeightA = 1.0f - Alpha;
+    float WeightB = Alpha;
+
+    if (CosOmega < 0.9995f)
+    {
+        const float Omega = acosf(CosOmega);
+        const float InvSinOmega = 1.0f / sinf(Omega);
+
+        WeightA = sinf(WeightA * Omega) * InvSinOmega;
+        WeightB = sinf(WeightB * Omega) * InvSinOmega;
+    }
+
+    return Normalize(quat(
+        (A.x * WeightA) + (B.x * WeightB),
+        (A.y * WeightA) + (B.y * WeightB),
+        (A.z * WeightA) + (B.z * WeightB),
+        (A.w * WeightA) + (B.w * WeightB)
+    ));
+}
+
+inline matrix MakeMatrixRotationFromQuaternion(quat Q) noexcept
+{
+    return MakeMatrixRotationFromQuaternion(float4(Q.x, Q.y, Q.z, Q.w));
+}
+
 inline constexpr matrix TransposeMatrix(matrix m) noexcept
 {
     matrix p;
