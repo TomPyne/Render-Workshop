@@ -1,0 +1,28 @@
+{
+    "Version": 1,
+    "Objects":
+    [
+        {
+            "Class": "SpatialObject",
+            "Position": "0, 5, -10",
+            "Components":
+            [
+                {
+                    "Class": "CameraComponent",
+                    "Position": "0, 0, -5"
+                },
+                {
+                    "Class": "FighterControllerComponent"
+                },
+                {
+                    "Class": "MeshComponent",
+                    "MeshAssetPath": "%ASSETS%/Meshes/Fighter.hp_mdl"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "MeshAssetPath": "%ASSETS%/Meshes/Plane.hp_mdl"
+        }
+    ]
+}

@@ -22,6 +22,9 @@ public:
 
 	virtual void Update();
 	virtual void Render();
+
+	virtual void ImGuiUpdate();
+
 	virtual void Resize(int Width, int Height);
 	virtual LRESULT HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

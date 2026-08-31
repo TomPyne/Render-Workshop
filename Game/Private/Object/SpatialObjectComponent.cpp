@@ -2,6 +2,7 @@
 
 #include "Object/SpatialObject.h"
 
+#include <Shared/FileUtils/JsonValue.h>
 #include <Shared/Logging/Logging.h>
 
 SpatialObjectComponent_c::SpatialObjectComponent_c(const ObjectComponentArgs_s& Args)
@@ -15,20 +16,18 @@ void SpatialObjectComponent_c::Deserialize(const JsonValue_s& Data)
 {
 	ObjectComponent_c::Deserialize(Data);
 	
-	// TODO: once we have component transforms
-	
-	//float3 Position = {};
-	//float3 Rotation = {};
-	//float Scale = 1.0f;
-	//JsonHelpers::ParseFloat3(Data, "Position", Position);
-	//JsonHelpers::ParseFloat3(Data, "Rotation", Position);
-	//JsonHelpers::ParseFloat(Data, "Scale", Scale);
-	//Transform.Set(Position, Rotation, Scale);
+	float3 Position = {};
+	float3 Rotation = {};
+	float Scale = 1.0f;
+	JsonHelpers::ParseFloat3(Data, "Position", Position);
+	JsonHelpers::ParseFloat3(Data, "Rotation", Rotation);
+	JsonHelpers::ParseFloat(Data, "Scale", Scale);
+	Transform.Set(Position, Rotation, Scale);
 }
 
-const Transform_s& SpatialObjectComponent_c::GetTransform() const
+const matrix& SpatialObjectComponent_c::GetWorldMatrix() const
 {
-	static const Transform_s DefaultTransform = {};
 	const SpatialObject_c* Owner = GetSpatialOwner();
-	return Owner ? Owner->GetTransform() : DefaultTransform;
+	WorldMatrix = Owner ? Transform.GetMatrix() * Owner->GetTransform().GetMatrix() : Transform.GetMatrix();
+	return WorldMatrix;
 }

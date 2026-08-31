@@ -24,8 +24,8 @@ void CameraComponent_c::PreDestroy()
 
 matrix CameraComponent_c::CalculateViewMatrix() const
 {
-	float3 Position = GetTransform().GetPosition();
-	float3 LookDir = GetTransform().GetForwardVector();
+	float3 Position = GetWorldPosition();
+	float3 LookDir = GetWorldForward();
 	float3 Target = Position + LookDir;
 	return MakeMatrixLookAtLH(Position, Target, float3{ 0, 1, 0 });
 }

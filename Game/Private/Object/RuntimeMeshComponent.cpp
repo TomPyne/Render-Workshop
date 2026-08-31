@@ -6,7 +6,7 @@
 
 void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
-	rl::DynamicBuffer_t DynamicUniforms = rl::CreateDynamicConstantBuffer(&GetTransform().GetMatrix());
+	rl::DynamicBuffer_t DynamicUniforms = rl::CreateDynamicConstantBuffer(&GetWorldMatrix());
 	Mesh->Render(Collector, DynamicUniforms);
 }
 

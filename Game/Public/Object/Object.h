@@ -57,14 +57,14 @@ public:
 		}
 	}
 
-	template<typename Func, class ComponentType>
+	template<class ComponentType, class Func>
 	void ForEachComponentType(Func&& Function)
 	{
 		for (const auto& CompPtr : Components)
 		{
 			if (auto CastedPtr = std::dynamic_pointer_cast<ComponentType>(CompPtr))
 			{
-				if (Function(CompPtr.get()) == false)
+				if (Function(CastedPtr.get()) == false)
 					return;
 			}
 		}

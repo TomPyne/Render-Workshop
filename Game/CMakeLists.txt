@@ -84,7 +84,7 @@ function(create_proj projname rapi)
 		PUBLIC
     		"${CMAKE_CURRENT_SOURCE_DIR}/Public"
 		PRIVATE
-    		"${PROJECT_SOURCE_DIR}/imgui"
+    		"${PROJECT_SOURCE_DIR}/RenderImGui/imgui"
 			"${PROJECT_SOURCE_DIR}/Include"
     		"${PROJECT_SOURCE_DIR}/Render"
     		"${PROJECT_SOURCE_DIR}"

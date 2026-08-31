@@ -8,6 +8,7 @@ public:
 	virtual ~SimpleGameApp_c() = default;
 
 	// Begin GameApp_c interface
+	virtual void RegisterClasses() override;
 	virtual void Load() override;
 	// Endf GameApp_c interface
 };

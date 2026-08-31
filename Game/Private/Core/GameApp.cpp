@@ -11,6 +11,9 @@
 #include "Rendering/SpaceRenderer.h"
 #include "Space/Space.h"
 
+#include <RenderImGui/imgui/imgui.h>
+#include <RenderImGui/imgui/backends/imgui_impl_win32.h>
+#include <RenderImGui/Source/Public/imgui_impl_render.h>
 #include <Render/Render.h>
 
 bool GameApp_c::Init()
@@ -26,9 +29,15 @@ bool GameApp_c::Init()
 
 	MainRenderView = rl::CreateRenderViewPtr((intptr_t)Hwnd);
 
-	Clock = {};
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
 
-	//*InitializeApp();
+	ImGui_ImplWin32_Init(Hwnd);
+	ImGui_ImplRender_Init(rl::RenderFormat::R8G8B8A8_UNORM);
+
+	ImGui_ImplRender_NewFrame();
+
+	Clock = {};
 
 	return true;
 }
@@ -86,12 +95,22 @@ void GameApp_c::Update()
 		Space->Update(DeltaSeconds);
 	}
 
+	ImGuiUpdate();
+
 	Render();
 }
 
 void GameApp_c::Render()
 {
 	rl::Render_BeginFrame();
+
+	{
+		ImGui_ImplRender_NewFrame();
+
+		ImGui::Render();
+	}
+
+	ImRenderFrameData* FrameData = ImGui_ImplRender_PrepareFrameData(ImGui::GetDrawData());
 
 	rl::Render_BeginRenderFrame();
 
@@ -116,6 +135,16 @@ void GameApp_c::Render()
 
 	rl::CommandList* PostCL = CLGroup.CreateCommandList();
 
+	PostCL->SetRootSignature(ImGui_ImplRender_GetRootSignature());
+
+	rl::RenderTargetView_t BackBufferRtv = MainRenderView->GetCurrentBackBufferRTV();
+
+	PostCL->SetRenderTargets(&BackBufferRtv, 1, rl::DepthStencilView_t::INVALID);
+
+	ImGui_ImplRender_RenderDrawData(FrameData, ImGui::GetDrawData(), PostCL);
+
+	ImGui_ImplRender_ReleaseFrameData(FrameData);
+
 	PostCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
 
 	CLGroup.Submit();
@@ -123,6 +152,15 @@ void GameApp_c::Render()
 	rl::Render_EndFrame();
 
 	MainRenderView->Present(true);
+}
+
+void GameApp_c::ImGuiUpdate()
+{
+	ImGui_ImplWin32_NewFrame();
+
+	ImGui::NewFrame();
+
+	ImGui::ShowDemoWindow();
 }
 
 void GameApp_c::Resize(int Width, int Height)

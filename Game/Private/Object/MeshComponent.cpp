@@ -23,7 +23,7 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
 	if (Mesh)
 	{
-		Mesh->Render(Collector, rl::CreateDynamicConstantBuffer(&GetTransform().GetMatrix()));
+		Mesh->Render(Collector, rl::CreateDynamicConstantBuffer(&GetWorldMatrix()));
 	}
 }
 
