@@ -19,6 +19,7 @@ void Space_c::DestroyObject(Object_c* Object)
 {
 	if (Object)
 	{
+		Object->OnDestroy();
 		std::erase(Objects, Object->shared_from_this());
 	}
 }

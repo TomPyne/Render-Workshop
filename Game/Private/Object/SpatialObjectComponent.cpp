@@ -31,3 +31,29 @@ const matrix& SpatialObjectComponent_c::GetWorldMatrix() const
 	WorldMatrix = Owner ? Transform.GetMatrix() * Owner->GetTransform().GetMatrix() : Transform.GetMatrix();
 	return WorldMatrix;
 }
+
+float3 SpatialObjectComponent_c::GetWorldRotation() const
+{
+	const matrix& World = GetWorldMatrix();
+
+	// Every angle below is an atan2 of two elements sharing the accumulated uniform scale,
+	// so the scale cancels and the rows can be used unnormalized.
+
+	// Row 2 is (cp*sy, -sp, cp*cy), which is exactly what GetEulerFromDirection inverts.
+	float3 Euler = GetEulerFromDirection(World.r[2].xyz);
+
+	constexpr float PitchEpsilon = 1.0e-4f;
+	if (fabsf(cosf(Euler.x)) > PitchEpsilon)
+	{
+		// m[0][1] is sr*cp and m[1][1] is cr*cp, so the pitch term divides out.
+		Euler.z = atan2f(World.m[0][1], World.m[1][1]);
+	}
+	else
+	{
+		// Gimbal lock: pitch is +-90 degrees, so yaw and roll spin about the same axis.
+		// Leave roll at zero and take the whole spin as yaw from the right vector.
+		Euler.y = atan2f(-World.m[0][2], World.m[0][0]);
+	}
+
+	return Euler;
+}

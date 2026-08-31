@@ -11,9 +11,11 @@
 #include "Rendering/SpaceRenderer.h"
 #include "Space/Space.h"
 
+#if IMGUI_ENABLE
 #include <RenderImGui/imgui/imgui.h>
 #include <RenderImGui/imgui/backends/imgui_impl_win32.h>
 #include <RenderImGui/Source/Public/imgui_impl_render.h>
+#endif // #if IMGUI_ENABLE
 #include <Render/Render.h>
 
 bool GameApp_c::Init()
@@ -29,6 +31,7 @@ bool GameApp_c::Init()
 
 	MainRenderView = rl::CreateRenderViewPtr((intptr_t)Hwnd);
 
+#if IMGUI_ENABLE
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -36,6 +39,7 @@ bool GameApp_c::Init()
 	ImGui_ImplRender_Init(rl::RenderFormat::R8G8B8A8_UNORM);
 
 	ImGui_ImplRender_NewFrame();
+#endif // #if IMGUI_ENABLE
 
 	Clock = {};
 
@@ -44,7 +48,6 @@ bool GameApp_c::Init()
 
 void GameApp_c::Main()
 {
-
 	PreUpdate();
 
 	Update();
@@ -113,13 +116,12 @@ void GameApp_c::Render()
 {
 	rl::Render_BeginFrame();
 
-	{
-		ImGui_ImplRender_NewFrame();
-
-		ImGui::Render();
-	}
+#if IMGUI_ENABLE
+	ImGui_ImplRender_NewFrame();
+	ImGui::Render();
 
 	ImRenderFrameData* FrameData = ImGui_ImplRender_PrepareFrameData(ImGui::GetDrawData());
+#endif // #if IMGUI_ENABLE
 
 	rl::Render_BeginRenderFrame();
 
@@ -144,6 +146,7 @@ void GameApp_c::Render()
 
 	rl::CommandList* PostCL = CLGroup.CreateCommandList();
 
+#if IMGUI_ENABLE
 	PostCL->SetRootSignature(ImGui_ImplRender_GetRootSignature());
 
 	rl::RenderTargetView_t BackBufferRtv = MainRenderView->GetCurrentBackBufferRTV();
@@ -153,6 +156,7 @@ void GameApp_c::Render()
 	ImGui_ImplRender_RenderDrawData(FrameData, ImGui::GetDrawData(), PostCL);
 
 	ImGui_ImplRender_ReleaseFrameData(FrameData);
+#endif // #if IMGUI_ENABLE
 
 	PostCL->TransitionResource(MainRenderView->GetCurrentBackBufferTexture(), rl::ResourceTransitionState::RENDER_TARGET, rl::ResourceTransitionState::PRESENT);
 
@@ -165,9 +169,11 @@ void GameApp_c::Render()
 
 void GameApp_c::ImGuiUpdate()
 {
+#if IMGUI_ENABLE
 	ImGui_ImplWin32_NewFrame();
 
 	ImGui::NewFrame();
+#endif // #if IMGUI_ENABLE
 }
 
 void GameApp_c::Resize(int Width, int Height)
@@ -175,11 +181,15 @@ void GameApp_c::Resize(int Width, int Height)
 	MainRenderView->Resize(Width, Height);
 }
 
+#if IMGUI_ENABLE
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif // #if IMGUI_ENABLE
 LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	Input::Win_InputHandler((void*)hWnd, msg, wParam, lParam);
+#if IMGUI_ENABLE
 	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+#endif // #if IMGUI_ENABLE
 	return 0;
 }
 

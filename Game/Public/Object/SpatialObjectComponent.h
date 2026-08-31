@@ -28,6 +28,7 @@ class SpatialObjectComponent_c : public ObjectComponent_c
 
 	float3 GetWorldPosition() const { return GetWorldMatrix().r[3].xyz; }
 	float3 GetWorldForward() const { return Normalize(GetWorldMatrix().r[2].xyz); }
+	float3 GetWorldRotation() const;
 
 	SpatialObject_c* GetSpatialOwner() const
 	{

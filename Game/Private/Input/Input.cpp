@@ -20,6 +20,11 @@ enum class KeyState_e : uint8_t
 
 struct InputData
 {
+	// Raw physical state, driven by the window messages.
+	bool KeyDownRaw[(uint32_t)KeyCode_e::MAX] = {};
+	// Sticky down edge, so a press and release that both land between two frames isn't dropped.
+	bool KeyPressedRaw[(uint32_t)KeyCode_e::MAX] = {};
+	// Per frame snapshot, this is what the game reads.
 	KeyState_e KeyStates[(uint32_t)KeyCode_e::MAX] = { KeyState_e::UNPRESSED };
 	float2 MousePosition = float2(0.0f);
 	float2 MousePrevPosition = float2(0.0f);
@@ -103,12 +108,30 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 	case '9': return KeyCode_e::_9;
 	case '0': return KeyCode_e::_0;
 	default:
-		return (KeyCode_e)0; // Invalid key
+		return KeyCode_e::INVALID;
 	}
 }
 
 void Input::NewFrame()
 {
+	for (uint32_t KeyIndex = 0; KeyIndex < (uint32_t)KeyCode_e::MAX; ++KeyIndex)
+	{
+		if (g_InputData.KeyPressedRaw[KeyIndex])
+		{
+			g_InputData.KeyStates[KeyIndex] = KeyState_e::PRESSED;
+		}
+		else if (g_InputData.KeyDownRaw[KeyIndex])
+		{
+			g_InputData.KeyStates[KeyIndex] = KeyState_e::HELD;
+		}
+		else
+		{
+			g_InputData.KeyStates[KeyIndex] = KeyState_e::UNPRESSED;
+		}
+
+		g_InputData.KeyPressedRaw[KeyIndex] = false;
+	}
+
 	POINT Centre;
 	if (g_InputData.MouseCaptured && Win_GetWindowCentre(g_InputData.WindowHandle, Centre))
 	{
@@ -244,6 +267,8 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 	case WM_KILLFOCUS:
 		SetMouseCaptured(false);
 		g_InputData.MouseButtonStates = 0;
+		memset(g_InputData.KeyDownRaw, 0, sizeof(g_InputData.KeyDownRaw));
+		memset(g_InputData.KeyPressedRaw, 0, sizeof(g_InputData.KeyPressedRaw));
 		memset(g_InputData.KeyStates, 0, sizeof(g_InputData.KeyStates));
 		return 0;
 	case WM_KEYDOWN:
@@ -254,17 +279,24 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 		const bool KeyDown = (Message == WM_KEYDOWN || Message == WM_SYSKEYDOWN);
 		const KeyCode_e Key = Win_VirtualKeyToKeyCode(wParam);
 
-		if (!KeyDown)
+		if (Key == KeyCode_e::INVALID)
 		{
-			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::UNPRESSED;
+			return 0;
 		}
-		else if(g_InputData.KeyStates[(uint32_t)Key] == KeyState_e::UNPRESSED)
+
+		if (KeyDown)
 		{
-			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::PRESSED;
+			// Windows repeats WM_KEYDOWN while the key is held, only the first one is an edge.
+			if (!g_InputData.KeyDownRaw[(uint32_t)Key])
+			{
+				g_InputData.KeyPressedRaw[(uint32_t)Key] = true;
+			}
+
+			g_InputData.KeyDownRaw[(uint32_t)Key] = true;
 		}
-		else if (g_InputData.KeyStates[(uint32_t)Key] == KeyState_e::PRESSED)
+		else
 		{
-			g_InputData.KeyStates[(uint32_t)Key] = KeyState_e::HELD;
+			g_InputData.KeyDownRaw[(uint32_t)Key] = false;
 		}
 
 		return 0;

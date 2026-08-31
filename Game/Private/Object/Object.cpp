@@ -35,6 +35,15 @@ void Object_c::Deserialize(const JsonValue_s& Data)
 	}
 }
 
+void Object_c::OnDestroy()
+{
+	for (std::shared_ptr<ObjectComponent_c>& Component : Components)
+	{
+		Component->PreDestroy();
+	}
+	Components.clear();
+}
+
 void Object_c::Update(float Delta)
 {
 	ForEachComponent([Delta](ObjectComponent_c* Component)

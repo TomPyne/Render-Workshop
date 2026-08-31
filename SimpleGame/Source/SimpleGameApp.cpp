@@ -37,6 +37,7 @@ void SimpleGameApp_c::PreUpdate()
 
 	if (Input::IsKeyPressed(KeyCode_e::_F8))
 	{
+		LOGINFO("Debug cam toggled");
 		ToggleDebugCamera(DebugCamera == nullptr);
 	}
 }
@@ -55,13 +56,15 @@ void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
 		if (CameraComponent_c* CurrentCamera = Space->GetCamera())
 		{
 			Position = CurrentCamera->GetWorldPosition();
-			//Rotation = CurrentCamera->GetWorldPosition
+			Rotation = CurrentCamera->GetWorldRotation();
 		}
 		DebugCamera = Space->CreateObject<DebugCameraObject_c>();
-		
+		DebugCamera->SetPosition(Position);
+		DebugCamera->SetRotation(Rotation);		
 	}
 	else
 	{
 		Space->DestroyObject(DebugCamera.get());
+		DebugCamera = {};
 	}
 }

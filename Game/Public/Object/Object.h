@@ -38,6 +38,9 @@ public:
 	// Called after deserialization
 	virtual void OnCreate() {}
 
+	// Called before destructor
+	virtual void OnDestroy();
+
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
 
 	void Update(float Delta);
