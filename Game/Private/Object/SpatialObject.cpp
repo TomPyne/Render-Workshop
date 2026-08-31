@@ -14,10 +14,12 @@ void SpatialObject_c::Deserialize(const JsonValue_s& Data)
 	Object_c::Deserialize(Data);
 
 	float3 Position = {};
-	float3 Rotation = {};
+	float3 RotationDegrees = {};
 	float Scale = 1.0f;
 	JsonHelpers::ParseFloat3(Data, "Position", Position);
-	JsonHelpers::ParseFloat3(Data, "Rotation", Rotation);
+	JsonHelpers::ParseFloat3(Data, "Rotation", RotationDegrees);
 	JsonHelpers::ParseFloat(Data, "Scale", Scale);
-	Transform.Set(Position, Rotation, Scale);
+
+	// Euler stays the authoring format, in degrees, and converts on load.
+	Transform.Set(Position, ConvertToRadians(RotationDegrees), Scale);
 }

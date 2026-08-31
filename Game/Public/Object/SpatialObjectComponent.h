@@ -22,13 +22,22 @@ class SpatialObjectComponent_c : public ObjectComponent_c
 
 	void SetPosition(const float3& NewPosition) { Transform.SetPosition(NewPosition); }
 	void SetRotation(const float3& NewRotation) { Transform.SetRotation(NewRotation); }
+	void SetRotation(quat NewRotation) { Transform.SetRotation(NewRotation); }
 	void SetScale(float NewScale) { Transform.SetScale(NewScale); }
+
+	void Rotate(quat Delta) { Transform.Rotate(Delta); }
+	void RotateLocal(quat Delta) { Transform.RotateLocal(Delta); }
 
 	const matrix& GetWorldMatrix() const;
 
 	float3 GetWorldPosition() const { return GetWorldMatrix().r[3].xyz; }
-	float3 GetWorldForward() const { return Normalize(GetWorldMatrix().r[2].xyz); }
-	float3 GetWorldRotation() const;
+	quat GetWorldRotation() const;
+
+	// Qualified, since the Rotate member above hides the SurfMath free function.
+	float3 GetWorldForward() const { return ::Rotate(GetWorldRotation(), float3{ 0.0f, 0.0f, 1.0f }); }
+
+	// Display and serialization only.
+	float3 GetWorldRotationEuler() const { return QuatToEuler(GetWorldRotation()); }
 
 	SpatialObject_c* GetSpatialOwner() const
 	{

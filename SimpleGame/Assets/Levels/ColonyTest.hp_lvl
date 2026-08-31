@@ -3,22 +3,8 @@
     "Objects":
     [
         {
-            "Class": "SpatialObject",
+            "Class": "DebugCameraObject",
             "Position": "0, 5, -10",
-            "Components":
-            [
-                {
-                    "Class": "CameraComponent",
-                    "Position": "0, 0, -5"
-                },
-                {
-                    "Class": "FighterControllerComponent"
-                },
-                {
-                    "Class": "MeshComponent",
-                    "MeshAssetPath": "%ASSETS%/Meshes/Fighter.hp_mdl"
-                }
-            ]
         },
         {
             "Class": "MeshObject",

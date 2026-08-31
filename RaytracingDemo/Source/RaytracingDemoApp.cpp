@@ -351,7 +351,9 @@ bool InitializeApp()
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);
 
-	G.Cam.SetPosition(float3(-5, 20, 25));
+	// Yaw 90 faces +X, which is where yaw 0 pointed before the camera moved onto the
+	// canonical +Z forward convention.
+	G.Cam.SetView(float3(-5, 20, 25), 0.0f, 90.0f);
 	G.Cam.SetNearFar(NearPlaneZ, FarPlaneZ);
 
 	return true;

@@ -19,25 +19,6 @@ namespace
 		const float T = Clamp((Value - Edge0) / (Edge1 - Edge0), 0.0f, 1.0f);
 		return T * T * (3.0f - 2.0f * T);
 	}
-
-	// MakeMatrixRotationFromVector applies Z, then X, then Y, so writing a roll into
-	// Rotation.x turns the fighter about the world X axis rather than about its own
-	// nose, which mirrors its pitch. Build the rotation we want - roll about the model
-	// X axis, then pitch about model Z - and decompose it back into an euler triple.
-	float3 MakeFighterRotation(float Pitch, float Roll)
-	{
-		const float CosPitch = cosf(Pitch);
-		const float SinPitch = sinf(Pitch);
-		const float CosRoll = cosf(Roll);
-		const float SinRoll = sinf(Roll);
-
-		return float3
-		{
-			asinf(Clamp(SinRoll * CosPitch, -1.0f, 1.0f)),
-			atan2f(SinRoll * SinPitch, CosRoll),
-			atan2f(SinPitch, CosRoll * CosPitch)
-		};
-	}
 }
 
 void FighterControllerComponent_c::OnCreate()
@@ -87,7 +68,11 @@ void FighterControllerComponent_c::Update(float Delta)
 		// 180 degrees to keep its belly pointing at the ground. Blend that flip across
 		// the near-vertical band, where the roll makes least difference to the belly.
 		const float RollAlpha = SmoothStep(ConvertToRadians(RollStartPitchDegrees), ConvertToRadians(RollEndPitchDegrees), fabsf(Pitch));
+		const float Roll = (Pitch < 0.0f ? -K_PI : K_PI) * RollAlpha;
 
-		FighterMeshComp->SetRotation(MakeFighterRotation(Pitch, (Pitch < 0.0f ? -K_PI : K_PI) * RollAlpha));
+		// Roll about the model nose, then pitch about the model Z axis.
+		FighterMeshComp->SetRotation(Mul(
+			QuatFromAxisAngle(float3{ 1.0f, 0.0f, 0.0f }, Roll),
+			QuatFromAxisAngle(float3{ 0.0f, 0.0f, 1.0f }, Pitch)));
 	}
 }

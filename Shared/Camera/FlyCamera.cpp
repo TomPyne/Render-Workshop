@@ -5,23 +5,16 @@ void FlyCamera::SetView(const float3& InPosition, float Pitch, float Yaw)
 {
 	Position = InPosition;
 
-	if (Yaw > 360.0f)
-		Yaw -= 360.0f;
+	// Store the clamped and wrapped angles, so pitch cannot run away past the clamp
+	// and leave the view unresponsive until it has been wound all the way back.
+	CamPitch = Clamp(Pitch, -85.0f, 85.0f);
+	CamYaw = fmodf(Yaw, 360.0f);
 
-	if (Yaw < -360.0f)
-		Yaw += 360.0f;
+	// Canonical convention, shared with GetDirectionFromEuler and the fly controller:
+	// yaw zero faces +Z and positive pitch tilts down.
+	const quat Rotation = QuatFromEuler(float3{ ConvertToRadians(CamPitch), ConvertToRadians(CamYaw), 0.0f });
 
-	CamPitch = Pitch;
-	CamYaw = Yaw;
-
-	Pitch = Clamp(Pitch, -85.0f, 85.0f);
-
-	Yaw = ConvertToRadians(Yaw);
-	Pitch = ConvertToRadians(Pitch);
-
-	float CosPitch = cosf(Pitch);
-
-	LookDir = float3{ cosf(Yaw) * CosPitch, sinf(Pitch), sinf(Yaw) * CosPitch };
+	LookDir = Rotate(Rotation, float3{ 0.0f, 0.0f, 1.0f });
 
 	View = MakeMatrixLookToLH(InPosition, LookDir, float3{ 0, 1, 0 });
 }
@@ -38,8 +31,10 @@ void FlyCamera::UpdateView(float delta)
 		float Yaw = ImGui::GetIO().MouseDelta.x;
 		float Pitch = ImGui::GetIO().MouseDelta.y;
 
-		CamPitch -= Pitch * 25.0f * delta;
-		CamYaw -= Yaw * 25.0f * delta;
+		// Both signs follow the canonical convention above, so the feel is unchanged:
+		// dragging down looks down, dragging right turns right.
+		CamPitch += Pitch * 25.0f * delta;
+		CamYaw += Yaw * 25.0f * delta;
 	}
 
 	float3 translation = { 0.0f };

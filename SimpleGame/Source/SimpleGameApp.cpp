@@ -53,7 +53,7 @@ void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
 		LOGINFO("Debug cam enabled");
 
 		float3 Position = float3(0.0f);
-		float3 Rotation = float3(0.0f);
+		quat Rotation = quat::Identity();
 		if (CameraComponent_c* CurrentCamera = Space->GetCamera())
 		{
 			Position = CurrentCamera->GetWorldPosition();

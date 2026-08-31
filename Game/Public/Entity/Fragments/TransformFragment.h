@@ -1,50 +1,24 @@
 #pragma once
 
+#include "Utility/Transform.h"
+
 #include <SurfMath.h>
 
 struct TransformFragment_s
 {
-	TransformFragment_s()
-		: Position(0)
-		, Rotation(0)
-		, Scale(0)
-	{
-		Transform = MakeMatrixIdentity();
-	}
+	float3 GetPosition() const { return Transform.GetPosition(); }
+	float3 GetRotation() const { return Transform.GetRotation(); }
+	quat GetRotationQuat() const { return Transform.GetRotationQuat(); }
+	float GetScale() const { return Transform.GetScale(); }
+	const matrix& GetTransform() const { return Transform.GetMatrix(); }
 
-	const float3& GetPosition() const {	return Position; }
-	const float3& GetRotation() const { return Rotation; }
-	const float GetScale() const { return Scale; }
-	const matrix& GetTransform() const { return Transform; }
+	void SetPosition(const float3& InPosition) { Transform.SetPosition(InPosition); }
+	void SetRotation(const float3& InRotation) { Transform.SetRotation(InRotation); }
+	void SetRotation(quat InRotation) { Transform.SetRotation(InRotation); }
+	void SetScale(float InScale) { Transform.SetScale(InScale); }
 
-	void SetPosition(const float3& InPosition)
-	{
-		Position = InPosition;
-		RecomputeTransform();
-	}
+	void Rotate(quat Delta) { Transform.Rotate(Delta); }
+	void RotateLocal(quat Delta) { Transform.RotateLocal(Delta); }
 
-	void SetRotation(const float3& InRotation)
-	{
-		Rotation = InRotation;
-		RecomputeTransform();
-	}
-
-	void SetScale(float InScale)
-	{
-		Scale = InScale;
-		RecomputeTransform();
-	}
-
-	void RecomputeTransform()
-	{
-		Transform = MakeMatrixIdentity();
-		Transform = Transform * MakeMatrixScaling(Scale, Scale, Scale);
-		Transform = Transform * MakeMatrixRotationFromVector(Rotation);
-		Transform = Transform * MakeMatrixTranslation(Position);
-	}
-
-	float3 Position = {};
-	float3 Rotation = {};
-	float Scale = 0.0f;
-	matrix Transform;
+	Transform_s Transform;
 };

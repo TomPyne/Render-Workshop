@@ -9,8 +9,4 @@ class FlyControllerComponent_c : public ControllerComponent_c
 	OBJECTCOMPONENT_BODY(FlyControllerComponent_c, ControllerComponent_c)
 
 	virtual void Update(float Delta) override;
-
-protected:
-	float ViewPitch = 0.0f;
-	float ViewYaw = 0.0f;
 };

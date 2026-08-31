@@ -21,9 +21,13 @@ class SpatialObject_c : public Object_c
 
 	void SetPosition(const float3& NewPosition) { Transform.SetPosition(NewPosition); }
 	void SetRotation(const float3& NewRotation) { Transform.SetRotation(NewRotation); }
+	void SetRotation(quat NewRotation) { Transform.SetRotation(NewRotation); }
 	void SetScale(float NewScale) { Transform.SetScale(NewScale); }
 
 	void Translate(const float3& Translation) { Transform.SetPosition(Transform.GetPosition() + Translation); }
+
+	void Rotate(quat Delta) { Transform.Rotate(Delta); }
+	void RotateLocal(quat Delta) { Transform.RotateLocal(Delta); }
 
 protected:
 	Transform_s Transform;

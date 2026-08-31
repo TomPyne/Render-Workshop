@@ -24,10 +24,20 @@ struct Transform_s
 		Set(InPosition, InRotation, InScale);
 	}
 
+	Transform_s(float3 InPosition, quat InRotation, float InScale = 1.0f)
+	{
+		Set(InPosition, InRotation, InScale);
+	}
+
 	void Set(float3 InPosition = float3(0.0f), float3 InRotation = float3(0.0f), float InScale = 1.0f) noexcept
 	{
+		Set(InPosition, QuatFromEuler(InRotation), InScale);
+	}
+
+	void Set(float3 InPosition, quat InRotation, float InScale) noexcept
+	{
 		Position = InPosition;
-		Rotation = InRotation;
+		Rotation = Normalize(InRotation);
 		Scale = InScale;
 		UpdateMatrix();
 	}
@@ -40,7 +50,12 @@ struct Transform_s
 
 	void SetRotation(float3 InRotation) noexcept
 	{
-		Rotation = InRotation;
+		SetRotation(QuatFromEuler(InRotation));
+	}
+
+	void SetRotation(quat InRotation) noexcept
+	{
+		Rotation = Normalize(InRotation);
 		UpdateMatrix();
 	}
 
@@ -50,45 +65,49 @@ struct Transform_s
 		UpdateMatrix();
 	}
 
+	// Delta is applied in parent space, RotateLocal applies it about our own axes.
+	void Rotate(quat Delta) noexcept
+	{
+		SetRotation(Mul(Rotation, Delta));
+	}
+
+	void RotateLocal(quat Delta) noexcept
+	{
+		SetRotation(Mul(Delta, Rotation));
+	}
+
 	void UpdateMatrix() noexcept
 	{
 		Matrix = MakeMatrixScaling(Scale, Scale, Scale);
-		Matrix = Matrix * MakeMatrixRotationFromVector(Rotation);
+		Matrix = Matrix * MakeMatrixRotationFromQuaternion(Rotation);
 		Matrix = Matrix * MakeMatrixTranslation(Position);
 	}
 
 	float3 GetPosition() const noexcept { return Position; }
-	float3 GetRotation() const noexcept { return Rotation; }
+	quat GetRotationQuat() const noexcept { return Rotation; }
+	float3 GetRotation() const noexcept { return QuatToEuler(Rotation); }
 	float GetScale() const noexcept { return Scale; }
 	const matrix& GetMatrix() const noexcept { return Matrix; }
 
-	// Basis vectors are derived from Rotation rather than read out of Matrix,
-	// since Matrix has Scale and Position baked into it.
+	// Qualified, since the Rotate member above hides the SurfMath free function.
 	float3 GetForwardVector() const noexcept
 	{
-		return GetDirectionFromEuler(Rotation);
+		return ::Rotate(Rotation, float3{ 0.0f, 0.0f, 1.0f });
 	}
 
 	float3 GetRightVector() const noexcept
 	{
-		const float cp = cosf(Rotation.x);
-		const float sp = sinf(Rotation.x);
-		const float cy = cosf(Rotation.y);
-		const float sy = sinf(Rotation.y);
-		const float cr = cosf(Rotation.z);
-		const float sr = sinf(Rotation.z);
-
-		return float3{ cr * cy + sr * sp * sy, sr * cp, sr * sp * cy - cr * sy };
+		return ::Rotate(Rotation, float3{ 1.0f, 0.0f, 0.0f });
 	}
 
 	float3 GetUpVector() const noexcept
 	{
-		return Cross(GetForwardVector(), GetRightVector());
+		return ::Rotate(Rotation, float3{ 0.0f, 1.0f, 0.0f });
 	}
 
 private:
 	float3 Position;
-	float3 Rotation;
+	quat Rotation;
 	float Scale;
 	matrix Matrix;
 };

@@ -11,6 +11,18 @@ void FlyControllerComponent_c::Update(float Delta)
 	if (!IsActiveController())
 		return;
 
+	SpatialObject_c* SpatialOwner = dynamic_cast<SpatialObject_c*>(GetOwner());
+
+	if (!SpatialOwner)
+		return;
+
+	// The owner's rotation holds the view angles, so anything else that turns the
+	// object is picked up here instead of being overwritten on the next frame.
+	const float3 CurrentView = QuatToEuler(SpatialOwner->GetTransform().GetRotationQuat());
+
+	float ViewPitch = ConvertToDegrees(CurrentView.x);
+	float ViewYaw = ConvertToDegrees(CurrentView.y);
+
 	const bool Looking = Input::IsMouseButtonDown(1);
 
 	Input::SetMouseCaptured(Looking);
@@ -24,15 +36,21 @@ void FlyControllerComponent_c::Update(float Delta)
 		ViewYaw += MouseDelta.x * Sensitivity;
 	}
 
-	ViewYaw = fmodf(ViewYaw, 360.0f);
+	// Yaw needs no wrapping, since it is read back from a canonical quaternion each
+	// frame. The pitch clamp is a free-look usability choice.
 	ViewPitch = Clamp(ViewPitch, -85.0f, 85.0f);
 
 	const float YawRad = ConvertToRadians(ViewYaw);
 	const float PitchRad = ConvertToRadians(ViewPitch);
 
-	const float3 Rotation = float3{ PitchRad, YawRad, 0.0f };
+	// Pitch about our own right axis, then yaw about world up.
+	const quat Rotation = Mul(
+		QuatFromAxisAngle(float3{ 1.0f, 0.0f, 0.0f }, PitchRad),
+		QuatFromAxisAngle(float3{ 0.0f, 1.0f, 0.0f }, YawRad));
 
-	const float3 Fwd = GetDirectionFromEuler(Rotation);
+	const float3 Fwd = Rotate(Rotation, float3{ 0.0f, 0.0f, 1.0f });
+
+	// Deliberately the horizontal right, so pitching does not tilt the strafe axis.
 	const float3 Rgt = Normalize(Cross(float3{ 0, 1, 0 }, Fwd));
 
 	constexpr float Speed = 5.0f;
@@ -55,9 +73,6 @@ void FlyControllerComponent_c::Update(float Delta)
 
 	const float3 Translation = Normalize(TranslateDir) * MoveSpeed;
 
-	if (SpatialObject_c* SpatialOwner = dynamic_cast<SpatialObject_c*>(GetOwner()))
-	{
-		SpatialOwner->Translate(Translation);
-		SpatialOwner->SetRotation(Rotation);
-	}
+	SpatialOwner->Translate(Translation);
+	SpatialOwner->SetRotation(Rotation);
 }

@@ -719,6 +719,9 @@ template<typename T>
 inline constexpr T Sqr(T t) noexcept { return t * t; }
 
 inline constexpr float ConvertToRadians(float angle) noexcept { return angle * (K_PI / 180.0f); }
+inline constexpr float ConvertToDegrees(float angle) noexcept { return angle * (180.0f / K_PI); }
+inline constexpr float3 ConvertToRadians(float3 angles) noexcept { return angles * (K_PI / 180.0f); }
+inline constexpr float3 ConvertToDegrees(float3 angles) noexcept { return angles * (180.0f / K_PI); }
 inline constexpr bool IsAnyInf(float3 f3) noexcept { return ISINF(f3.x) || ISINF(f3.y) || ISINF(f3.z); }
 inline bool ScalarNearEqual(float s1, float s2, float e) noexcept { return fabsf(s1 - s2) <= e; }
 
