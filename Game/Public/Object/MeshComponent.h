@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Rendering/IRenderable.h"
 #include "Object/SpatialObject.h"
 #include "Object/SpatialObjectComponent.h"
+#include "Physics/IPhysical.h"
+#include "Rendering/IRenderable.h"
 
-#include <string>
-
-class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
+class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, public IPhysical_c
 {
 	OBJECTCOMPONENT_BODY(MeshComponent_c, SpatialObjectComponent_c)
 
@@ -18,11 +17,22 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
 	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
 	// End IRenderable_c interface
 
+	// Begin IPhysical interface
+	virtual void Intersect(IntersectionCtx_s& Context) const override;
+	// End IPhysical interface
+
 	virtual void SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh);
+	void SetVisible(bool InVisible) { Visible = InVisible; }
+	void SetCollidable(bool InCollidable) { Collidable = InCollidable; }
+
+	uint32_t GetMaterialCount() const;
+	class MaterialShaderInstance_c* GetMaterial(uint32_t Index) const;
 
 protected:
 
 	std::shared_ptr<struct Mesh_s> Mesh = {};
+	bool Visible = true;
+	bool Collidable = true;
 };
 
 class MeshObject_c : public SpatialObject_c

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <SurfMath.h>
 
 #include <cstdint>
 #include <vector>
@@ -10,6 +11,8 @@ struct Surface_s
 	std::shared_ptr<class MaterialShaderInstance_c> Material = nullptr;
 	uint32_t IndexOffset = 0;
 	uint32_t IndexCount = 0;
+
+	AABB Bounds = {};
 };
 
 struct MeshUniformData_s
@@ -30,6 +33,11 @@ struct Mesh_s
 	rl::IndexBufferPtr IndexBuffer = {};
 
 	rl::ConstantBuffer_t MeshUniforms = {};
+
+	std::vector<float3> Vertices;
+	std::vector<uint32_t> Indices;
+
+	AABB Bounds = {};
 
 	void Render(struct SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms) const;
 };

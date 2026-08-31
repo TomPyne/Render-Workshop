@@ -92,6 +92,9 @@ public:
 	ControllerComponent_c* GetController() const;
 	bool IsControllerActive(const ControllerComponent_c* Controller) const;
 
+	// Tracing ////////////////////////////////////////////////////////////////////////////////
+	void Trace(struct IntersectionCtx_s& Context) const;
+
 protected:
 
 	// Camera

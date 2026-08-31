@@ -1,8 +1,10 @@
 #include "Space/Space.h"
+
+#include "Level/Level.h"
 #include "Object/CameraComponent.h"
 #include "Object/ControllerComponent.h"
 #include "Object/Object.h"
-#include "Level/Level.h"
+#include "Physics/IPhysical.h"
 #include "Utility/SharedPtr.h"
 
 #include <Shared/FileUtils/PathUtils.h>
@@ -185,4 +187,18 @@ bool Space_c::IsControllerActive(const ControllerComponent_c* Controller) const
 {
 	const ControllerComponent_c* CurrentController = GetController();
 	return Controller && CurrentController == Controller;
+}
+
+void Space_c::Trace(IntersectionCtx_s& Context) const
+{
+	for (const std::shared_ptr<Object_c>& Object : Objects)
+	{
+		for (const std::shared_ptr<ObjectComponent_c>& Component : Object->Components)
+		{
+			if (const IPhysical_c* Physical = dynamic_cast<IPhysical_c*>(Component.get()))
+			{
+				Physical->Intersect(Context);
+			}
+		}
+	}
 }

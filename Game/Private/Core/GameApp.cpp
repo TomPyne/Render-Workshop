@@ -4,6 +4,7 @@
 #include "Core/WindowsPlatform.h"
 #include "Input/Input.h"
 #include "Object/CameraComponent.h"
+#include "Object/DebugCameraObject.h"
 #include "Object/FlyControllerComponent.h"
 #include "Object/MeshComponent.h"
 #include "Object/RuntimeMeshComponent.h"
@@ -75,6 +76,7 @@ void GameApp_c::RegisterClasses()
 	Space->RegisterObjectClass<MeshObject_c>();
 	Space->RegisterObjectClass<RuntimeMeshObject_c>();
 	Space->RegisterObjectClass<SpatialObject_c>();
+	Space->RegisterObjectClass<DebugCameraObject_c>();
 
 	Space->RegisterComponentClass<CameraComponent_c>();
 	Space->RegisterComponentClass<FlyControllerComponent_c>();

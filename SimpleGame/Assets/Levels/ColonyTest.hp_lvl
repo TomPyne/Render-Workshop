@@ -4,7 +4,7 @@
     [
         {
             "Class": "DebugCameraObject",
-            "Position": "0, 5, -10",
+            "Position": "0, 5, -10"
         },
         {
             "Class": "MeshObject",

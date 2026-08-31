@@ -7,6 +7,8 @@ function(create_proj projname rapi)
 		"Source/SimpleGameApp.h"
 		"Source/Components/FighterControllerComponent.cpp"
 		"Source/Components/FighterControllerComponent.h"
+		"Source/Objects/SelectionCursorObject.cpp"
+		"Source/Objects/SelectionCursorObject.h"
 	)
 
 	add_executable(${projname}${rapi} ${source_list})

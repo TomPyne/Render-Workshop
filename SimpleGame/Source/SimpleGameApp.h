@@ -16,4 +16,5 @@ public:
 	void ToggleDebugCamera(bool Enabled);
 
 	std::shared_ptr<class DebugCameraObject_c> DebugCamera = nullptr;
+	std::shared_ptr<class SelectionCursorObject_c> SelectionCursor = nullptr;
 };

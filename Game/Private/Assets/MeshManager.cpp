@@ -52,13 +52,14 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		return nullptr;
 	}
 
-	std::vector<float3> Positions;
 	std::vector<std::vector<uint32_t>> SurfaceIndices;
 
-	Positions.resize(Reader.Vertices.size());
+	NewMesh->Vertices.resize(Reader.Vertices.size());
 	for (uint32_t VertIt = 0; VertIt < Reader.Vertices.size(); VertIt++)
 	{
-		Positions[VertIt] = Reader.Vertices[VertIt].Position;
+		NewMesh->Vertices[VertIt] = Reader.Vertices[VertIt].Position;
+
+		NewMesh->Bounds.Grow(NewMesh->Vertices[VertIt]);
 	}
 
 	for (uint32_t AttrIt = 0; AttrIt < Reader.Attributes.size(); AttrIt++)
@@ -75,15 +76,14 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 2]);
 	}
 
-	std::vector<uint32_t> CombinedIndices;
-	for (const std::vector<uint32_t> Surface : SurfaceIndices)
+	for (const std::vector<uint32_t>& Surface : SurfaceIndices)
 	{
-		CombinedIndices.insert(CombinedIndices.end(), Surface.begin(), Surface.end());
+		NewMesh->Indices.insert(NewMesh->Indices.end(), Surface.begin(), Surface.end());
 	}
 
-	NewMesh->PositionBuffer = rl::CreateStructuredBuffer(Positions.data(), Positions.size());
-	NewMesh->PositionBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->PositionBuffer, 0u, static_cast<uint32_t>(Positions.size()), static_cast<uint32_t>(sizeof(float3)));
-	NewMesh->IndexBuffer = rl::CreateIndexBufferFromArray(CombinedIndices.data(), CombinedIndices.size());
+	NewMesh->PositionBuffer = rl::CreateStructuredBuffer(NewMesh->Vertices.data(), NewMesh->Vertices.size());
+	NewMesh->PositionBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->PositionBuffer, 0u, static_cast<uint32_t>(NewMesh->Vertices.size()), static_cast<uint32_t>(sizeof(float3)));
+	NewMesh->IndexBuffer = rl::CreateIndexBufferFromArray(NewMesh->Indices.data(), NewMesh->Indices.size());
 
 	MeshUniformData_s MeshUniformData = {};
 	MeshUniformData.PositionBufferIndex = rl::GetDescriptorIndex(NewMesh->PositionBufferSRV);
@@ -124,6 +124,12 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		NewSurface.Material = Materials[SurfaceIt];
 		NewSurface.IndexOffset = CurrentIndexOffset;
 		NewSurface.IndexCount = static_cast<uint32_t>(SurfaceIndices[SurfaceIt].size());
+
+		for (uint32_t IndexIt = NewSurface.IndexOffset; IndexIt < NewSurface.IndexOffset + NewSurface.IndexCount; IndexIt++)
+		{
+			NewSurface.Bounds.Grow(NewMesh->Vertices[NewMesh->Indices[IndexIt]]);
+		}
+
 		CurrentIndexOffset += NewSurface.IndexCount;
 		NewMesh->Surfaces.push_back(NewSurface);
 	}

@@ -34,10 +34,7 @@ public:
 	virtual void Update(float Delta) {}
 	virtual void PreDestroy() {}
 
-	Object_c* GetOwner() const
-	{
-		return Owner.lock().get();
-	}
+	inline Object_c* GetOwner() const { return Owner.lock().get();	}
 	
 	class Space_c* GetSpace() const;
 
