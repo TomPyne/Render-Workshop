@@ -217,6 +217,11 @@ float2 Input::GetMouseDelta()
 	return g_InputData.MouseDelta;
 }
 
+float2 Input::GetMousePosition()
+{
+	return g_InputData.MousePosition;
+}
+
 int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wParam, int64_t lParam)
 {
 	g_InputData.WindowHandle = static_cast<HWND>(WindowHandle);

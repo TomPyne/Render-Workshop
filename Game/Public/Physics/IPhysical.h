@@ -11,8 +11,20 @@ struct IntersectionCtx_s
 	static IntersectionCtx_s CreateLineTrace(float3 Start, float3 Direction, float MaxDistance, bool Complex = false)
 	{
 		IntersectionCtx_s Ctx = {};
+		Ctx.Shape = TraceShape_e::Line;
 		Ctx.Path.Start = Start;
 		Ctx.Path.End = Start + Direction * MaxDistance;
+		Ctx.Params.bTraceComplex = Complex;
+
+		return Ctx;
+	}
+
+	static IntersectionCtx_s CreateLineSegmentTrace(float3 Start, float3 End, bool Complex = false)
+	{
+		IntersectionCtx_s Ctx = {};
+		Ctx.Shape = TraceShape_e::Line;
+		Ctx.Path.Start = Start;
+		Ctx.Path.End = End;
 		Ctx.Params.bTraceComplex = Complex;
 
 		return Ctx;
