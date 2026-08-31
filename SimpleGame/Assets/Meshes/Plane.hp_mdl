@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "SourceFilePath": "SimpleGame/Raw/Meshes/Plane.obj",
+    "SourceFileType": "obj",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/Default.hp_mtl"
+        }
+    ]
+}

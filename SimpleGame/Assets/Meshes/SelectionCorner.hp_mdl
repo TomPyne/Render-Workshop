@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "SourceFilePath": "SimpleGame/Raw/Meshes/SelectionCorner.obj",
+    "SourceFileType": "obj",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/DefaultWhite.hp_mtl"
+        }
+    ]
+}

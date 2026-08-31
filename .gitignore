@@ -14,16 +14,5 @@ imgui.ini
 *.pdb
 *.stackdump
 
-#cooked assets
-*.hp_mdl
-*.hp_mtl
-*.hp_tex
-*.hp_pkg
-*.hp_wml
-
-# raw assets
-*.obj
-*.mtl
-*.png
-*.dds
-*.tga
+RaytracingDemo/Assets/*
+RaytracingDemo/Cooked/*
