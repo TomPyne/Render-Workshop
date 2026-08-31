@@ -69,14 +69,13 @@ void GameApp_c::RegisterClasses()
 	if (!Space)
 		return;
 
-	Space->RegisterObjectClass<MeshObject_c>(L"MeshObject");
-	Space->RegisterObjectClass<RuntimeMeshObject_c>(L"RuntimeMesh");
-	Space->RegisterObjectClass<SpatialObject_c>(L"SpatialObject");
-	
+	Space->RegisterObjectClass<MeshObject_c>();
+	Space->RegisterObjectClass<RuntimeMeshObject_c>();
+	Space->RegisterObjectClass<SpatialObject_c>();
 
-	Space->RegisterComponentClass<CameraComponent_c>(L"CameraComponent");
-	Space->RegisterComponentClass<FlyControllerComponent_c>(L"FlyControllerComponent");
-	Space->RegisterComponentClass<MeshComponent_c>(L"MeshComponent");
+	Space->RegisterComponentClass<CameraComponent_c>();
+	Space->RegisterComponentClass<FlyControllerComponent_c>();
+	Space->RegisterComponentClass<MeshComponent_c>();
 }
 
 void GameApp_c::RegisterMaterials()

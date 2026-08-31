@@ -4,9 +4,7 @@
 
 class FighterControllerComponent_c : public ObjectComponent_c
 {
-public:
-	using ObjectComponent_c::ObjectComponent_c;
-	virtual ~FighterControllerComponent_c() = default;
+	OBJECTCOMPONENT_BODY(FighterControllerComponent_c, ObjectComponent_c)
 
 	virtual void OnCreate() override;
 	virtual void Update(float Delta) override;

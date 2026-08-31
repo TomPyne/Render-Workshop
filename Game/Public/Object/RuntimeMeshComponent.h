@@ -21,9 +21,7 @@ struct RuntimeMeshDesc_s
 
 class RuntimeMeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
 {
-public:
-	using SpatialObjectComponent_c::SpatialObjectComponent_c;
-	virtual ~RuntimeMeshComponent_c() = default;
+	OBJECTCOMPONENT_BODY(RuntimeMeshComponent_c, SpatialObjectComponent_c)
 
 	// IRenderable_c
 	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;

@@ -10,9 +10,9 @@ class SpatialObject_c;
 
 class SpatialObjectComponent_c : public ObjectComponent_c
 {
-public:
+	OBJECTCOMPONENT_BODY(SpatialObjectComponent_c, ObjectComponent_c)
+
 	SpatialObjectComponent_c(const ObjectComponentArgs_s& Args);
-	virtual ~SpatialObjectComponent_c() = default;
 
 	// Begin ObjectComponent_c interface
 	virtual void Deserialize(const struct JsonValue_s& Data) override;

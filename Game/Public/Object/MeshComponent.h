@@ -8,10 +8,7 @@
 
 class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c
 {
-public:
-
-	using SpatialObjectComponent_c::SpatialObjectComponent_c;
-	virtual ~MeshComponent_c() = default;
+	OBJECTCOMPONENT_BODY(MeshComponent_c, SpatialObjectComponent_c)
 
 	// Begin ObjectComponent_c interface
 	virtual void Deserialize(const struct JsonValue_s& Data) override;

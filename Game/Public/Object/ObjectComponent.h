@@ -1,11 +1,8 @@
 #pragma once
 
-#include <memory>
+#include "Object/ObjectMacros.h"
 
-#define OBJECTCOMPONENT_BODY(BaseClass)      \
-public:                             \
-    using Super = BaseClass;        \
-    using BaseClass::BaseClass;
+#include <memory>
 
 class Object_c;
 
@@ -21,8 +18,14 @@ class ObjectComponent_c : public std::enable_shared_from_this<ObjectComponent_c>
 {
 public:
 
+	// ObjectComponent_c is the root of the hierarchy, so it has no Super and declares Self by hand.
+	using Self = ObjectComponent_c;
+
 	ObjectComponent_c(const ObjectComponentArgs_s& Args);
 	virtual ~ObjectComponent_c() = default;
+
+	// Pure so that a derived class missing its OBJECTCOMPONENT_BODY stays abstract and cannot be created.
+	virtual std::wstring_view GetClassName() const = 0;
 
 	virtual void OnConstruct() {}
 	virtual void Deserialize(const struct JsonValue_s& Data) {}

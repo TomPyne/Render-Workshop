@@ -41,20 +41,22 @@ public:
 
 	// Factory functions ////////////////////////////////////////////////////////////////
 	template<class ObjectType>
-	void RegisterObjectClass(const std::wstring& ClassName)
+	void RegisterObjectClass()
 	{
 		static_assert(std::is_same_v<ObjectType, typename ObjectType::Self>, "Object class is missing an OBJECT_BODY declaration");
 
-		ObjectFactoryCallbacks[ClassName] = [](const ObjectArgs_s& Args) -> std::shared_ptr<Object_c>
+		ObjectFactoryCallbacks[std::wstring(ObjectType::StaticClassName())] = [](const ObjectArgs_s& Args) -> std::shared_ptr<Object_c>
 		{
 			return std::make_shared<ObjectType>(Args);
 		};
 	}
 
 	template<class ComponentType>
-	void RegisterComponentClass(const std::wstring& ClassName)
+	void RegisterComponentClass()
 	{
-		ComponentFactoryCallbacks[ClassName] = [](const ObjectComponentArgs_s& Args) -> std::shared_ptr<ObjectComponent_c>
+		static_assert(std::is_same_v<ComponentType, typename ComponentType::Self>, "Component class is missing an OBJECTCOMPONENT_BODY declaration");
+
+		ComponentFactoryCallbacks[std::wstring(ComponentType::StaticClassName())] = [](const ObjectComponentArgs_s& Args) -> std::shared_ptr<ObjectComponent_c>
 		{
 			return std::make_shared<ComponentType>(Args);
 		};

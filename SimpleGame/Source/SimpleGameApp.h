@@ -14,4 +14,6 @@ public:
 	// Endf GameApp_c interface
 
 	void ToggleDebugCamera(bool Enabled);
+
+	std::shared_ptr<class DebugCameraObject_c> DebugCamera = nullptr;
 };

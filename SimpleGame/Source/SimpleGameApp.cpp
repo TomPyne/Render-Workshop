@@ -4,7 +4,10 @@
 #include "Input/Input.h"
 #include "Levels/SimpleLevel.h"
 
+#include <Game/Public/Object/DebugCameraObject.h>
+#include <Game/Public/Object/CameraComponent.h>
 #include <Shared/FileUtils/PathUtils.h>
+#include <Shared/Logging/Logging.h>
 
 void SimpleGameApp_c::RegisterClasses()
 {
@@ -13,7 +16,7 @@ void SimpleGameApp_c::RegisterClasses()
 	if (!Space)
 		return;
 
-	Space->RegisterComponentClass<FighterControllerComponent_c>(L"FighterControllerComponent");
+	Space->RegisterComponentClass<FighterControllerComponent_c>();
 }
 
 void SimpleGameApp_c::Load()
@@ -34,7 +37,7 @@ void SimpleGameApp_c::PreUpdate()
 
 	if (Input::IsKeyPressed(KeyCode_e::_F8))
 	{
-
+		ToggleDebugCamera(DebugCamera == nullptr);
 	}
 }
 
@@ -43,8 +46,22 @@ void SimpleGameApp_c::ToggleDebugCamera(bool Enabled)
 	if (!Space)
 		return;
 
-	if (CameraComponent_c* Camera = Space->GetCamera())
-	{
+	ASSERTMSG(Enabled == (DebugCamera == nullptr), "[ToggleDebugCamera] Toggle mismatch");
 
+	if (Enabled)
+	{
+		float3 Position = float3(0.0f);
+		float3 Rotation = float3(0.0f);
+		if (CameraComponent_c* CurrentCamera = Space->GetCamera())
+		{
+			Position = CurrentCamera->GetWorldPosition();
+			//Rotation = CurrentCamera->GetWorldPosition
+		}
+		DebugCamera = Space->CreateObject<DebugCameraObject_c>();
+		
+	}
+	else
+	{
+		Space->DestroyObject(DebugCamera.get());
 	}
 }

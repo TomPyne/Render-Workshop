@@ -27,7 +27,7 @@ public:
 	virtual ~Object_c() = default;
 
 	// Pure so that a derived class missing its OBJECT_BODY stays abstract and cannot be created.
-	virtual const wchar_t* GetClassName() const = 0;
+	virtual std::wstring_view GetClassName() const = 0;
 
 	// Set up any class defaults before serialization
 	virtual void OnConstruct() {}
@@ -46,6 +46,8 @@ public:
 	template<class ComponentType>
 	ComponentType* AddComponent(bool Deferred = false)
 	{
+		static_assert(std::is_same_v<ComponentType, typename ComponentType::Self>, "Component class is missing an OBJECTCOMPONENT_BODY declaration");
+
 		const ObjectComponentArgs_s Args(shared_from_this());
 
 		std::shared_ptr<ComponentType> NewComponent = std::make_shared<ComponentType>(Args);

@@ -4,7 +4,7 @@
 
 class CameraComponent_c : public SpatialObjectComponent_c
 {
-	OBJECTCOMPONENT_BODY(SpatialObjectComponent_c)
+	OBJECTCOMPONENT_BODY(CameraComponent_c, SpatialObjectComponent_c)
 
 	// Begin SpatialObjectComponent_c
 	virtual void OnCreate() override;
