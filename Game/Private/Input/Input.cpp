@@ -26,9 +26,9 @@ struct InputData
 	bool KeyPressedRaw[(uint32_t)KeyCode_e::MAX] = {};
 	// Per frame snapshot, this is what the game reads.
 	KeyState_e KeyStates[(uint32_t)KeyCode_e::MAX] = { KeyState_e::UNPRESSED };
-	float2 MousePosition = float2(0.0f);
-	float2 MousePrevPosition = float2(0.0f);
-	float2 MouseDelta = float2(0.0f);
+	int2 MousePosition = int2(0);
+	int2 MousePrevPosition = int2(0);
+	int2 MouseDelta = int2(0);
 	uint8_t MouseButtonStates = 0;
 	float MouseWheelDelta = 0.0f;
 	HWND WindowHandle = nullptr;
@@ -138,8 +138,8 @@ void Input::NewFrame()
 		POINT Cursor;
 		if (GetCursorPos(&Cursor))
 		{
-			g_InputData.MouseDelta.x = static_cast<float>(Cursor.x - Centre.x);
-			g_InputData.MouseDelta.y = static_cast<float>(Cursor.y - Centre.y);
+			g_InputData.MouseDelta.x = Cursor.x - Centre.x;
+			g_InputData.MouseDelta.y = Cursor.y - Centre.y;
 
 			SetCursorPos(Centre.x, Centre.y);
 		}
@@ -212,12 +212,12 @@ bool Input::IsMouseButtonDown(int Button)
 	return (g_InputData.MouseButtonStates & (1 << Button)) != 0;
 }
 
-float2 Input::GetMouseDelta()
+int2 Input::GetMouseDelta()
 {
 	return g_InputData.MouseDelta;
 }
 
-float2 Input::GetMousePosition()
+int2 Input::GetMousePosition()
 {
 	return g_InputData.MousePosition;
 }
@@ -233,8 +233,8 @@ int Input::Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wPara
 	{
 		POINT MousePos = { (LONG)GET_X_LPARAM(lParam), (LONG)GET_Y_LPARAM(lParam) };
 
-		g_InputData.MousePosition.x = static_cast<float>(MousePos.x);
-		g_InputData.MousePosition.y = static_cast<float>(MousePos.y);
+		g_InputData.MousePosition.x = static_cast<int32_t>(MousePos.x);
+		g_InputData.MousePosition.y = static_cast<int32_t>(MousePos.y);
 
 		return 0;
 	}

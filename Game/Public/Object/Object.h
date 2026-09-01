@@ -27,7 +27,7 @@ public:
 	virtual ~Object_c() = default;
 
 	// Pure so that a derived class missing its OBJECT_BODY stays abstract and cannot be created.
-	virtual std::wstring_view GetClassName() const = 0;
+	virtual std::wstring_view ClassName() const = 0;
 
 	// Set up any class defaults before serialization
 	virtual void OnConstruct() {}

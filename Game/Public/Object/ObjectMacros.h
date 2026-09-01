@@ -21,7 +21,7 @@ constexpr std::wstring_view StripClassNameSuffix(std::wstring_view Name)
 //  - ClassBodySelfCheck fails if ThisClass is not the enclosing class, which a copied body macro
 //    line would otherwise leave unnoticed. It needs a member function body because the enclosing
 //    class is still incomplete at the point the macro expands.
-//  - GetClassName is pure in both root classes, so a class missing its body macro stays abstract.
+//  - ClassName is pure in both root classes, so a class missing its body macro stays abstract.
 #define CLASS_BODY_INTERNAL(ThisClass, BaseClass, MacroName)                        \
 public:                                                                             \
 	using Self = ThisClass;                                                         \
@@ -36,7 +36,7 @@ public:                                                                         
 		return StripClassNameSuffix(OBJECT_WIDEN(#ThisClass));                      \
 	}                                                                               \
                                                                                     \
-	virtual std::wstring_view GetClassName() const override                         \
+	virtual std::wstring_view ClassName() const override                         \
 	{                                                                               \
 		return StaticClassName();                                                   \
 	}                                                                               \

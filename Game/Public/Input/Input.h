@@ -20,8 +20,8 @@ namespace Input
 	bool IsKeyDown(KeyCode_e Key);
 	bool IsKeyPressed(KeyCode_e Key);
 	bool IsMouseButtonDown(int Button);
-	float2 GetMouseDelta();
-	float2 GetMousePosition();
+	int2 GetMouseDelta();
+	int2 GetMousePosition();
 
 	// While captured the cursor is hidden and recentred every frame, so mouse
 	// deltas keep accumulating instead of stopping at the window edge.

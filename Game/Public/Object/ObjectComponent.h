@@ -25,7 +25,7 @@ public:
 	virtual ~ObjectComponent_c() = default;
 
 	// Pure so that a derived class missing its OBJECTCOMPONENT_BODY stays abstract and cannot be created.
-	virtual std::wstring_view GetClassName() const = 0;
+	virtual std::wstring_view ClassName() const = 0;
 
 	virtual void OnConstruct() {}
 	virtual void Deserialize(const struct JsonValue_s& Data) {}

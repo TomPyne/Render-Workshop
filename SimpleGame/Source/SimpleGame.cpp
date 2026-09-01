@@ -7,10 +7,10 @@ int main()
 {
 	Path_s::SetDefaultProject(L"SimpleGame");
 
-    SimpleGameApp_c* App = new SimpleGameApp_c();
+    GApp = new SimpleGameApp_c();
 
-    WindowsPlatformMain("Simple Game", 1280, 800, App);
+    WindowsPlatformMain("Simple Game", 1280, 800);
 
-    delete App;
+    delete GApp;
     return 0;
 }

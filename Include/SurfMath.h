@@ -58,6 +58,13 @@ struct Vector2Component
         this->y /= rhs;
         return *this;
     }
+
+    Vector2Component& operator/=(const Vector2Component& rhs)
+    {
+        this->x /= rhs.x;
+        this->y /= rhs.y;
+        return *this;
+    }
 };
 
 template<typename T>

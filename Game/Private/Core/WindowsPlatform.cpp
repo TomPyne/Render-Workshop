@@ -4,16 +4,13 @@
 #include <Shared/Logging/Logging.h>
 #include <Windows.h>
 
-GameApp_c* GApp = nullptr;
 HWND GMainWindowHandle = nullptr;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void WindowsPlatformMain(const char* WindowTitle, int Width, int Height, GameApp_c* App)
+void WindowsPlatformMain(const char* WindowTitle, int Width, int Height)
 {
-	if (!App)
+	if (!GApp)
 		return;
-
-	GApp = App;
 
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, WindowTitle, NULL };
 	::RegisterClassEx(&wc);

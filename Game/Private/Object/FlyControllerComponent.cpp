@@ -31,9 +31,9 @@ void FlyControllerComponent_c::Update(float Delta)
 	{
 		constexpr float Sensitivity = 0.25f;
 
-		float2 MouseDelta = Input::GetMouseDelta();
-		ViewPitch += MouseDelta.y * Sensitivity;
-		ViewYaw += MouseDelta.x * Sensitivity;
+		int2 MouseDelta = Input::GetMouseDelta();
+		ViewPitch += Sensitivity * static_cast<float>(MouseDelta.y);
+		ViewYaw += Sensitivity * static_cast<float>(MouseDelta.x);
 	}
 
 	// Yaw needs no wrapping, since it is read back from a canonical quaternion each

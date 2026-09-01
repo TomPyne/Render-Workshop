@@ -19,6 +19,8 @@
 #endif // #if IMGUI_ENABLE
 #include <Render/Render.h>
 
+GameApp_c* GApp;
+
 bool GameApp_c::Init()
 {
 	rl::RenderInitParams Params = GetAppRenderParams();	
@@ -193,6 +195,15 @@ LRESULT GameApp_c::HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 	ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 #endif // #if IMGUI_ENABLE
 	return 0;
+}
+
+uint2 GameApp_c::GetScreenSize() const
+{
+	if (MainRenderView)
+	{
+		return uint2(MainRenderView->Width, MainRenderView->Height);
+	}
+	return uint2(0,0);
 }
 
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const

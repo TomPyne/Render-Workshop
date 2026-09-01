@@ -9,6 +9,9 @@
         {
             "Class": "MeshObject",
             "MeshAssetPath": "%ASSETS%/Meshes/Plane.hp_mdl"
+        },
+        {
+            "Class": "SelectionCursorObject"
         }
     ]
 }

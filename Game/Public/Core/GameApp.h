@@ -2,11 +2,14 @@
 
 #include <Render/RenderTypes.h>
 #include <SurfClock.h>
+#include <SurfMath.h>
 #include <windef.h>
 
 #include <memory>
 
 #define IMGUI_ENABLE 1
+
+extern class GameApp_c* GApp;
 
 class GameApp_c
 {
@@ -31,6 +34,8 @@ public:
 
 	virtual void Resize(int Width, int Height);
 	virtual LRESULT HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	virtual uint2 GetScreenSize() const;
 
 protected:
 	virtual rl::RenderInitParams GetAppRenderParams() const;
