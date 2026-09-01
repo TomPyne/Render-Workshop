@@ -1,6 +1,8 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
+#include "Modes/BuildingMode.h"
+#include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
 
 #include <Input/Input.h>
@@ -9,6 +11,48 @@
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 #include <Space/Space.h>
+
+#include <RenderImGui/imgui/imgui.h>
+
+namespace Mode_e
+{
+	enum Type
+	{
+		NONE,
+		BUILDING,
+		COUNT
+	};
+}
+
+
+static struct
+{
+	bool ShowUI = true;
+	Mode_e::Type CurrentMode = Mode_e::NONE;
+	ColonyMode_c* ColonyMode = nullptr;
+
+	std::unique_ptr<ColonyMode_c> ColonyModes[Mode_e::COUNT] = { nullptr };
+} G;
+
+static void SwitchMode(Mode_e::Type NewMode)
+{
+	if (G.CurrentMode == NewMode)
+		return;
+
+	if (G.ColonyMode)
+	{
+		G.ColonyMode->Exit();
+	}
+
+	G.ColonyMode = G.ColonyModes[NewMode].get();
+
+	if (G.ColonyMode)
+	{
+		G.ColonyMode->Enter();
+	}
+
+	G.CurrentMode = NewMode;
+}
 
 void SimpleGameApp_c::RegisterClasses()
 {
@@ -26,6 +70,9 @@ void SimpleGameApp_c::Load()
 {
 	GameApp_c::Load();
 
+	G.ColonyModes[Mode_e::NONE] = nullptr;
+	G.ColonyModes[Mode_e::BUILDING] = std::make_unique<BuildingMode_c>(Space.get());
+
 	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
 
 	if (Space)
@@ -41,6 +88,42 @@ void SimpleGameApp_c::PreUpdate()
 	if (Input::IsKeyPressed(KeyCode_e::_F8))
 	{
 		ToggleDebugCamera(DebugCamera == nullptr);
+	}
+}
+
+void SimpleGameApp_c::Update(float Delta)
+{
+	if (G.ColonyMode)
+	{
+		G.ColonyMode->UpdateMode(Delta);
+	}
+
+	GameApp_c::Update(Delta);
+}
+
+void SimpleGameApp_c::ImGuiUpdate()
+{
+	GameApp_c::ImGuiUpdate();
+
+	if (ImGui::IsKeyPressed(ImGuiKey_F1))
+	{
+		G.ShowUI = !G.ShowUI;
+	}
+	if (!G.ShowUI)
+		return;
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::MenuItem("Building Mode"))
+		{
+			SwitchMode(Mode_e::BUILDING);
+		}
+		ImGui::EndMainMenuBar();
+	}
+
+	if (G.ColonyMode)
+	{
+		G.ColonyMode->ImGuiUpdate();
 	}
 }
 

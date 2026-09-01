@@ -11,6 +11,8 @@ public:
 	virtual void RegisterClasses() override;
 	virtual void Load() override;
 	virtual void PreUpdate() override;
+	virtual void Update(float Delta) override;
+	virtual void ImGuiUpdate() override;
 	// Endf GameApp_c interface
 
 	void ToggleDebugCamera(bool Enabled);

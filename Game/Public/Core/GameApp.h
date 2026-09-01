@@ -7,8 +7,6 @@
 
 #include <memory>
 
-#define IMGUI_ENABLE 1
-
 extern class GameApp_c* GApp;
 
 class GameApp_c
@@ -27,7 +25,7 @@ public:
 	virtual void Load(); // Called after init and before first frame
 
 	virtual void PreUpdate(); // Init frame
-	virtual void Update();
+	virtual void Update(float Delta);
 	virtual void Render();
 
 	virtual void ImGuiUpdate();

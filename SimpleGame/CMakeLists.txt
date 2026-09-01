@@ -7,6 +7,12 @@ function(create_proj projname rapi)
 		"Source/SimpleGameApp.h"
 		"Source/Components/FighterControllerComponent.cpp"
 		"Source/Components/FighterControllerComponent.h"
+		"Source/Modes/ColonyMode.cpp"
+		"Source/Modes/ColonyMode.h"
+		"Source/Modes/BuildingMode.cpp"
+		"Source/Modes/BuildingMode.h"
+		"Source/Objects/BuildingObject.cpp"
+		"Source/Objects/BuildingObject.h"
 		"Source/Objects/SelectionCursorObject.cpp"
 		"Source/Objects/SelectionCursorObject.h"
 	)
@@ -38,6 +44,7 @@ function(create_proj projname rapi)
 	"${PROJECT_SOURCE_DIR}/Render"
 	"${PROJECT_SOURCE_DIR}/RenderImGui"
 	"${PROJECT_SOURCE_DIR}/Shared"
+	"${PROJECT_SOURCE_DIR}/SimpleGame/Source"
 	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
 

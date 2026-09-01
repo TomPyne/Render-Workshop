@@ -36,7 +36,7 @@ public:                                                                         
 		return StripClassNameSuffix(OBJECT_WIDEN(#ThisClass));                      \
 	}                                                                               \
                                                                                     \
-	virtual std::wstring_view ClassName() const override                         \
+	virtual std::wstring_view ClassName() const override							\
 	{                                                                               \
 		return StaticClassName();                                                   \
 	}                                                                               \
