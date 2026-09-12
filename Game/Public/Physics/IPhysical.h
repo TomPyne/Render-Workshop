@@ -68,4 +68,5 @@ public:
 	virtual ~IPhysical_c() = default;
 
 	virtual void Intersect(IntersectionCtx_s& Context) const = 0;
+
 };
