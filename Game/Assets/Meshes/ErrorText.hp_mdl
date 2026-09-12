@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "SourceFilePath": "Game/Raw/Meshes/ErrorText.obj",
+    "SourceFileType": "obj",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/Error.hp_mtl"
+        }
+    ]
+}

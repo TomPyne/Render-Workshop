@@ -188,7 +188,7 @@ bool ParseWString(const JsonValue_s& Node, const char* Field, std::wstring& Out)
 
 // Parses Count comma separated floats from a string field, e.g. "0, 5, -10".
 // Out is only written on success, so a malformed field leaves the caller's value alone.
-static bool ParseFloatComponents(const JsonValue_s& Node, const char* Field, float* Out, int32_t Count)
+bool ParseFloatComponents(const JsonValue_s& Node, const char* Field, float* Out, int32_t Count)
 {
 	std::string Value;
 	if (!ParseString(Node, Field, Value))

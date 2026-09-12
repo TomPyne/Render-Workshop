@@ -3,6 +3,7 @@
 #include "Rendering/SpaceRenderer.h"
 
 #include <Render/Render.h>
+#include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
@@ -21,9 +22,9 @@ uint32_t MaterialShader_c::GetShaderParamBufferSize() const
     return GetShaderParamBufferSizeFloats() * 4u;
 }
 
-const MaterialShader_c::ShaderParam_s* MaterialShader_c::GetShaderParam(const std::string& Param) const
+const ShaderParam_s* MaterialShader_c::FindParam(std::string_view Param) const
 {
-    auto FoundIt = ShaderParameters.find(Param);
+    auto FoundIt = ShaderParameters.find(std::string(Param)); // Gross construction of string to make this work. TODO - update when using hashed strings
     return FoundIt != ShaderParameters.end() ? &FoundIt->second : nullptr;
 }
 
@@ -57,9 +58,32 @@ rl::GraphicsPipelineState_t DefaultMaterialShader_c::GetPSO()
 
 void DefaultMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(GetShaderParamBufferSize(), 0u);
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    Params->Color = float3(0.5f);
+    OutData.resize(sizeof(Parameters_s));
+	Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
+	Params->Color = float3(0.5f);
+}
+
+bool ErrorMaterialShader_c::Compile()
+{
+    const std::string ShaderPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ErrorMaterial.hlsl").ToString();
+
+    rl::GraphicsPipelineStateDesc PSODesc = {};
+    PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
+        .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
+        .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
+        .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
+        .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
+        .RootSignature(SpaceRenderer_c::GetRootSignature());
+
+    PSODesc.DebugName = L"ErrorMaterialShader";
+    PSO = rl::CreateGraphicsPipelineState(PSODesc);
+
+    return PSO.IsValid();
+}
+
+rl::GraphicsPipelineState_t ErrorMaterialShader_c::GetPSO()
+{
+    return PSO;
 }
 
 MaterialShaderInstance_c::~MaterialShaderInstance_c()
@@ -76,57 +100,90 @@ void MaterialShaderInstance_c::SetParent(const std::shared_ptr<MaterialShader_c>
     }
 }
 
-void MaterialShaderInstance_c::SetValue(const MaterialShader_c::ShaderParam_s* Param, const void* Data, size_t DataSize)
+const ShaderParam_s* MaterialShaderInstance_c::FindParam(std::string_view Param) const
+{
+    if (Parent)
+    {
+        return Parent->FindParam(Param);
+    }
+    return nullptr;
+}
+
+void MaterialShaderInstance_c::SetDefaultValue(const ShaderParam_s* Param, const void* Data, size_t DataSize)
 {
     CHECK(Param->Size == DataSize);
     CHECK(ParamData.size() >= (Param->Offset + Param->Size));
     memcpy(ParamData.data() + Param->Offset, Data, DataSize);
 }
 
-
-void MaterialShaderInstance_c::SetFloat(const std::string& Param, float Value)
+void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
 {
-    if (const MaterialShader_c::ShaderParam_s* Found = FindParam(Param))
+    auto ParamsIt = Data.Json.find("MaterialParams");
+    if (ParamsIt != Data.Json.end() && ParamsIt->is_array())
     {
-        SetValue(Found, &Value, sizeof(Value));
-    }
-}
+        for (const Json_t& ParamNode : *ParamsIt)
+        {
+            std::string ParamName;
+            if (!ENSUREMSG(JsonHelpers::ParseString(ParamNode, "Name", ParamName), "[MaterialShaderInstance_c::Deserialize] Material param missing name"))
+            {
+                continue;
+            }
 
-void MaterialShaderInstance_c::SetFloat2(const std::string& Param, float2 Value)
-{
-    if (const MaterialShader_c::ShaderParam_s* Found = FindParam(Param))
-    {
-        SetValue(Found, &Value, sizeof(Value));
-    }
-}
+            int32_t ParamTypeRaw = 0;
+            if (!ENSUREMSG(JsonHelpers::ParseInt(ParamNode, "Type", ParamTypeRaw), "[MaterialShaderInstance_c::Deserialize Material param missing type"))
+            {
+                continue;
+            }
 
-void MaterialShaderInstance_c::SetFloat3(const std::string& Param, float3 Value)
-{
-    if (const MaterialShader_c::ShaderParam_s* Found = FindParam(Param))
-    {
-        SetValue(Found, &Value, sizeof(Value));
-    }
-}
+            const ShaderParamType_e ParamType = static_cast<ShaderParamType_e>(ParamTypeRaw);
 
-void MaterialShaderInstance_c::SetFloat4(const std::string& Param, float4 Value)
-{
-    if (const MaterialShader_c::ShaderParam_s* Found = FindParam(Param))
-    {
-        SetValue(Found, &Value, sizeof(Value));
-    }
-}
+            const ShaderParam_s* FoundParam = FindParam(ParamName);
+            if (!FoundParam)
+            {
+                LOGWARNING("[MaterialShaderInstance_c::Deserialize] Material param %s not found in shader", ParamName.c_str());
+                continue;
+            }
 
-const MaterialShader_c::ShaderParam_s* MaterialShaderInstance_c::FindParam(const std::string& Param) const
-{
-    if (Parent)
-    {
-        return Parent->GetShaderParam(Param);
+            if (FoundParam->Type != ParamType)
+            {
+                LOGWARNING("[MaterialShaderInstance_c::Deserialize] Material param %s type %d does not match the type used by the shader", ParamName.c_str(), static_cast<int32_t>(ParamType), static_cast<int32_t>(FoundParam->Type));
+                continue;
+            }
+
+            int32_t Components = 0;
+            switch (ParamType)
+            {
+            case ShaderParamType_e::_float:
+                Components = 1;
+                break;
+            case ShaderParamType_e::_float2:
+				Components = 2;
+				break;
+            case ShaderParamType_e::_float3:
+				Components = 3;
+                break;
+            case ShaderParamType_e::_float4:
+				Components = 4;
+				break;
+            }
+
+            if (ENSUREMSG(Components > 0, "[MaterialShaderInstance_c::Deserialize] Failed to parse components from type for %s", ParamName.c_str()))
+            {
+				float FloatComponents[4] = {};
+                if (ENSUREMSG(JsonHelpers::ParseFloatComponents(ParamNode, "Value", FloatComponents, Components), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
+                {
+                    SetDefaultValue(FoundParam, FloatComponents, Components * sizeof(float));
+                }
+            }
+        }
     }
-    return nullptr;
 }
 
 void MaterialShaderInstance_c::Update()
 {
+    if (ParamData.empty())
+        return;
+
     if (ENSUREMSG(!ConstantBuffer.IsValid(), "[MaterialShaderInstance_c::Update] Cannot update already built instance"))
     {
         ConstantBuffer = rl::CreateConstantBuffer(ParamData.data(), ParamData.size());
@@ -141,4 +198,44 @@ rl::GraphicsPipelineState_t MaterialShaderInstance_c::GetPSO()
 rl::ConstantBuffer_t MaterialShaderInstance_c::GetConstantBuffer()
 {
     return ConstantBuffer;
+}
+
+void MaterialShaderInstanceDynamic_c::SetValue(const ShaderParam_s* Param, const void* Data, size_t DataSize)
+{
+    CHECK(Param->Size == DataSize);
+    CHECK(ParamData.size() >= (Param->Offset + Param->Size));
+    memcpy(ParamData.data() + Param->Offset, Data, DataSize);
+}
+
+
+void MaterialShaderInstanceDynamic_c::SetFloat(std::string_view Param, float Value)
+{
+    if (const ShaderParam_s* Found = FindParam(Param))
+    {
+        SetValue(Found, &Value, sizeof(Value));
+    }
+}
+
+void MaterialShaderInstanceDynamic_c::SetFloat2(std::string_view Param, float2 Value)
+{
+    if (const ShaderParam_s* Found = FindParam(Param))
+    {
+        SetValue(Found, &Value, sizeof(Value));
+    }
+}
+
+void MaterialShaderInstanceDynamic_c::SetFloat3(std::string_view Param, float3 Value)
+{
+    if (const ShaderParam_s* Found = FindParam(Param))
+    {
+        SetValue(Found, &Value, sizeof(Value));
+    }
+}
+
+void MaterialShaderInstanceDynamic_c::SetFloat4(std::string_view Param, float4 Value)
+{
+    if (const ShaderParam_s* Found = FindParam(Param))
+    {
+        SetValue(Found, &Value, sizeof(Value));
+    }
 }

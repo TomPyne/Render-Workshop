@@ -73,7 +73,7 @@ void SimpleGameApp_c::Load()
 	G.ColonyModes[Mode_e::NONE] = nullptr;
 	G.ColonyModes[Mode_e::BUILDING] = std::make_unique<BuildingMode_c>(Space.get());
 
-	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
+	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SunTemple.hp_lvl");
 
 	if (Space)
 	{

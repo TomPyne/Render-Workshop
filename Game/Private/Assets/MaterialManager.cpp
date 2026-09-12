@@ -77,10 +77,7 @@ std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const JsonValu
 
 	NewMaterialInstance->SetParent(Parent);
 
-	float3 Color = float3(0.5f);
-	JsonHelpers::ParseFloat3(Data, "Color", Color);
-
-	NewMaterialInstance->SetFloat3("Color", Color);
+	NewMaterialInstance->Deserialize(Data);
 
 	NewMaterialInstance->Update();
 

@@ -86,6 +86,7 @@ void GameApp_c::RegisterClasses()
 void GameApp_c::RegisterMaterials()
 {
 	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<ErrorMaterialShader_c>(L"ErrorMaterialShader");
 }
 
 void GameApp_c::Load()

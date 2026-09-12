@@ -1,4 +1,11 @@
 {
     "AssetType": "Material",
-    "Albedo": [0.5,0.5,0.5],
+    "MaterialParams":
+    [
+        {
+            "Name": "Color",
+            "Type": 3,
+            "Value": "1.0, 1.0, 1.0"
+        }
+    ]
 }

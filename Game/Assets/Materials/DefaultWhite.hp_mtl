@@ -1,5 +1,12 @@
 {
     "Version": 1,
     "MaterialShaderClass": "DefaultMaterialShader",
-    "Color": "1.0, 1.0, 1.0"
+    "MaterialParams":
+    [
+        {
+            "Name": "Color",
+            "Type": 3,
+            "Value": "1.0, 1.0, 1.0"
+        }
+    ]
 }

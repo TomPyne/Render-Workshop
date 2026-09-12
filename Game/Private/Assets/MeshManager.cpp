@@ -140,40 +140,49 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	return NewMesh;
 }
 
-std::shared_ptr<Mesh_s> RequestMesh(const Path_s& Path)
+std::shared_ptr<Mesh_s> RequestErrorMesh()
 {
-	Json_t Json;
-	if (ENSUREMSG(LoadJsonFromFile(Path.ToWString(), Json), "[MeshManager::RequestMesh] Failed to load Mesh json from path %S", Path.ToWString().c_str()))
-	{
-		return RequestMesh(Json);
-	}
-	return nullptr;
+	Path_s ErrorMeshPath = Path_s(PathDirectory_e::Assets, L"Game", L"Meshes/ErrorText.hp_mdl");
+	return RequestMesh(ErrorMeshPath, false);
 }
 
-std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data)
+std::shared_ptr<Mesh_s> RequestMesh(const Path_s& Path, bool ErrorMeshIfMissing)
+{
+	Json_t Json;
+	const bool JsonLoaded = LoadJsonFromFile(Path.ToWString(), Json);
+	if (!JsonLoaded)
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to load Mesh json from path %S", Path.ToWString().c_str());
+		return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
+	}
+
+	return RequestMesh(Json, ErrorMeshIfMissing);
+}
+
+std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data, bool ErrorMeshIfMissing)
 {
 	int32_t Version = -1;
 	JsonHelpers::ParseInt(Data, "Version", Version);
-	if (!ENSUREMSG(Version == MESH_ASSET_VERSION_CURRENT,"[MeshManager::RequestMesh] Unsupported mesh asset version: %d", Version))
+	if (Version != MESH_ASSET_VERSION_CURRENT)
 	{
-		return nullptr;
+		LOGWARNING("[MeshManager::RequestMesh] Unsupported mesh asset version: %d", Version);
+		return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
 	}
 
 	std::string FileFormat;
-	if (!ENSUREMSG(JsonHelpers::ParseString(Data, "SourceFileType", FileFormat), "[MeshManager::RequestMesh] Missing FileFormat field"))
+	if (!JsonHelpers::ParseString(Data, "SourceFileType", FileFormat))
 	{
-		return nullptr;
+		LOGWARNING("[MeshManager::RequestMesh] Missing FileFormat field");
+		return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
 	}
 
 	if (FileFormat == "obj")
 	{
 		return RequestMeshObj(Data);
 	}
-	else
-	{
-		LOGWARNING("[MeshManager::RequestMesh] Unsupported file format for mesh: %s", FileFormat.c_str());
-		return nullptr;
-	}
+
+	LOGWARNING("[MeshManager::RequestMesh] Unsupported file format for mesh: %s", FileFormat.c_str());
+	return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
 }
 
 }

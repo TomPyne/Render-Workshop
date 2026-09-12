@@ -11,7 +11,7 @@ bool LoadJsonFromFile(const std::wstring& Path, Json_t& OutJson)
 
 	if (!AssetFile.is_open())
 	{
-		LOGERROR("[LoadJsonFromFile] Failed to open file %S", Path.c_str());
+		LOGWARNING("[LoadJsonFromFile] Failed to open file %S", Path.c_str());
 		return false;
 	}
 
@@ -20,7 +20,7 @@ bool LoadJsonFromFile(const std::wstring& Path, Json_t& OutJson)
 
 	if (OutJson.is_discarded())
 	{
-		LOGERROR("[LoadJsonFromFile] Failed to parse json in file %S", Path.c_str());
+		LOGWARNING("[LoadJsonFromFile] Failed to parse json in file %S", Path.c_str());
 		return false;
 	}
 

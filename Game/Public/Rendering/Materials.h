@@ -5,22 +5,33 @@
 #include <unordered_map>
 #include <SurfMath.h>
 
-#define SHADER_PARAM(Type, Name) { offsetof(Parameters_s, Name), sizeof(Type) }
+#define SHADER_PARAM(Type, Name) { offsetof(Parameters_s, Name), sizeof(Type), ShaderParamType_e::_##Type }
+
+enum class ShaderParamType_e : uint8_t
+{
+	Unknown = 0,
+	_float,
+	_float2,
+	_float3,
+	_float4,
+	Count
+};
+
+struct ShaderParam_s
+{
+	ShaderParam_s() = default;
+	ShaderParam_s(size_t InOffset, size_t InSize, ShaderParamType_e InType)
+		: Offset(static_cast<uint16_t>(InOffset))
+		, Size(static_cast<uint8_t>(InSize))
+	{}
+	uint16_t Offset = 0u;
+	uint8_t Size = 0u;
+	ShaderParamType_e Type = ShaderParamType_e::Unknown;
+};
 
 class MaterialShader_c
 {
 public:
-
-	struct ShaderParam_s
-	{
-		ShaderParam_s() = default;
-		ShaderParam_s(size_t InOffset, size_t InSize)
-			: Offset(static_cast<uint16_t>(InOffset))
-			, Size(static_cast<uint16_t>(InSize))
-		{}
-		uint16_t Offset = 0u;
-		uint16_t Size = 0u;
-	};
 
 	virtual ~MaterialShader_c() = default;
 
@@ -33,11 +44,12 @@ public:
 
 	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const {}
 
-	const ShaderParam_s* GetShaderParam(const std::string& Param) const;
+	const ShaderParam_s* FindParam(std::string_view Param) const;
 
 protected:
 
 	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;
+	std::vector<uint8_t> DefaultParamData;
 };
 
 class DefaultMaterialShader_c : public MaterialShader_c
@@ -55,7 +67,17 @@ public:
 	virtual bool Compile() override;
 	virtual rl::GraphicsPipelineState_t GetPSO() override;
 	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
-	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const;
+	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+
+private:
+	rl::GraphicsPipelineStatePtr PSO;
+};
+
+class ErrorMaterialShader_c : public MaterialShader_c
+{
+public:
+	virtual bool Compile() override;
+	virtual rl::GraphicsPipelineState_t GetPSO() override;
 
 private:
 	rl::GraphicsPipelineStatePtr PSO;
@@ -64,25 +86,36 @@ private:
 class MaterialShaderInstance_c
 {
 public:
-	~MaterialShaderInstance_c();
+	virtual ~MaterialShaderInstance_c();
 
 	void SetParent(const std::shared_ptr<MaterialShader_c>& InParent);
 
-	void SetValue(const MaterialShader_c::ShaderParam_s* Param, const void* Data, size_t DataSize);
+	const ShaderParam_s* FindParam(std::string_view  Param) const;	
 
-	void SetFloat(const std::string& Param, float Value);
-	void SetFloat2(const std::string& Param, float2 Value);
-	void SetFloat3(const std::string& Param, float3 Value);
-	void SetFloat4(const std::string& Param, float4 Value);
-	const MaterialShader_c::ShaderParam_s* FindParam(const std::string& Param) const;
+	void Deserialize(const struct JsonValue_s& Data);
 
 	void Update();
 
 	rl::GraphicsPipelineState_t GetPSO();
 	rl::ConstantBuffer_t GetConstantBuffer();
 
-private:
+protected:
+
+	void SetDefaultValue(const ShaderParam_s* Param, const void* Data, size_t DataSize);
+
 	std::shared_ptr<MaterialShader_c> Parent;
 	std::vector<uint8_t> ParamData;
 	rl::ConstantBufferPtr ConstantBuffer;
+};
+
+class MaterialShaderInstanceDynamic_c : public MaterialShaderInstance_c
+{
+public:
+	~MaterialShaderInstanceDynamic_c();
+
+	void SetValue(const ShaderParam_s* Param, const void* Data, size_t DataSize);
+	void SetFloat(std::string_view Param, float Value);
+	void SetFloat2(std::string_view Param, float2 Value);
+	void SetFloat3(std::string_view Param, float3 Value);
+	void SetFloat4(std::string_view Param, float4 Value);
 };

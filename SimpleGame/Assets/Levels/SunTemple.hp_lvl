@@ -1,0 +1,4489 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "DebugCameraObject",
+            "Position": "0, 5, -10"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "StaticMesh_SkySphere",
+            "Position": "0, 1, 0",
+            "Rotation": "0, 140.615372, 0",
+            "Scale": "400, 400, 400",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_SkySphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_9",
+            "Position": "0.000019, 11.3, 0.000007",
+            "Rotation": "0, 44.999454, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_10",
+            "Position": "0.000019, 11.3, 0.000007",
+            "Rotation": "0, 134.999329, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_11",
+            "Position": "0.000019, 11.3, 0.000007",
+            "Rotation": "0, -135.00087, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_12",
+            "Position": "0.000019, 11.3, 0.000007",
+            "Rotation": "0, -45.000523, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_13",
+            "Position": "0.000019, 13.35, 0.000007",
+            "Rotation": "0, -135.00087, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_14",
+            "Position": "0.000019, 13.35, 0.000007",
+            "Rotation": "0, -45.00061, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_15",
+            "Position": "0.000019, 13.35, 0.000007",
+            "Rotation": "0, 44.999386, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_16",
+            "Position": "0.000019, 13.35, 0.000007",
+            "Rotation": "0, 134.999084, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_11",
+            "Position": "-8.69334, 2.3, 2.329352",
+            "Rotation": "0, -15.000051, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_13",
+            "Position": "-8.69332, 2.3, -2.329393",
+            "Rotation": "0, 14.999992, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_24",
+            "Position": "-2.329434, 2.3, 8.693327",
+            "Rotation": "0, -74.999969, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_25",
+            "Position": "-6.364023, 2.3, 6.363926",
+            "Rotation": "0, -45.000031, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_26",
+            "Position": "6.363886, 2.3, 6.364059",
+            "Rotation": "0, -134.999863, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_27",
+            "Position": "2.329258, 2.3, 8.693384",
+            "Rotation": "0, -105.000015, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_28",
+            "Position": "8.693378, 2.3, -2.3292",
+            "Rotation": "0, 164.999908, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_29",
+            "Position": "8.6933, 2.3, 2.329546",
+            "Rotation": "0, -164.999786, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_30",
+            "Position": "2.32957, 2.3, -8.693255",
+            "Rotation": "0, 104.999664, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_31",
+            "Position": "6.364101, 2.3, -6.363796",
+            "Rotation": "0, 134.999741, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_38",
+            "Position": "-6.363789, 2.3, -6.3641",
+            "Rotation": "0, 44.999454, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_39",
+            "Position": "-2.329141, 2.3, -8.693375",
+            "Rotation": "0, 74.999504, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Dome_6",
+            "Position": "0.000019, 19.17, 0.000001",
+            "Rotation": "0, -0.002289, 0",
+            "Scale": "0.589935, 0.589935, 0.589935",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Dome.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_14",
+            "Position": "-5.718281, 15.51, 1.532206",
+            "Rotation": "0, -15.000076, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_21",
+            "Position": "0.000019, 17.790255, 0.000007",
+            "Rotation": "0, -135.00087, 0",
+            "Scale": "0.9375, 0.9375, 0.9375",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_22",
+            "Position": "0.000019, 17.790255, 0.000007",
+            "Rotation": "0, -45.00061, 0",
+            "Scale": "0.9375, 0.9375, 0.9375",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_23",
+            "Position": "0.000019, 17.790255, 0.000007",
+            "Rotation": "0, 44.999386, 0",
+            "Scale": "0.9375, 0.9375, 0.9375",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2_Bend_24",
+            "Position": "0.000019, 17.790255, 0.000007",
+            "Rotation": "0, 134.999084, 0",
+            "Scale": "0.9375, 0.9375, 0.9375",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_Bend_5",
+            "Position": "0.000019, 14.79, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_Bend_6",
+            "Position": "0.000019, 14.79, 0",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_Bend_7",
+            "Position": "0.000019, 14.79, 0",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_Bend_8",
+            "Position": "0.000019, 14.79, 0",
+            "Rotation": "0, -90.000237, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall_Bend.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_15",
+            "Position": "-4.186074, 15.51, 4.186063",
+            "Rotation": "0, -45.000252, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_16",
+            "Position": "-1.532227, 15.51, 5.718276",
+            "Rotation": "0, -75.00016, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_17",
+            "Position": "1.532187, 15.51, 5.71829",
+            "Rotation": "0, -105.00032, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_18",
+            "Position": "4.186054, 15.51, 4.186096",
+            "Rotation": "0, -135.000122, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_19",
+            "Position": "5.718281, 15.51, 1.532252",
+            "Rotation": "0, -165.000153, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_20",
+            "Position": "5.7183, 15.51, -1.53216",
+            "Rotation": "0, 164.999786, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_21",
+            "Position": "4.186132, 15.51, -4.186031",
+            "Rotation": "0, 134.999603, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_22",
+            "Position": "1.532285, 15.51, -5.718264",
+            "Rotation": "0, 104.999664, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_23",
+            "Position": "-1.532129, 15.51, -5.718302",
+            "Rotation": "0, 74.999321, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_24",
+            "Position": "-4.185996, 15.51, -4.186124",
+            "Rotation": "0, 44.999386, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_25",
+            "Position": "-5.718242, 15.51, -1.532293",
+            "Rotation": "0, 14.99903, 0",
+            "Scale": "-0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_142",
+            "Position": "0.020019, 14.82, 6.01",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_143",
+            "Position": "3.022324, 14.82, 5.194818",
+            "Rotation": "0, -30.000092, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_144",
+            "Position": "5.214824, 14.82, 2.987694",
+            "Rotation": "0, -60.000134, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_145",
+            "Position": "6.010019, 14.82, -0.009977",
+            "Rotation": "0, -90.000183, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_146",
+            "Position": "5.194843, 14.82, -3.022291",
+            "Rotation": "0, -120.000191, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_147",
+            "Position": "2.987734, 14.82, -5.214792",
+            "Rotation": "0, -150.000076, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_148",
+            "Position": "-0.019942, 14.82, -6.010002",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_149",
+            "Position": "-3.013594, 14.82, -5.199841",
+            "Rotation": "0, 149.999817, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_150",
+            "Position": "-5.214766, 14.82, -2.987733",
+            "Rotation": "0, 119.99968, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_151",
+            "Position": "-6.01, 14.82, 0.019932",
+            "Rotation": "0, 89.999565, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_152",
+            "Position": "-5.194844, 14.82, 3.022257",
+            "Rotation": "0, 59.999466, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_153",
+            "Position": "-2.996406, 14.82, 5.209774",
+            "Rotation": "0, 29.999384, 0",
+            "Scale": "0.205, 0.205, 0.205",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch",
+            "Position": "9.499999, 11.2, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_2",
+            "Position": "8.227245, 11.2, 4.74999",
+            "Rotation": "0, 30.000002, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_3",
+            "Position": "4.750019, 11.2, 8.227225",
+            "Rotation": "0, 59.999958, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_4",
+            "Position": "0.000019, 11.2, 9.499987",
+            "Rotation": "0, 89.999954, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_5",
+            "Position": "-2.015293, 2.3, 9.690624",
+            "Rotation": "0, 29.999743, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_5",
+            "Position": "-4.74998, 11.2, 8.227226",
+            "Rotation": "0, 119.999931, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_6",
+            "Position": "-6.590605, 2.3, 7.384669",
+            "Rotation": "0, 59.999699, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_6",
+            "Position": "-8.227207, 11.2, 4.74999",
+            "Rotation": "0, 149.999832, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_18",
+            "Position": "-9.499961, 11.2, 0.000002",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_8",
+            "Position": "-9.690605, 2.3, -2.015313",
+            "Rotation": "0, 119.99968, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_19",
+            "Position": "-8.227207, 11.2, -4.749985",
+            "Rotation": "0, -150.000061, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_9",
+            "Position": "-7.384648, 2.3, -6.590621",
+            "Rotation": "0, 149.999573, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_20",
+            "Position": "-4.74998, 11.2, -8.227231",
+            "Rotation": "0, -120.00013, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_21",
+            "Position": "0.000019, 11.2, -9.49999",
+            "Rotation": "0, -90.000145, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_22",
+            "Position": "4.750019, 11.2, -8.227225",
+            "Rotation": "0, -60.000053, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_23",
+            "Position": "8.227245, 11.2, -4.750011",
+            "Rotation": "0, -30.000071, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch5",
+            "Position": "-12.9, 11.2, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch4.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_2",
+            "Position": "-9.6, 2.3, 2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_24",
+            "Position": "-16.299961, 11.2, 0.000002",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.86, 0.86, 0.86",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_58",
+            "Position": "-16.2, 2.3, 2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_63",
+            "Position": "-16.2, 2.3, -2.6",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_90",
+            "Position": "-9.6, 2.3, -2.6",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_57",
+            "Position": "-9.8, 2.3, 2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_91",
+            "Position": "-16.4, 2.3, -2.6",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_96",
+            "Position": "-16.7, 2.3, 2.7",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.51, 0.621, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_113",
+            "Position": "-16.6, 2.3, -2.75",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.62, 0.621, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_120",
+            "Position": "-17.2, 11.3, 2.7",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.31, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_121",
+            "Position": "-16.7, 2.3, 2.5",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall",
+            "Position": "-16.9, 7.55, 5.95",
+            "Rotation": "0, 0, 0",
+            "Scale": "4.180176, 0.800176, 0.810176",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_122",
+            "Position": "-16.7, 2.3, 8.7",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_123",
+            "Position": "-17.2, 11.3, 8.7",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_125",
+            "Position": "-17.1, 11.3, 8.6",
+            "Rotation": "0, 0.000181, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_2",
+            "Position": "-19.399995, 10.65, 9.000001",
+            "Rotation": "0, 89.999908, 0",
+            "Scale": "4, 0.47, 0.63",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_126",
+            "Position": "-22, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_127",
+            "Position": "-22, 11.3, 8.8",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_128",
+            "Position": "-21.9, 11.3, 8.900001",
+            "Rotation": "0, 90.000092, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_129",
+            "Position": "-22.1, 11.3, 8.900001",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_130",
+            "Position": "-17.4, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_132",
+            "Position": "-17.5, 11.3, 8.900001",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar",
+            "Position": "-22.15, 0.3, -2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.3, 1.215, 1.3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_2",
+            "Position": "-24.8, 0.3, -5.8",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.32",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Stairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_131",
+            "Position": "-24.75, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_27",
+            "Position": "-24.7, 3.6, 9.05",
+            "Rotation": "0, 89.99968, 0",
+            "Scale": "1.61, 1.61, 1.61",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_3",
+            "Position": "-24.8, 0.3, 6.049999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.42",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Stairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_16",
+            "Position": "-8.443705, 7.55, 4.874991",
+            "Rotation": "0, 150.000061, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_17",
+            "Position": "-4.874964, 7.55, 8.443728",
+            "Rotation": "0, 120.000008, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_18",
+            "Position": "-4.874969, 7.55, -8.443719",
+            "Rotation": "0, -119.999863, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_19",
+            "Position": "-8.443705, 7.55, -4.87498",
+            "Rotation": "0, -150.000061, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_2",
+            "Position": "-22.15, 0.3, 2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.3, 1.215, 1.3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_3",
+            "Position": "-27.35, 0.3, -2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.3, 1.215, 1.3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_4",
+            "Position": "-27.35, 0.3, 2.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.3, 1.215, 1.3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_134",
+            "Position": "-27.4, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_135",
+            "Position": "-27.4, 11.3, 8.8",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_136",
+            "Position": "-27.3, 11.3, 8.900001",
+            "Rotation": "0, 90.000092, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_137",
+            "Position": "-27.5, 11.3, 8.900001",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_138",
+            "Position": "-16.5, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.53, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_3",
+            "Position": "-24.7, 11.1, 9.05",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "4, 1.15, 1.15",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_31",
+            "Position": "-24.7, 12.25, 8.85",
+            "Rotation": "0, 89.99968, 0",
+            "Scale": "0.58, 0.58, 0.58",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_139",
+            "Position": "-30.15, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_30",
+            "Position": "-30.1, 3.6, 9.05",
+            "Rotation": "0, 89.99968, 0",
+            "Scale": "1.61, 1.61, 1.61",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_140",
+            "Position": "-32.8, 2.3, 9.3",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_141",
+            "Position": "-32.8, 11.3, 8.8",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_154",
+            "Position": "-32.7, 11.3, 8.900001",
+            "Rotation": "0, 90.000092, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_155",
+            "Position": "-32.9, 11.3, 8.900001",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_4",
+            "Position": "-30.1, 11.1, 9.05",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "4, 1.15, 1.15",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_32",
+            "Position": "-30.1, 12.25, 8.85",
+            "Rotation": "0, 89.99968, 0",
+            "Scale": "0.58, 0.58, 0.58",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_158",
+            "Position": "-38.15, 2.3, 8.7",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_159",
+            "Position": "-37.55, 11.3, 8.7",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.29, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_160",
+            "Position": "-37.65, 11.3, 8.6",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_4",
+            "Position": "-35.350005, 10.75, 9.000001",
+            "Rotation": "0, 89.999908, 0",
+            "Scale": "4, 0.47, -0.63",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_161",
+            "Position": "-37.35, 2.3, 9.3",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_162",
+            "Position": "-37.25, 11.3, 8.900001",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_163",
+            "Position": "-38.25, 2.3, 9.3",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.53, 0.62, -0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_164",
+            "Position": "-16.7, 2.3, -2.399999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.62, 0.62, -0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_165",
+            "Position": "-16.7, 2.3, -8.599999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_166",
+            "Position": "-17.2, 11.3, -8.599999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.29, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_167",
+            "Position": "-17.1, 11.3, -8.499999",
+            "Rotation": "0, 0.000181, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_6",
+            "Position": "-19.399995, 10.95, -8.95",
+            "Rotation": "0, -89.999908, 0",
+            "Scale": "4, 0.47, -0.63",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_168",
+            "Position": "-22, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_169",
+            "Position": "-22, 11.3, -8.699999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_170",
+            "Position": "-21.9, 11.3, -8.799999",
+            "Rotation": "0, -90.000053, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_171",
+            "Position": "-22.1, 11.3, -8.799999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_172",
+            "Position": "-17.4, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_173",
+            "Position": "-17.5, 11.3, -8.799999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_174",
+            "Position": "-24.75, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, -0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_33",
+            "Position": "-24.7, 3.6, -8.949999",
+            "Rotation": "0, -89.99968, 0",
+            "Scale": "1.61, 1.61, -1.61",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_175",
+            "Position": "-27.4, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_176",
+            "Position": "-27.4, 11.3, -8.699999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_177",
+            "Position": "-27.3, 11.3, -8.799999",
+            "Rotation": "0, -90.000053, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_178",
+            "Position": "-27.5, 11.3, -8.799999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_179",
+            "Position": "-16.5, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.53, 0.62, -0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_5",
+            "Position": "-24.7, 11.1, -8.949999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "4, 1.15, -1.15",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_34",
+            "Position": "-24.7, 12.25, -8.699999",
+            "Rotation": "0, -89.99968, 0",
+            "Scale": "0.58, 0.58, -0.58",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_180",
+            "Position": "-30.15, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.62, 0.62, -0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_35",
+            "Position": "-30.1, 3.6, -8.949999",
+            "Rotation": "0, -89.99968, 0",
+            "Scale": "1.61, 1.61, -1.61",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_181",
+            "Position": "-32.8, 2.3, -9.199999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.51, 0.62, -0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_182",
+            "Position": "-32.8, 11.3, -8.699999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.29, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_183",
+            "Position": "-32.7, 11.3, -8.799999",
+            "Rotation": "0, -90.000053, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_184",
+            "Position": "-32.9, 11.3, -8.799999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.23, 0.235, -0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_6",
+            "Position": "-30.1, 11.1, -8.949999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "4, 1.15, -1.15",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_36",
+            "Position": "-30.1, 12.25, -8.699999",
+            "Rotation": "0, -89.99968, 0",
+            "Scale": "0.58, 0.58, -0.58",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_187",
+            "Position": "-38.15, 2.3, -8.599999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_188",
+            "Position": "-37.55, 11.3, -8.599999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_189",
+            "Position": "-37.65, 11.3, -8.499999",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_7",
+            "Position": "-35.350005, 11, -8.95",
+            "Rotation": "0, -89.999908, 0",
+            "Scale": "4, 0.47, 0.63",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_190",
+            "Position": "-37.35, 2.3, -9.199999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.51, 0.62, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_191",
+            "Position": "-37.25, 11.3, -8.799999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_192",
+            "Position": "-38.25, 2.3, -9.199999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.53, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_199",
+            "Position": "-38.15, 2.3, 1.65",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.51, 0.63001, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_200",
+            "Position": "-37.65, 11.3, 1.65",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_201",
+            "Position": "-37.750002, 11.3, 1.749999",
+            "Rotation": "0, 179.999634, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_202",
+            "Position": "-37.750002, 11.3, 1.549999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_203",
+            "Position": "-38.15, 2.3, -1.55",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.51, 0.63001, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_204",
+            "Position": "-37.65, 11.3, -1.55",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.29, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_205",
+            "Position": "-37.750002, 11.3, -1.45",
+            "Rotation": "0, 179.999634, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_206",
+            "Position": "-37.750002, 11.3, -1.65",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_WindowWall_7",
+            "Position": "-37.9, 10.8, 0.000001",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.15, 1.15, 1.15",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_WindowWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Window_37",
+            "Position": "-37.85, 11.95, 0",
+            "Rotation": "0, 179.999496, 0",
+            "Scale": "0.58, 0.58, 0.58",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Window.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_9",
+            "Position": "-37.800005, 10.75, 5.300001",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.58, 0.59, -0.76",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_10",
+            "Position": "-37.800005, 10.75, -5.049998",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.58, 0.59, -0.76",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_11",
+            "Position": "-37.8, 16.21, 0.35",
+            "Rotation": "0.000307, -179.999756, 90.000145",
+            "Scale": "1.99, 1.75998, 2.039932",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_10",
+            "Position": "-3.74998, 2.3, -9.399979",
+            "Rotation": "0, 179.999496, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_20",
+            "Position": "0.000015, 7.55, -9.749969",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_11",
+            "Position": "2.600018, 2.3, 9.399974",
+            "Rotation": "0, -0.000366, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_21",
+            "Position": "0.000026, 7.55, 9.749962",
+            "Rotation": "0, 90.000092, 0",
+            "Scale": "3, 0.56, 0.56",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_12",
+            "Position": "2.758147, 2.3, 9.377218",
+            "Rotation": "0, 59.999432, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_13",
+            "Position": "6.741865, 2.3, 7.077219",
+            "Rotation": "0, -120.000664, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_14",
+            "Position": "7.077236, 2.3, 6.741839",
+            "Rotation": "0, 29.999414, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_15",
+            "Position": "9.377235, 2.3, 2.758124",
+            "Rotation": "0, -150.000717, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_16",
+            "Position": "9.499991, 2.3, 2.299999",
+            "Rotation": "0, -0.00058, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_17",
+            "Position": "9.499992, 2.3, -2.3",
+            "Rotation": "0, 179.999374, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_18",
+            "Position": "9.377229, 2.3, -2.75813",
+            "Rotation": "0, -30.000614, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_19",
+            "Position": "7.077231, 2.3, -6.741845",
+            "Rotation": "0, 149.999207, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_20",
+            "Position": "6.741855, 2.3, -7.077216",
+            "Rotation": "0, -60.000599, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_21",
+            "Position": "2.758141, 2.3, -9.377214",
+            "Rotation": "0, 119.999207, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FloorPlane_18",
+            "Position": "100.58999, -29.449998, -62.559995",
+            "Rotation": "0, 0, 0",
+            "Scale": "156.029999, 156.029999, 156.029999",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FloorPlane.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue",
+            "Position": "-0.2, 8.55, 0.1",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "2.5, 2.5, 2.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue_2",
+            "Position": "-29.839998, 4.809048, -0.059986",
+            "Rotation": "0, -0.400482, 0",
+            "Scale": "1.720154, 1.720154, 1.720154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_22",
+            "Position": "2.510546, 2.3, 9.369488",
+            "Rotation": "0, 164.998993, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_23",
+            "Position": "6.858944, 2.3, 6.858952",
+            "Rotation": "0, 134.998947, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_24",
+            "Position": "9.3695, 2.3, 2.510564",
+            "Rotation": "0, 104.998924, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_25",
+            "Position": "9.36951, 2.3, -2.510528",
+            "Rotation": "0, 74.998871, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_26",
+            "Position": "6.858974, 2.3, -6.858928",
+            "Rotation": "0, 44.998833, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_27",
+            "Position": "2.510584, 2.3, -9.369484",
+            "Rotation": "0, 14.99886, 0",
+            "Scale": "0.44, 0.62, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U",
+            "Position": "9.562668, 11.248342, 2.562303",
+            "Rotation": "0, 104.999794, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_31",
+            "Position": "9.693179, 11.25, 2.351763",
+            "Rotation": "0, -0.00058, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_32",
+            "Position": "9.56377, 11.25, 2.834726",
+            "Rotation": "0, 30.000587, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_3",
+            "Position": "9.56267, 11.248342, -2.562305",
+            "Rotation": "0, 74.999695, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_33",
+            "Position": "9.570423, 11.25, -2.809893",
+            "Rotation": "0, -30.000587, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_34",
+            "Position": "9.699833, 11.25, -2.32693",
+            "Rotation": "0, 0.000577, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_4",
+            "Position": "7.000366, 11.248342, -7.000347",
+            "Rotation": "0, 44.999657, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_35",
+            "Position": "6.883287, 11.25, -7.218643",
+            "Rotation": "0, -60.000572, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_36",
+            "Position": "7.236841, 11.25, -6.865089",
+            "Rotation": "0, -29.999426, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_5",
+            "Position": "2.562325, 11.248342, -9.562653",
+            "Rotation": "0, 14.999651, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_37",
+            "Position": "2.351783, 11.25, -9.693163",
+            "Rotation": "0, -90.000565, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_38",
+            "Position": "2.834747, 11.25, -9.563754",
+            "Rotation": "0, -59.999416, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_6",
+            "Position": "7.000374, 11.248342, 7.000349",
+            "Rotation": "0, 134.999359, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_39",
+            "Position": "7.218666, 11.25, 6.88327",
+            "Rotation": "0, 29.999336, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_40",
+            "Position": "6.865112, 11.25, 7.236826",
+            "Rotation": "0, 60.000423, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_7",
+            "Position": "2.562332, 11.248342, 9.562659",
+            "Rotation": "0, 164.999237, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_41",
+            "Position": "2.809918, 11.25, 9.570412",
+            "Rotation": "0, 59.999207, 0",
+            "Scale": "0.380386, 0.180267, 0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_42",
+            "Position": "2.326952, 11.25, 9.699823",
+            "Rotation": "0, 90.000298, 0",
+            "Scale": "0.380386, 0.180267, -0.450302",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_28",
+            "Position": "2.25002, 2.3, -9.249978",
+            "Rotation": "0, 89.999367, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch4",
+            "Position": "-49.5, 7.549999, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch4.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_208",
+            "Position": "-51.4, 0.3, -2.899999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.289856, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_209",
+            "Position": "-44.7, 0.3, -2.849999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_210",
+            "Position": "-44.4, 0.3, -2.949999",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_7",
+            "Position": "-44.7, 7.5, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.269928, 1.269928, 1.269928",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_8",
+            "Position": "-54.35, 7.5, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.269928, 1.269928, 1.269928",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_211",
+            "Position": "-54.3, 0.3, -2.849999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_212",
+            "Position": "-54.95, 0.3, -3.499999",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_9",
+            "Position": "-49.75, 5.3, -3.1",
+            "Rotation": "0, 89.999847, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_213",
+            "Position": "-44.3, 0.3, -2.899999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.369873, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_214",
+            "Position": "-47.75, 0.3, -3.099999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.389893, 0.5, -0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_215",
+            "Position": "-51.7, 0.3, -3.099999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.389893, 0.5, -0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch_2",
+            "Position": "-49.75, 5.3, -4.05",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.7, 0.7, 0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_10",
+            "Position": "-49.75, 5.3, -5.05",
+            "Rotation": "0, 89.999847, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_8",
+            "Position": "-51.5, 0.3, -3.1",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_9",
+            "Position": "-51.5, 0.3, -4.95",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_10",
+            "Position": "-51.45, 0.3, -3.4",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_11",
+            "Position": "-51.5, 0.3, -5.15",
+            "Rotation": "0, 179.999634, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_12",
+            "Position": "-47.95, 0.3, -3.1",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_13",
+            "Position": "-47.95, 0.3, -4.95",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_14",
+            "Position": "-48, 0.3, -3.4",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_12",
+            "Position": "-49.8, 0.25, -5.4",
+            "Rotation": "0, -90.000183, 0",
+            "Scale": "4, 0.625, 0.625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_11",
+            "Position": "-58.1, 7.5, -3.5",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1.4, 1.4, 1.4",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_12",
+            "Position": "-58.1, 7.5, 3.5",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "1.4, 1.4, 1.4",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_216",
+            "Position": "-54.85, 0.3, -3.249999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_217",
+            "Position": "-55.5, 0.3, -3.999999",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.53125, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch6",
+            "Position": "-66.6, 7.549999, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch4.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_218",
+            "Position": "-64.7, 0.3, -2.899999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.289856, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_219",
+            "Position": "-71.4, 0.3, -2.849999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_220",
+            "Position": "-71.6, 0.3, -3.049999",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_15",
+            "Position": "-61.8, 7.5, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.269928, 1.269928, 1.269928",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_16",
+            "Position": "-71.45, 7.5, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.269928, 1.269928, 1.269928",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_221",
+            "Position": "-61.8, 0.3, -2.849999",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_222",
+            "Position": "-61.15, 0.3, -3.499999",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_13",
+            "Position": "-66.35, 5.3, -3.1",
+            "Rotation": "0, 89.999847, 0",
+            "Scale": "0.75, 0.75, -0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_223",
+            "Position": "-71.8, 0.3, -2.899999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.369873, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_224",
+            "Position": "-68.35, 0.3, -3.099999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.389893, 0.5, 0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_225",
+            "Position": "-64.4, 0.3, -3.099999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.389893, 0.5, 0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch_3",
+            "Position": "-66.35, 5.3, -4.05",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.7, 0.7, -0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_14",
+            "Position": "-66.35, 5.3, -5.05",
+            "Rotation": "0, 89.999847, 0",
+            "Scale": "0.75, 0.75, -0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_15",
+            "Position": "-64.6, 0.3, -3.1",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_16",
+            "Position": "-64.6, 0.3, -4.95",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_17",
+            "Position": "-64.65, 0.3, -3.4",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_18",
+            "Position": "-64.6, 0.3, -5.15",
+            "Rotation": "0, 0.000364, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_19",
+            "Position": "-68.15, 0.3, -3.1",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_20",
+            "Position": "-68.15, 0.3, -4.95",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_21",
+            "Position": "-68.1, 0.3, -3.4",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_13",
+            "Position": "-66.3, 0.25, -5.4",
+            "Rotation": "0, -90.000114, 0",
+            "Scale": "4, 0.625, -0.625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_226",
+            "Position": "-61.25, 0.3, -3.249999",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_227",
+            "Position": "-51.4, 0.3, 2.950292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.289856, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_228",
+            "Position": "-44.7, 0.3, 2.900292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_229",
+            "Position": "-44.45, 0.3, 3.000292",
+            "Rotation": "0, 90.000015, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_230",
+            "Position": "-54.3, 0.3, 2.900292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_231",
+            "Position": "-54.95, 0.3, 3.550292",
+            "Rotation": "0, 90.000015, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_17",
+            "Position": "-49.75, 5.3, 3.150293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.75, 0.75, -0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_232",
+            "Position": "-44.3, 0.3, 2.950292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.369873, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_233",
+            "Position": "-47.75, 0.3, 3.150292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.389893, 0.5, 0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_234",
+            "Position": "-51.7, 0.3, 3.150292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.389893, 0.5, 0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch_4",
+            "Position": "-49.75, 5.3, 4.100293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.7, 0.7, -0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_38",
+            "Position": "-49.75, 5.3, 5.100293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.75, 0.75, -0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_22",
+            "Position": "-51.5, 0.3, 3.150293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_23",
+            "Position": "-51.5, 0.3, 5.000293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_24",
+            "Position": "-51.45, 0.3, 3.450293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_25",
+            "Position": "-51.5, 0.3, 5.200293",
+            "Rotation": "0, 179.999634, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_26",
+            "Position": "-47.95, 0.3, 3.150293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_27",
+            "Position": "-47.95, 0.3, 5.000293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_28",
+            "Position": "-48, 0.3, 3.450293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_14",
+            "Position": "-49.8, 0.25, 5.450293",
+            "Rotation": "0, 90.000015, 0",
+            "Scale": "4, 0.625, -0.625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_235",
+            "Position": "-54.85, 0.3, 3.300292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_236",
+            "Position": "-55.5, 0.3, 4.000292",
+            "Rotation": "0, -0.000031, 0",
+            "Scale": "0.53125, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_237",
+            "Position": "-64.7, 0.3, 2.950292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.289856, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_238",
+            "Position": "-71.4, 0.3, 2.900292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_239",
+            "Position": "-71.6, 0.3, 3.100292",
+            "Rotation": "0, 90.000015, 0",
+            "Scale": "0.5, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_240",
+            "Position": "-61.8, 0.3, 2.900292",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_241",
+            "Position": "-61.15, 0.3, 3.550292",
+            "Rotation": "0, 90.000015, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_39",
+            "Position": "-66.35, 5.3, 3.150293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_242",
+            "Position": "-71.8, 0.3, 2.950292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.369873, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_243",
+            "Position": "-68.35, 0.3, 3.150292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.389893, 0.5, -0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_244",
+            "Position": "-64.4, 0.3, 3.150292",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.389893, 0.5, -0.419922",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_PanelArch_5",
+            "Position": "-66.35, 5.3, 4.100293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.7, 0.7, 0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_PanelArch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_40",
+            "Position": "-66.35, 5.3, 5.100293",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_29",
+            "Position": "-64.6, 0.3, 3.150293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_30",
+            "Position": "-64.6, 0.3, 5.000293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_31",
+            "Position": "-64.65, 0.3, 3.450293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_32",
+            "Position": "-64.6, 0.3, 5.200293",
+            "Rotation": "0, 0.000364, 0",
+            "Scale": "0.35, 0.35, 0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_33",
+            "Position": "-68.15, 0.3, 3.150293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_34",
+            "Position": "-68.15, 0.3, 5.000293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_35",
+            "Position": "-68.1, 0.3, 3.450293",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.35, 0.35, -0.35",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_15",
+            "Position": "-66.35, 0.25, 5.450293",
+            "Rotation": "0, 90.000046, 0",
+            "Scale": "4, 0.625, 0.625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_245",
+            "Position": "-61.25, 0.3, 3.300292",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_22",
+            "Position": "-71.85, 0.3, 0",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "4, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_246",
+            "Position": "-71.85, 0.3, -2.749999",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "0.53125, 0.5, -0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue_3",
+            "Position": "-49.739995, 2.809048, -2.959986",
+            "Rotation": "0, -90.400604, 0",
+            "Scale": "0.875, 0.875, 0.875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue_4",
+            "Position": "-49.689995, 2.809048, 3.090014",
+            "Rotation": "0, 89.599312, 0",
+            "Scale": "0.875, 0.875, 0.875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue_5",
+            "Position": "-66.389995, 2.809048, -2.959986",
+            "Rotation": "0, -90.400604, 0",
+            "Scale": "0.875, 0.875, 0.875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Statue_6",
+            "Position": "-66.339995, 2.809048, 3.090014",
+            "Rotation": "0, 89.599312, 0",
+            "Scale": "0.875, 0.875, 0.875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Statue.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door",
+            "Position": "-38.05, 0.3, 5",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 0.78125, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door3.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_2",
+            "Position": "-38.05, 0.3, -5",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 0.78125, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Door3.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_3",
+            "Position": "-38.1, 0.3, 0.1",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 0.78125, 0.625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_4",
+            "Position": "-45.25, 0.3, -8.65",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.78125, 0.78125, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_5",
+            "Position": "-45, 0.3, -7.75",
+            "Rotation": "0, 89.999565, 0",
+            "Scale": "0.78125, 0.78125, 0.78125",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_6",
+            "Position": "-45, 0.3, -3.45",
+            "Rotation": "0, 89.999565, 0",
+            "Scale": "0.78125, 0.78125, 0.78125",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_7",
+            "Position": "-44.75, 0.3, -2.75",
+            "Rotation": "0, 89.999626, 0",
+            "Scale": "0.78125, 0.78125, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_8",
+            "Position": "-45.25, 0.3, 8.649999",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.78125, 0.78125, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_9",
+            "Position": "-45, 0.3, 7.749999",
+            "Rotation": "0, -89.999565, 0",
+            "Scale": "0.78125, 0.78125, -0.78125",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_10",
+            "Position": "-45, 0.3, 3.449999",
+            "Rotation": "0, -89.999565, 0",
+            "Scale": "0.78125, 0.78125, -0.78125",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Door_11",
+            "Position": "-44.75, 0.3, 2.749999",
+            "Rotation": "0, -89.999626, 0",
+            "Scale": "0.78125, 0.78125, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_29",
+            "Position": "2.25002, 2.3, 15.700021",
+            "Rotation": "0, 89.999367, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_23",
+            "Position": "-42.2, 11.61, 9.649999",
+            "Rotation": "-0.000096, 89.999947, 89.999809",
+            "Scale": "1.96998, 1.729636, 0.949844",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1500",
+            "Position": "-44.8, 10.45, -3.3",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.78125, 0.78125, 0.78125",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_24",
+            "Position": "-58.15, 6.2, -3.95",
+            "Rotation": "0, -90.000298, 0",
+            "Scale": "4, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_25",
+            "Position": "-58.15, 6.2, 4",
+            "Rotation": "0, 89.99987, 0",
+            "Scale": "4, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim",
+            "Position": "-16.65, 0.3, 8.65",
+            "Rotation": "0, 0, 0",
+            "Scale": "2.125, 0.7, 0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_4",
+            "Position": "-37.5, 0.3, 3.55",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.7, 0.7, 0.543701",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_5",
+            "Position": "-37.45, 0.3, 13.85",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.7, 0.7, 0.393555",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_6",
+            "Position": "-37.4, 0.3, -6.899999",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.7, 0.7, 0.353516",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_7",
+            "Position": "-16.65, 0.3, -8.599999",
+            "Rotation": "0, 0, 0",
+            "Scale": "2.125, 0.7, -0.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_156",
+            "Position": "-16.9, 11.3, 3.05",
+            "Rotation": "0, -89.999817, 0",
+            "Scale": "0.23, 0.235, 0.29",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_10",
+            "Position": "-21, 0.15, 3.15",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "0.65625, 0.7, -0.289783",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr",
+            "Position": "-49.75, 0.3, -2.9",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_2",
+            "Position": "-49.75, 0.3, 3.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_3",
+            "Position": "-66.35, 0.3, -2.9",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_4",
+            "Position": "-66.35, 0.3, 3.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.40625, 0.40625, 0.40625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_5",
+            "Position": "-29.95, 0.3, 0",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.65625, 0.65625, 0.65625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_6",
+            "Position": "-29.95, 0.3, -0.8",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.46875, 0.46875, 0.46875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_7",
+            "Position": "-29.95, 0.3, 0.8",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.46875, 0.46875, 0.46875",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_8",
+            "Position": "-0.050001, 2.3, 0",
+            "Rotation": "0, -45.000061, 0",
+            "Scale": "0.84375, 0.84375, 0.84375",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_9",
+            "Position": "-0.050001, 2.3, -1.320074",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.65625, 0.65625, 0.65625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_10",
+            "Position": "-0.000001, 2.3, 1.310074",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.65625, 0.65625, 0.65625",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1501",
+            "Position": "-16.68, 14.71, -8.99",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 1.44043",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1504",
+            "Position": "-16.83, 14.69, 9.059999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.220154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1505",
+            "Position": "-37.88, 14.69, 9.059999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "1, 1, -1.220154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1502",
+            "Position": "-16.68, 14.71, 9.009999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "1, 1, -1.44043",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1506",
+            "Position": "-27.38, 14.69, 9.059999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.220154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500_M.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1508",
+            "Position": "-32.78, 14.69, 9.059999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.220154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500_M.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1510",
+            "Position": "-21.98, 14.69, 9.059999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1.220154",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500_M.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1512",
+            "Position": "-16.68, 14.73, -2.54",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "1, 1, -1.44043",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500_M.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1514",
+            "Position": "-16.68, 14.73, 2.509999",
+            "Rotation": "0, 89.999962, 0",
+            "Scale": "1, 1, -1.44043",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500_M.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit",
+            "Position": "-28.55, 0.3, 2.4",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_2",
+            "Position": "-28.55, 0.3, 2.4",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_3",
+            "Position": "-50.8, 0.3, -2.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_4",
+            "Position": "-50.8, 0.3, -2.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_5",
+            "Position": "-70.85, 0.3, -1.45",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_6",
+            "Position": "-70.85, 0.3, -1.45",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_7",
+            "Position": "-70.85, 0.3, 1.65",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_8",
+            "Position": "-70.85, 0.3, 1.65",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_9",
+            "Position": "-48.55, 0.3, -2.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_10",
+            "Position": "-48.55, 0.3, 2.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_11",
+            "Position": "-50.9, 0.3, 2.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_12",
+            "Position": "-28.45, 0.3, -2.4",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_13",
+            "Position": "5.75, 2.3, -5.7",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_14",
+            "Position": "2.05, 2.3, -8",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_15",
+            "Position": "7.9, 2.3, -2.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_16",
+            "Position": "7.75, 2.3, 2.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_17",
+            "Position": "5.8, 2.3, 5.699999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_18",
+            "Position": "2.15, 2.3, 7.899999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_20",
+            "Position": "-7.799999, 2.3, 3.149999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_21",
+            "Position": "-18.05, 2.3, 7.45",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_22",
+            "Position": "-18.05, 2.3, 7.45",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_6",
+            "Position": "-50.8, 2.15, -2.15",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_7",
+            "Position": "-28.45, 2.3, 2.4",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_8",
+            "Position": "-70.8, 2.4, -1.45",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_9",
+            "Position": "-70.8, 2.4, 1.6",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_10",
+            "Position": "-17.95, 4.3, 7.449999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_26",
+            "Position": "-16.9, 13.35, -0.029683",
+            "Rotation": "0, 0, 0",
+            "Scale": "4, 0.579961, -0.730097",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_25",
+            "Position": "-27.35, 11.25, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_34",
+            "Position": "-22.15, 11.25, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_35",
+            "Position": "-24.75, 11.2, 2.75",
+            "Rotation": "0, 89.99987, 0",
+            "Scale": "1.1, 1.1, 1.1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_41",
+            "Position": "-16.65, 11.15, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_42",
+            "Position": "-19.55, 11.2, 2.75",
+            "Rotation": "0, 89.99987, 0",
+            "Scale": "1.1, 1.1, 1.1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_43",
+            "Position": "-19.55, 11.2, -2.75",
+            "Rotation": "0, -90.000237, 0",
+            "Scale": "1.1, 1.1, 1.1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Arch_37",
+            "Position": "-24.75, 11.2, -2.75",
+            "Rotation": "0, -90.000023, 0",
+            "Scale": "1.1, 1.1, 1.1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Arch_2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_185",
+            "Position": "-27.35, 11.25, -2.549999",
+            "Rotation": "0, 89.999947, 0",
+            "Scale": "0.440085, 0.24, -0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_186",
+            "Position": "-27.35, 11.25, -2.699999",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, -0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_193",
+            "Position": "-22.15, 11.25, -2.699999",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, -0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_194",
+            "Position": "-16.95, 11.25, -2.699999",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, -0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_197",
+            "Position": "-27.35, 11.25, 2.550002",
+            "Rotation": "0, -89.999939, 0",
+            "Scale": "0.440085, 0.24, 0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_198",
+            "Position": "-27.35, 11.25, 2.700002",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, 0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_247",
+            "Position": "-22.15, 11.25, 2.700002",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, 0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_248",
+            "Position": "-16.95, 11.25, 2.700002",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "0.440085, 0.237, 0.439872",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1503",
+            "Position": "-27.65, 14.3, 2.65",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.309387, 0.309387, 0.339417",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1507",
+            "Position": "-27.3, 14.3, -3",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.309387, 0.309387, 0.339417",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1509",
+            "Position": "-21.9, 14.3, -3",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "0.309387, 0.309387, 0.339417",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1511",
+            "Position": "-27.3, 14.3, 3.049999",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.309387, 0.309387, -0.339417",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Trim_1513",
+            "Position": "-21.9, 14.3, 3.049999",
+            "Rotation": "0, -89.999878, 0",
+            "Scale": "0.309387, 0.309387, -0.339417",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_1500.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_11",
+            "Position": "-21.55, 1.7, -9.149999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.579883, 0.579883, -0.820117",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_12",
+            "Position": "-27.15, 1.7, -9.149999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.579883, 0.579883, -0.820117",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_13",
+            "Position": "-21.5, 1.7, 9.2",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.579883, 0.579883, 0.820117",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_14",
+            "Position": "-27.1, 1.7, 9.2",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.579883, 0.579883, 0.820117",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield",
+            "Position": "-17.100001, 6.6, 5.7",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.490082, 1.490082, 1.490082",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_2",
+            "Position": "-17.100001, 6.6, -5.749999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.490082, 1.490082, 1.490082",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_3",
+            "Position": "-71.45, 4.25, 0.000001",
+            "Rotation": "0, 179.999756, 0",
+            "Scale": "1.490082, 1.490082, 1.490082",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_4",
+            "Position": "-7.8, 6.6, -4.499999",
+            "Rotation": "0, -149.999954, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_5",
+            "Position": "-7.8, 6.6, 4.450001",
+            "Rotation": "0, 149.999954, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_6",
+            "Position": "0, 6.6, -9.049999",
+            "Rotation": "0, -89.999939, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_7",
+            "Position": "0, 6.6, 9.000001",
+            "Rotation": "0, 89.999878, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_8",
+            "Position": "-58.1, 4.25, -3.649999",
+            "Rotation": "0, -90.000114, 0",
+            "Scale": "1.490082, 1.490082, 1.490082",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Shield_9",
+            "Position": "-58.1, 4.25, 3.650001",
+            "Rotation": "0, 89.99968, 0",
+            "Scale": "1.490082, 1.490082, 1.490082",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Shield.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BrickWall_3",
+            "Position": "-16.9, 7.55, -6.099999",
+            "Rotation": "0, 0, 0",
+            "Scale": "4.180176, 0.800176, 0.810176",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BrickWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_23",
+            "Position": "-58, -2.1, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "2.7, 1.829814, 2.7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_24",
+            "Position": "2.05, 2.3, -7.999999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_12",
+            "Position": "2.15, 4.3, -8",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_25",
+            "Position": "2.15, 2.3, 7.9",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_14",
+            "Position": "2.25, 4.3, 7.899999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_26",
+            "Position": "7.749999, 3.3, 2.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 0.380127, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_16",
+            "Position": "7.849999, 4.3, 2.049999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_27",
+            "Position": "-7.849999, 2.3, -3.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_28",
+            "Position": "-7.85, 2.3, -3.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_15",
+            "Position": "-7.75, 4.3, -3.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BottomTrim_Sqr_15",
+            "Position": "-31.15, -1.1, 0",
+            "Rotation": "0, 44.999939, 0",
+            "Scale": "0.638855, 0.638855, 0.638855",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BottomTrim_Sqr.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_19",
+            "Position": "-31.6, -0.45, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1.399841, 0.979431, 1.399841",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing",
+            "Position": "-20.8, 2.25, 1.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_2",
+            "Position": "-20.8, 2.25, -1.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_3",
+            "Position": "-20.8, 2.25, -3.15",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_4",
+            "Position": "-24.8, 0.3, 3.249999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingStairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_5",
+            "Position": "-24.8, 0.3, 8.049999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingStairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_6",
+            "Position": "-24.8, 0.3, -8",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingStairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Stairs_7",
+            "Position": "-24.8, 0.3, -3.25",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingStairs.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_4",
+            "Position": "-20.75, 2.25, -7.999999",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_5",
+            "Position": "-18.65, 2.25, -7.999999",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 0.939941",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar",
+            "Position": "-17.25, 2.3, -8",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_6",
+            "Position": "-20.7, 2.25, 8.05",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_7",
+            "Position": "-18.6, 2.25, 8.05",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 0.939941",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_2",
+            "Position": "-17.2, 2.3, 8.049999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_8",
+            "Position": "10.45, 2.3, -1.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_3",
+            "Position": "10.45, 2.3, -1.15",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_4",
+            "Position": "10.45, 2.3, 1.15",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_10",
+            "Position": "10.45, 2.3, 1.25",
+            "Rotation": "0, 15.000011, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_11",
+            "Position": "10.45, 2.3, -1.25",
+            "Rotation": "0, -15.00002, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_9",
+            "Position": "9.574969, 2.3, 4.315663",
+            "Rotation": "0, 29.999968, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_5",
+            "Position": "9.624971, 2.3, 4.229061",
+            "Rotation": "0, 29.999968, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_6",
+            "Position": "8.47497, 2.3, 6.22092",
+            "Rotation": "0, 29.999968, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_12",
+            "Position": "8.424969, 2.3, 6.307523",
+            "Rotation": "0, 44.999954, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_13",
+            "Position": "9.674969, 2.3, 4.142458",
+            "Rotation": "0, 15.00001, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_14",
+            "Position": "6.134339, 2.3, 8.524949",
+            "Rotation": "0, 59.999924, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_7",
+            "Position": "6.220943, 2.3, 8.474951",
+            "Rotation": "0, 59.999924, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_8",
+            "Position": "4.229084, 2.3, 9.624952",
+            "Rotation": "0, 59.999924, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_15",
+            "Position": "4.142481, 2.3, 9.674952",
+            "Rotation": "0, 74.99987, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_16",
+            "Position": "6.307546, 2.3, 8.424949",
+            "Rotation": "0, 44.999954, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_17",
+            "Position": "8.52497, 2.3, -6.134319",
+            "Rotation": "0, -30.000092, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_9",
+            "Position": "8.474972, 2.3, -6.220925",
+            "Rotation": "0, -30.000092, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_10",
+            "Position": "9.624976, 2.3, -4.229066",
+            "Rotation": "0, -30.000092, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_18",
+            "Position": "9.674972, 2.3, -4.14246",
+            "Rotation": "0, -15.000171, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_19",
+            "Position": "8.424969, 2.3, -6.307529",
+            "Rotation": "0, -45.000061, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_20",
+            "Position": "4.315684, 2.3, -9.574952",
+            "Rotation": "0, -60.000088, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_11",
+            "Position": "4.229081, 2.3, -9.624957",
+            "Rotation": "0, -60.000088, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_12",
+            "Position": "6.220944, 2.3, -8.47496",
+            "Rotation": "0, -60.000088, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_21",
+            "Position": "6.307545, 2.3, -8.424953",
+            "Rotation": "0, -45.000149, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_22",
+            "Position": "4.142475, 2.3, -9.674957",
+            "Rotation": "0, -75.000038, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_13",
+            "Position": "-20.8, 2.25, -1.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_14",
+            "Position": "-20.8, 2.25, 1.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Pillar",
+            "Position": "-37.9, 0.3, 3.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_5",
+            "Position": "-37, 0.3, 3.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.850273, 0.850273, 0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_6",
+            "Position": "-37, 0.3, 6.949999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.850273, 0.850273, 0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_7",
+            "Position": "-37, 0.3, -3.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.850273, 0.850273, 0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_8",
+            "Position": "-37, 0.3, -7.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.850273, 0.850273, 0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Pillar_2",
+            "Position": "-37.9, 0.3, 7.05",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Pillar_3",
+            "Position": "-37.9, 0.3, -3.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_Pillar_4",
+            "Position": "-37.9, 0.3, -7.099999",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_2",
+            "Position": "-37.9, 8.75, -5.1",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Gable.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_3",
+            "Position": "-37.9, 8.75, 5.049999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Gable.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_9",
+            "Position": "-38.7, 0.3, 3.05",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.850273, 0.850273, -0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_10",
+            "Position": "-38.7, 0.3, 6.949999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.850273, 0.850273, -0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_12",
+            "Position": "-38.7, 0.3, -3.1",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.850273, 0.850273, -0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Pillar_14",
+            "Position": "-38.7, 0.3, -7.100001",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.850273, 0.850273, -0.850273",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Pillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_4",
+            "Position": "-37.8, 8.75, -5.1",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.57, 0.57, -0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Gable.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_5",
+            "Position": "-37.8, 8.75, 5.049999",
+            "Rotation": "0, -0.000092, 0",
+            "Scale": "0.57, 0.57, -0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Gable.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_Round",
+            "Position": "0, 2.3, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_Round.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_StairTop",
+            "Position": "-16.499999, 2.3, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_StairTop.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_StairTop_2",
+            "Position": "-18.999999, 2.3, -5.499999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_StairTop2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_StairTop_3",
+            "Position": "-18.999998, 2.3, 5.5",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_StairTop2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_23",
+            "Position": "-17.200001, 2.25, -7.9",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_24",
+            "Position": "-17.200001, 2.25, -5.7",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 0.939941",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_15",
+            "Position": "-17.2, 2.3, -3.6",
+            "Rotation": "0, 89.999908, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_16",
+            "Position": "-17.2, 2.3, -5.75",
+            "Rotation": "0, 89.999908, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_25",
+            "Position": "-17.200001, 2.25, 7.949999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Railing_26",
+            "Position": "-17.200001, 2.25, 5.749999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, -0.939941",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Railing.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_17",
+            "Position": "-17.2, 2.3, 3.649999",
+            "Rotation": "0, -89.999908, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RailingPillar_18",
+            "Position": "-17.2, 2.3, 5.799999",
+            "Rotation": "0, -89.999908, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RailingPillar.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_6",
+            "Position": "-37.9, 8.85, -5.1",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Platform2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Gable_7",
+            "Position": "-37.9, 8.85, 5.049999",
+            "Rotation": "0, -179.999893, 0",
+            "Scale": "0.57, 0.57, 0.57",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Trim_Platform2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_Lower",
+            "Position": "0, 1, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_Lower.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Floor_Lower_2",
+            "Position": "0, 1, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Floor_Lower2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte",
+            "Position": "162.523281, -29.009983, 80.254609",
+            "Rotation": "0, 11.249973, 0",
+            "Scale": "22.435045, 22.435045, 22.435045",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_2",
+            "Position": "-277.359023, -28.449998, 623.581406",
+            "Rotation": "0, 89.999954, 0",
+            "Scale": "11.435042, 11.435042, -11.435042",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_3",
+            "Position": "-383.549961, -28.449998, 680.65",
+            "Rotation": "0, 146.249725, 0",
+            "Scale": "11.435042, 11.435042, 11.435042",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_4",
+            "Position": "133.573281, -29.009983, -321.745371",
+            "Rotation": "0, -78.750168, 0",
+            "Scale": "11.435045, 11.435045, -11.435045",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_5",
+            "Position": "-628.049961, -28.449998, -60.84999",
+            "Rotation": "0, -146.250244, 0",
+            "Scale": "11.435042, 11.435042, 11.435042",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_6",
+            "Position": "-1076.299922, -28.449998, 94",
+            "Rotation": "0, 157.499695, 0",
+            "Scale": "11.435042, 11.435042, 11.435042",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_BackGroundMatte_7",
+            "Position": "-725.326641, -29.009983, -11.995371",
+            "Rotation": "0, 157.499695, 0",
+            "Scale": "11.435045, 11.435045, -11.435045",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_BackGroundMatte.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_Tree_4",
+            "Position": "-19.149998, 2.650001, 23.499998",
+            "Rotation": "0, -157.500198, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_Tree_5",
+            "Position": "-35.299998, 2.650001, 19.249998",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_Tree_6",
+            "Position": "-15.449998, 0.300001, -28.55",
+            "Rotation": "0, 89.999763, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_Tree_7",
+            "Position": "-37.049998, -2.099999, -20.95",
+            "Rotation": "0, -157.500198, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RockTerrain",
+            "Position": "0, 1, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RockTerrain.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RockTerrain_2",
+            "Position": "0.149995, -14.72, -21.379995",
+            "Rotation": "0, -70.312492, 0",
+            "Scale": "0.5, 0.25, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RockTerrain.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_RockTerrain_8",
+            "Position": "-0.550009, -17.35, 5.3",
+            "Rotation": "0, 92.812363, 0",
+            "Scale": "1, 0.480362, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_RockTerrain.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG01",
+            "Position": "23.6, -8, -23.1",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG2",
+            "Position": "26.65, -9.17, -11.65",
+            "Rotation": "0, 30.937477, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG3",
+            "Position": "44.25, -13.1, -16.25",
+            "Rotation": "0, 30.937477, 0",
+            "Scale": "0.409851, 0.409851, 0.409851",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG4",
+            "Position": "16.22, 0.25, -0.710001",
+            "Rotation": "13.706645, 59.016438, -0.783477",
+            "Scale": "0.5, 0.5, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG5",
+            "Position": "5.41, -22.17, -49.53",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_30",
+            "Position": "2.25002, -6.649999, -9.249978",
+            "Rotation": "0, 89.999367, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_43",
+            "Position": "2.25002, -6.649999, 15.700021",
+            "Rotation": "0, 89.999367, 0",
+            "Scale": "0.62, 0.62, 0.62",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG6",
+            "Position": "63.6, -19.55, -17.1",
+            "Rotation": "-4.822659, 31.059553, -2.898682",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "S_BuildingSetA_Tree_02",
+            "Position": "8.48, -3.16, 13.6",
+            "Rotation": "0, -22.499985, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "S_BuildingSetA_Tree_3",
+            "Position": "28, -6.359999, -20.479998",
+            "Rotation": "0, -67.500015, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "S_BuildingSetA_Tree_4",
+            "Position": "2.72, -5.879999, -21.759998",
+            "Rotation": "0, -157.499939, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/S_BuildingSetA_Tree_02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large02",
+            "Position": "4.320001, -5.56, -13.92",
+            "Rotation": "-56.249992, 0, 0.000183",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large4",
+            "Position": "33.6, -9.88, -21.92",
+            "Rotation": "-54.636284, 109.698463, -106.275261",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Waves",
+            "Position": "-25.439998, 6.599999, -3.839999",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Waves.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Waves_2",
+            "Position": "187.35998, 6.759999, -118.87998",
+            "Rotation": "0, -67.500015, 0",
+            "Scale": "1, 1, -1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Waves.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large3",
+            "Position": "13.888187, -3.530275, 4.419977",
+            "Rotation": "-50.57061, -62.128723, 88.94091",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large5",
+            "Position": "17.76, -6.68, -21.6",
+            "Rotation": "76.559143, 116.593811, 86.924057",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large6",
+            "Position": "13.28, -5.24, -5.28",
+            "Rotation": "-32.126026, -40.02803, -77.789879",
+            "Scale": "1.25, 1.25, 1.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large7",
+            "Position": "76.48, -22.68, -27.36",
+            "Rotation": "-54.636284, 143.448273, -106.275276",
+            "Scale": "2.25, 2.25, 2.25",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large8",
+            "Position": "-23.679998, -10.52, -19.04",
+            "Rotation": "-90, -90, -179.999786",
+            "Scale": "2.5, 2.5, 2.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large9",
+            "Position": "-16.319998, -6.36, -30.08",
+            "Rotation": "-90, -90, -179.999786",
+            "Scale": "1.5, 1.5, 1.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large10",
+            "Position": "-40.639998, -8.76, -22.24",
+            "Rotation": "-90, 90, -44.999817",
+            "Scale": "1.5, 1.5, 1.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large11",
+            "Position": "-30.240002, -10.52, 22.240005",
+            "Rotation": "-90, 0, -89.999847",
+            "Scale": "2.5, 2.5, 2.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large12",
+            "Position": "-42.87999, -2.2, 21.120015",
+            "Rotation": "-79.30407, -169.993652, 86.390053",
+            "Scale": "1.5, 1.5, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large13",
+            "Position": "-17.279995, -1.72, 24.959998",
+            "Rotation": "-90, -7.125023, -127.874878",
+            "Scale": "1.5, 1.5, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Cave_Rock_Large14",
+            "Position": "-35.999995, -1.72, 30.239998",
+            "Rotation": "-90, 0, -56.249817",
+            "Scale": "1.5, 1.5, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Cave_Rock_Large02.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_Waves2",
+            "Position": "0, -3.159999, 0",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_Waves2.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_17",
+            "Position": "2095.359844, 918.92, -1765.759844",
+            "Rotation": "0, 0, 0",
+            "Scale": "50.000004, 50.000004, 50",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_TrimWall_U_207",
+            "Position": "-38.25, 0.22, 0.05",
+            "Rotation": "0, 89.999825, 0",
+            "Scale": "1.25, 0.78125, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_TrimWall_U.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG7",
+            "Position": "14.21, -24.73, -59.45",
+            "Rotation": "-17.978355, -29.055231, -17.805275",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG8",
+            "Position": "7.97, -22.33, -69.21",
+            "Rotation": "0.000014, 78.74984, 0",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Soul_FG9",
+            "Position": "4.13, -2.33, -17.05",
+            "Rotation": "10.383718, -15.602987, -11.64574",
+            "Scale": "0.75, 0.75, 0.75",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Soul_FG01.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "BP_Godray_4",
+            "Position": "5.848584, 16.3, 1.277958",
+            "Rotation": "0, 10.000209, 0",
+            "Scale": "1, 1.18, 0.54",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_GodRay.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "BP_Godray",
+            "Position": "5.65, 16.15, -1.55",
+            "Rotation": "0, -10.000014, 0",
+            "Scale": "1, 2.28, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_GodRay.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "BP_Godray_2",
+            "Position": "4.14744, 16.2, -4.179026",
+            "Rotation": "0, -50.000011, 0",
+            "Scale": "1, 2.28, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_GodRay.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "BP_Godray_5",
+            "Position": "1.964212, 16.3, -6.010972",
+            "Rotation": "0, -50.000011, 0",
+            "Scale": "1, 1.94, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_GodRay.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "CameraActor1",
+            "Position": "-69.9, 4.2, 0.1",
+            "Rotation": "0, 89.999954, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/MatineeCam_SM.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "CameraActor4",
+            "Position": "-40.6, 2.6, 5.4",
+            "Rotation": "0, 179.999893, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/MatineeCam_SM.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "CameraActor6",
+            "Position": "-18.6, 4, 0",
+            "Rotation": "0, -89.999992, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/MatineeCam_SM.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_29",
+            "Position": "-43.25, 0.3, 7.2",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_11",
+            "Position": "-43.15, 2.3, 7.2",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_30",
+            "Position": "-43.259946, 0.3, 7.190568",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_31",
+            "Position": "-43.176895, 0.300001, -7.145599",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_13",
+            "Position": "-43.076895, 2.300001, -7.145599",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "SM_FirePit_32",
+            "Position": "-43.186841, 0.300001, -7.155031",
+            "Rotation": "0, 0, 0",
+            "Scale": "1, 1, 1",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Sphere_18",
+            "Position": "-50.676895, 2.800001, -1.945599",
+            "Rotation": "0, 0, 0",
+            "Scale": "0.8, 0.8, 0.8",
+            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
+        }
+    ]
+}
