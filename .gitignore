@@ -17,5 +17,9 @@ imgui.ini
 RaytracingDemo/Assets/*
 RaytracingDemo/Cooked/*
 
+#SunTemple Test
+SimpleGame/Assets/Meshes/SunTemple/*
+SimpleGame/Raw/Meshes/SunTemple/*
+
 #docs
 Docs

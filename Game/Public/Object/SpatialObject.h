@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Object/Object.h"
-#include "Object/SpatialObjectComponent.h"
 
 #include "Utility/Transform.h"
 

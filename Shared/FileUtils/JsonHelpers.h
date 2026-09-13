@@ -21,7 +21,7 @@ namespace JsonHelpers
 	bool ParseInt(const JsonValue_s& Node, const char* Field, int64_t& Out);
 	bool ParseInt(const JsonValue_s& Node, const char* Field, uint64_t& Out);
 
-	bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out);
+	bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out, bool Silent = false);
 
 	bool ParseString(const JsonValue_s& Node, const char* Field, std::string& Out);
 	bool ParseWString(const JsonValue_s& Node, const char* Field, std::wstring& Out);

@@ -7,14 +7,6 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "StaticMesh_SkySphere",
-            "Position": "0, 1, 0",
-            "Rotation": "0, 140.615372, 0",
-            "Scale": "400, 400, 400",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_SkySphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_Arch_2_Bend_9",
             "Position": "0.000019, 11.3, 0.000007",
             "Rotation": "0, 44.999454, 0",

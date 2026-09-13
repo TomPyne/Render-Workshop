@@ -138,7 +138,7 @@ bool ParseInt(const JsonValue_s& Node, const char* Field, uint32_t& Out)
 	return true;
 }
 
-bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out)
+bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out, bool Silent)
 {
 	const Json_t* Value = FindField(Node, Field);
 	if (!Value)
@@ -148,7 +148,7 @@ bool ParseFloat(const JsonValue_s& Node, const char* Field, float& Out)
 
 	if (!Value->is_number())
 	{
-		LOGWARNING("[Json] Field '%s' is not a number", Field);
+		CLOGWARNING(!Silent, "[Json] Field '%s' is not a number", Field);
 		return false;
 	}
 

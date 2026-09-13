@@ -104,6 +104,46 @@ void _LogDebugfLF(const char* fmt, ...)
 	PlatformFormatLogMessageLf(LogDebug);
 }
 
+void _CLogFatalfLF(bool cond, const char* fmt, ...)
+{
+	if (cond)
+	{
+		PlatformFormatLogMessageLf(LogFatal);
+	}		
+}
+
+void _CLogErrorfLF(bool cond, const char* fmt, ...)
+{
+	if (cond)
+	{
+		PlatformFormatLogMessageLf(LogError);
+	}
+}
+
+void _CLogWarningfLF(bool cond, const char* fmt, ...)
+{
+	if (cond)
+	{
+		PlatformFormatLogMessageLf(LogWarning);
+	}
+}
+
+void _CLogInfofLF(bool cond, const char* fmt, ...)
+{
+	if (cond)
+	{
+		PlatformFormatLogMessageLf(LogInfo);
+	}
+}
+
+void _CLogDebugfLF(bool cond, const char* fmt, ...)
+{
+	if (cond)
+	{
+		PlatformFormatLogMessageLf(LogDebug);
+	}
+}
+
 bool _EnsureMsg(bool condition, const char * fmt, ...)
 {
 	if (condition == false)
