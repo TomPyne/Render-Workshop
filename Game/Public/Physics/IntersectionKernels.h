@@ -43,7 +43,7 @@ inline float3 AABBEntryNormal(const SegmentCache_s& Segment, const AABB& Bounds)
 }
 
 // Moller-Trumbore. OutBarycentric is (W, U, V) weighting (V0, V1, V2).
-inline bool LineTriangle(const Segment_s& Segment, const Triangle_s& Triangle, bool bAllowBackFaces, float Epsilon, float& OutT, float3& OutBarycentric) noexcept
+inline bool LineTriangle(const Segment_s& Segment, const Triangle_s& Triangle, bool bAllowBackFaces, float WindingSign, float Epsilon, float& OutT, float3& OutBarycentric) noexcept
 {
 	const float3 Edge1 = Triangle.Edge1();
 	const float3 Edge2 = Triangle.Edge2();
@@ -53,8 +53,9 @@ inline bool LineTriangle(const Segment_s& Segment, const Triangle_s& Triangle, b
 	const float Determinant = Dot(Edge1, P);
 
 	// Determinant is -Dot(Delta, Cross(Edge1, Edge2)), so it is positive when the trace runs
-	// against the geometric normal, which is a front facing hit for clockwise winding.
-	if (bAllowBackFaces ? fabsf(Determinant) < Epsilon : Determinant < Epsilon)
+	// against the geometric normal, which is a front facing hit for clockwise winding. WindingSign
+	// is -1 when the candidate transform mirrors, which reverses which side counts as the front.
+	if (bAllowBackFaces ? fabsf(Determinant) < Epsilon : (Determinant * WindingSign) < Epsilon)
 	{
 		return false;
 	}

@@ -15,6 +15,13 @@ struct CandidateSpace_s
 	float MaxAxisScale = 1.0f;
 	float MinAxisScale = 1.0f;
 	bool UniformScale = true;
+
+	// -1 when the transform mirrors, which reverses the winding the front facing test reads.
+	float WindingSign = 1.0f;
+
+	// False when the transform is singular, which leaves every matrix above full of NaN. Nothing
+	// in here is usable in that case, so callers must reject the candidate rather than trace it.
+	bool Valid = true;
 };
 
 CandidateSpace_s MakeCandidateSpace(const matrix& CandidateToQuery) noexcept;

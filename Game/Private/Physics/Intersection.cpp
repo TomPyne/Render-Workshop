@@ -7,7 +7,21 @@ CandidateSpace_s MakeCandidateSpace(const matrix& CandidateToQuery) noexcept
 {
 	CandidateSpace_s Space;
 	Space.ToQuery = CandidateToQuery;
-	Space.ToCandidate = InverseMatrix(CandidateToQuery);
+
+	float Determinant = 0.0f;
+	Space.ToCandidate = InverseMatrix(CandidateToQuery, &Determinant);
+
+	// A zero scale on any axis collapses the transform, and InverseMatrix divides through by the
+	// determinant without guarding, so everything derived from it below would be NaN.
+	Space.Valid = fabsf(Determinant) > 1e-12f;
+	if (!Space.Valid)
+	{
+		return Space;
+	}
+
+	// A mirror maps a front facing triangle onto a back facing one, since the winding normal
+	// transforms as determinant * the inverse transpose rather than the inverse transpose alone.
+	Space.WindingSign = Determinant < 0.0f ? -1.0f : 1.0f;
 
 	// The inverse transpose of ToQuery. Transposing an affine matrix leaves r[3] as (0, 0, 0, 1),
 	// so TransformF3 applies no translation and this can be used on a normal directly.
@@ -35,7 +49,7 @@ Segment_s TransformSegment(const Segment_s& Segment, const matrix& Transform) no
 
 bool TraceLineMesh(const LineTrace_s& Trace, const Mesh_s& Mesh, const CandidateSpace_s& Space, const TraceParams_s& Params, Hit_s& InOutHit)
 {
-	if (!Mesh.Ready)
+	if (!Mesh.Ready || !Space.Valid)
 	{
 		return false;
 	}
@@ -84,7 +98,7 @@ bool TraceLineMesh(const LineTrace_s& Trace, const Mesh_s& Mesh, const Candidate
 
 				float T = 0.0f;
 				float3 Barycentric = {};
-				if (!LineTriangle(LocalPath, Triangle, Params.bAllowBackFaces, Params.Epsilon, T, Barycentric) || T >= LocalHit.T)
+				if (!LineTriangle(LocalPath, Triangle, Params.bAllowBackFaces, Space.WindingSign, Params.Epsilon, T, Barycentric) || T >= LocalHit.T)
 				{
 					continue;
 				}

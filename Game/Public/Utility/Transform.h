@@ -19,22 +19,22 @@ struct Transform_s
 		Set(InPosition, InRotation);
 	}
 
-	Transform_s(float3 InPosition, float3 InRotation, float InScale)
+	Transform_s(float3 InPosition, float3 InRotation, float3 InScale)
 	{
 		Set(InPosition, InRotation, InScale);
 	}
 
-	Transform_s(float3 InPosition, quat InRotation, float InScale = 1.0f)
+	Transform_s(float3 InPosition, quat InRotation, float3 InScale = float3(1.0f))
 	{
 		Set(InPosition, InRotation, InScale);
 	}
 
-	void Set(float3 InPosition = float3(0.0f), float3 InRotation = float3(0.0f), float InScale = 1.0f) noexcept
+	void Set(float3 InPosition = float3(0.0f), float3 InRotation = float3(0.0f), float3 InScale = float3(1.0f)) noexcept
 	{
 		Set(InPosition, QuatFromEuler(InRotation), InScale);
 	}
 
-	void Set(float3 InPosition, quat InRotation, float InScale) noexcept
+	void Set(float3 InPosition, quat InRotation, float3 InScale) noexcept
 	{
 		Position = InPosition;
 		Rotation = Normalize(InRotation);
@@ -59,10 +59,15 @@ struct Transform_s
 		UpdateMatrix();
 	}
 
-	void SetScale(float InScale) noexcept
+	void SetScale(float3 InScale) noexcept
 	{
 		Scale = InScale;
 		UpdateMatrix();
+	}
+
+	void SetScale(float InScale) noexcept
+	{
+		SetScale(float3(InScale));
 	}
 
 	// Delta is applied in parent space, RotateLocal applies it about our own axes.
@@ -78,7 +83,7 @@ struct Transform_s
 
 	void UpdateMatrix() noexcept
 	{
-		Matrix = MakeMatrixScaling(Scale, Scale, Scale);
+		Matrix = MakeMatrixScaling(Scale.x, Scale.y, Scale.z);
 		Matrix = Matrix * MakeMatrixRotationFromQuaternion(Rotation);
 		Matrix = Matrix * MakeMatrixTranslation(Position);
 	}
@@ -86,10 +91,17 @@ struct Transform_s
 	float3 GetPosition() const noexcept { return Position; }
 	quat GetRotationQuat() const noexcept { return Rotation; }
 	float3 GetRotation() const noexcept { return QuatToEuler(Rotation); }
-	float GetScale() const noexcept { return Scale; }
+	float3 GetScale() const noexcept { return Scale; }
 	const matrix& GetMatrix() const noexcept { return Matrix; }
 
-	// Qualified, since the Rotate member above hides the SurfMath free function.
+	bool IsUniformScale() const noexcept
+	{
+		const float MaxComponent = Max(Scale.x, Max(Scale.y, Scale.z));
+		const float MinComponent = Min(Scale.x, Min(Scale.y, Scale.z));
+
+		return (MaxComponent - MinComponent) <= (1e-4f * fabsf(MaxComponent));
+	}
+
 	float3 GetForwardVector() const noexcept
 	{
 		return ::Rotate(Rotation, float3{ 0.0f, 0.0f, 1.0f });
@@ -108,6 +120,6 @@ struct Transform_s
 private:
 	float3 Position;
 	quat Rotation;
-	float Scale;
+	float3 Scale;
 	matrix Matrix;
 };
