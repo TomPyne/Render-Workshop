@@ -2847,27 +2847,11 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "SM_FirePit_2",
-            "Position": "-28.55, 0.3, 2.4",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_FirePit_3",
             "Position": "-50.8, 0.3, -2.1",
             "Rotation": "0, 0, 0",
             "Scale": "1, 1, 1",
             "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_4",
-            "Position": "-50.8, 0.3, -2.1",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
         },
         {
             "Class": "MeshObject",
@@ -2879,27 +2863,11 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "SM_FirePit_6",
-            "Position": "-70.85, 0.3, -1.45",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_FirePit_7",
             "Position": "-70.85, 0.3, 1.65",
             "Rotation": "0, 0, 0",
             "Scale": "1, 1, 1",
             "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_8",
-            "Position": "-70.85, 0.3, 1.65",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
         },
         {
             "Class": "MeshObject",
@@ -2996,54 +2964,6 @@
             "Rotation": "0, 0, 0",
             "Scale": "1, 1, 1",
             "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_22",
-            "Position": "-18.05, 2.3, 7.45",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_6",
-            "Position": "-50.8, 2.15, -2.15",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_7",
-            "Position": "-28.45, 2.3, 2.4",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_8",
-            "Position": "-70.8, 2.4, -1.45",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_9",
-            "Position": "-70.8, 2.4, 1.6",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_10",
-            "Position": "-17.95, 4.3, 7.449999",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
         },
         {
             "Class": "MeshObject",
@@ -3335,75 +3255,11 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "SM_FirePit_24",
-            "Position": "2.05, 2.3, -7.999999",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_12",
-            "Position": "2.15, 4.3, -8",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_25",
-            "Position": "2.15, 2.3, 7.9",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_14",
-            "Position": "2.25, 4.3, 7.899999",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_26",
-            "Position": "7.749999, 3.3, 2.05",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 0.380127, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_16",
-            "Position": "7.849999, 4.3, 2.049999",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_FirePit_27",
             "Position": "-7.849999, 2.3, -3.1",
             "Rotation": "0, 0, 0",
             "Scale": "1, 1, 1",
             "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_28",
-            "Position": "-7.85, 2.3, -3.1",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_15",
-            "Position": "-7.75, 4.3, -3.1",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
         },
         {
             "Class": "MeshObject",
@@ -4327,14 +4183,6 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "Sphere_17",
-            "Position": "2095.359844, 918.92, -1765.759844",
-            "Rotation": "0, 0, 0",
-            "Scale": "50.000004, 50.000004, 50",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_TrimWall_U_207",
             "Position": "-38.25, 0.22, 0.05",
             "Rotation": "0, 89.999825, 0",
@@ -4431,51 +4279,11 @@
         },
         {
             "Class": "MeshObject",
-            "Name": "Sphere_11",
-            "Position": "-43.15, 2.3, 7.2",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_30",
-            "Position": "-43.259946, 0.3, 7.190568",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
             "Name": "SM_FirePit_31",
             "Position": "-43.176895, 0.300001, -7.145599",
             "Rotation": "0, 0, 0",
             "Scale": "1, 1, 1",
             "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FirePit.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_13",
-            "Position": "-43.076895, 2.300001, -7.145599",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "SM_FirePit_32",
-            "Position": "-43.186841, 0.300001, -7.155031",
-            "Rotation": "0, 0, 0",
-            "Scale": "1, 1, 1",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/SM_FireFX.hp_mdl"
-        },
-        {
-            "Class": "MeshObject",
-            "Name": "Sphere_18",
-            "Position": "-50.676895, 2.800001, -1.945599",
-            "Rotation": "0, 0, 0",
-            "Scale": "0.8, 0.8, 0.8",
-            "MeshAssetPath": "%ASSETS%/Meshes/SunTemple/Sphere.hp_mdl"
         }
     ]
 }
