@@ -5,7 +5,23 @@
 #include <Render/Render.h>
 #include <Shared/Logging/Logging.h>
 
-void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms) const
+bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms)
+{
+	float Determinant = 0.0f;
+	const matrix Inverse = InverseMatrix(WorldMatrix, &Determinant);
+
+	// Normals are covectors, so they transform by the inverse transpose rather than the model matrix.
+	// The determinant sign is kept separately: it flips tangent frame handedness under mirroring.
+	const bool Mirrored = Determinant < 0.0f;
+
+	OutUniforms.ModelMatrix = WorldMatrix;
+	OutUniforms.NormalMatrix = TransposeMatrix(Inverse);
+	OutUniforms.DeterminantSign = Mirrored ? -1.0f : 1.0f;
+
+	return Mirrored;
+}
+
+void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms, bool Mirrored) const
 {
 	if (!Ready)
 		return;
@@ -24,7 +40,7 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t 
 			Batch.DynamicUniforms = DynamicUniforms;
 			Batch.MeshUniforms = MeshUniforms;
 
-			Batch.PSO = Surface.Material->GetPSO();
+			Batch.PSO = Surface.Material->GetPSO(Mirrored);
 			Batch.MaterialUniforms = Surface.Material->GetConstantBuffer();
 		}
 	}

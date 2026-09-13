@@ -18,8 +18,21 @@ struct Surface_s
 struct MeshUniformData_s
 {
 	uint32_t PositionBufferIndex;
-	float __pad[3];
+	uint32_t NormalBufferIndex;
+	uint32_t TangentBufferIndex;
+	uint32_t Texcoord0BufferIndex;
 };
+
+struct ObjectUniforms_s
+{
+	matrix ModelMatrix;
+	matrix NormalMatrix;
+	float DeterminantSign;
+	float __Pad[3];
+};
+
+// Returns true when the transform mirrors, so the caller can select the front-face-culling PSO.
+bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms);
 
 struct Mesh_s
 {
@@ -28,7 +41,13 @@ struct Mesh_s
 	std::vector<Surface_s> Surfaces;
 
 	rl::StructuredBufferPtr PositionBuffer = {};
+	rl::StructuredBufferPtr NormalBuffer = {};
+	rl::StructuredBufferPtr TangentBuffer = {};
+	rl::StructuredBufferPtr Texcoord0Buffer = {};
 	rl::ShaderResourceViewPtr PositionBufferSRV = {};
+	rl::ShaderResourceViewPtr NormalBufferSRV = {};
+	rl::ShaderResourceViewPtr TangentBufferSRV = {};
+	rl::ShaderResourceViewPtr Texcoord0BufferSRV = {};
 
 	rl::IndexBufferPtr IndexBuffer = {};
 
@@ -39,5 +58,5 @@ struct Mesh_s
 
 	AABB Bounds = {};
 
-	void Render(struct SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms) const;
+	void Render(struct SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms, bool Mirrored) const;
 };

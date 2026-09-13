@@ -10,6 +10,7 @@
 #include "Object/RuntimeMeshComponent.h"
 #include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
+#include "Game/Private/Rendering/Materials/BRDFMaterial.h"
 #include "Space/Space.h"
 
 
@@ -87,6 +88,7 @@ void GameApp_c::RegisterMaterials()
 {
 	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<ErrorMaterialShader_c>(L"ErrorMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<BRDFMaterialShader_c>(L"DefaultBRDFMaterialShader");
 }
 
 void GameApp_c::Load()

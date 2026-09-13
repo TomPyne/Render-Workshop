@@ -36,7 +36,7 @@ public:
 	virtual ~MaterialShader_c() = default;
 
 	virtual bool Compile() { return true; }
-	virtual rl::GraphicsPipelineState_t GetPSO();
+	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	virtual rl::ConstantBuffer_t GetConstantBuffer();
 
 	virtual uint32_t GetShaderParamBufferSizeFloats() const { return 0u; }
@@ -65,22 +65,24 @@ public:
 	virtual ~DefaultMaterialShader_c() = default;
 
 	virtual bool Compile() override;
-	virtual rl::GraphicsPipelineState_t GetPSO() override;
+	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
 	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
 	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
 
 private:
 	rl::GraphicsPipelineStatePtr PSO;
+	rl::GraphicsPipelineStatePtr PSOMirrored;
 };
 
 class ErrorMaterialShader_c : public MaterialShader_c
 {
 public:
 	virtual bool Compile() override;
-	virtual rl::GraphicsPipelineState_t GetPSO() override;
+	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
 
 private:
 	rl::GraphicsPipelineStatePtr PSO;
+	rl::GraphicsPipelineStatePtr PSOMirrored;
 };
 
 class MaterialShaderInstance_c
@@ -96,7 +98,7 @@ public:
 
 	void Update();
 
-	rl::GraphicsPipelineState_t GetPSO();
+	rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	rl::ConstantBuffer_t GetConstantBuffer();
 
 protected:

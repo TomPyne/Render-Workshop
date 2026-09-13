@@ -6,8 +6,11 @@
 
 void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
-	rl::DynamicBuffer_t DynamicUniforms = rl::CreateDynamicConstantBuffer(&GetWorldMatrix());
-	Mesh->Render(Collector, DynamicUniforms);
+	ObjectUniforms_s Uniforms = {};
+	const bool Mirrored = MakeObjectUniforms(GetWorldMatrix(), Uniforms);
+
+	rl::DynamicBuffer_t DynamicUniforms = rl::CreateDynamicConstantBuffer(&Uniforms);
+	Mesh->Render(Collector, DynamicUniforms, Mirrored);
 }
 
 void RuntimeMeshComponent_c::UpdateMesh(const RuntimeMeshDesc_s& Desc)

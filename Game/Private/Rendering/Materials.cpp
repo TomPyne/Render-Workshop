@@ -7,7 +7,7 @@
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
-rl::GraphicsPipelineState_t MaterialShader_c::GetPSO()
+rl::GraphicsPipelineState_t MaterialShader_c::GetPSO(bool Mirrored)
 {
     return rl::GraphicsPipelineState_t::INVALID;
 }
@@ -48,12 +48,17 @@ bool DefaultMaterialShader_c::Compile()
     PSODesc.DebugName = L"DefaultMaterialShader";
     PSO = rl::CreateGraphicsPipelineState(PSODesc);
 
-    return PSO.IsValid();
+    // A mirroring transform reverses triangle winding, so those draws need the opposite cull face.
+    PSODesc.Cull = rl::CullMode::FRONT;
+    PSODesc.DebugName = L"DefaultMaterialShaderMirrored";
+    PSOMirrored = rl::CreateGraphicsPipelineState(PSODesc);
+
+    return PSO.IsValid() && PSOMirrored.IsValid();
 }
 
-rl::GraphicsPipelineState_t DefaultMaterialShader_c::GetPSO()
+rl::GraphicsPipelineState_t DefaultMaterialShader_c::GetPSO(bool Mirrored)
 {
-    return PSO;
+    return Mirrored ? PSOMirrored : PSO;
 }
 
 void DefaultMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
@@ -78,12 +83,16 @@ bool ErrorMaterialShader_c::Compile()
     PSODesc.DebugName = L"ErrorMaterialShader";
     PSO = rl::CreateGraphicsPipelineState(PSODesc);
 
-    return PSO.IsValid();
+    PSODesc.Cull = rl::CullMode::FRONT;
+    PSODesc.DebugName = L"ErrorMaterialShaderMirrored";
+    PSOMirrored = rl::CreateGraphicsPipelineState(PSODesc);
+
+    return PSO.IsValid() && PSOMirrored.IsValid();
 }
 
-rl::GraphicsPipelineState_t ErrorMaterialShader_c::GetPSO()
+rl::GraphicsPipelineState_t ErrorMaterialShader_c::GetPSO(bool Mirrored)
 {
-    return PSO;
+    return Mirrored ? PSOMirrored : PSO;
 }
 
 MaterialShaderInstance_c::~MaterialShaderInstance_c()
@@ -190,9 +199,9 @@ void MaterialShaderInstance_c::Update()
     }   
 }
 
-rl::GraphicsPipelineState_t MaterialShaderInstance_c::GetPSO()
+rl::GraphicsPipelineState_t MaterialShaderInstance_c::GetPSO(bool Mirrored)
 {
-    return Parent != nullptr ? Parent->GetPSO() : rl::GraphicsPipelineState_t::INVALID;
+    return Parent != nullptr ? Parent->GetPSO(Mirrored) : rl::GraphicsPipelineState_t::INVALID;
 }
 
 rl::ConstantBuffer_t MaterialShaderInstance_c::GetConstantBuffer()

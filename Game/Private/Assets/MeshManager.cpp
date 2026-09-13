@@ -9,6 +9,7 @@
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/JsonHelpers.h>
 #include <Shared/Logging/Logging.h>
+#include <Shared/ModelUtils/TangentSpace.h>
 #include <Render/Render.h>
 #include <SurfMath.h>
 
@@ -52,15 +53,13 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		return nullptr;
 	}
 
-	std::vector<std::vector<uint32_t>> SurfaceIndices;
-
-	NewMesh->Vertices.resize(Reader.Vertices.size());
-	for (uint32_t VertIt = 0; VertIt < Reader.Vertices.size(); VertIt++)
+	if (Reader.Vertices.empty() || Reader.Indices.empty())
 	{
-		NewMesh->Vertices[VertIt] = Reader.Vertices[VertIt].Position;
-
-		NewMesh->Bounds.Grow(NewMesh->Vertices[VertIt]);
+		LOGWARNING("[MeshManager::RequestMesh] Mesh has no geometry: %s", Path.ToString().c_str());
+		return nullptr;
 	}
+
+	std::vector<std::vector<uint32_t>> SurfaceIndices;
 
 	for (uint32_t AttrIt = 0; AttrIt < Reader.Attributes.size(); AttrIt++)
 	{
@@ -76,17 +75,55 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 2]);
 	}
 
+	std::vector<uint32_t> SourceIndices;
+	SourceIndices.reserve(Reader.Indices.size());
 	for (const std::vector<uint32_t>& Surface : SurfaceIndices)
 	{
-		NewMesh->Indices.insert(NewMesh->Indices.end(), Surface.begin(), Surface.end());
+		SourceIndices.insert(SourceIndices.end(), Surface.begin(), Surface.end());
 	}
 
-	NewMesh->PositionBuffer = rl::CreateStructuredBuffer(NewMesh->Vertices.data(), NewMesh->Vertices.size());
-	NewMesh->PositionBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->PositionBuffer, 0u, static_cast<uint32_t>(NewMesh->Vertices.size()), static_cast<uint32_t>(sizeof(float3)));
+	TangentSpaceInput_s TangentInput = {};
+	TangentInput.Positions = { &Reader.Vertices[0].Position, sizeof(WaveFrontReader_c::Vertex_s) };
+	TangentInput.Normals = { &Reader.Vertices[0].Normal, sizeof(WaveFrontReader_c::Vertex_s) };
+	TangentInput.Texcoords = { &Reader.Vertices[0].Texcoord, sizeof(WaveFrontReader_c::Vertex_s) };
+	TangentInput.VertexCount = static_cast<uint32_t>(Reader.Vertices.size());
+	TangentInput.Indices = SourceIndices.data();
+	TangentInput.IndexCount = static_cast<uint32_t>(SourceIndices.size());
+
+	TangentSpaceOutput_s TangentOutput;
+	if (!GenerateTangents(TangentInput, TangentOutput))
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to generate tangents for mesh: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	NewMesh->Vertices = std::move(TangentOutput.Positions);
+	NewMesh->Indices = std::move(TangentOutput.Indices);
+
+	for (const float3& Vertex : NewMesh->Vertices)
+	{
+		NewMesh->Bounds.Grow(Vertex);
+	}
+
+	const uint32_t VertexCount = static_cast<uint32_t>(NewMesh->Vertices.size());
+
+	NewMesh->PositionBuffer = rl::CreateStructuredBuffer(NewMesh->Vertices.data(), VertexCount);
+	NewMesh->NormalBuffer = rl::CreateStructuredBuffer(TangentOutput.Normals.data(), VertexCount);
+	NewMesh->TangentBuffer = rl::CreateStructuredBuffer(TangentOutput.Tangents.data(), VertexCount);
+	NewMesh->Texcoord0Buffer = rl::CreateStructuredBuffer(TangentOutput.Texcoords.data(), VertexCount);
+
+	NewMesh->PositionBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->PositionBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float3)));
+	NewMesh->NormalBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->NormalBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float3)));
+	NewMesh->TangentBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->TangentBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float4)));
+	NewMesh->Texcoord0BufferSRV = rl::CreateStructuredBufferSRV(NewMesh->Texcoord0Buffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float2)));
+
 	NewMesh->IndexBuffer = rl::CreateIndexBufferFromArray(NewMesh->Indices.data(), NewMesh->Indices.size());
 
 	MeshUniformData_s MeshUniformData = {};
 	MeshUniformData.PositionBufferIndex = rl::GetDescriptorIndex(NewMesh->PositionBufferSRV);
+	MeshUniformData.NormalBufferIndex = rl::GetDescriptorIndex(NewMesh->NormalBufferSRV);
+	MeshUniformData.TangentBufferIndex = rl::GetDescriptorIndex(NewMesh->TangentBufferSRV);
+	MeshUniformData.Texcoord0BufferIndex = rl::GetDescriptorIndex(NewMesh->Texcoord0BufferSRV);
 	NewMesh->MeshUniforms = rl::CreateConstantBuffer(&MeshUniformData);
 
 	std::vector<std::shared_ptr<MaterialShaderInstance_c>> Materials;

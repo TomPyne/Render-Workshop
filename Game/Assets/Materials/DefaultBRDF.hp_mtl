@@ -1,0 +1,12 @@
+{
+    "Version": 1,
+    "MaterialShaderClass": "DefaultBRDFMaterialShader",
+    "MaterialParams":
+    [
+        {
+            "Name": "Albedo",
+            "Type": 3,
+            "Value": "1.0, 1.0, 1.0"
+        }
+    ]
+}

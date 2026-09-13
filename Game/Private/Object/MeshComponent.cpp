@@ -24,7 +24,10 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
 	if (Visible && Mesh)
 	{
-		Mesh->Render(Collector, rl::CreateDynamicConstantBuffer(&GetWorldMatrix()));
+		ObjectUniforms_s Uniforms = {};
+		const bool Mirrored = MakeObjectUniforms(GetWorldMatrix(), Uniforms);
+
+		Mesh->Render(Collector, rl::CreateDynamicConstantBuffer(&Uniforms), Mirrored);
 	}
 }
 
