@@ -59,6 +59,14 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		return nullptr;
 	}
 
+	// Blender exports right handed OBJ, so mirror X into our left handed space. The winding is
+	// reversed below to match, otherwise the mirror would flip which faces get culled.
+	for (WaveFrontReader_c::Vertex_s& Vertex : Reader.Vertices)
+	{
+		Vertex.Position.x = -Vertex.Position.x;
+		Vertex.Normal.x = -Vertex.Normal.x;
+	}
+
 	std::vector<std::vector<uint32_t>> SurfaceIndices;
 
 	for (uint32_t AttrIt = 0; AttrIt < Reader.Attributes.size(); AttrIt++)
@@ -71,8 +79,8 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		}
 
 		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 0]);
-		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 1]);
 		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 2]);
+		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 1]);
 	}
 
 	std::vector<uint32_t> SourceIndices;
