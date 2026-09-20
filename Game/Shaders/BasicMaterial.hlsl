@@ -1,58 +1,33 @@
-#include "ShaderDefines.h"
-
-struct ViewUniforms_s
-{
-    float4x4 ViewProjectionMatrix;
-};
-
-struct DynamicUniforms_s
-{
-    float4x4 ModelMatrix;
-    float4x4 NormalMatrix;
-    float DeterminantSign;
-    float3 __Pad;
-};
-
-struct ModelUniforms_s
-{
-    uint PositionBufferIndex;
-    float3 __Pad;
-};
-
 struct MaterialUniforms_s
 {
     float3 Color;
     float __Pad;
 };
 
-ConstantBuffer<DynamicUniforms_s> c_Dynamic : register(b0);
-ConstantBuffer<ViewUniforms_s> c_View : register(b1);
-ConstantBuffer<ModelUniforms_s> c_Model : register(b2);
-ConstantBuffer<MaterialUniforms_s> c_Material : register(b3);
-
-StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space0);
+#include "MeshMaterial.h"
 
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float3 Normal : NORMAL;
 };
 
 #ifdef _VS
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    float3 Position = t_sbuf_f3[c_Model.PositionBufferIndex][VertexID];
-    float4 WorldPosition = mul(c_Dynamic.ModelMatrix, float4(Position, 1.0f));
-    Output.Position = mul(c_View.ViewProjectionMatrix, WorldPosition);
+    Output.Position = ModelToClip(LoadPosition(VertexID));
+    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
 }
 
 #endif // #ifdef _VS
 
 #ifdef _PS
 
-void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
+void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    Output = float4(c_Material.Color, 1.0f);
+    Output.AlbedoMetallic = float4(c_Material.Color, 0.0f);
+    Output.NormalRoughness = float4(Input.Normal, 1.0f);
 }
 
 #endif

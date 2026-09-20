@@ -7,7 +7,7 @@
 
 BRDFMaterialShader_c::BRDFMaterialShader_c()
 {
-	ShaderParameters["Albedo"] = SHADER_PARAM(float3, Albedo);
+    ASSIGN_SHADER_PARAM(float3, Albedo);
 }
 
 bool BRDFMaterialShader_c::Compile()
@@ -17,7 +17,7 @@ bool BRDFMaterialShader_c::Compile()
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());

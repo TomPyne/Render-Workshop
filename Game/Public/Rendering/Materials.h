@@ -2,18 +2,25 @@
 
 #include <Render/RenderTypes.h>
 
+#include <memory>
 #include <unordered_map>
 #include <SurfMath.h>
 
+struct Texture_s;
+
 #define SHADER_PARAM(Type, Name) { offsetof(Parameters_s, Name), sizeof(Type), ShaderParamType_e::_##Type }
+#define ASSIGN_SHADER_PARAM(Type, Name) ShaderParameters[#Name] = SHADER_PARAM(Type, Name)
+
+using TextureIndex = uint32_t;
 
 enum class ShaderParamType_e : uint8_t
 {
 	Unknown = 0,
-	_float,
-	_float2,
-	_float3,
-	_float4,
+	_float,				// 1
+	_float2,			// 2
+	_float3,			// 3
+	_float4,			// 4
+	_TextureIndex,		// 5
 	Count
 };
 
@@ -23,6 +30,7 @@ struct ShaderParam_s
 	ShaderParam_s(size_t InOffset, size_t InSize, ShaderParamType_e InType)
 		: Offset(static_cast<uint16_t>(InOffset))
 		, Size(static_cast<uint8_t>(InSize))
+		, Type(InType)
 	{}
 	uint16_t Offset = 0u;
 	uint8_t Size = 0u;
@@ -35,6 +43,7 @@ public:
 
 	virtual ~MaterialShader_c() = default;
 
+	virtual void Load() {}
 	virtual bool Compile() { return true; }
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	virtual rl::ConstantBuffer_t GetConstantBuffer();
@@ -48,8 +57,12 @@ public:
 
 protected:
 
+	TextureIndex GetTextureBindIndex(int TextureID) const;
+
 	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;
 	std::vector<uint8_t> DefaultParamData;
+
+	std::vector<std::shared_ptr<Texture_s>> BoundTextures;
 };
 
 class DefaultMaterialShader_c : public MaterialShader_c
@@ -108,6 +121,8 @@ protected:
 	std::shared_ptr<MaterialShader_c> Parent;
 	std::vector<uint8_t> ParamData;
 	rl::ConstantBufferPtr ConstantBuffer;
+
+	std::vector<std::shared_ptr<Texture_s>> BoundTextures;
 };
 
 class MaterialShaderInstanceDynamic_c : public MaterialShaderInstance_c

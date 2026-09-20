@@ -1,10 +1,12 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
+#include "Materials/ArchMaterial.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
 
+#include <Assets/MaterialManager.h>
 #include <Input/Input.h>
 #include <Object/DebugCameraObject.h>
 #include <Object/CameraComponent.h>
@@ -61,9 +63,14 @@ void SimpleGameApp_c::RegisterClasses()
 	if (!Space)
 		return;
 
+	// Objects
+	Space->RegisterObjectClass<SelectionCursorObject_c>();
+
+	// Components
 	Space->RegisterComponentClass<FighterControllerComponent_c>();
 
-	Space->RegisterObjectClass<SelectionCursorObject_c>();
+	// Materials
+	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
 }
 
 void SimpleGameApp_c::Load()

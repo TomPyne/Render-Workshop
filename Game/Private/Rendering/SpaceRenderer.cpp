@@ -7,6 +7,7 @@
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <RenderUtils/RenderPasses/Tonemapping.h>
+#include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
 #include <SurfMath.h>
@@ -14,6 +15,7 @@
 static struct SpaceRendererPrivate_s
 {
 	rl::RootSignaturePtr RootSignature;
+	rl::GraphicsPipelineStatePtr DeferredPSO;
 	TonemapRenderer_s TonemapRenderer;
 	bool Initialized = false;
 } G;
@@ -61,6 +63,27 @@ void SpaceRenderer_c::Init()
 
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewCBVRegister, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
+	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
+	rl::VertexShader_t ScreenPassVS = rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str());
+
+	// Deferred PSO
+	{
+		static const Path_s DeferredPSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Deferred.hlsl");
+		rl::PixelShader_t DeferredPS = rl::CreatePixelShader(DeferredPSPath.ToString().c_str());
+
+		rl::GraphicsPipelineStateDesc PsoDesc = {};
+		PsoDesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
+			.DepthDesc(false)
+			.TargetBlendDesc({ rl::RenderFormat::R11G11B10_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
+			.VertexShader(ScreenPassVS)
+			.PixelShader(DeferredPS)
+			.RootSignature(G.RootSignature);
+
+		PsoDesc.DebugName = L"DeferredPSO";
+
+		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
+	}
+
 	G.Initialized = true;
 }
 
@@ -96,18 +119,21 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
 
-	RenderGraphResourceHandle_t SceneColorTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorTexture");
+	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorMetallicTexture");
+	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalRoughnessTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
-	.AccessResource(SceneColorTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		Ctx.SetRootSignature(G.RootSignature);
 		rl::RenderTargetView_t SceneRTVs[] =
 		{
-			RG.GetRTV(SceneColorTexture),
+			RG.GetRTV(SceneColorMetallicTexture),
+			RG.GetRTV(SceneNormalRoughnessTexture),
 		};
 
 		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
@@ -132,9 +158,48 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		}
 	});
 
+	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"LitTexture");
+
+	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
+	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		struct DeferredConstants_s
+		{
+			uint32_t SceneColorMetallicTextureIndex;
+			uint32_t SceneNormalRoughnessTextureIndex;
+			float2 __Pad;
+		} Uniforms;
+
+		Uniforms.SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
+		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
+
+		rl::DynamicBuffer_t DeferredCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
+
+		Ctx.SetRootSignature(G.RootSignature);
+
+		rl::RenderTargetView_t RTV = RG.GetRTV(LitTexture);
+
+		Ctx.SetRenderTargets(&RTV, 1, {}); // TODO: this should be set by the graph
+
+		rl::Viewport vp{ Screen.Width, Screen.Height };
+		Ctx.SetViewports(&vp, 1);
+		Ctx.SetDefaultScissor(); // Could also be captured by the command context
+
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniformsBuffer);
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, DeferredCBuf);
+		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
+
+		Ctx.SetPipelineState(G.DeferredPSO);
+
+		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
+	});
+
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
-	G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, SceneColorTexture, BackBufferTexture);
+	G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
 
 	RenderGraph_s Graph = RGBuilder.Build();
 
@@ -146,4 +211,19 @@ rl::RootSignature_t SpaceRenderer_c::GetRootSignature()
 	ASSERTMSG(G.Initialized, "SpaceRenderer has not been initialized");
 
 	return G.RootSignature;
+}
+
+const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTargetDesc()
+{
+	static rl::GraphicsPipelineTargetDesc MaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
+		{ 
+			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
+			rl::RenderFormat::R16G16B16A16_FLOAT, // Normal + Roughness
+		}, 
+		{ 
+			rl::BlendMode::None(),
+			rl::BlendMode::None(),
+		}, 
+		rl::RenderFormat::D32_FLOAT);
+	return MaterialPipelineTargetDesc;
 }

@@ -101,8 +101,11 @@ std::shared_ptr<MaterialShader_c> MaterialShaderFactory_s::CreateShaderMaterial(
 	}
 
 	std::shared_ptr<MaterialShader_c> NewMaterialShader = It->second();
-	if (NewMaterialShader && NewMaterialShader->Compile())
+	if (NewMaterialShader)
 	{
+		NewMaterialShader->Load();
+		NewMaterialShader->Compile();
+
 		return NewMaterialShader;
 	}
 

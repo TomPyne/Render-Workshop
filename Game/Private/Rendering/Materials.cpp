@@ -1,6 +1,7 @@
 #include "Rendering/Materials.h"
 
 #include "Rendering/SpaceRenderer.h"
+#include "Rendering/Texture.h"
 
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>
@@ -28,6 +29,19 @@ const ShaderParam_s* MaterialShader_c::FindParam(std::string_view Param) const
     return FoundIt != ShaderParameters.end() ? &FoundIt->second : nullptr;
 }
 
+TextureIndex MaterialShader_c::GetTextureBindIndex(int TextureID) const
+{
+    if (TextureID >= 0 && BoundTextures.size() > TextureID)
+    {
+        if (BoundTextures[TextureID])
+        {
+            return rl::GetDescriptorIndex(BoundTextures[TextureID]->SRV);
+        }
+    }
+    ENSUREMSG(false, "[MaterialShader_c::GetTextureBindIndex] Failed to find a valid texture binding for material");
+    return 0u;
+}
+
 DefaultMaterialShader_c::DefaultMaterialShader_c() : MaterialShader_c()
 {
     ShaderParameters["Color"] = SHADER_PARAM(float3, Color);
@@ -40,7 +54,7 @@ bool DefaultMaterialShader_c::Compile()
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
@@ -75,7 +89,7 @@ bool ErrorMaterialShader_c::Compile()
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::D32_FLOAT)
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
@@ -159,31 +173,57 @@ void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
                 continue;
             }
 
-            int32_t Components = 0;
+            bool IsFloatType = false;
             switch (ParamType)
             {
             case ShaderParamType_e::_float:
-                Components = 1;
-                break;
             case ShaderParamType_e::_float2:
-				Components = 2;
-				break;
             case ShaderParamType_e::_float3:
-				Components = 3;
-                break;
             case ShaderParamType_e::_float4:
-				Components = 4;
-				break;
+                IsFloatType = true;
+                break;
+            default:
+                IsFloatType = false;
             }
 
-            if (ENSUREMSG(Components > 0, "[MaterialShaderInstance_c::Deserialize] Failed to parse components from type for %s", ParamName.c_str()))
+            if (IsFloatType)
             {
-				float FloatComponents[4] = {};
-                if (ENSUREMSG(JsonHelpers::ParseFloatComponents(ParamNode, "Value", FloatComponents, Components), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
+                int32_t Components = 0;
+                switch (ParamType)
                 {
-                    SetDefaultValue(FoundParam, FloatComponents, Components * sizeof(float));
+                case ShaderParamType_e::_float:
+                    Components = 1;
+                    break;
+                case ShaderParamType_e::_float2:
+                    Components = 2;
+                    break;
+                case ShaderParamType_e::_float3:
+                    Components = 3;
+                    break;
+                case ShaderParamType_e::_float4:
+                    Components = 4;
+                    break;
                 }
+
+                if (ENSUREMSG(Components > 0, "[MaterialShaderInstance_c::Deserialize] Failed to parse components from type for %s", ParamName.c_str()))
+                {
+                    float FloatComponents[4] = {};
+                    if (ENSUREMSG(JsonHelpers::ParseFloatComponents(ParamNode, "Value", FloatComponents, Components), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
+                    {
+                        SetDefaultValue(FoundParam, FloatComponents, Components * sizeof(float));
+                    }
+                }
+
+                continue;
             }
+
+            bool IsTextureType = ParamType == ShaderParamType_e::_TextureIndex;
+            if (IsTextureType)
+            {
+
+                continue;
+            }
+
         }
     }
 }

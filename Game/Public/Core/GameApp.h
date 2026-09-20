@@ -20,7 +20,6 @@ public:
 
 	virtual std::shared_ptr<class SpaceRenderer_c> CreateSpaceRenderer() const;
 	virtual void RegisterClasses();
-	virtual void RegisterMaterials();
 
 	virtual void Load(); // Called after init and before first frame
 

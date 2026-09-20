@@ -58,6 +58,7 @@ public:
 	void RenderSpace(const SpaceRendererScreenInfo_s& Screen, class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
 
 	static rl::RootSignature_t GetRootSignature();
+	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
 protected:
 
 	RenderGraphResourcePool_s RenderGraphResourcePool;

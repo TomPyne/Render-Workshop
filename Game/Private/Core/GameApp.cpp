@@ -74,18 +74,18 @@ void GameApp_c::RegisterClasses()
 	if (!Space)
 		return;
 
+	// Objects
 	Space->RegisterObjectClass<MeshObject_c>();
 	Space->RegisterObjectClass<RuntimeMeshObject_c>();
 	Space->RegisterObjectClass<SpatialObject_c>();
 	Space->RegisterObjectClass<DebugCameraObject_c>();
 
+	// Components
 	Space->RegisterComponentClass<CameraComponent_c>();
 	Space->RegisterComponentClass<FlyControllerComponent_c>();
 	Space->RegisterComponentClass<MeshComponent_c>();
-}
 
-void GameApp_c::RegisterMaterials()
-{
+	// Materials
 	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<ErrorMaterialShader_c>(L"ErrorMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<BRDFMaterialShader_c>(L"DefaultBRDFMaterialShader");
@@ -95,7 +95,6 @@ void GameApp_c::Load()
 {
 	Space = std::make_shared<Space_c>();
 	RegisterClasses();
-	RegisterMaterials();
 
 	SpaceRenderer = CreateSpaceRenderer();
 	SpaceRenderer->Init();

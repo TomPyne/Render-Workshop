@@ -65,6 +65,7 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	{
 		Vertex.Position.x = -Vertex.Position.x;
 		Vertex.Normal.x = -Vertex.Normal.x;
+		Vertex.Texcoord.y = 1.0f - Vertex.Texcoord.y;
 	}
 
 	std::vector<std::vector<uint32_t>> SurfaceIndices;

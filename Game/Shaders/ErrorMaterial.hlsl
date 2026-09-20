@@ -1,34 +1,15 @@
-#include "ShaderDefines.h"
-
-struct ViewUniforms_s
+struct MaterialUniforms_s
 {
-    float4x4 ViewProjectionMatrix;
+    float4 Dummy;
 };
 
-struct DynamicUniforms_s
-{
-    float4x4 ModelMatrix;
-    float4x4 NormalMatrix;
-    float DeterminantSign;
-    float3 __Pad;
-};
-
-struct ModelUniforms_s
-{
-    uint PositionBufferIndex;
-    float3 __Pad;
-};
-
-ConstantBuffer<DynamicUniforms_s> c_Dynamic : register(b0);
-ConstantBuffer<ViewUniforms_s> c_View : register(b1);
-ConstantBuffer<ModelUniforms_s> c_Model : register(b2);
-
-StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space0);
+#include "MeshMaterial.h"
 
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
     float3 WorldPosition : WORLDPOS;
+    float3 Normal : NORMAL;
 };
 
 #ifdef _VS
@@ -37,8 +18,10 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
     float3 Position = t_sbuf_f3[c_Model.PositionBufferIndex][VertexID];
     float4 WorldPosition = mul(c_Dynamic.ModelMatrix, float4(Position, 1.0f));
-    Output.Position = mul(c_View.ViewProjectionMatrix, WorldPosition);
-    Output.WorldPosition = WorldPosition.xyz;
+    
+    Output.WorldPosition = ModelToWorld(LoadPosition(VertexID));
+    Output.Position = WorldToClip(Output.WorldPosition);
+    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
 }
 
 #endif // #ifdef _VS
@@ -61,9 +44,10 @@ float3 Checkerboard3D(float3 Pos, float3 ColorA, float3 ColorB, float Scale) {
     return lerp(ColorA, ColorB, Check);
 }
 
-void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
+void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    Output = float4(Checkerboard3D(Input.WorldPosition, float3(1.0f, 0.04f, 0.68f), float3(0.0f, 0.0f, 0.0f), 10.0f), 1.0f);
+    Output.AlbedoMetallic = float4(Checkerboard3D(Input.WorldPosition, float3(1.0f, 0.04f, 0.68f), float3(0.0f, 0.0f, 0.0f), 10.0f), 0.0f);
+    Output.NormalRoughness = float4(Input.Normal, 1.0f);
 }
 
 #endif

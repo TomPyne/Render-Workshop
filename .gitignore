@@ -18,8 +18,11 @@ RaytracingDemo/Assets/*
 RaytracingDemo/Cooked/*
 
 #SunTemple Test
+SimpleGame/Assets/Materials/SunTemple/*
 SimpleGame/Assets/Meshes/SunTemple/*
+SimpleGame/Assets/Textures/SunTemple/*
 SimpleGame/Raw/Meshes/SunTemple/*
+SimpleGame/Raw/Textures/SunTemple/*
 
 #docs
 Docs

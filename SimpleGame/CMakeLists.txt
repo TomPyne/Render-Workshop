@@ -7,6 +7,8 @@ function(create_proj projname rapi)
 		"Source/SimpleGameApp.h"
 		"Source/Components/FighterControllerComponent.cpp"
 		"Source/Components/FighterControllerComponent.h"
+		"Source/Materials/ArchMaterial.cpp"
+		"Source/Materials/ArchMaterial.h"
 		"Source/Modes/BuildingMode.cpp"
 		"Source/Modes/BuildingMode.h"
 		"Source/Modes/ColonyMode.cpp"
