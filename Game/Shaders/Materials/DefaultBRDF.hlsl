@@ -16,8 +16,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    Output.Position = ModelToClip(LoadPosition(VertexID));
-    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
+    VS_PosNormal(VertexID, Output.Position, Output.Normal);
 }
 
 #endif // #ifdef _VS
@@ -26,8 +25,8 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    Output.AlbedoMetallic = float4(c_Material.Albedo, 0.0f);
-    Output.NormalRoughness = float4(Input.Normal, 1.0f);
+    MaterialOutput_Default(Input.Normal, Output);
+    MaterialOutput_Albedo(c_Material.Albedo, Output);
 }
 
 #endif

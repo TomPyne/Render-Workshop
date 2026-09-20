@@ -2,6 +2,7 @@
 
 #include "Components/FighterControllerComponent.h"
 #include "Materials/ArchMaterial.h"
+#include "Materials/BackgroundMatteMaterial.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
@@ -71,6 +72,7 @@ void SimpleGameApp_c::RegisterClasses()
 
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<BackgroundMatteMaterialShader_c>(L"BackgroundMatteMaterialShader");
 }
 
 void SimpleGameApp_c::Load()

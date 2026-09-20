@@ -29,6 +29,21 @@ const ShaderParam_s* MaterialShader_c::FindParam(std::string_view Param) const
     return FoundIt != ShaderParameters.end() ? &FoundIt->second : nullptr;
 }
 
+rl::GraphicsPipelineStateDesc MaterialShader_c::MakeDefaultPSODesc(const Path_s& Path, const rl::ShaderMacros& Macros)
+{
+    const std::string ShaderPath = Path.ToString();
+
+    rl::GraphicsPipelineStateDesc PSODesc = {};
+    PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
+        .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
+        .VertexShader(rl::CreateVertexShader(ShaderPath.c_str(), Macros))
+        .PixelShader(rl::CreatePixelShader(ShaderPath.c_str(), Macros))
+        .RootSignature(SpaceRenderer_c::GetRootSignature());
+
+    return PSODesc;
+}
+
 TextureIndex MaterialShader_c::GetTextureBindIndex(int TextureID) const
 {
     if (TextureID >= 0 && BoundTextures.size() > TextureID)

@@ -9,6 +9,8 @@ function(create_proj projname rapi)
 		"Source/Components/FighterControllerComponent.h"
 		"Source/Materials/ArchMaterial.cpp"
 		"Source/Materials/ArchMaterial.h"
+		"Source/Materials/BackGroundMatteMaterial.cpp"
+		"Source/Materials/BackGroundMatteMaterial.h"
 		"Source/Modes/BuildingMode.cpp"
 		"Source/Modes/BuildingMode.h"
 		"Source/Modes/ColonyMode.cpp"

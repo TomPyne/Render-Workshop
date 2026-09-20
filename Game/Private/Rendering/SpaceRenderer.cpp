@@ -121,11 +121,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorMetallicTexture");
 	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalRoughnessTexture");
+	RenderGraphResourceHandle_t SceneEmissiveSpecularTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneEmissiveSpecularTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -134,6 +136,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		{
 			RG.GetRTV(SceneColorMetallicTexture),
 			RG.GetRTV(SceneNormalRoughnessTexture),
+			RG.GetRTV(SceneEmissiveSpecularTexture),
 		};
 
 		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
@@ -163,6 +166,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -170,11 +174,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		{
 			uint32_t SceneColorMetallicTextureIndex;
 			uint32_t SceneNormalRoughnessTextureIndex;
-			float2 __Pad;
+			uint32_t SceneEmissiveSpecularTextureIndex;
+			float __Pad;
 		} Uniforms;
 
 		Uniforms.SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
 		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
+		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
 
 		rl::DynamicBuffer_t DeferredCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
 
@@ -219,8 +225,10 @@ const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTarget
 		{ 
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Normal + Roughness
+			rl::RenderFormat::R16G16B16A16_FLOAT, // Emissive + Specular
 		}, 
 		{ 
+			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 		}, 

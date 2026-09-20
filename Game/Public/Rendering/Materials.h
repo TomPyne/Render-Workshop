@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <SurfMath.h>
 
+struct Path_s;
 struct Texture_s;
 
 #define SHADER_PARAM(Type, Name) { offsetof(Parameters_s, Name), sizeof(Type), ShaderParamType_e::_##Type }
@@ -56,6 +57,8 @@ public:
 	const ShaderParam_s* FindParam(std::string_view Param) const;
 
 protected:
+
+	rl::GraphicsPipelineStateDesc MakeDefaultPSODesc(const Path_s& ShaderPath, const rl::ShaderMacros& Macros);
 
 	TextureIndex GetTextureBindIndex(int TextureID) const;
 
