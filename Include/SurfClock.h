@@ -25,6 +25,7 @@ public:
 	}
 
 	float GetDeltaSeconds() const { return static_cast<float>(DeltaTime.count() * 1e-9); }
+	float GetTotalSeconds() const { return static_cast<float>(TotalTime.count() * 1e-9); }
 
 private:
 	TimePoint LastFrameTime;

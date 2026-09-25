@@ -11,6 +11,8 @@ function(create_proj projname rapi)
 		"Source/Materials/ArchMaterial.h"
 		"Source/Materials/BackGroundMatteMaterial.cpp"
 		"Source/Materials/BackGroundMatteMaterial.h"
+		"Source/Materials/SunTempleMaterials.h"
+		"Source/Materials/SunTempleMaterials.cpp"
 		"Source/Modes/BuildingMode.cpp"
 		"Source/Modes/BuildingMode.h"
 		"Source/Modes/ColonyMode.cpp"

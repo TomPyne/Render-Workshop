@@ -1,23 +1,17 @@
 struct MaterialUniforms_s
-{    
-    float3 ColorMarble1;
-    float AOStrength;
+{   
+    float3 Color;
+    float Distance;
 
-    float3 ColorMarble2;
-    float AOStrength2;
+    float Scale1;
+    float Scale2;
+    float Speed;
+    float Speed2;
 
+    uint UseDistanceFade;
     float NormalIntensity;
-    float RoughnessMarble1;
-    float RoughnessMarble2;
-    float ScaleMarble1;
-
-    float ScaleMarble2;
-    float3 _Pad0;
-
-    uint MaskTextureIndex;
-    uint AlbedoTextureIndex;
-    uint NormalTextureIndex;
-    uint DetailNormalIndex;
+    uint NormalTexture;
+    float __Pad;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"
@@ -29,23 +23,19 @@ struct Interpolants_s
     float4 Tangent : TANGENT;
     float2 UV0 : TEXCOORD0;
     float2 UV1 : TEXCOORD1;
-    float2 UV2 : TEXCOORD2;
 };
+
+#include "SunTempleShared.h"
 
 #ifdef _VS
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    Output.Position = ModelToClip(LoadPosition(VertexID));
-    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
-    Output.Tangent = TangentModelToWorld(LoadTangent(VertexID));
+    VS_PosNormalTangent(VertexID, Output.Position, Output.Normal, Output.Tangent);
+    float2 UV0 = LoadUV0(VertexID);
 
-    Output.UV0 = LoadUV0(VertexID);
-
-    float2 SecondUV = USE_UV3 ? LoadUV2(VertexID) : Output.UV0;
-
-    Output.UV1 = SecondUV / c_Material.ScaleMarble1; // OPT : Pass as reciprocal
-    Output.UV2 = SecondUV / c_Material.ScaleMarble2;
+    Output.UV0 = Panner2(UV0 * c_Material.Scale1, c_View.Time * c_Material.Speed, float2(0.3131f, 0.123f));
+    Output.UV1 = Panner2(UV0 * c_Material.Scale2, c_View.Time * c_Material.Speed2, float2(0.114f, 0.2342f));
 }
 
 #endif // #ifdef _VS
@@ -56,40 +46,28 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
 
-float3 BlendDetailNormals(float3 Base, float3 Detail)
-{
-    Base = float3(Base.x, Base.y, Base.z + 1.0f);
-    Detail = float3(-Detail.x, -Detail.y, Detail.z);
-    return (Base * dot(Base, Detail)) - (Base.z * Detail); 
-}
-
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    float3 Mask = t_tex2d_f4[c_Material.MaskTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
+    float3 Normal1 = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 Normal2 = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
+    float3 TangentNormals = BlendDetailNormals(Normal1, Normal2);
 
-    float3 Color = lerp(c_Material.ColorMarble1, c_Material.ColorMarble2, Mask.g);
-    float2 CustomUV = lerp(Input.UV1, Input.UV2, Mask.g);
-    float3 Albedo = t_tex2d_f4[c_Material.AlbedoTextureIndex].Sample(SharedWrappedSampler, CustomUV).rgb;
+    TangenNormals *= float3(c_Material.NormalIntensity.xx, 1.0f);
 
-    float RoughnessAlpha = Albedo.r * Mask.r;
-    float Roughness = lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, RoughnessAlpha);
-    Roughness = saturate(Roughness);
+    float3 Albedo = c_Material.Color;
 
-    float AO = saturate((1.0f - Mask.g) + c_Material.AOStrength2);
-    AO = saturate(AO + c_Material.AOStrength);
+    [branch]
+    if(c_Material.UseDistanceFade)
+    {
+        float Fade = GetPixelDistance(Input.Position) / c_Material.Distance;
+        Fade = 1.0f - saturate(Fade);
+        Albedo *= Fade;
+    }
 
-    Albedo = Albedo * Color * AO;
-
-    float Metallic = 0.0f;
-
-    float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalIndex].Sample(SharedWrappedSampler, CustomUV).rgb;
-    DetailNormal = DetailNormal * float3(c_Material.NormalIntensity, c_Material.NormalIntensity, 1.0f);
-
-    Normal = BlendDetailNormals(Normal, DetailNormal);
-
-    Output.AlbedoMetallic = float4(Albedo, Metallic);
-    Output.NormalRoughness = float4(Normal, Roughness);
+    MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
+    MaterialOutput_Metallic(1.0f, Output);
+    MaterialOutput_Roughness(0.01f, Output);
+    MaterialOutput_Albedo(Albedo, Output);   
 }
 
 #endif

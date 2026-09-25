@@ -3,6 +3,7 @@
 #include "Components/FighterControllerComponent.h"
 #include "Materials/ArchMaterial.h"
 #include "Materials/BackgroundMatteMaterial.h"
+#include "Materials/SunTempleMaterials.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
@@ -73,6 +74,22 @@ void SimpleGameApp_c::RegisterClasses()
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<BackgroundMatteMaterialShader_c>(L"BackgroundMatteMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<BottomTrimMaterialShader_c>(L"BottomTrimMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<TreeBranchesMaterialShader_c>(L"TreeBranchesMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<TreeTrunkMaterialShader_c>(L"TreeTrunkMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<TrimMaterialShader_c>(L"TrimMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<StoneBrickWallMaterialShader_c>(L"StoneBrickWallMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<SoulRocksMaterialShader_c>(L"SoulRocksMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<DomeMaterialShader_c>(L"DomeMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<FirePitMaterialShader_c>(L"FirePitMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<FloorMaterialShader_c>(L"FloorMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<WaterMaterialShader_c>(L"WaterMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<PillarMaterialShader_c>(L"PillarMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<RailingMaterialShader_c>(L"RailingMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<StatueMaterialShader_c>(L"StatueMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<ShieldMaterialShader_c>(L"ShieldMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<WaveFoamMaterialShader_c>(L"WaveFoamMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<SoulTreeMaterialShader_c>(L"SoulTreeMaterialShader");
 }
 
 void SimpleGameApp_c::Load()

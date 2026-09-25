@@ -20,12 +20,6 @@ public:
     virtual ~BackgroundMatteMaterialShader_c() = default;
 
     virtual void Load() override;
-    virtual bool Compile() override;
-    virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
     virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
-
-private:
-    rl::GraphicsPipelineStatePtr PSO;
-    rl::GraphicsPipelineStatePtr PSOMirrored;
 };

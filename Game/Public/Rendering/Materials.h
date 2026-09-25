@@ -13,6 +13,7 @@ struct Texture_s;
 #define ASSIGN_SHADER_PARAM(Type, Name) ShaderParameters[#Name] = SHADER_PARAM(Type, Name)
 
 using TextureIndex = uint32_t;
+using DynamicBool = uint32_t;
 
 enum class ShaderParamType_e : uint8_t
 {
@@ -22,6 +23,7 @@ enum class ShaderParamType_e : uint8_t
 	_float3,			// 3
 	_float4,			// 4
 	_TextureIndex,		// 5
+	_DynamicBool,		// 6
 	Count
 };
 
@@ -45,7 +47,7 @@ public:
 	virtual ~MaterialShader_c() = default;
 
 	virtual void Load() {}
-	virtual bool Compile() { return true; }
+	virtual bool Compile();
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	virtual rl::ConstantBuffer_t GetConstantBuffer();
 
@@ -60,12 +62,19 @@ protected:
 
 	rl::GraphicsPipelineStateDesc MakeDefaultPSODesc(const Path_s& ShaderPath, const rl::ShaderMacros& Macros);
 
+	void AddBindTexture(int TextureId, const std::shared_ptr<Texture_s>& Texture);
 	TextureIndex GetTextureBindIndex(int TextureID) const;
 
 	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;
 	std::vector<uint8_t> DefaultParamData;
 
 	std::vector<std::shared_ptr<Texture_s>> BoundTextures;
+
+	rl::GraphicsPipelineStatePtr PSO;
+	rl::GraphicsPipelineStatePtr PSOMirrored;
+
+	std::wstring ShaderDebugName;
+	std::wstring ShaderFilePath;
 };
 
 class DefaultMaterialShader_c : public MaterialShader_c

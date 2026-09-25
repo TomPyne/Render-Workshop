@@ -1,23 +1,30 @@
 struct MaterialUniforms_s
-{    
+{   
     float3 ColorMarble1;
-    float AOStrength;
+    uint UseColoredMarble;
 
     float3 ColorMarble2;
-    float AOStrength2;
+    uint UseMetalTop;
 
+    float3 ColorMarble2Color1;
+    float ScaleBricks1;
+
+    float3 ColorMarble2Color2;
+    float AOStrength;   
+    
     float NormalIntensity;
+    float RoughnessColoredMarble1;
+    float RoughnessColoredMarble2;
     float RoughnessMarble1;
+
     float RoughnessMarble2;
-    float ScaleMarble1;
-
     float ScaleMarble2;
-    float3 _Pad0;
+    uint AlbedoTexture;
+    uint MaskTexture;
 
-    uint MaskTextureIndex;
-    uint AlbedoTextureIndex;
-    uint NormalTextureIndex;
-    uint DetailNormalIndex;
+    uint NormalTexture;
+    uint DetailNormalTexture;
+    float2 __Pad;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"
@@ -32,20 +39,16 @@ struct Interpolants_s
     float2 UV2 : TEXCOORD2;
 };
 
+#include "SunTempleShared.h"
+
 #ifdef _VS
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    Output.Position = ModelToClip(LoadPosition(VertexID));
-    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
-    Output.Tangent = TangentModelToWorld(LoadTangent(VertexID));
+    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
 
-    Output.UV0 = LoadUV0(VertexID);
-
-    float2 SecondUV = USE_UV3 ? LoadUV2(VertexID) : Output.UV0;
-
-    Output.UV1 = SecondUV / c_Material.ScaleMarble1; // OPT : Pass as reciprocal
-    Output.UV2 = SecondUV / c_Material.ScaleMarble2;
+    Output.UV1 = Output.UV0 / c_Material.ScaleBricks1;
+    Output.UV2 = Output.UV0 / c_Material.ScaleBricks2;
 }
 
 #endif // #ifdef _VS
@@ -56,40 +59,47 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 
 Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
 
-float3 BlendDetailNormals(float3 Base, float3 Detail)
-{
-    Base = float3(Base.x, Base.y, Base.z + 1.0f);
-    Detail = float3(-Detail.x, -Detail.y, Detail.z);
-    return (Base * dot(Base, Detail)) - (Base.z * Detail); 
-}
-
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    float3 Mask = t_tex2d_f4[c_Material.MaskTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
+    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV2).xyz * 2.0f - 1.0f;
+    
+    float3 TangentNormals = SafeNormalize(Normal + (DetailNormal * float3(c_Material.NormalIntensity.xx, 0.0f)));
 
-    float3 Color = lerp(c_Material.ColorMarble1, c_Material.ColorMarble2, Mask.g);
-    float2 CustomUV = lerp(Input.UV1, Input.UV2, Mask.g);
-    float3 Albedo = t_tex2d_f4[c_Material.AlbedoTextureIndex].Sample(SharedWrappedSampler, CustomUV).rgb;
+    float4 Mask = t_tex2d_f4[c_Material.MaskTexture].Sample(SharedWrappedSampler, Input.UV0);
 
-    float RoughnessAlpha = Albedo.r * Mask.r;
-    float Roughness = lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, RoughnessAlpha);
-    Roughness = saturate(Roughness);
+    float3 AlbedoSample = t_tex2d_f4[c_Material.AlbedoTexture].Sample(SharedWrappedSampler, Input.UV2).rgb;
 
-    float AO = saturate((1.0f - Mask.g) + c_Material.AOStrength2);
-    AO = saturate(AO + c_Material.AOStrength);
+    float AO = saturate(c_Material.AOStrength + Mask.r);
+    float MarbleAlpha = lerp(-1.0f, 2.0f, AlbedoSample.r);    
 
-    Albedo = Albedo * Color * AO;
+    float3 ColorMarble2 = c_Material.ColorMarble2;
+
+    [branch]
+    if(c_Material.UseColoredMarble)
+    {
+        ColorMarble2 = lerp(c_Material.ColorMarble2Color1, c_Material.ColorMarble2Color2, MarbleAlpha);
+    }
+
+    float3 ColorMarble = lerp(c_Material.ColorMarble1, ColorMarble2, Mask.g);
+    float3 Albedo = AlbedoSample * ColorMarble;
 
     float Metallic = 0.0f;
+    float Roughness = lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, AlbedoSample.r * Mask.r);
 
-    float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalIndex].Sample(SharedWrappedSampler, CustomUV).rgb;
-    DetailNormal = DetailNormal * float3(c_Material.NormalIntensity, c_Material.NormalIntensity, 1.0f);
+    [branch]
+    if(c_Material.UseMetalTop)
+    {
+        Metallic = lerp(1.0f, 0.0f, Mask.g);
 
-    Normal = BlendDetailNormals(Normal, DetailNormal);
+        float Roughness2 = lerp(c_Material.RoughnessColoredMarble1, c_Material.RoughnessColoredMarble2, MarbleAlpha);
+        Roughness = lerp(Roughness, Roughness2, Mask.g);
+    }
 
-    Output.AlbedoMetallic = float4(Albedo, Metallic);
-    Output.NormalRoughness = float4(Normal, Roughness);
+    MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
+    MaterialOutput_Metallic(Metallic, Output);
+    MaterialOutput_Roughness(Roughness + Mask.a, Output);
+    MaterialOutput_Albedo(Albedo * AO, Output);   
 }
 
 #endif

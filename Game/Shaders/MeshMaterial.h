@@ -86,12 +86,38 @@ void VS_PosNormalUV0(in uint VertexID, out float4 Position, out float3 Normal, o
     UV0 = LoadUV0(VertexID);
 }
 
+void VS_PosNormalTangent(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent)
+{
+    Position = ModelToClip(LoadPosition(VertexID));
+    Normal = NormalModelToWorld(LoadNormal(VertexID));
+    Tangent = TangentModelToWorld(LoadTangent(VertexID));
+}
+
 void VS_PosNormalTangentUV0(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0)
 {
     Position = ModelToClip(LoadPosition(VertexID));
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     Tangent = TangentModelToWorld(LoadTangent(VertexID));
     UV0 = LoadUV0(VertexID);
+}
+
+void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1)
+{
+    Position = ModelToClip(LoadPosition(VertexID));
+    Normal = NormalModelToWorld(LoadNormal(VertexID));
+    Tangent = TangentModelToWorld(LoadTangent(VertexID));
+    UV0 = LoadUV0(VertexID);
+    UV1 = LoadUV1(VertexID);
+}
+
+void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1, out float2 UV2)
+{
+    Position = ModelToClip(LoadPosition(VertexID));
+    Normal = NormalModelToWorld(LoadNormal(VertexID));
+    Tangent = TangentModelToWorld(LoadTangent(VertexID));
+    UV0 = LoadUV0(VertexID);
+    UV1 = LoadUV1(VertexID);
+    UV2 = LoadUV2(VertexID);
 }
 
 #endif // #ifdef _VS
@@ -144,5 +170,10 @@ void MaterialOutput_Specular(float Specular, out PSOutput_s Output)
 void MaterialOutput_Emissive(float3 Emissive, out PSOutput_s Output)
 {
     Output.EmissiveSpecular.rgb = Emissive;
+}
+
+void MaterialOutput_AmbientOcclusion(float AO, out PSOutput_s Output)
+{
+    // TODO
 }
 #endif // #ifdef _PS

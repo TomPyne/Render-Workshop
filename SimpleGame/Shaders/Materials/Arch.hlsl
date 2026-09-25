@@ -74,8 +74,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 
     Albedo = Albedo * Color * AO;
 
-    float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalIndex].Sample(SharedWrappedSampler, CustomUV).rgb;
+    float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
+    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalIndex].Sample(SharedWrappedSampler, CustomUV).rgb * 2.0f - 1.0f;
     DetailNormal = DetailNormal * float3(c_Material.NormalIntensity, c_Material.NormalIntensity, 1.0f);
 
     Normal = BlendDetailNormals(Normal, DetailNormal);

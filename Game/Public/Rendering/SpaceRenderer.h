@@ -2,6 +2,7 @@
 
 #include <Render/RenderTypes.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
+#include <SurfClock.h>
 
 #include <unordered_map>
 #include <vector>
@@ -62,4 +63,6 @@ public:
 protected:
 
 	RenderGraphResourcePool_s RenderGraphResourcePool;
+
+	SurfClock Clock;
 };

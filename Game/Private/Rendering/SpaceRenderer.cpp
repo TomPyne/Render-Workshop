@@ -36,6 +36,12 @@ namespace SpaceRendererRootSigSlots
 struct SpaceViewUniforms_s
 {
 	matrix ViewProjection;
+
+	float3 CamPos;
+	float Time;
+
+	float2 InvViewportSize;
+	float2 Pad0;
 };
 
 void SpaceRenderer_c::Init()
@@ -84,6 +90,8 @@ void SpaceRenderer_c::Init()
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
 	}
 
+	Clock = {};
+
 	G.Initialized = true;
 }
 
@@ -112,8 +120,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		}
 	}
 
+	Clock.Tick();
+
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewMatrix * ProjectionMatrix;
+	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
+	ViewUniforms.Time = Clock.GetTotalSeconds();
+	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
 
 	rl::DynamicBuffer_t ViewUniformsBuffer = rl::CreateDynamicConstantBuffer(&ViewUniforms);
 

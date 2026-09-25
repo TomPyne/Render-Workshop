@@ -10,6 +10,7 @@
 #include <Shared/FileUtils/JsonHelpers.h>
 #include <Shared/Logging/Logging.h>
 #include <Shared/ModelUtils/TangentSpace.h>
+#include <Shared/StringUtils/StringUtils.h>
 #include <Render/Render.h>
 #include <SurfMath.h>
 
@@ -84,6 +85,26 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 1]);
 	}
 
+	// The obj reader reserves slot 0 for a synthetic "default" material that exports never
+	// reference, so drop any slot that ended up with no faces and keep the usemtl name of the
+	// slots that survive, which is what MaterialSlot binds against below.
+	std::vector<std::wstring> SurfaceNames;
+	{
+		std::vector<std::vector<uint32_t>> UsedSurfaceIndices;
+		for (uint32_t SlotIt = 0; SlotIt < SurfaceIndices.size(); SlotIt++)
+		{
+			if (SurfaceIndices[SlotIt].empty())
+			{
+				continue;
+			}
+
+			UsedSurfaceIndices.push_back(std::move(SurfaceIndices[SlotIt]));
+			SurfaceNames.push_back(SlotIt < Reader.Materials.size() ? Reader.Materials[SlotIt].Name : std::wstring{});
+		}
+
+		SurfaceIndices = std::move(UsedSurfaceIndices);
+	}
+
 	std::vector<uint32_t> SourceIndices;
 	SourceIndices.reserve(Reader.Indices.size());
 	for (const std::vector<uint32_t>& Surface : SurfaceIndices)
@@ -136,23 +157,57 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	NewMesh->MeshUniforms = rl::CreateConstantBuffer(&MeshUniformData);
 
 	std::vector<std::shared_ptr<MaterialShaderInstance_c>> Materials;
-	Materials.reserve(SurfaceIndices.size());
+	Materials.resize(SurfaceIndices.size());
 	auto MaterialsIt = Data.Json.find("Materials");
 	if (MaterialsIt != Data.Json.end())
 	{
 		if (MaterialsIt->is_array())
 		{
+			uint32_t EntryIt = 0;
 			for (const Json_t& MaterialNode : *MaterialsIt)
 			{
+				const uint32_t EntryIndex = EntryIt++;
+
 				Path_s MaterialAssetPath;
-				if (JsonHelpers::ParsePath(MaterialNode, "MaterialAssetPath", MaterialAssetPath))
+				if (!JsonHelpers::ParsePath(MaterialNode, "MaterialAssetPath", MaterialAssetPath))
 				{
-					Materials.push_back(MaterialManager::RequestMaterialInstance(MaterialAssetPath));
+					continue;
 				}
-				else
+
+				// MaterialSlot binds to the usemtl name it matches, so reordering the slots in
+				// blender cannot silently swap two materials over. Entries without one fall back
+				// to the order they are authored in.
+				uint32_t Slot = EntryIndex;
+				std::string MaterialSlot;
+				if (JsonHelpers::ParseString(MaterialNode, "MaterialSlot", MaterialSlot))
 				{
-					Materials.push_back(nullptr);
+					const std::wstring WideMaterialSlot = NarrowToWide(MaterialSlot);
+
+					bool FoundSlot = false;
+					for (uint32_t SlotIt = 0; SlotIt < SurfaceNames.size(); SlotIt++)
+					{
+						if (SurfaceNames[SlotIt] == WideMaterialSlot)
+						{
+							Slot = SlotIt;
+							FoundSlot = true;
+							break;
+						}
+					}
+
+					if (!FoundSlot)
+					{
+						LOGWARNING("[MeshManager::RequestMesh] No material slot named '%s' in mesh: %s", MaterialSlot.c_str(), Path.ToString().c_str());
+						continue;
+					}
 				}
+
+				if (Slot >= Materials.size())
+				{
+					LOGWARNING("[MeshManager::RequestMesh] Material entry %u has no matching surface in mesh: %s", EntryIndex, Path.ToString().c_str());
+					continue;
+				}
+
+				Materials[Slot] = MaterialManager::RequestMaterialInstance(MaterialAssetPath);
 			}
 		}
 		else
@@ -161,7 +216,10 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 		}
 	}
 
-	CHECK(SurfaceIndices.size() == Materials.size());
+	for (uint32_t SlotIt = 0; SlotIt < Materials.size(); SlotIt++)
+	{
+		CLOGWARNING(Materials[SlotIt] == nullptr, "[MeshManager::RequestMesh] Surface '%S' has no material and will not draw: %s", SurfaceNames[SlotIt].c_str(), Path.ToString().c_str());
+	}
 
 	uint32_t CurrentIndexOffset = 0;
 	for (size_t SurfaceIt = 0; SurfaceIt < SurfaceIndices.size(); SurfaceIt++)

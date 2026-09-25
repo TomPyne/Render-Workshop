@@ -61,6 +61,7 @@ std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const JsonValu
 		if (ENSUREMSG(NewMaterialShader != nullptr, "[MaterialManager::RequestMaterialInstance] No valid MaterialShaderClass found %S", MaterialShaderClass.c_str()))
 		{
 			Parent = NewMaterialShader;
+			G.RegisteredMaterials[MaterialShaderClass] = NewMaterialShader;
 		}
 	}
 	else

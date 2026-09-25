@@ -55,7 +55,7 @@ float3 CalcNormals(Interpolants_s Input)
     float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
     float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTextureIndex].Sample(SharedWrappedSampler, Input.UV1).rgb * 2.0f - 1.0f;
     DetailNormal = DetailNormal * float3(c_Material.NormalIntensity.xx, 1.0f);
-    return BlendDetailNormals(normalize(Normal), DetailNormal);
+    float3  BlendDetailNormals(normalize(Normal), DetailNormal);
 }
 
 float CalcRoughness(float MaskR, float AlbedoAlpha, float MetallicAlpa)
@@ -86,7 +86,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float MetallicAlpa = Mask.g + Mask.b;
     float AlbedoAlpha = t_tex2d_f4[c_Material.AlbedoTextureIndex].Sample(SharedWrappedSampler, Input.UV1).r;
 
-    MaterialOutput_Default(CalcNormals(Input), Output);
+    float3 TangentNormals = CalcNormals(Input);
+    MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
     MaterialOutput_Albedo(CalcAlbedo(Input, AlbedoAlpha, MetallicAlpa) * CalcAO(Mask.r), Output);
     MaterialOutput_Metallic(MetallicAlpa, Output);
     MaterialOutput_Roughness(CalcRoughness(Mask.r, AlbedoAlpha, MetallicAlpa), Output);

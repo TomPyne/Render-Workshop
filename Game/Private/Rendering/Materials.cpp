@@ -3,14 +3,35 @@
 #include "Rendering/SpaceRenderer.h"
 #include "Rendering/Texture.h"
 
+#include <Assets/TextureManager.h>
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
+bool MaterialShader_c::Compile()
+{
+    if (ShaderFilePath.empty())
+    {
+        LOGWARNING("[MaterialShader_c::Compile] Failed to compile due to ShaderFilePath being empty");
+        return false;
+    }
+
+    rl::GraphicsPipelineStateDesc PSODesc = MakeDefaultPSODesc(Path_s(PathDirectory_e::Shaders, ShaderFilePath), {});
+
+    PSODesc.DebugName = ShaderDebugName;
+    PSO = rl::CreateGraphicsPipelineState(PSODesc);
+
+    PSODesc.Cull = rl::CullMode::FRONT;
+    PSODesc.DebugName = ShaderDebugName + L"Mirrored";
+    PSOMirrored = rl::CreateGraphicsPipelineState(PSODesc);
+
+    return PSO.IsValid() && PSOMirrored.IsValid();
+}
+
 rl::GraphicsPipelineState_t MaterialShader_c::GetPSO(bool Mirrored)
 {
-    return rl::GraphicsPipelineState_t::INVALID;
+    return Mirrored ? PSOMirrored : PSO;
 }
 
 rl::ConstantBuffer_t MaterialShader_c::GetConstantBuffer()
@@ -42,6 +63,16 @@ rl::GraphicsPipelineStateDesc MaterialShader_c::MakeDefaultPSODesc(const Path_s&
         .RootSignature(SpaceRenderer_c::GetRootSignature());
 
     return PSODesc;
+}
+
+void MaterialShader_c::AddBindTexture(int TextureID, const std::shared_ptr<Texture_s>& Texture)
+{
+    if (BoundTextures.size() <= TextureID)
+    {
+        BoundTextures.resize(TextureID + 7u);
+    }
+
+    BoundTextures[TextureID] = Texture;
 }
 
 TextureIndex MaterialShader_c::GetTextureBindIndex(int TextureID) const
@@ -235,6 +266,18 @@ void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
             bool IsTextureType = ParamType == ShaderParamType_e::_TextureIndex;
             if (IsTextureType)
             {
+                std::wstring TexAssetPath;
+                if (ENSUREMSG(JsonHelpers::ParseWString(ParamNode, "Value", TexAssetPath), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
+                {
+                    std::shared_ptr<Texture_s> LoadedTexture = TextureManager::RequestTexture(Path_s::FromTokenised(TexAssetPath.c_str()));
+
+                    if (LoadedTexture)
+                    {
+                        BoundTextures.push_back(LoadedTexture);
+                        uint32_t DescriptorIndex = rl::GetDescriptorIndex(LoadedTexture->SRV);
+                        SetDefaultValue(FoundParam, &DescriptorIndex, sizeof(DescriptorIndex));
+                    }
+                }
 
                 continue;
             }
