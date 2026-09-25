@@ -180,20 +180,38 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct DeferredConstants_s
 		{
+			matrix InvViewProjection;
+
+			float3 LightDirection;
 			uint32_t SceneColorMetallicTextureIndex;
+
+			float3 LightRadiance;
 			uint32_t SceneNormalRoughnessTextureIndex;
+
+			float3 AmbientColor;
 			uint32_t SceneEmissiveSpecularTextureIndex;
-			float __Pad;
+
+			uint32_t SceneDepthTextureIndex;
+			float3 __Pad;
 		} Uniforms;
+		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
+
+		// TODO: replace with a light component
+		Uniforms.InvViewProjection = InverseMatrix(ViewUniforms.ViewProjection);
+		Uniforms.LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
+		Uniforms.LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
+		Uniforms.AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
 
 		Uniforms.SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
 		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
 		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
+		Uniforms.SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
 
 		rl::DynamicBuffer_t DeferredCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
 
