@@ -11,7 +11,7 @@ struct MaterialUniforms_s
     float RoughnessMetalLow;
     uint AlbedoTexture;
     uint MaskTexture;
-    uint NormalTexture
+    uint NormalTexture;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"

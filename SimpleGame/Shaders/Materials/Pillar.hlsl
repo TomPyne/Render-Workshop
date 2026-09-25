@@ -48,7 +48,7 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
     VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
 
     Output.UV1 = Output.UV0 / c_Material.ScaleBricks1;
-    Output.UV2 = Output.UV0 / c_Material.ScaleBricks2;
+    Output.UV2 = Output.UV0 / c_Material.ScaleMarble2;
 }
 
 #endif // #ifdef _VS

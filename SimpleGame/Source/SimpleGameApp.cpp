@@ -82,11 +82,12 @@ void SimpleGameApp_c::RegisterClasses()
 	MaterialManager::RegisterMaterialShaderClass<SoulRocksMaterialShader_c>(L"SoulRocksMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<DomeMaterialShader_c>(L"DomeMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<FirePitMaterialShader_c>(L"FirePitMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<FloorMaterialShader_c>(L"FloorMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<FloorMaterialShader_c>(L"FloorTilesMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<WaterMaterialShader_c>(L"WaterMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<PillarMaterialShader_c>(L"PillarMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<RailingMaterialShader_c>(L"RailingMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<StatueMaterialShader_c>(L"StatueMaterialShader");
+	MaterialManager::RegisterMaterialShaderClass<StairsMaterialShader_c>(L"StairsMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<ShieldMaterialShader_c>(L"ShieldMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<WaveFoamMaterialShader_c>(L"WaveFoamMaterialShader");
 	MaterialManager::RegisterMaterialShaderClass<SoulTreeMaterialShader_c>(L"SoulTreeMaterialShader");

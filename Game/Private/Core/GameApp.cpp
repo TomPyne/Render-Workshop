@@ -61,6 +61,7 @@ void GameApp_c::Main()
 
 void GameApp_c::Shutdown()
 {
+	SpaceRenderer.reset();
 	rl::Render_ShutDown();
 }
 

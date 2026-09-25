@@ -16,7 +16,7 @@ bool LoadJsonFromFile(const std::wstring& Path, Json_t& OutJson)
 	}
 
 	constexpr bool AllowExceptions = false;
-	OutJson = Json_t::parse(AssetFile, nullptr, AllowExceptions);
+	OutJson = Json_t::parse(AssetFile, nullptr, AllowExceptions, true, true);
 
 	if (OutJson.is_discarded())
 	{

@@ -79,7 +79,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     AlbedoAlpha = saturate(AlbedoAlpha);
     float3 ColorMask = saturate(Mask * AlbedoAlpha);
 
-    float3 Albedo = lerp(c_Material.Color, c_Material.Color2, ColorMask.g);
+    float3 Albedo = lerp(c_Material.Color1, c_Material.Color2, ColorMask.g);
     Albedo = lerp(Albedo, c_Material.Color3, Mask.b);
 
     float AO = saturate(c_Material.AOIntensity + Mask.r);

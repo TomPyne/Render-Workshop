@@ -40,6 +40,10 @@ struct TextureManagerGlobals_s
 
         return nullptr;
     }
+    void Cache(const JsonValue_s& Data, const std::shared_ptr<Texture_s>& New)
+    {
+        LoadedTextures[Data.GetHash()] = New;
+    }
 } G;
 
 constexpr rl::RenderFormat TexToRenderFormat(TextureFormat_e TexFormat)
@@ -139,6 +143,8 @@ std::shared_ptr<Texture_s> RequestTextureSTB(const JsonValue_s& Data)
     Desc.Height = NewTexture->Size.y;
 
     NewTexture->Texture = rl::CreateTexture(Desc);
+
+    stbi_image_free(RawData);
     if (!NewTexture->Texture)
     {
         LOGWARNING("[TextureManager::RequestTextureSTB] Texture failed to upload to GPU: %s", Path.ToString().c_str());
@@ -199,6 +205,7 @@ std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTex
         }
         else
         {
+            G.Cache(Data, NewTexture);
             return NewTexture;
         }
     }

@@ -282,6 +282,19 @@ void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
                 continue;
             }
 
+            bool IsDynamicBool = ParamType == ShaderParamType_e::_DynamicBool;
+            if (IsDynamicBool)
+            {
+                bool Value;
+                if (ENSUREMSG(JsonHelpers::ParseBool(ParamNode, "Value", Value), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
+                {
+                    uint32_t ValueUint = Value ? 1u : 0u;
+                    SetDefaultValue(FoundParam, &ValueUint, sizeof(ValueUint));
+                }
+                continue;
+            }
+
+            ENSUREMSG(false, "[MaterialShaderInstance_c::Deserialize] Unsupported type for %s", ParamName.c_str());
         }
     }
 }
