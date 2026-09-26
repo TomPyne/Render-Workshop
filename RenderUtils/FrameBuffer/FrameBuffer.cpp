@@ -3,15 +3,15 @@
 #include <cstring>
 #include <Logging/Logging.h>
 
-FrameBufferAlloc_t FrameBuffer_s::Alloc(const void* Data, uint32_t Size)
+FrameBufferAlloc_s FrameBuffer_s::Alloc(const void* Data, uint32_t Size)
 {
-	FrameBufferAlloc_t Handle;
+	FrameBufferAlloc_s Handle;
 	memcpy(AllocRaw(Size, Handle), Data, Size);
 
 	return Handle;
 }
 
-void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_t& OutHandle)
+void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
 {
 	ASSERTMSG(!Sealed, "FrameBuffer has already been uploaded");
 	ASSERTMSG(Size > 0u && Size <= MaxAllocSize, "FrameBuffer alloc size must be in (0, 64KB]");
@@ -74,11 +74,11 @@ void FrameBuffer_s::SetUploaded(rl::GPUAddress_t InGPUBase)
 	Sealed = true;
 }
 
-rl::GPUAddress_t FrameBuffer_s::Resolve(const FrameBufferAlloc_t& Handle) const
+rl::GPUAddress_t FrameBuffer_s::Resolve(const FrameBufferAlloc_s& Handle) const
 {
-	ASSERTMSG(Handle.Owner == this, "FrameBufferAlloc_t resolved against a FrameBuffer that didn't allocate it");
-	ASSERTMSG(Sealed, "FrameBufferAlloc_t bound but its FrameBuffer was never uploaded by the executing GPUContext");
-	ASSERTMSG(Handle.Offset + Handle.Size <= GetUsedSize(), "FrameBufferAlloc_t is out of range");
+	ASSERTMSG(Handle.Owner == this, "FrameBufferAlloc_s resolved against a FrameBuffer that didn't allocate it");
+	ASSERTMSG(Sealed, "FrameBufferAlloc_s bound but its FrameBuffer was never uploaded by the executing GPUContext");
+	ASSERTMSG(Handle.Offset + Handle.Size <= GetUsedSize(), "FrameBufferAlloc_s is out of range");
 
 	return static_cast<rl::GPUAddress_t>(static_cast<uint64_t>(GPUBase) + Handle.Offset);
 }

@@ -4,7 +4,7 @@
 
 struct FrameBuffer_s;
 
-struct FrameBufferAlloc_t
+struct FrameBufferAlloc_s
 {
 	FrameBuffer_s* Owner = nullptr;
 	uint32_t Offset = 0u;

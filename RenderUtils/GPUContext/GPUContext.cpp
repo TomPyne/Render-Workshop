@@ -1,9 +1,22 @@
 #include "GPUContext.h"
 
+#include <algorithm>
 #include <Logging/Logging.h>
 #include <Render/Render.h>
+#include <RenderUtils/FrameBuffer/FrameBuffer.h>
 #include <SurfMath.h>
 #include <thread>
+
+template<typename BufferType>
+static BufferType ToRootCBV(BufferType CBV)
+{
+	return CBV;
+}
+
+static rl::GPUAddress_t ToRootCBV(const FrameBufferAlloc_s& CBV)
+{
+	return CBV.Owner->Resolve(CBV);
+}
 
 class GPUCommand_c
 {
@@ -150,7 +163,7 @@ public:
 
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetGraphicsRootCBV(RootParameterIndex, CBV);
+		CL->SetGraphicsRootCBV(RootParameterIndex, ToRootCBV(CBV));
 	}
 };
 
@@ -169,7 +182,7 @@ public:
 
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetComputeRootCBV(RootParameterIndex, CBV);
+		CL->SetComputeRootCBV(RootParameterIndex, ToRootCBV(CBV));
 	}
 };
 
@@ -486,8 +499,45 @@ GPUContext_s::~GPUContext_s()
 	}
 }
 
+void GPUContext_s::AddFrameBuffer(FrameBuffer_s* FrameBuffer)
+{
+	CHECK(FrameBuffer);
+	ASSERTMSG(std::find(FrameBuffers.begin(), FrameBuffers.end(), FrameBuffer) == FrameBuffers.end(), "FrameBuffer added to the GPUContext twice");
+
+	FrameBuffers.push_back(FrameBuffer);
+}
+
+void GPUContext_s::UploadFrameBuffers(rl::CommandListSubmissionGroup* CLGroup)
+{
+	std::vector<rl::ConstantUploadSpan_s> Spans;
+	std::vector<size_t> BaseOffsets;
+	BaseOffsets.reserve(FrameBuffers.size());
+
+	size_t TotalSize = 0u;
+	for (FrameBuffer_s* FrameBuffer : FrameBuffers)
+	{
+		BaseOffsets.push_back(TotalSize);
+		FrameBuffer->GatherUploadSpans(TotalSize, Spans);
+		TotalSize = DivideRoundUp(TotalSize + FrameBuffer->GetUsedSize(), size_t(FrameBuffer_s::Alignment)) * FrameBuffer_s::Alignment;
+	}
+
+	if (TotalSize == 0u)
+		return;
+
+	// Created before any replay list, CommandListSubmissionGroup submits in creation order so the upload runs first
+	rl::CommandList* UploadCL = CLGroup->CreateCommandList();
+	const rl::GPUAddress_t GPUBase = rl::UploadFrameConstants(UploadCL, Spans.data(), Spans.size(), TotalSize);
+
+	for (size_t Index = 0; Index < FrameBuffers.size(); ++Index)
+	{
+		FrameBuffers[Index]->SetUploaded(static_cast<rl::GPUAddress_t>(static_cast<uint64_t>(GPUBase) + BaseOffsets[Index]));
+	}
+}
+
 void GPUContext_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 {
+	UploadFrameBuffers(CLGroup);
+
 	const size_t CommandCount = Commands.size();
 	const size_t CommandsPerList = 100;
 
@@ -637,6 +687,22 @@ void GPUContext_s::SetGraphicsRootCBV(uint32_t RootParameterIndex, rl::GPUAddres
 void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, rl::GPUAddress_t CBV)
 {
 	AddCommand<GPUCommand_SetComputeRootCBV_c<rl::GPUAddress_t>>(RootParameterIndex, CBV);
+}
+
+void GPUContext_s::SetGraphicsRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV)
+{
+#ifndef NDEBUG
+	ASSERTMSG(std::find(FrameBuffers.begin(), FrameBuffers.end(), CBV.Owner) != FrameBuffers.end(), "FrameBufferAlloc_s bound to a GPUContext that won't upload its FrameBuffer");
+#endif
+	AddCommand<GPUCommand_SetGraphicsRootCBV_c<FrameBufferAlloc_s>>(RootParameterIndex, CBV);
+}
+
+void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV)
+{
+#ifndef NDEBUG
+	ASSERTMSG(std::find(FrameBuffers.begin(), FrameBuffers.end(), CBV.Owner) != FrameBuffers.end(), "FrameBufferAlloc_s bound to a GPUContext that won't upload its FrameBuffer");
+#endif
+	AddCommand<GPUCommand_SetComputeRootCBV_c<FrameBufferAlloc_s>>(RootParameterIndex, CBV);
 }
 
 void GPUContext_s::SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV)

@@ -2,7 +2,9 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <Render/Render.h>
+#include <RenderUtils/FrameBuffer/FrameBuffer.h>
 #include <SurfMath.h>
 #include <vector>
 
@@ -164,6 +166,14 @@ struct RenderGraphBuilder_s
 	{
 	}
 
+	template<typename T> FrameBufferAlloc_s Alloc(const T& Data) { return MainFrameBuffer->Alloc(Data); }
+	template<typename T> T* Alloc(FrameBufferAlloc_s& OutHandle) { return MainFrameBuffer->Alloc<T>(OutHandle); }
+
+	FrameBuffer_s& GetMainFrameBuffer() { return *MainFrameBuffer; }
+
+	// One per parallel worker thread, not reachable through Alloc. Call from the builder's thread before dispatching.
+	FrameBuffer_s& CreateWorkerFrameBuffer();
+
 	RenderGraphResourceHandle_t CreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState, uint32_t Width, uint32_t Height);
@@ -191,6 +201,9 @@ protected:
 
 	std::map<RenderGraphResourceHandle_t, RenderGraphTexturePtr_t> ExtractedTextures;
 
+	std::unique_ptr<FrameBuffer_s> MainFrameBuffer = std::make_unique<FrameBuffer_s>();
+	std::vector<std::unique_ptr<FrameBuffer_s>> WorkerFrameBuffers;
+
 	RenderGraphResourceHandle_t AllocateResourceDesc(RenderGraphResourceDesc_s** NewDesc, const wchar_t* ResourceName);
 };
 
@@ -208,6 +221,9 @@ struct RenderGraph_s
 	std::vector<RenderGraphResource_s> Resources;
 
 	void Execute(rl::CommandListSubmissionGroup* CLGroup);
+
+	template<typename T> FrameBufferAlloc_s Alloc(const T& Data) { return MainFrameBuffer->Alloc(Data); }
+	template<typename T> T* Alloc(FrameBufferAlloc_s& OutHandle) { return MainFrameBuffer->Alloc<T>(OutHandle); }
 
 	rl::ShaderResourceView_t GetSRV(RenderGraphResourceHandle_t Resource);
 	rl::RenderTargetView_t GetRTV(RenderGraphResourceHandle_t Resource);
@@ -228,6 +244,9 @@ private:
 	RenderGraphBackbufferDesc_s Backbuffer = {};
 
 	std::map<RenderGraphResourceHandle_t, RenderGraphTexturePtr_t> ExtractedTextures;
+
+	std::unique_ptr<FrameBuffer_s> MainFrameBuffer;
+	std::vector<std::unique_ptr<FrameBuffer_s>> WorkerFrameBuffers;
 
 	friend struct RenderGraphBuilder_s;
 };

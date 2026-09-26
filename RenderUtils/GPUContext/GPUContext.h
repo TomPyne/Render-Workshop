@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <RenderUtils/FrameBuffer/FrameBufferAlloc.h>
 
 class GPUCommand_c;
 class GPUPass_c;
+struct FrameBuffer_s;
 
 struct GPUContext_s
 {
@@ -20,11 +22,18 @@ private:
 
 	void AddPass(uint32_t StartCommandIndex, uint32_t CommandCount);
 
+	void UploadFrameBuffers(rl::CommandListSubmissionGroup* CLGroup);
+
 	int32_t CurrentPassIndex = -1;
+
+	std::vector<FrameBuffer_s*> FrameBuffers;
 
 public:
 
 	~GPUContext_s();
+
+	// Uploaded at the start of Execute, must be added before any of its allocs are bound
+	void AddFrameBuffer(FrameBuffer_s* FrameBuffer);
 
 	void Execute(rl::CommandListSubmissionGroup* CLGroup);
 
@@ -44,6 +53,8 @@ public:
 	void SetComputeRootCBV(uint32_t RootParameterIndex, rl::DynamicBuffer_t CBV);
 	void SetGraphicsRootCBV(uint32_t RootParameterIndex, rl::GPUAddress_t CBV);
 	void SetComputeRootCBV(uint32_t RootParameterIndex, rl::GPUAddress_t CBV);
+	void SetGraphicsRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV);
+	void SetComputeRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV);
 	void SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV);
 	void SetGraphicsRootValue(uint32_t RootParameterIndex, uint32_t OffsetIn32BitValues, uint32_t Value);
 	void SetGraphicsRootDescriptorTable(uint32_t RootParameterIndex);

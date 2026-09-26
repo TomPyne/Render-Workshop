@@ -192,6 +192,11 @@ bool RenderGraphBuilder_s::IsResourceExternal(RenderGraphResourceHandle_t Resour
 	return ResourceDescs[ResourceIndex].ExternalTextureRef != nullptr || ResourceDescs[ResourceIndex].IsBackBuffer;
 }
 
+FrameBuffer_s& RenderGraphBuilder_s::CreateWorkerFrameBuffer()
+{
+	return *WorkerFrameBuffers.emplace_back(std::make_unique<FrameBuffer_s>());
+}
+
 RenderGraph_s RenderGraphBuilder_s::Build()
 {
 	std::vector<RenderGraphPassHandle_t> LastWrittenBy(ResourceDescs.size());
@@ -325,6 +330,8 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 
 	RenderGraph.ExtractedTextures = std::move(ExtractedTextures);
 	RenderGraph.Backbuffer = Backbuffer;
+	RenderGraph.MainFrameBuffer = std::move(MainFrameBuffer);
+	RenderGraph.WorkerFrameBuffers = std::move(WorkerFrameBuffers);
 
 	ResourcePool.FinishFrame();
 
@@ -351,6 +358,12 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 	CHECK(CLGroup);
 
 	GPUContext_s Ctx;
+
+	Ctx.AddFrameBuffer(MainFrameBuffer.get());
+	for (std::unique_ptr<FrameBuffer_s>& FrameBuffer : WorkerFrameBuffers)
+	{
+		Ctx.AddFrameBuffer(FrameBuffer.get());
+	}
 
 	for (RenderGraphPass_s& Pass : Passes)
 	{		
