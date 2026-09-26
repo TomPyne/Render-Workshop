@@ -1,5 +1,6 @@
 #include "Core/GameApp.h"
 
+#include "Assets/AssetManager.h"
 #include "Assets/MaterialManager.h"
 #include "Core/WindowsPlatform.h"
 #include "Input/Input.h"
@@ -21,6 +22,12 @@
 #include <Render/Render.h>
 
 GameApp_c* GApp;
+
+GameApp_c::GameApp_c()
+{}
+
+GameApp_c::~GameApp_c()
+{}
 
 bool GameApp_c::Init()
 {
@@ -45,6 +52,8 @@ bool GameApp_c::Init()
 
 	Clock = {};
 
+	AssetManager = std::make_unique<AssetManager_c>();
+
 	return true;
 }
 
@@ -68,6 +77,7 @@ void GameApp_c::Main()
 
 void GameApp_c::Shutdown()
 {
+	AssetManager.reset();
 	SpaceRenderer.reset();
 	rl::Render_ShutDown();
 }
@@ -106,6 +116,8 @@ void GameApp_c::Load()
 
 	SpaceRenderer = CreateSpaceRenderer();
 	SpaceRenderer->Init();
+
+	AssetManager->Init();
 }
 
 void GameApp_c::PreUpdate()
@@ -200,6 +212,11 @@ uint2 GameApp_c::GetScreenSize() const
 		return uint2(MainRenderView->Width, MainRenderView->Height);
 	}
 	return uint2(0,0);
+}
+
+AssetManager_c* GameApp_c::GetAssetManager() const
+{
+	return AssetManager.get();
 }
 
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const

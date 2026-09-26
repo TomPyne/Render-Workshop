@@ -21,18 +21,10 @@ class ArchMaterialShader_c : public MaterialShader_c
         DynamicBool UseUV3 = 0;
         float2 _Pad0;
 
-        TextureIndex MaskTextureIndex = 0u;
-        TextureIndex AlbedoTextureIndex = 0u;
-        TextureIndex NormalTextureIndex = 0u;
-        TextureIndex DetailNormalTextureIndex = 0u;
-    };
-
-    enum
-    {
-        AlbedoTex,
-        NormalTex,
-        DetailNormalTex,
-        MaskTex,
+        TextureIndex MaskTexture = 0u;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex NormalTexture = 0u;
+        TextureIndex DetailNormalTexture = 0u;
     };
 
 public:
@@ -40,7 +32,7 @@ public:
     ArchMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 
 };
 
@@ -56,8 +48,6 @@ class BackgroundMatteMaterialShader_c : public MaterialShader_c
         float2 __Pad;
     };
 
-    int MatteTexture = -1;
-
 public:
 
     BackgroundMatteMaterialShader_c();
@@ -65,7 +55,7 @@ public:
 
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class BottomTrimMaterialShader_c : public MaterialShader_c
@@ -100,7 +90,7 @@ public:
     BottomTrimMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class TreeTrunkMaterialShader_c : public MaterialShader_c
@@ -110,8 +100,8 @@ class TreeTrunkMaterialShader_c : public MaterialShader_c
         float3 Color = float3(0.81f);
         float Roughness = 0.5f;
         
-        TextureIndex AlbedoTextureIndex = 0u;
-        TextureIndex NormalTextureIndex = 0u;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex NormalTexture = 0u;
         float2 __Pad;
     };
 
@@ -120,7 +110,7 @@ public:
     TreeTrunkMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class TreeBranchesMaterialShader_c : public MaterialShader_c
@@ -128,10 +118,10 @@ class TreeBranchesMaterialShader_c : public MaterialShader_c
     struct Parameters_s
     {
         float3 DiffuseColor = float3(1.0f);
-        TextureIndex AlbedoTextureIndex = 0u;
+        TextureIndex AlbedoTexture = 0u;
 
         float3 EmissiveColor = float3(0.0f);
-        TextureIndex NormalTextureIndex = 0u;
+        TextureIndex NormalTexture = 0u;
     };
 
 public:
@@ -139,7 +129,7 @@ public:
     TreeBranchesMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class TrimMaterialShader_c : public MaterialShader_c
@@ -171,7 +161,7 @@ public:
     TrimMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class StoneBrickWallMaterialShader_c : public MaterialShader_c
@@ -194,7 +184,7 @@ public:
     StoneBrickWallMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class SoulRocksMaterialShader_c : public MaterialShader_c
@@ -233,7 +223,7 @@ public:
     SoulRocksMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class DomeMaterialShader_c : public MaterialShader_c
@@ -263,7 +253,7 @@ public:
     DomeMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class FirePitMaterialShader_c : public MaterialShader_c
@@ -301,7 +291,7 @@ public:
     FirePitMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class FloorMaterialShader_c : public MaterialShader_c
@@ -345,7 +335,7 @@ public:
     FloorMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class WaterMaterialShader_c : public MaterialShader_c
@@ -371,7 +361,7 @@ public:
     WaterMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class PillarMaterialShader_c : public MaterialShader_c
@@ -410,7 +400,7 @@ public:
     PillarMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class RailingMaterialShader_c : public MaterialShader_c
@@ -437,7 +427,7 @@ public:
     RailingMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class StairsMaterialShader_c : public MaterialShader_c
@@ -463,7 +453,7 @@ public:
     StairsMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class StatueMaterialShader_c : public MaterialShader_c
@@ -503,7 +493,7 @@ public:
     StatueMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class ShieldMaterialShader_c : public MaterialShader_c
@@ -529,7 +519,7 @@ public:
     ShieldMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class WaveFoamMaterialShader_c : public MaterialShader_c
@@ -544,7 +534,7 @@ public:
     WaveFoamMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
 class SoulTreeMaterialShader_c : public MaterialShader_c
@@ -568,5 +558,5 @@ public:
     SoulTreeMaterialShader_c();
     virtual void Load() override;
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
-    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };

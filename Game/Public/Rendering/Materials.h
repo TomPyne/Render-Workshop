@@ -40,6 +40,12 @@ struct ShaderParam_s
 	ShaderParamType_e Type = ShaderParamType_e::Unknown;
 };
 
+struct ShaderTexture_s
+{
+	uint32_t ParamOffset = 0;
+	std::shared_ptr<Texture_s> Texture;
+};
+
 class MaterialShader_c
 {
 public:
@@ -58,6 +64,8 @@ public:
 
 	const ShaderParam_s* FindParam(std::string_view Param) const;
 
+	bool IsReady() const;
+
 protected:
 
 	// Construct params using struct defaults
@@ -67,26 +75,30 @@ protected:
 		OutData.resize(sizeof(T));
 		T* const Params = reinterpret_cast<T*>(OutData.data());
 		*Params = {};
+		AssignTextureParams(Params, sizeof(T));
 		return Params;
 	}
 
+	void AssignTextureParams(void* const ParamData, size_t ParamSize) const;
 
 	rl::GraphicsPipelineStateDesc MakeDefaultPSODesc(const Path_s& ShaderPath, const rl::ShaderMacros& Macros);
 
-	void AddBindTexture(int TextureId, const std::shared_ptr<Texture_s>& Texture);
-	int LoadBindTexture(const Path_s& Path);
-	TextureIndex GetTextureBindIndex(int TextureID) const;
+	void LoadShaderTexture(std::string_view ParamName, const Path_s& Path);
+
 
 	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;
+
 	std::vector<uint8_t> DefaultParamData;
 
-	std::vector<std::shared_ptr<Texture_s>> BoundTextures;
+	std::vector<ShaderTexture_s> ShaderTextures;
 
 	rl::GraphicsPipelineStatePtr PSO;
 	rl::GraphicsPipelineStatePtr PSOMirrored;
 
 	std::wstring ShaderDebugName;
 	std::wstring ShaderFilePath;
+
+	mutable bool Ready = false;
 };
 
 class DefaultMaterialShader_c : public MaterialShader_c
@@ -105,10 +117,6 @@ public:
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
 	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
 	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
-
-private:
-	rl::GraphicsPipelineStatePtr PSO;
-	rl::GraphicsPipelineStatePtr PSOMirrored;
 };
 
 class ErrorMaterialShader_c : public MaterialShader_c
@@ -116,10 +124,6 @@ class ErrorMaterialShader_c : public MaterialShader_c
 public:
 	virtual bool Compile() override;
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
-
-private:
-	rl::GraphicsPipelineStatePtr PSO;
-	rl::GraphicsPipelineStatePtr PSOMirrored;
 };
 
 class MaterialShaderInstance_c
@@ -129,11 +133,13 @@ public:
 
 	void SetParent(const std::shared_ptr<MaterialShader_c>& InParent);
 
-	const ShaderParam_s* FindParam(std::string_view  Param) const;	
+	const ShaderParam_s* FindParam(std::string_view Param) const;	
 
 	void Deserialize(const struct JsonValue_s& Data);
 
 	void Update();
+
+	bool IsReady() const;
 
 	rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	rl::ConstantBuffer_t GetConstantBuffer();
@@ -141,18 +147,27 @@ public:
 protected:
 
 	void SetDefaultValue(const ShaderParam_s* Param, const void* Data, size_t DataSize);
+	void LoadOverrideShaderTexture(std::string_view ParamName, const Path_s& Path);
+	void AssignOverrideTextureParams(void* const ParamData, size_t ParamSize) const;
 
 	std::shared_ptr<MaterialShader_c> Parent;
-	std::vector<uint8_t> ParamData;
+	std::vector<uint8_t> OverrideParamData;
+	std::vector<ShaderParam_s> OverridenParams;
 	rl::ConstantBufferPtr ConstantBuffer;
 
-	std::vector<std::shared_ptr<Texture_s>> BoundTextures;
+	std::vector<ShaderTexture_s> OverrideShaderTextures;
+
+	mutable bool Ready = false;
 };
 
+// TODO
 class MaterialShaderInstanceDynamic_c : public MaterialShaderInstance_c
 {
 public:
 	~MaterialShaderInstanceDynamic_c();
+
+	std::vector<uint8_t> DynamicOverrideParamData;
+	std::vector<ShaderParam_s> DynamicOverridenParams;
 
 	void SetValue(const ShaderParam_s* Param, const void* Data, size_t DataSize);
 	void SetFloat(std::string_view Param, float Value);

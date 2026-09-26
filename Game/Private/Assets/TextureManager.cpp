@@ -1,5 +1,6 @@
 #include "Assets/TextureManager.h"
 
+#include "Assets/AssetManager.h"
 #include "Rendering/Texture.h"
 
 #include <Render/Render.h>
@@ -23,28 +24,6 @@ enum class TextureFormat_e
     RGBA8, // 1
     Count
 };
-
-struct TextureManagerGlobals_s
-{
-    // Content addressable storage of loaded meshes.
-    std::unordered_map<uint64_t, std::shared_ptr<Texture_s>> LoadedTextures;
-
-    std::shared_ptr<Texture_s> TryGet(const JsonValue_s& Data)
-    {
-        // Compute hash of data to use as a key for caching
-        auto It = LoadedTextures.find(Data.GetHash());
-        if (It != LoadedTextures.end())
-        {
-            return It->second;
-        }
-
-        return nullptr;
-    }
-    void Cache(const JsonValue_s& Data, const std::shared_ptr<Texture_s>& New)
-    {
-        LoadedTextures[Data.GetHash()] = New;
-    }
-} G;
 
 constexpr rl::RenderFormat TexToRenderFormat(TextureFormat_e TexFormat)
 {
@@ -177,7 +156,7 @@ std::shared_ptr<Texture_s> RequestTexture(const Path_s& Path, bool ErrorTextureI
 
 std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTextureIfMissing)
 {
-    std::shared_ptr<Texture_s> Texture = G.TryGet(Data);
+    std::shared_ptr<Texture_s> Texture = AssetManager_c::TryGetTexture(Data.GetHash());
     if (Texture)
         return Texture;
 
@@ -205,7 +184,8 @@ std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTex
         }
         else
         {
-            G.Cache(Data, NewTexture);
+            AssetManager_c::CacheTexture(Data.GetHash(), NewTexture);
+            NewTexture->Ready.store(true);
             return NewTexture;
         }
     }

@@ -33,11 +33,6 @@ bool BRDFMaterialShader_c::Compile()
     return PSO.IsValid() && PSOMirrored.IsValid();
 }
 
-rl::GraphicsPipelineState_t BRDFMaterialShader_c::GetPSO(bool Mirrored)
-{
-    return Mirrored ? PSOMirrored : PSO;
-}
-
 void BRDFMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
     OutData.resize(sizeof(Parameters_s));

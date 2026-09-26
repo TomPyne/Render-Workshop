@@ -7,12 +7,15 @@
 
 #include <memory>
 
+class AssetManager_c;
+
 extern class GameApp_c* GApp;
 
 class GameApp_c
 {
 public:
-	virtual ~GameApp_c() = default;
+	GameApp_c();
+	virtual ~GameApp_c();
 
 	virtual bool Init();
 	virtual void Main();
@@ -34,6 +37,8 @@ public:
 
 	virtual uint2 GetScreenSize() const;
 
+	AssetManager_c* GetAssetManager() const;
+
 protected:
 	virtual rl::RenderInitParams GetAppRenderParams() const;
 
@@ -43,4 +48,6 @@ protected:
 	std::shared_ptr<class SpaceRenderer_c> SpaceRenderer;
 
 	SurfClock Clock;
+
+	std::unique_ptr<AssetManager_c> AssetManager;
 };

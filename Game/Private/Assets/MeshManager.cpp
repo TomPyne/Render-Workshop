@@ -1,5 +1,6 @@
 #include "Assets/MeshManager.h"
 
+#include "Assets/AssetManager.h"
 #include "Assets/MaterialManager.h"
 #include "Rendering/Materials.h"
 #include "Rendering/Mesh.h"
@@ -25,12 +26,6 @@ static_assert(kMeshMaxTexcoords == GltfReader_c::MaxTexcoords, "Mesh and glTF re
 
 namespace MeshManager
 {
-
-struct MeshManagerGlobals_s
-{
-	// Content addressable storage of loaded meshes.
-	std::unordered_map<uint64_t, std::shared_ptr<Mesh_s>> LoadedMeshes;
-} G;
 
 // Geometry from a source file reader, already converted into engine space.
 struct SourceMesh_s
@@ -237,7 +232,7 @@ std::shared_ptr<Mesh_s> BuildMesh(const JsonValue_s& Data, const Path_s& Path, c
 		NewMesh->Surfaces.push_back(NewSurface);
 	}
 
-	G.LoadedMeshes[Data.GetHash()] = NewMesh;
+	AssetManager_c::CacheMesh(Data.GetHash(), NewMesh);
 
 	NewMesh->Ready = true;
 	return NewMesh;
@@ -354,11 +349,10 @@ std::shared_ptr<Mesh_s> RequestMesh(const Path_s& Path, bool ErrorMeshIfMissing)
 
 std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data, bool ErrorMeshIfMissing)
 {
-	// Compute hash of data to use as a key for caching
-	auto It = G.LoadedMeshes.find(Data.GetHash());
-	if (It != G.LoadedMeshes.end())
+	std::shared_ptr<Mesh_s> Found = AssetManager_c::TryGetMesh(Data.GetHash());
+	if (Found)
 	{
-		return It->second;
+		return Found;
 	}
 
 	int32_t Version = -1;

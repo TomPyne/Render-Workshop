@@ -3,6 +3,8 @@
 #include <Render/RenderTypes.h>
 #include <SurfMath.h>
 
+#include <atomic>
+
 struct Texture_s
 {
 	rl::TexturePtr Texture = {};
@@ -11,5 +13,5 @@ struct Texture_s
 	u32 MipCount = 0;
 	rl::RenderFormat Format = rl::RenderFormat::UNKNOWN;
 
-	bool Ready = false;
+	std::atomic<bool> Ready;
 };

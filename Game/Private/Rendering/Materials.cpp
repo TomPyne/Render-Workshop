@@ -50,6 +50,40 @@ const ShaderParam_s* MaterialShader_c::FindParam(std::string_view Param) const
     return FoundIt != ShaderParameters.end() ? &FoundIt->second : nullptr;
 }
 
+bool MaterialShader_c::IsReady() const
+{
+    if (Ready)
+        return true;
+
+    for (const ShaderTexture_s& Tex : ShaderTextures)
+    {
+        if (Tex.Texture && !Tex.Texture->Ready.load())
+        {
+            return false;
+        }
+    }
+
+    Ready = true;
+    return true;
+}
+
+void MaterialShader_c::AssignTextureParams(void* const ParamData, size_t ParamSize) const
+{
+    for (const ShaderTexture_s& Tex : ShaderTextures)
+    {
+#ifndef NDEBUG
+        CHECK(Tex.Texture != nullptr);
+        CHECK(Tex.Texture->Ready.load());
+        CHECK(Tex.Texture->Texture.IsValid());
+        CHECK(Tex.Texture->SRV.IsValid());
+        CHECK(ParamSize >= Tex.ParamOffset + sizeof(uint32_t));
+#endif
+        const uint32_t DescriptorIndex = rl::GetDescriptorIndex(Tex.Texture->SRV);
+        CHECK(DescriptorIndex != 0);
+        memcpy((uint8_t*)ParamData + Tex.ParamOffset, &DescriptorIndex, sizeof(DescriptorIndex));
+    }
+}
+
 rl::GraphicsPipelineStateDesc MaterialShader_c::MakeDefaultPSODesc(const Path_s& Path, const rl::ShaderMacros& Macros)
 {
     const std::string ShaderPath = Path.ToString();
@@ -65,34 +99,20 @@ rl::GraphicsPipelineStateDesc MaterialShader_c::MakeDefaultPSODesc(const Path_s&
     return PSODesc;
 }
 
-void MaterialShader_c::AddBindTexture(int TextureID, const std::shared_ptr<Texture_s>& Texture)
+void MaterialShader_c::LoadShaderTexture(std::string_view ParamName, const Path_s& Path)
 {
-    if (BoundTextures.size() <= TextureID)
+    const ShaderParam_s* Param = FindParam(ParamName);
+    if (ENSUREMSG(Param != nullptr, "MaterialShader_c::LoadShaderTexture passed invalid param name %s", std::string(ParamName).c_str()))
     {
-        BoundTextures.resize(TextureID + 7u);
-    }
-
-    BoundTextures[TextureID] = Texture;
-}
-
-int MaterialShader_c::LoadBindTexture(const Path_s& Path)
-{
-    const int Index = static_cast<int>(BoundTextures.size());
-    BoundTextures.push_back(TextureManager::RequestTexture(Path));
-    return Index;
-}
-
-TextureIndex MaterialShader_c::GetTextureBindIndex(int TextureID) const
-{
-    if (TextureID >= 0 && BoundTextures.size() > TextureID)
-    {
-        if (BoundTextures[TextureID])
+        ShaderTexture_s ShaderTexture;
+        ShaderTexture.Texture = TextureManager::RequestTexture(Path);
+        ShaderTexture.ParamOffset = Param->Offset;
+        
+        if (ENSUREMSG(ShaderTexture.Texture != nullptr, "[MaterialShader_c::LoadShaderTexture] Failed to load texture %s for param", Path.ToString().c_str(), std::string(ParamName).c_str()))
         {
-            return rl::GetDescriptorIndex(BoundTextures[TextureID]->SRV);
-        }
-    }
-    ENSUREMSG(false, "[MaterialShader_c::GetTextureBindIndex] Failed to find a valid texture binding for material");
-    return 0u;
+            ShaderTextures.push_back(ShaderTexture);
+        }        
+    }    
 }
 
 DefaultMaterialShader_c::DefaultMaterialShader_c() : MaterialShader_c()
@@ -168,12 +188,13 @@ MaterialShaderInstance_c::~MaterialShaderInstance_c()
 void MaterialShaderInstance_c::SetParent(const std::shared_ptr<MaterialShader_c>& InParent)
 {
     Parent = InParent;
-    ParamData.clear();
+    OverrideParamData.clear();
+    ConstantBuffer = {};
 
     if (Parent)
     {
-        Parent->GetDefaultParams(ParamData);
-    }
+        OverrideParamData.resize(Parent->GetShaderParamBufferSize());
+    }    
 }
 
 const ShaderParam_s* MaterialShaderInstance_c::FindParam(std::string_view Param) const
@@ -187,9 +208,46 @@ const ShaderParam_s* MaterialShaderInstance_c::FindParam(std::string_view Param)
 
 void MaterialShaderInstance_c::SetDefaultValue(const ShaderParam_s* Param, const void* Data, size_t DataSize)
 {
+    CHECK(Param);
     CHECK(Param->Size == DataSize);
-    CHECK(ParamData.size() >= (Param->Offset + Param->Size));
-    memcpy(ParamData.data() + Param->Offset, Data, DataSize);
+    CHECK(OverrideParamData.size() >= (Param->Offset + Param->Size));
+    memcpy(OverrideParamData.data() + Param->Offset, Data, DataSize);
+
+    // You can technically push duplicates but whatever gets pushed last always wins so not my problem
+    OverridenParams.push_back(*Param);
+}
+
+void MaterialShaderInstance_c::LoadOverrideShaderTexture(std::string_view ParamName, const Path_s& Path)
+{
+    const ShaderParam_s* Param = FindParam(ParamName);
+    if (ENSUREMSG(Param != nullptr, "[MaterialShaderInstance_c::LoadOverrideShaderTexture] passed invalid param name %s", ParamName))
+    {
+        ShaderTexture_s ShaderTexture;
+        ShaderTexture.Texture = TextureManager::RequestTexture(Path);
+        ShaderTexture.ParamOffset = Param->Offset;
+
+        if (ENSUREMSG(ShaderTexture.Texture != nullptr, "[MaterialShaderInstance_c::LoadOverrideShaderTexture] Failed to load texture %s for param", Path.ToString().c_str(), ParamName))
+        {
+            OverrideShaderTextures.push_back(ShaderTexture);
+        }
+    }
+}
+
+void MaterialShaderInstance_c::AssignOverrideTextureParams(void* const ParamData, size_t ParamSize) const
+{
+    for (const ShaderTexture_s& Tex : OverrideShaderTextures)
+    {
+#ifndef NDEBUG
+        CHECK(Tex.Texture != nullptr);
+        CHECK(Tex.Texture->Ready.load());
+        CHECK(Tex.Texture->Texture.IsValid());
+        CHECK(Tex.Texture->SRV.IsValid());
+        CHECK(ParamSize >= Tex.ParamOffset + sizeof(uint32_t));
+#endif
+        const uint32_t DescriptorIndex = rl::GetDescriptorIndex(Tex.Texture->SRV);
+        CHECK(DescriptorIndex != 0);
+        memcpy((uint8_t*)ParamData + Tex.ParamOffset, &DescriptorIndex, sizeof(DescriptorIndex));
+    }
 }
 
 void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
@@ -276,14 +334,7 @@ void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
                 std::wstring TexAssetPath;
                 if (ENSUREMSG(JsonHelpers::ParseWString(ParamNode, "Value", TexAssetPath), "[MaterialShaderInstance_c::Deserialize] Failed to parse value from type for %s", ParamName.c_str()))
                 {
-                    std::shared_ptr<Texture_s> LoadedTexture = TextureManager::RequestTexture(Path_s::FromTokenised(TexAssetPath.c_str()));
-
-                    if (LoadedTexture)
-                    {
-                        BoundTextures.push_back(LoadedTexture);
-                        uint32_t DescriptorIndex = rl::GetDescriptorIndex(LoadedTexture->SRV);
-                        SetDefaultValue(FoundParam, &DescriptorIndex, sizeof(DescriptorIndex));
-                    }
+                    LoadOverrideShaderTexture(ParamName, Path_s::FromTokenised(TexAssetPath));
                 }
 
                 continue;
@@ -308,13 +359,45 @@ void MaterialShaderInstance_c::Deserialize(const JsonValue_s& Data)
 
 void MaterialShaderInstance_c::Update()
 {
-    if (ParamData.empty())
+    if (!Parent)
         return;
 
-    if (ENSUREMSG(!ConstantBuffer.IsValid(), "[MaterialShaderInstance_c::Update] Cannot update already built instance"))
+    std::vector<uint8_t> ParamData(Parent->GetShaderParamBufferSize());
+    Parent->GetDefaultParams(ParamData);
+
+    for (const ShaderParam_s& OverrideParam : OverridenParams)
     {
-        ConstantBuffer = rl::CreateConstantBuffer(ParamData.data(), ParamData.size());
-    }   
+        memcpy(ParamData.data() + OverrideParam.Offset, OverrideParamData.data() + OverrideParam.Offset, OverrideParam.Size);
+    }
+
+    AssignOverrideTextureParams(ParamData.data(), ParamData.size());
+
+    ConstantBuffer = rl::CreateConstantBuffer(ParamData.data(), ParamData.size());
+}
+
+bool MaterialShaderInstance_c::IsReady() const
+{
+    if (Ready)
+        return true;
+
+    if (!Parent)
+    {
+        return false;
+    }
+
+    if (!Parent->IsReady())
+        return false;
+
+    for (const ShaderTexture_s& Tex : OverrideShaderTextures)
+    {
+        if (Tex.Texture && !Tex.Texture->Ready.load())
+        {
+            return false;
+        }
+    }
+
+    Ready = true;
+    return true;
 }
 
 rl::GraphicsPipelineState_t MaterialShaderInstance_c::GetPSO(bool Mirrored)
@@ -324,14 +407,22 @@ rl::GraphicsPipelineState_t MaterialShaderInstance_c::GetPSO(bool Mirrored)
 
 rl::ConstantBuffer_t MaterialShaderInstance_c::GetConstantBuffer()
 {
+    CHECK(IsReady());
+    if (!ConstantBuffer.IsValid())
+    {
+        Update();
+    }
     return ConstantBuffer;
 }
 
 void MaterialShaderInstanceDynamic_c::SetValue(const ShaderParam_s* Param, const void* Data, size_t DataSize)
 {
+    CHECK(Param);
     CHECK(Param->Size == DataSize);
-    CHECK(ParamData.size() >= (Param->Offset + Param->Size));
-    memcpy(ParamData.data() + Param->Offset, Data, DataSize);
+    CHECK(DynamicOverrideParamData.size() >= (Param->Offset + Param->Size));
+    memcpy(DynamicOverrideParamData.data() + Param->Offset, Data, DataSize);
+
+    DynamicOverridenParams.push_back(*Param);
 }
 
 

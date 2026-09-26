@@ -18,29 +18,19 @@ ArchMaterialShader_c::ArchMaterialShader_c()
     ASSIGN_SHADER_PARAM(float, ScaleMarble1);
     ASSIGN_SHADER_PARAM(float, ScaleMarble2);
     ASSIGN_SHADER_PARAM(DynamicBool, UseUV3);
-    ASSIGN_SHADER_PARAM(TextureIndex, MaskTextureIndex);
-    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTextureIndex);
-    ASSIGN_SHADER_PARAM(TextureIndex, NormalTextureIndex);
-    ASSIGN_SHADER_PARAM(TextureIndex, DetailNormalTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, MaskTexture);
+    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTexture);
+    ASSIGN_SHADER_PARAM(TextureIndex, NormalTexture);
+    ASSIGN_SHADER_PARAM(TextureIndex, DetailNormalTexture);
 }
 
 void ArchMaterialShader_c::Load()
 {
-    AddBindTexture(AlbedoTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(NormalTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_N.hp_tex")));
-    AddBindTexture(DetailNormalTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-    AddBindTexture(MaskTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_M.hp_tex")));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
-
-void ArchMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTextureIndex = GetTextureBindIndex(AlbedoTex);
-    Params->NormalTextureIndex = GetTextureBindIndex(NormalTex);
-    Params->DetailNormalTextureIndex = GetTextureBindIndex(DetailNormalTex);
-    Params->MaskTextureIndex = GetTextureBindIndex(MaskTex);
-}
-
 
 BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
 {
@@ -55,25 +45,7 @@ BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
 
 void BackgroundMatteMaterialShader_c::Load()
 {
-    MatteTexture = LoadBindTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BackgroundMatte.hp_tex"));
-}
-
-void BackgroundMatteMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->MatteTexture = GetTextureBindIndex(MatteTexture);
-}
-
-namespace BottomTrimTextures
-{
-    enum
-    {
-        Mask,
-        Albedo,
-        Normal,
-        DetailNormal,
-        Count
-    };
+    LoadShaderTexture("MatteTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BackgroundMatte.hp_tex"));
 }
 
 BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
@@ -100,29 +72,10 @@ BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
 
 void BottomTrimMaterialShader_c::Load()
 {
-    AddBindTexture(BottomTrimTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_M.hp_tex")));
-    AddBindTexture(BottomTrimTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(BottomTrimTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_N.hp_tex")));
-    AddBindTexture(BottomTrimTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void BottomTrimMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->MaskTexture = GetTextureBindIndex(BottomTrimTextures::Mask);
-    Params->AlbedoTexture = GetTextureBindIndex(BottomTrimTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(BottomTrimTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(BottomTrimTextures::DetailNormal);
-}
-
-namespace TreeTrunkTextures
-{
-    enum
-    {
-        Albedo,
-        Normal,
-        Count
-    };
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 TreeTrunkMaterialShader_c::TreeTrunkMaterialShader_c()
@@ -132,33 +85,15 @@ TreeTrunkMaterialShader_c::TreeTrunkMaterialShader_c()
 
     ASSIGN_SHADER_PARAM(float3, Color);
     ASSIGN_SHADER_PARAM(float, Roughness);
-    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTextureIndex);
-    ASSIGN_SHADER_PARAM(TextureIndex, NormalTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTexture);
+    ASSIGN_SHADER_PARAM(TextureIndex, NormalTexture);
 }
 
 void TreeTrunkMaterialShader_c::Load()
 {
-    AddBindTexture(TreeTrunkTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_D.hp_tex")));
-    AddBindTexture(TreeTrunkTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_N.hp_tex")));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_N.hp_tex"));
 }
-
-void TreeTrunkMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTextureIndex = GetTextureBindIndex(TreeTrunkTextures::Albedo);
-    Params->NormalTextureIndex = GetTextureBindIndex(TreeTrunkTextures::Normal);
-}
-
-namespace TreeBranchTextures
-{
-    enum
-    {
-        Albedo,
-        Normal,
-        Count
-    };
-}
-
 
 TreeBranchesMaterialShader_c::TreeBranchesMaterialShader_c()
 {
@@ -167,32 +102,14 @@ TreeBranchesMaterialShader_c::TreeBranchesMaterialShader_c()
 
     ASSIGN_SHADER_PARAM(float3, DiffuseColor);
     ASSIGN_SHADER_PARAM(float3, EmissiveColor);
-    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTextureIndex);
-    ASSIGN_SHADER_PARAM(TextureIndex, NormalTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTexture);
+    ASSIGN_SHADER_PARAM(TextureIndex, NormalTexture);
 }
 
 void TreeBranchesMaterialShader_c::Load()
 {
-    AddBindTexture(TreeBranchTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_D.hp_tex")));
-    AddBindTexture(TreeBranchTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_N.hp_tex")));
-}
-
-void TreeBranchesMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTextureIndex = GetTextureBindIndex(TreeBranchTextures::Albedo);
-    Params->NormalTextureIndex = GetTextureBindIndex(TreeBranchTextures::Normal);
-}
-
-namespace TrimTextures
-{
-    enum
-    {
-        Mask,
-        Albedo,
-        Normal,
-        DetailNormal
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_N.hp_tex"));
 }
 
 TrimMaterialShader_c::TrimMaterialShader_c()
@@ -217,30 +134,10 @@ TrimMaterialShader_c::TrimMaterialShader_c()
 
 void TrimMaterialShader_c::Load()
 {
-    AddBindTexture(TrimTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex")));
-    AddBindTexture(TrimTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(TrimTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex")));
-    AddBindTexture(TrimTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void TrimMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->MaskTexture = GetTextureBindIndex(TrimTextures::Mask);
-    Params->AlbedoTexture = GetTextureBindIndex(TrimTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(TrimTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(TrimTextures::DetailNormal);
-}
-
-namespace StoneBrickWallTextures
-{
-    enum
-    {
-        AO,
-        Albedo,
-        Normal,
-        DetailNormal
-    };
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 StoneBrickWallMaterialShader_c::StoneBrickWallMaterialShader_c()
@@ -259,31 +156,10 @@ StoneBrickWallMaterialShader_c::StoneBrickWallMaterialShader_c()
 
 void StoneBrickWallMaterialShader_c::Load()
 {
-    AddBindTexture(StoneBrickWallTextures::AO, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_AO.hp_tex")));
-    AddBindTexture(StoneBrickWallTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_D.hp_tex")));
-    AddBindTexture(StoneBrickWallTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_N.hp_tex")));
-    AddBindTexture(StoneBrickWallTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void StoneBrickWallMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AOTexture = GetTextureBindIndex(StoneBrickWallTextures::AO);
-    Params->AlbedoTexture = GetTextureBindIndex(StoneBrickWallTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(StoneBrickWallTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(StoneBrickWallTextures::DetailNormal);
-}
-
-namespace SoulRocksTextures
-{
-    enum
-    {
-        GrassAlbedo,
-        RocksAlbedo,
-        GrassNormal,
-        RocksNormal,
-        Normal,
-    };
+    LoadShaderTexture("AOTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_AO.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 SoulRocksMaterialShader_c::SoulRocksMaterialShader_c()
@@ -315,32 +191,11 @@ SoulRocksMaterialShader_c::SoulRocksMaterialShader_c()
 
 void SoulRocksMaterialShader_c::Load()
 {
-    AddBindTexture(SoulRocksTextures::GrassAlbedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_D.hp_tex")));
-    AddBindTexture(SoulRocksTextures::RocksAlbedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_D.hp_tex")));
-    AddBindTexture(SoulRocksTextures::GrassNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_N.hp_tex")));
-    AddBindTexture(SoulRocksTextures::RocksNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_N.hp_tex")));
-    AddBindTexture(SoulRocksTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Cave_Rock_Large02_N.hp_tex")));
-}
-
-void SoulRocksMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->GrassAlbedoTexture = GetTextureBindIndex(SoulRocksTextures::GrassAlbedo);
-    Params->RocksAlbedoTexture = GetTextureBindIndex(SoulRocksTextures::RocksAlbedo);
-    Params->GrassNormalTexture = GetTextureBindIndex(SoulRocksTextures::GrassNormal);
-    Params->RocksNormalTexture = GetTextureBindIndex(SoulRocksTextures::RocksNormal);
-    Params->NormalTexture = GetTextureBindIndex(SoulRocksTextures::Normal);
-}
-
-namespace DomeTextures
-{
-    enum
-    {
-        Mask,
-        Albedo,
-        Normal,
-        DetailNormal
-    };
+    LoadShaderTexture("GrassAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_D.hp_tex"));
+    LoadShaderTexture("RocksAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_D.hp_tex"));
+    LoadShaderTexture("GrassNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_N.hp_tex"));
+    LoadShaderTexture("RocksNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_N.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Cave_Rock_Large02_N.hp_tex"));
 }
 
 DomeMaterialShader_c::DomeMaterialShader_c()
@@ -364,29 +219,10 @@ DomeMaterialShader_c::DomeMaterialShader_c()
 
 void DomeMaterialShader_c::Load()
 {
-    AddBindTexture(DomeTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex")));
-    AddBindTexture(DomeTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(DomeTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex")));
-    AddBindTexture(DomeTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void DomeMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->MaskTexture = GetTextureBindIndex(DomeTextures::Mask);
-    Params->AlbedoTexture = GetTextureBindIndex(DomeTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(DomeTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(DomeTextures::DetailNormal);
-}
-
-namespace FirePitTextures
-{
-    enum
-    {
-        Mask,
-        Albedo,
-        Normal,
-    };
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 FirePitMaterialShader_c::FirePitMaterialShader_c()
@@ -415,28 +251,9 @@ FirePitMaterialShader_c::FirePitMaterialShader_c()
 
 void FirePitMaterialShader_c::Load()
 {
-    AddBindTexture(FirePitTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_M.hp_tex")));
-    AddBindTexture(FirePitTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(FirePitTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_N.hp_tex")));
-}
-
-void FirePitMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->MaskTexture = GetTextureBindIndex(FirePitTextures::Mask);
-    Params->AlbedoTexture = GetTextureBindIndex(FirePitTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(FirePitTextures::Normal);
-}
-
-namespace FloorTextures
-{
-    enum
-    {
-        PatternMask,
-        Albedo,
-        Normal,
-        TileMask,
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_N.hp_tex"));
 }
 
 FloorMaterialShader_c::FloorMaterialShader_c()
@@ -470,32 +287,15 @@ FloorMaterialShader_c::FloorMaterialShader_c()
 
 void FloorMaterialShader_c::Load()
 {
-    AddBindTexture(FloorTextures::PatternMask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTileMasks_M.hp_tex")));
-    AddBindTexture(FloorTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(FloorTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_N.hp_tex")));
-    AddBindTexture(FloorTextures::TileMask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_M.hp_tex")));
-}
-
-void FloorMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->PatternMaskTexture = GetTextureBindIndex(FloorTextures::PatternMask);
-    Params->AlbedoTexture = GetTextureBindIndex(FloorTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(FloorTextures::Normal);
-    Params->TileMaskTexture = GetTextureBindIndex(FloorTextures::TileMask);
-}
-
-namespace WaterTextures
-{
-    enum
-    {
-        Normal,
-    };
+    LoadShaderTexture("PatternMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTileMasks_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_N.hp_tex"));
+    LoadShaderTexture("TileMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_M.hp_tex"));
 }
 
 WaterMaterialShader_c::WaterMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Ocean.hlsl";
+    ShaderFilePath = L"Materials/Water.hlsl";
     ShaderDebugName = L"OceanShader";
 
     ASSIGN_SHADER_PARAM(float3, Color);
@@ -511,24 +311,7 @@ WaterMaterialShader_c::WaterMaterialShader_c()
 
 void WaterMaterialShader_c::Load()
 {
-    AddBindTexture(WaterTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTileMasks_M.hp_tex")));
-}
-
-void WaterMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->NormalTexture = GetTextureBindIndex(WaterTextures::Normal);
-}
-
-namespace PillarTextures
-{
-    enum
-    {
-        Albedo,
-        Mask,
-        Normal,
-        DetailNormal,
-    };
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Water2_N.hp_tex"));
 }
 
 PillarMaterialShader_c::PillarMaterialShader_c()
@@ -558,29 +341,10 @@ PillarMaterialShader_c::PillarMaterialShader_c()
 
 void PillarMaterialShader_c::Load()
 {
-    AddBindTexture(PillarTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(PillarTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_M.hp_tex")));
-    AddBindTexture(PillarTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_N.hp_tex")));
-    AddBindTexture(PillarTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void PillarMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(PillarTextures::Albedo);
-    Params->MaskTexture = GetTextureBindIndex(PillarTextures::Mask);
-    Params->NormalTexture = GetTextureBindIndex(PillarTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(PillarTextures::DetailNormal);
-}
-
-namespace RailingTextures
-{
-    enum
-    {
-        Albedo,
-        Mask,
-        Normal,
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 RailingMaterialShader_c::RailingMaterialShader_c()
@@ -601,28 +365,9 @@ RailingMaterialShader_c::RailingMaterialShader_c()
 
 void RailingMaterialShader_c::Load()
 {
-    AddBindTexture(RailingTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(RailingTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_M.hp_tex")));
-    AddBindTexture(RailingTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_N.hp_tex")));
-}
-
-void RailingMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(RailingTextures::Albedo);
-    Params->MaskTexture = GetTextureBindIndex(RailingTextures::Mask);
-    Params->NormalTexture = GetTextureBindIndex(RailingTextures::Normal);
-}
-
-namespace StatueTextures
-{
-    enum
-    {
-        Albedo,
-        Mask,
-        Normal,
-        DetailNormal,
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_N.hp_tex"));
 }
 
 StatueMaterialShader_c::StatueMaterialShader_c()
@@ -654,30 +399,10 @@ StatueMaterialShader_c::StatueMaterialShader_c()
 
 void StatueMaterialShader_c::Load()
 {
-    AddBindTexture(StatueTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle.hp_tex")));
-    AddBindTexture(StatueTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_M.hp_tex")));
-    AddBindTexture(StatueTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_N.hp_tex")));
-    AddBindTexture(StatueTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle_N.hp_tex")));
-}
-
-void StatueMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(StatueTextures::Albedo);
-    Params->MaskTexture = GetTextureBindIndex(StatueTextures::Mask);
-    Params->NormalTexture = GetTextureBindIndex(StatueTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(StatueTextures::DetailNormal);
-}
-
-namespace StairsTextures
-{
-    enum
-    {
-        Albedo,
-        Mask,
-        Normal,
-        DetailNormal,
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle_N.hp_tex"));
 }
 
 StairsMaterialShader_c::StairsMaterialShader_c()
@@ -699,29 +424,10 @@ StairsMaterialShader_c::StairsMaterialShader_c()
 
 void StairsMaterialShader_c::Load()
 {
-    AddBindTexture(StairsTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(StairsTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_M.hp_tex")));
-    AddBindTexture(StairsTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_M.hp_tex")));
-    AddBindTexture(StairsTextures::DetailNormal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
-}
-
-void StairsMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(StairsTextures::Albedo);
-    Params->MaskTexture = GetTextureBindIndex(StairsTextures::Mask);
-    Params->NormalTexture = GetTextureBindIndex(StairsTextures::Normal);
-    Params->DetailNormalTexture = GetTextureBindIndex(StairsTextures::DetailNormal);
-}
-
-namespace ShieldTextures
-{
-    enum
-    {
-        Albedo,
-        Mask,
-        Normal,
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
 }
 
 ShieldMaterialShader_c::ShieldMaterialShader_c()
@@ -743,25 +449,9 @@ ShieldMaterialShader_c::ShieldMaterialShader_c()
 
 void ShieldMaterialShader_c::Load()
 {
-    AddBindTexture(ShieldTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
-    AddBindTexture(ShieldTextures::Mask, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_M.hp_tex")));
-    AddBindTexture(ShieldTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_N.hp_tex")));
-}
-
-void ShieldMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(ShieldTextures::Albedo);
-    Params->MaskTexture = GetTextureBindIndex(ShieldTextures::Mask);
-    Params->NormalTexture = GetTextureBindIndex(ShieldTextures::Normal);
-}
-
-namespace WaveFoamTextures
-{
-    enum
-    {
-
-    };
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_N.hp_tex"));
 }
 
 WaveFoamMaterialShader_c::WaveFoamMaterialShader_c()
@@ -772,21 +462,6 @@ WaveFoamMaterialShader_c::WaveFoamMaterialShader_c()
 
 void WaveFoamMaterialShader_c::Load()
 {}
-
-void WaveFoamMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-}
-
-namespace SoulTreeTextures
-{
-    enum
-    {
-        Albedo,
-        Normal,
-    };
-}
 
 SoulTreeMaterialShader_c::SoulTreeMaterialShader_c()
 {
@@ -804,13 +479,6 @@ SoulTreeMaterialShader_c::SoulTreeMaterialShader_c()
 
 void SoulTreeMaterialShader_c::Load()
 {
-    AddBindTexture(SoulTreeTextures::Albedo, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01DF.hp_tex")));
-    AddBindTexture(SoulTreeTextures::Normal, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01NRM.hp_tex")));
-}
-
-void SoulTreeMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
-{
-    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
-    Params->AlbedoTexture = GetTextureBindIndex(SoulTreeTextures::Albedo);
-    Params->NormalTexture = GetTextureBindIndex(SoulTreeTextures::Normal);
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01DF.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01NRM.hp_tex"));
 }

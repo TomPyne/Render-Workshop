@@ -1,6 +1,8 @@
 #include "Assets/MaterialManager.h"
 
+#include "Assets/AssetManager.h"
 #include "Rendering/Materials.h"
+
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
@@ -18,7 +20,6 @@ namespace MaterialManager
 struct MaterialManagerGlobals_s
 {
 	std::unordered_map<std::wstring, std::shared_ptr<MaterialShader_c>> RegisteredMaterials;
-	std::unordered_map<uint64_t, std::shared_ptr<MaterialShaderInstance_c>> LoadedMaterialInstances;
 } G;
 
 std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const Path_s& Path)
@@ -33,11 +34,10 @@ std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const Path_s& 
 
 std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const JsonValue_s& Data)
 {
-	// Compute hash of data to use as a key for caching
-	auto It = G.LoadedMaterialInstances.find(Data.GetHash());
-	if (It != G.LoadedMaterialInstances.end())
+	std::shared_ptr<MaterialShaderInstance_c> Found = AssetManager_c::TryGetMaterialInstance(Data.GetHash());
+	if (Found)
 	{
-		return It->second;
+		return Found;
 	}
 
 	int32_t Version = -1;
@@ -81,9 +81,7 @@ std::shared_ptr<MaterialShaderInstance_c> RequestMaterialInstance(const JsonValu
 
 	NewMaterialInstance->Deserialize(Data);
 
-	NewMaterialInstance->Update();
-
-	G.LoadedMaterialInstances[Data.GetHash()] = NewMaterialInstance;
+	AssetManager_c::CacheMaterialInstance(Data.GetHash(), NewMaterialInstance);
 
 	return NewMaterialInstance;
 }

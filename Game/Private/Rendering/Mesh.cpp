@@ -1,5 +1,6 @@
 #include "Rendering/Mesh.h"
 
+#include "Assets/AssetManager.h"
 #include "Rendering/SpaceRenderer.h"
 #include "Rendering/Materials.h"
 #include <Render/Render.h>
@@ -28,8 +29,22 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s D
 
 	for (const Surface_s& Surface : Surfaces)
 	{
-		if (Surface.Material)
+		MaterialShaderInstance_c* Material = Surface.Material.get();
+		if (Material)
 		{
+			if (!Material->IsReady())
+			{
+				Material = AssetManager_c::GetDefaultMaterial().get();
+				if (!Material)
+					continue;
+			}
+
+			rl::GraphicsPipelineState_t PSO = Material->GetPSO(Mirrored);
+			rl::ConstantBuffer_t MaterialConstants = Material->GetConstantBuffer();
+
+			if (!rl::IsValid(PSO) || !rl::IsValid(MaterialConstants))
+				continue;
+
 			SpatialRenderingBatch_s& Batch = Collector.MainPass.AddBatch();
 			
 			Batch.IndexBuffer = IndexBuffer;
@@ -40,8 +55,8 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s D
 			Batch.DynamicUniforms = DynamicUniforms;
 			Batch.MeshUniforms = MeshUniforms;
 
-			Batch.PSO = Surface.Material->GetPSO(Mirrored);
-			Batch.MaterialUniforms = Surface.Material->GetConstantBuffer();
+			Batch.PSO = PSO;
+			Batch.MaterialUniforms = MaterialConstants;
 		}
 	}
 }
