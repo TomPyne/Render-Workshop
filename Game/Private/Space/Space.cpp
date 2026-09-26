@@ -189,16 +189,42 @@ bool Space_c::IsControllerActive(const ControllerComponent_c* Controller) const
 	return Controller && CurrentController == Controller;
 }
 
+void Space_c::RegisterPhysical(IPhysical_c* Physical)
+{
+	if (Physical)
+	{
+		PhysicalComponents.push_back(Physical);
+	}
+}
+
+void Space_c::UnregisterPhysical(IPhysical_c* Physical)
+{
+	if (Physical)
+	{
+		std::erase(PhysicalComponents, Physical);
+	}
+}
+
 void Space_c::Trace(IntersectionCtx_s& Context) const
 {
-	for (const std::shared_ptr<Object_c>& Object : Objects)
+	for (IPhysical_c* Physical : PhysicalComponents)
 	{
-		for (const std::shared_ptr<ObjectComponent_c>& Component : Object->Components)
-		{
-			if (const IPhysical_c* Physical = dynamic_cast<IPhysical_c*>(Component.get()))
-			{
-				Physical->Intersect(Context);
-			}
-		}
+		Physical->Intersect(Context);
+	}
+}
+
+void Space_c::RegisterRenderable(IRenderable_c* Renderable)
+{
+	if (Renderable)
+	{
+		RenderableComponents.push_back(Renderable);
+	}
+}
+
+void Space_c::UnregisterRenderable(IRenderable_c* Renderable)
+{
+	if (Renderable)
+	{
+		std::erase(RenderableComponents, Renderable);
 	}
 }

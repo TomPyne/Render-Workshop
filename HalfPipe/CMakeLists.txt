@@ -4,7 +4,7 @@ target_link_libraries(HalfPipe Shared)
 
 set_target_properties(HalfPipe
 					PROPERTIES
-					RUNTIME_OUTPUT_NAME_DEBUG HalfPipe_Debug
+					OUTPUT_NAME_DEBUG HalfPipe_Debug
 					VS_DEBUGGER_WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/HalfPipe
 )
 

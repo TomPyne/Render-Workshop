@@ -23,8 +23,14 @@ struct SpatialRenderingMeshPass_s
 {
 	std::vector<SpatialRenderingBatch_s> Batches;
 
+	static constexpr size_t ArenaSize = 100;
+
 	SpatialRenderingBatch_s& AddBatch()
 	{
+		if ((Batches.size() % ArenaSize) == 0)
+		{
+			Batches.reserve(Batches.size() + ArenaSize);
+		}
 		Batches.resize(Batches.size() + 1);
 		return Batches.back();
 	}

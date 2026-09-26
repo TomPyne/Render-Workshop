@@ -1,6 +1,7 @@
 #include "Object/MeshComponent.h"
 
 #include "Assets/MeshManager.h"
+#include "Space/Space.h"
 #include "Physics/Intersection.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/SpaceRenderer.h"
@@ -9,6 +10,16 @@
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 
+void MeshComponent_c::OnCreate()
+{
+	Super::OnCreate();
+
+	if (Space_c* Space = GetSpace())
+	{
+		Space->RegisterPhysical(this);
+		Space->RegisterRenderable(this);
+	}
+}
 
 void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 {
@@ -19,6 +30,16 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 	{
 		SetMesh(MeshManager::RequestMesh(MeshAssetPath));
 	}
+}
+
+void MeshComponent_c::PreDestroy()
+{
+	if (Space_c* Space = GetSpace())
+	{
+		Space->UnregisterPhysical(this);
+		Space->UnregisterRenderable(this);
+	}
+	Super::PreDestroy();
 }
 
 void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)

@@ -13,6 +13,8 @@
 
 class CameraComponent_c;
 class ControllerComponent_c;
+class IRenderable_c;
+class IPhysical_c;
 class Level_c;
 class MaterialShader_c;
 
@@ -92,8 +94,14 @@ public:
 	ControllerComponent_c* GetController() const;
 	bool IsControllerActive(const ControllerComponent_c* Controller) const;
 
-	// Tracing ////////////////////////////////////////////////////////////////////////////////
+	// Tracing ////////////////////////////////////////////////////////////////////////////////////
+	void RegisterPhysical(IPhysical_c* Physical);
+	void UnregisterPhysical(IPhysical_c* Physical);
 	void Trace(struct IntersectionCtx_s& Context) const;
+
+	// Rendering //////////////////////////////////////////////////////////////////////////////////
+	void RegisterRenderable(IRenderable_c* Renderable);
+	void UnregisterRenderable(IRenderable_c* Renderable);
 
 protected:
 
@@ -103,10 +111,18 @@ protected:
 	// Controllers
 	std::vector<std::weak_ptr<ControllerComponent_c>> ControllerStack;
 
+	// Tracing
+	std::vector<IPhysical_c*> PhysicalComponents;
+
+	// Rendering
+	std::vector<IRenderable_c*> RenderableComponents;
+
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
 
 private:
 
 	std::unordered_map<std::wstring, std::function<std::shared_ptr<Object_c>(const ObjectArgs_s&)>> ObjectFactoryCallbacks;
 	std::unordered_map<std::wstring, std::function<std::shared_ptr<ObjectComponent_c>(const ObjectComponentArgs_s&)>> ComponentFactoryCallbacks;
+
+	friend class SpaceRenderer_c;
 };

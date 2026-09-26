@@ -205,6 +205,6 @@ uint2 GameApp_c::GetScreenSize() const
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const
 {
 	rl::RenderInitParams Params = {};
-	Params.DebugEnabled = true;
+	//Params.DebugEnabled = true;
 	return Params;
 }

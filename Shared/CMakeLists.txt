@@ -16,6 +16,8 @@ set(
     "FileUtils/JsonValue.h"
     "FileUtils/PathUtils.cpp"
     "FileUtils/PathUtils.h"
+    "Jobs/JobSystem.cpp"
+    "Jobs/JobSystem.h"
     "Logging/Logging.cpp"
     "Logging/Logging.h"
     "Materials/Materials.cpp"

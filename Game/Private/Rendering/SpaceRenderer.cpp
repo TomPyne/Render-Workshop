@@ -116,15 +116,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer());
 
-	for (std::shared_ptr<Object_c>& Object : Space->Objects)
+	for (IRenderable_c* Renderable : Space->RenderableComponents)
 	{
-		for (std::shared_ptr<ObjectComponent_c>& Component : Object->Components)
-		{
-			if (IRenderable_c* Renderable = dynamic_cast<IRenderable_c*>(Component.get()))
-			{
-				Renderable->Render(Collector);
-			}
-		}
+		Renderable->Render(Collector);
 	}
 
 	Clock.Tick();

@@ -10,7 +10,9 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	OBJECTCOMPONENT_BODY(MeshComponent_c, SpatialObjectComponent_c)
 
 	// Begin ObjectComponent_c interface
+	virtual void OnCreate() override;
 	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void PreDestroy() override;
 	// End ObjectComponent_c interface
 
 	// Begin IRenderable_c interface
