@@ -13,6 +13,7 @@
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 #include <Space/Space.h>
+#include <Tools/PerfStats.h>
 
 #include <RenderImGui/imgui/imgui.h>
 
@@ -30,6 +31,7 @@ namespace Mode_e
 static struct
 {
 	bool ShowUI = true;
+	bool ShowPerfWindow = true;
 	Mode_e::Type CurrentMode = Mode_e::NONE;
 	ColonyMode_c* ColonyMode = nullptr;
 
@@ -143,12 +145,21 @@ void SimpleGameApp_c::ImGuiUpdate()
 		{
 			SwitchMode(Mode_e::BUILDING);
 		}
+		if (ImGui::MenuItem("Performance", nullptr, G.ShowPerfWindow))
+		{
+			G.ShowPerfWindow = !G.ShowPerfWindow;
+		}
 		ImGui::EndMainMenuBar();
 	}
 
 	if (G.ColonyMode)
 	{
 		G.ColonyMode->ImGuiUpdate();
+	}
+
+	if (G.ShowPerfWindow)
+	{
+		PerfStats::DrawPerfWindow(&G.ShowPerfWindow);
 	}
 }
 

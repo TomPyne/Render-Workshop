@@ -69,6 +69,8 @@ function(create_proj projname rapi)
 		"Private/Rendering/Materials/BRDFMaterial.h"
 		"Private/Space/Space.cpp"
 		"Public/Space/Space.h"
+		"Private/Tools/PerfStats.cpp"
+		"Public/Tools/PerfStats.h"
 		"Public/Utility/SharedPtr.h"
 		"Public/Utility/Transform.h"
 	)

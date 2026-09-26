@@ -12,6 +12,7 @@
 #include "Rendering/SpaceRenderer.h"
 #include "Game/Private/Rendering/Materials/BRDFMaterial.h"
 #include "Space/Space.h"
+#include "Tools/PerfStats.h"
 
 
 #include <RenderImGui/imgui/imgui.h>
@@ -52,11 +53,17 @@ void GameApp_c::Main()
 	PreUpdate();
 
 	const float DeltaSeconds = Clock.GetDeltaSeconds();
+	PerfStats::RecordFrame(DeltaSeconds);
+
+	PerfStats::BeginUpdate();
 	Update(DeltaSeconds);
+	PerfStats::EndUpdate();
 
 	ImGuiUpdate();
 
+	PerfStats::BeginRender();
 	Render();
+	PerfStats::EndRender();
 }
 
 void GameApp_c::Shutdown()
