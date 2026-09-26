@@ -21,7 +21,7 @@ bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms
 	return Mirrored;
 }
 
-void Mesh_s::Render(SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms, bool Mirrored) const
+void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored) const
 {
 	if (!Ready)
 		return;

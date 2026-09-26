@@ -95,6 +95,11 @@ void SpaceRenderer_c::Init()
 	G.Initialized = true;
 }
 
+FrameBufferAlloc_s SpatialRenderingCollector_s::Alloc(const void* Data, uint32_t Size)
+{
+	return FrameBuffer.Alloc(Data, Size);
+}
+
 void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space_c* Space, rl::CommandListSubmissionGroup& clGroup)
 {
 	if (!Space)
@@ -107,7 +112,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	matrix ProjectionMatrix = PrimaryCamera->CalculateProjectionMatrix(Screen.Width, Screen.Height);
 	matrix ViewMatrix = PrimaryCamera->CalculateViewMatrix();
 
-	SpatialRenderingCollector_s Collector = {};
+	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
+
+	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer());
 
 	for (std::shared_ptr<Object_c>& Object : Space->Objects)
 	{
@@ -127,8 +134,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
-
-	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
 
 	FrameBufferAlloc_s ViewUniformsBuffer = RGBuilder.Alloc(ViewUniforms);
 

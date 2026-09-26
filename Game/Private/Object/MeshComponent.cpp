@@ -3,6 +3,7 @@
 #include "Assets/MeshManager.h"
 #include "Physics/Intersection.h"
 #include "Rendering/Mesh.h"
+#include "Rendering/SpaceRenderer.h"
 
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>
@@ -27,7 +28,7 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 		ObjectUniforms_s Uniforms = {};
 		const bool Mirrored = MakeObjectUniforms(GetWorldMatrix(), Uniforms);
 
-		Mesh->Render(Collector, rl::CreateDynamicConstantBuffer(&Uniforms), Mirrored);
+		Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored);
 	}
 }
 

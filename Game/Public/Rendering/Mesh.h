@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <RenderUtils/FrameBuffer/FrameBufferAlloc.h>
 #include <SurfMath.h>
 
 #include <cstdint>
@@ -63,5 +64,5 @@ struct Mesh_s
 
 	AABB Bounds = {};
 
-	void Render(struct SpatialRenderingCollector_s& Collector, rl::DynamicBuffer_t DynamicUniforms, bool Mirrored) const;
+	void Render(struct SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored) const;
 };
