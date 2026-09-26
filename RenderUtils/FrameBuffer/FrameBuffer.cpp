@@ -14,8 +14,13 @@ FrameBufferAlloc_t FrameBuffer_s::Alloc(const void* Data, uint32_t Size)
 void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_t& OutHandle)
 {
 	ASSERTMSG(!Sealed, "FrameBuffer has already been uploaded");
-	ASSERTMSG(std::this_thread::get_id() == OwnerThread, "FrameBuffer allocated from a thread that doesn't own it");
 	ASSERTMSG(Size > 0u && Size <= MaxAllocSize, "FrameBuffer alloc size must be in (0, 64KB]");
+
+	if (OwnerThread == std::thread::id())
+	{
+		OwnerThread = std::this_thread::get_id();
+	}
+	ASSERTMSG(std::this_thread::get_id() == OwnerThread, "FrameBuffer allocated from a thread that doesn't own it");
 
 	uint32_t Offset = Pages.empty() ? PageSize : (Pages.back().Used + Alignment - 1u) & ~(Alignment - 1u);
 

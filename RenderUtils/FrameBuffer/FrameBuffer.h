@@ -58,5 +58,6 @@ private:
 	std::vector<Page_s> Pages;
 	rl::GPUAddress_t GPUBase = rl::GPUAddress_t::INVALID;
 	bool Sealed = false;
-	std::thread::id OwnerThread = std::this_thread::get_id();
+	// Bound on first alloc so a FrameBuffer can be created on one thread and handed to a worker
+	std::thread::id OwnerThread = {};
 };
