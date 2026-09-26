@@ -39,7 +39,7 @@ void TonemapRenderer_s::Init(rl::RootSignature_t InRootSignaure, uint32_t InCBVR
 	Ready = true;
 }
 
-void TonemapRenderer_s::FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, rl::DynamicBuffer_t UniformBuffer)
+void TonemapRenderer_s::FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, FrameBufferAlloc_s UniformBuffer)
 {
 	if (!Ready)
 		return;
@@ -80,9 +80,7 @@ void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e M
 
 			Uniforms.InputTexture = RG.GetSRVIndex(Input);
 
-			rl::DynamicBuffer_t TonemapCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
-
-			FullScreenPassVSPS(RG, Ctx, Output, NoTonemapPSO, TonemapCBuf);
+			FullScreenPassVSPS(RG, Ctx, Output, NoTonemapPSO, RG.Alloc(Uniforms));
 		});
 	}
 	else if (Mode == TonemapMode_e::ACES)
@@ -102,9 +100,7 @@ void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e M
 			Uniforms.InputTexture = RG.GetSRVIndex(Input);
 			Uniforms.ExposureBias = 1.0f;
 
-			rl::DynamicBuffer_t TonemapCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
-
-			FullScreenPassVSPS(RG, Ctx, Output, ACESTonemapPSO, TonemapCBuf);
+			FullScreenPassVSPS(RG, Ctx, Output, ACESTonemapPSO, RG.Alloc(Uniforms));
 		});
 	}
 	else if (Mode == TonemapMode_e::Filmic)
@@ -126,9 +122,7 @@ void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e M
 			Uniforms.ExposureBias = 2.0f;
 			Uniforms.WhitePoint = 11.2f;
 
-			rl::DynamicBuffer_t TonemapCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
-
-			FullScreenPassVSPS(RG, Ctx, Output, FilmicTonemapPSO, TonemapCBuf);
+			FullScreenPassVSPS(RG, Ctx, Output, FilmicTonemapPSO, RG.Alloc(Uniforms));
 		});
 	}
 }

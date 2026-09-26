@@ -29,5 +29,5 @@ struct TonemapRenderer_s
 	rl::GraphicsPipelineStatePtr FilmicTonemapPSO = {};
 
 private:
-	void FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, rl::DynamicBuffer_t UniformBuffer);
+	void FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx, RenderGraphResourceHandle_t Target, rl::GraphicsPipelineState_t PSO, FrameBufferAlloc_s UniformBuffer);
 };
