@@ -75,6 +75,13 @@ void MaterialShader_c::AddBindTexture(int TextureID, const std::shared_ptr<Textu
     BoundTextures[TextureID] = Texture;
 }
 
+int MaterialShader_c::LoadBindTexture(const Path_s& Path)
+{
+    const int Index = static_cast<int>(BoundTextures.size());
+    BoundTextures.push_back(TextureManager::RequestTexture(Path));
+    return Index;
+}
+
 TextureIndex MaterialShader_c::GetTextureBindIndex(int TextureID) const
 {
     if (TextureID >= 0 && BoundTextures.size() > TextureID)

@@ -60,9 +60,21 @@ public:
 
 protected:
 
+	// Construct params using struct defaults
+	template<typename T>
+	T* const InitDefaultParams(std::vector<uint8_t>& OutData) const
+	{
+		OutData.resize(sizeof(T));
+		T* const Params = reinterpret_cast<T*>(OutData.data());
+		*Params = {};
+		return Params;
+	}
+
+
 	rl::GraphicsPipelineStateDesc MakeDefaultPSODesc(const Path_s& ShaderPath, const rl::ShaderMacros& Macros);
 
 	void AddBindTexture(int TextureId, const std::shared_ptr<Texture_s>& Texture);
+	int LoadBindTexture(const Path_s& Path);
 	TextureIndex GetTextureBindIndex(int TextureID) const;
 
 	std::unordered_map<std::string, ShaderParam_s> ShaderParameters;

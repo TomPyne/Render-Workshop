@@ -12,7 +12,8 @@ struct MaterialUniforms_s
     float ScaleMarble1;
 
     float ScaleMarble2;
-    float3 _Pad0;
+    uint UseUV3;
+    float2 __Pad;
 
     uint MaskTextureIndex;
     uint AlbedoTextureIndex;
@@ -36,13 +37,9 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    Output.Position = ModelToClip(LoadPosition(VertexID));
-    Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
-    Output.Tangent = TangentModelToWorld(LoadTangent(VertexID));
+    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
 
-    Output.UV0 = LoadUV0(VertexID);
-
-    float2 SecondUV = USE_UV3 ? LoadUV2(VertexID) : Output.UV0;
+    float2 SecondUV = c_Material.UseUV3 ? LoadUV2(VertexID) : Output.UV0;
 
     Output.UV1 = SecondUV / c_Material.ScaleMarble1; // OPT : Pass as reciprocal
     Output.UV2 = SecondUV / c_Material.ScaleMarble2;

@@ -1,8 +1,6 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
-#include "Materials/ArchMaterial.h"
-#include "Materials/BackgroundMatteMaterial.h"
 #include "Materials/SunTempleMaterials.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"

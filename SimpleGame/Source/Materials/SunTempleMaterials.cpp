@@ -3,6 +3,67 @@
 #include <Assets/TextureManager.h>
 #include <Shared/FileUtils/PathUtils.h>
 
+ArchMaterialShader_c::ArchMaterialShader_c()
+{
+    ShaderFilePath = L"Materials/Arch.hlsl";
+    ShaderDebugName = L"ArchShader";
+
+    ASSIGN_SHADER_PARAM(float3, ColorMarble1);
+    ASSIGN_SHADER_PARAM(float, AOStrength);
+    ASSIGN_SHADER_PARAM(float3, ColorMarble2);
+    ASSIGN_SHADER_PARAM(float, AOStrength2);
+    ASSIGN_SHADER_PARAM(float, NormalIntensity);
+    ASSIGN_SHADER_PARAM(float, RoughnessMarble1);
+    ASSIGN_SHADER_PARAM(float, RoughnessMarble2);
+    ASSIGN_SHADER_PARAM(float, ScaleMarble1);
+    ASSIGN_SHADER_PARAM(float, ScaleMarble2);
+    ASSIGN_SHADER_PARAM(DynamicBool, UseUV3);
+    ASSIGN_SHADER_PARAM(TextureIndex, MaskTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, NormalTextureIndex);
+    ASSIGN_SHADER_PARAM(TextureIndex, DetailNormalTextureIndex);
+}
+
+void ArchMaterialShader_c::Load()
+{
+    AddBindTexture(AlbedoTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex")));
+    AddBindTexture(NormalTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_N.hp_tex")));
+    AddBindTexture(DetailNormalTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex")));
+    AddBindTexture(MaskTex, TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_M.hp_tex")));
+}
+
+void ArchMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
+{
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
+    Params->AlbedoTextureIndex = GetTextureBindIndex(AlbedoTex);
+    Params->NormalTextureIndex = GetTextureBindIndex(NormalTex);
+    Params->DetailNormalTextureIndex = GetTextureBindIndex(DetailNormalTex);
+    Params->MaskTextureIndex = GetTextureBindIndex(MaskTex);
+}
+
+
+BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
+{
+    ShaderFilePath = L"Materials/BackgroundMatte.hlsl";
+    ShaderDebugName = L"BackgroundMatteShader";
+
+    ASSIGN_SHADER_PARAM(float3, Color);
+    ASSIGN_SHADER_PARAM(float, Contrast);
+    ASSIGN_SHADER_PARAM(float, Brightness);
+    ASSIGN_SHADER_PARAM(TextureIndex, MatteTexture);
+}
+
+void BackgroundMatteMaterialShader_c::Load()
+{
+    MatteTexture = LoadBindTexture(Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BackgroundMatte.hp_tex"));
+}
+
+void BackgroundMatteMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
+{
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
+    Params->MatteTexture = GetTextureBindIndex(MatteTexture);
+}
+
 namespace BottomTrimTextures
 {
     enum
@@ -46,18 +107,7 @@ void BottomTrimMaterialShader_c::Load()
 
 void BottomTrimMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    Params->ColorMarble1 = float3(1.0f);
-    Params->AOStrength = 0.0f;
-    Params->ColorMarble2 = float3(1.0f);
-    Params->NormalIntensity = 0.5f;
-    Params->RoughnessMarble1 = 0.3f;
-    Params->RoughnessMarble2 = 0.8f;
-    Params->ScaleMarble1 = 1.0f;
-    Params->ColorMetal = float3(1.0f);
-    Params->RoughnessMetalHigh = 0.3f;
-    Params->RoughnessMetalLow = 0.8f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->MaskTexture = GetTextureBindIndex(BottomTrimTextures::Mask);
     Params->AlbedoTexture = GetTextureBindIndex(BottomTrimTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(BottomTrimTextures::Normal);
@@ -93,10 +143,7 @@ void TreeTrunkMaterialShader_c::Load()
 
 void TreeTrunkMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    Params->Color = float3(0.81f);
-    Params->Roughness = 0.5f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTextureIndex = GetTextureBindIndex(TreeTrunkTextures::Albedo);
     Params->NormalTextureIndex = GetTextureBindIndex(TreeTrunkTextures::Normal);
 }
@@ -131,12 +178,9 @@ void TreeBranchesMaterialShader_c::Load()
 
 void TreeBranchesMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    Params->DiffuseColor = float3(1.0f);
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTextureIndex = GetTextureBindIndex(TreeBranchTextures::Albedo);
     Params->NormalTextureIndex = GetTextureBindIndex(TreeBranchTextures::Normal);
-    Params->EmissiveColor = float3(0.0f);
 }
 
 namespace TrimTextures
@@ -179,17 +223,7 @@ void TrimMaterialShader_c::Load()
 
 void TrimMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-
-    Params->ColorMarble1 = float3(1.0f);
-    Params->AOStrength = 0.0f;
-    Params->ColorMarble2 = float3(1.0f);
-    Params->NormalIntensity = 0.5f;
-    Params->RoughnessMarble1 = 0.3f;
-    Params->RoughnessMarble2 = 0.8f;
-    Params->ScaleMarble1 = 1.0f;
-    Params->UTile = 1.0f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->MaskTexture = GetTextureBindIndex(TrimTextures::Mask);
     Params->AlbedoTexture = GetTextureBindIndex(TrimTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(TrimTextures::Normal);
@@ -231,12 +265,7 @@ void StoneBrickWallMaterialShader_c::Load()
 
 void StoneBrickWallMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-
-    Params->NormalIntensity = 0.5f;
-    Params->RoughnessMarble1 = 0.3f;
-    Params->RoughnessMarble2 = 0.8f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AOTexture = GetTextureBindIndex(StoneBrickWallTextures::AO);
     Params->AlbedoTexture = GetTextureBindIndex(StoneBrickWallTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(StoneBrickWallTextures::Normal);
@@ -293,25 +322,7 @@ void SoulRocksMaterialShader_c::Load()
 
 void SoulRocksMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-
-    Params->GrassColor = float3(0.991f);
-    Params->NormalIntensity = 0.5f;
-    Params->RoughnessGrass = 0.0f;
-    Params->ScaleGrass = 1.0f;
-    Params->BlendMult = 0.0f;
-    Params->BlendPower = 10.0f;
-    Params->ColorRocks = float3(1.0f);
-    Params->DetailNormalIntensityRocks = 1.0f;
-    Params->MetallicRocksLow = 0.0f;
-    Params->MetallicRocksHigh = 1.0f;
-    Params->NormalIntensityRocks = 0.5f;
-    Params->RoughnessRocksHigh = 1.0f;
-    Params->RoughnessRocksLow = 0.0f;
-    Params->ScaleRocks = 1.0f;
-    Params->NormalIntensityGrass = 1.0f;
-
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->GrassAlbedoTexture = GetTextureBindIndex(SoulRocksTextures::GrassAlbedo);
     Params->RocksAlbedoTexture = GetTextureBindIndex(SoulRocksTextures::RocksAlbedo);
     Params->GrassNormalTexture = GetTextureBindIndex(SoulRocksTextures::GrassNormal);
@@ -359,9 +370,7 @@ void DomeMaterialShader_c::Load()
 
 void DomeMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->MaskTexture = GetTextureBindIndex(DomeTextures::Mask);
     Params->AlbedoTexture = GetTextureBindIndex(DomeTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(DomeTextures::Normal);
@@ -411,23 +420,7 @@ void FirePitMaterialShader_c::Load()
 
 void FirePitMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-
-    Params->CoalColor = float3(0.017f);
-    Params->RoughnessCoalHigh = 0.8f;
-    Params->RoughnessCoalLow = 0.8f;
-    Params->DirtBrightness = 2.0f;
-    Params->DirtContrast = 2.0f;
-    Params->ScaleDirt = 3.0f;
-    Params->ColorEmber = float3(1.0f, 0.7f, 0.37f);
-    Params->ColorEmber2 = float3(1.0f, 0.041f, 0.0f);
-    Params->EmberAnimScale = 3.0f;
-    Params->EmberAnimSpeed = 1.0f;
-    Params->Glow = 5.0f;
-    Params->MetalColor = float3(1.0f);
-    Params->RoughnessMetalHigh = 0.0f;
-    Params->RoughnessMetalLow = 0.0f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->MaskTexture = GetTextureBindIndex(FirePitTextures::Mask);
     Params->AlbedoTexture = GetTextureBindIndex(FirePitTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(FirePitTextures::Normal);
@@ -483,9 +476,7 @@ void FloorMaterialShader_c::Load()
 
 void FloorMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->PatternMaskTexture = GetTextureBindIndex(FloorTextures::PatternMask);
     Params->AlbedoTexture = GetTextureBindIndex(FloorTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(FloorTextures::Normal);
@@ -523,17 +514,7 @@ void WaterMaterialShader_c::Load()
 
 void WaterMaterialShader_c::GetDefaultParams(std::vector<uint8_t>&OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-
-    Params->Distance = 2000.0f;
-    Params->UseDistanceFade = 0;
-    Params->Color = float3(1.0f);
-    Params->NormalIntensity = 1.0f;
-    Params->Scale1 = 0.2f;
-    Params->Scale2 = 0.2f;
-    Params->Speed = 0.2f;
-    Params->Speed2 = 0.2f;
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->NormalTexture = GetTextureBindIndex(WaterTextures::Normal);
 }
 
@@ -583,9 +564,7 @@ void PillarMaterialShader_c::Load()
 
 void PillarMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(PillarTextures::Albedo);
     Params->MaskTexture = GetTextureBindIndex(PillarTextures::Mask);
     Params->NormalTexture = GetTextureBindIndex(PillarTextures::Normal);
@@ -627,9 +606,7 @@ void RailingMaterialShader_c::Load()
 
 void RailingMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(RailingTextures::Albedo);
     Params->MaskTexture = GetTextureBindIndex(RailingTextures::Mask);
     Params->NormalTexture = GetTextureBindIndex(RailingTextures::Normal);
@@ -683,9 +660,7 @@ void StatueMaterialShader_c::Load()
 
 void StatueMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(StatueTextures::Albedo);
     Params->MaskTexture = GetTextureBindIndex(StatueTextures::Mask);
     Params->NormalTexture = GetTextureBindIndex(StatueTextures::Normal);
@@ -730,9 +705,7 @@ void StairsMaterialShader_c::Load()
 
 void StairsMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(StairsTextures::Albedo);
     Params->MaskTexture = GetTextureBindIndex(StairsTextures::Mask);
     Params->NormalTexture = GetTextureBindIndex(StairsTextures::Normal);
@@ -775,9 +748,7 @@ void ShieldMaterialShader_c::Load()
 
 void ShieldMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(ShieldTextures::Albedo);
     Params->MaskTexture = GetTextureBindIndex(ShieldTextures::Mask);
     Params->NormalTexture = GetTextureBindIndex(ShieldTextures::Normal);
@@ -837,9 +808,7 @@ void SoulTreeMaterialShader_c::Load()
 
 void SoulTreeMaterialShader_c::GetDefaultParams(std::vector<uint8_t>& OutData) const
 {
-    OutData.resize(sizeof(Parameters_s));
-    Parameters_s* Params = reinterpret_cast<Parameters_s*>(OutData.data());
-    *Params = {};
+    Parameters_s* const Params = InitDefaultParams<Parameters_s>(OutData);
     Params->AlbedoTexture = GetTextureBindIndex(SoulTreeTextures::Albedo);
     Params->NormalTexture = GetTextureBindIndex(SoulTreeTextures::Normal);
 }

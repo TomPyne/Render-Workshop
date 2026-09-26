@@ -2,28 +2,94 @@
 
 #include <Rendering/Materials.h>
 
+class ArchMaterialShader_c : public MaterialShader_c
+{
+    struct Parameters_s
+    {
+        float3 ColorMarble1 = float3(1.0f);
+        float AOStrength = 0.0f;
+
+        float3 ColorMarble2 = float3(1.0f);
+        float AOStrength2 = 0.0f;
+
+        float NormalIntensity = 0.5f;
+        float RoughnessMarble1 = 0.3f;
+        float RoughnessMarble2 = 0.8f;
+        float ScaleMarble1 = 1.0f;
+
+        float ScaleMarble2 = 1.0f;
+        DynamicBool UseUV3 = 0;
+        float2 _Pad0;
+
+        TextureIndex MaskTextureIndex = 0u;
+        TextureIndex AlbedoTextureIndex = 0u;
+        TextureIndex NormalTextureIndex = 0u;
+        TextureIndex DetailNormalTextureIndex = 0u;
+    };
+
+    enum
+    {
+        AlbedoTex,
+        NormalTex,
+        DetailNormalTex,
+        MaskTex,
+    };
+
+public:
+
+    ArchMaterialShader_c();
+    virtual void Load() override;
+    virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+
+};
+
+class BackgroundMatteMaterialShader_c : public MaterialShader_c
+{
+    struct Parameters_s
+    {
+        float3 Color = float3(1.0f);
+        float Contrast = 1.0f;
+
+        float Brightness = 1.0f;
+        TextureIndex MatteTexture = 0u;
+        float2 __Pad;
+    };
+
+    int MatteTexture = -1;
+
+public:
+
+    BackgroundMatteMaterialShader_c();
+    virtual ~BackgroundMatteMaterialShader_c() = default;
+
+    virtual void Load() override;
+    virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
+};
+
 class BottomTrimMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 ColorMarble1;
-        float AOStrength;
+        float3 ColorMarble1 = float3(1.0f);
+        float AOStrength = 0.0f;
 
-        float3 ColorMarble2;
-        float RoughnessMetalLow;
+        float3 ColorMarble2 = float3(1.0f);
+        float RoughnessMetalLow = 0.8f;
 
-        float NormalIntensity;
-        float RoughnessMarble1;
-        float RoughnessMarble2;
-        float ScaleMarble1;
+        float NormalIntensity = 0.5f;
+        float RoughnessMarble1 = 0.3f;
+        float RoughnessMarble2 = 0.8f;
+        float ScaleMarble1 = 1.0f;
 
-        float3 ColorMetal;
-        float RoughnessMetalHigh;
+        float3 ColorMetal = float3(1.0f);
+        float RoughnessMetalHigh = 0.3f;
 
-        TextureIndex MaskTexture;
-        TextureIndex AlbedoTexture;
-        TextureIndex NormalTexture;
-        TextureIndex DetailNormalTexture;
+        TextureIndex MaskTexture = 0u;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex NormalTexture = 0u;
+        TextureIndex DetailNormalTexture = 0u;
     };
 
 public:
@@ -38,11 +104,11 @@ class TreeTrunkMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 Color;
-        float Roughness;
+        float3 Color = float3(0.81f);
+        float Roughness = 0.5f;
         
-        TextureIndex AlbedoTextureIndex;
-        TextureIndex NormalTextureIndex;
+        TextureIndex AlbedoTextureIndex = 0u;
+        TextureIndex NormalTextureIndex = 0u;
         float2 __Pad;
     };
 
@@ -58,11 +124,11 @@ class TreeBranchesMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 DiffuseColor;
-        TextureIndex AlbedoTextureIndex;
+        float3 DiffuseColor = float3(1.0f);
+        TextureIndex AlbedoTextureIndex = 0u;
 
-        float3 EmissiveColor;
-        TextureIndex NormalTextureIndex;
+        float3 EmissiveColor = float3(0.0f);
+        TextureIndex NormalTextureIndex = 0u;
     };
 
 public:
@@ -77,21 +143,21 @@ class TrimMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 ColorMarble1;
-        float AOStrength;
+        float3 ColorMarble1 = float3(1.0f);
+        float AOStrength = 0.0f;
 
-        float3 ColorMarble2;
-        float NormalIntensity;
+        float3 ColorMarble2 = float3(1.0f);
+        float NormalIntensity = 0.5f;
 
-        float RoughnessMarble1;
-        float RoughnessMarble2;
-        float ScaleMarble1;
-        float UTile;
+        float RoughnessMarble1 = 0.3f;
+        float RoughnessMarble2 = 0.8f;
+        float ScaleMarble1 = 1.0f;
+        float UTile = 1.0f;
 
-        TextureIndex MaskTexture;
-        TextureIndex AlbedoTexture;
-        TextureIndex NormalTexture;
-        TextureIndex DetailNormalTexture;
+        TextureIndex MaskTexture = 0u;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex NormalTexture = 0u;
+        TextureIndex DetailNormalTexture = 0u;
     };
 
 public:
@@ -106,15 +172,15 @@ class StoneBrickWallMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float NormalIntensity;
-        float RoughnessMarble1;
-        float RoughnessMarble2;
+        float NormalIntensity = 0.5f;
+        float RoughnessMarble1 = 0.3f;
+        float RoughnessMarble2 = 0.8f;
         float __Pad;
 
-        TextureIndex AOTexture;
-        TextureIndex AlbedoTexture;
-        TextureIndex NormalTexture;
-        TextureIndex DetailNormalTexture;
+        TextureIndex AOTexture = 0u;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex NormalTexture = 0u;
+        TextureIndex DetailNormalTexture = 0u;
     };
 
 public:
@@ -129,31 +195,31 @@ class SoulRocksMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 GrassColor;
-        float NormalIntensity;
+        float3 GrassColor = float3(0.991f);
+        float NormalIntensity = 0.5f;
 
-        float RoughnessGrass;
-        float ScaleGrass;
-        float BlendMult;
-        float BlendPower;
+        float RoughnessGrass = 0.0f;
+        float ScaleGrass = 1.0f;
+        float BlendMult = 0.0f;
+        float BlendPower = 10.0f;
 
-        float3 ColorRocks;
-        float DetailNormalIntensityRocks;
+        float3 ColorRocks = 1.0f;
+        float DetailNormalIntensityRocks = 1.0f;
 
-        float MetallicRocksLow;
-        float MetallicRocksHigh;
-        float NormalIntensityRocks;
-        float RoughnessRocksHigh;
+        float MetallicRocksLow = 0.0f;
+        float MetallicRocksHigh = 1.0f;
+        float NormalIntensityRocks = 0.5f;
+        float RoughnessRocksHigh = 1.0f;
 
-        float RoughnessRocksLow;
-        float ScaleRocks;
-        float NormalIntensityGrass;
-        TextureIndex GrassAlbedoTexture;
+        float RoughnessRocksLow = 0.0f;
+        float ScaleRocks = 1.0f;
+        float NormalIntensityGrass = 1.0f;
+        TextureIndex GrassAlbedoTexture = 0u;
 
-        TextureIndex RocksAlbedoTexture;
-        TextureIndex GrassNormalTexture;
-        TextureIndex RocksNormalTexture;
-        TextureIndex NormalTexture;
+        TextureIndex RocksAlbedoTexture = 0u;
+        TextureIndex GrassNormalTexture = 0u;
+        TextureIndex RocksNormalTexture = 0u;
+        TextureIndex NormalTexture = 0u;
     };
 
 public:
@@ -198,29 +264,29 @@ class FirePitMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 CoalColor;
-        float RoughnessCoalHigh;
+        float3 CoalColor = float3(0.017f);
+        float RoughnessCoalHigh = 0.8f;
 
-        float RoughnessCoalLow;
-        float DirtBrightness;
-        float DirtContrast;
-        float ScaleDirt;
+        float RoughnessCoalLow = 0.8f;
+        float DirtBrightness = 2.0f;
+        float DirtContrast = 2.0f;
+        float ScaleDirt = 3.0f;
 
-        float3 ColorEmber;
-        float EmberAnimScale;
+        float3 ColorEmber = float3(1.0f, 0.7f, 0.37f);
+        float EmberAnimScale = 3.0f;
 
-        float3 ColorEmber2;
-        float RoughnessMetalHigh;
+        float3 ColorEmber2 = float3(1.0f, 0.041f, 0.0f);
+        float RoughnessMetalHigh = 0.0f;
 
-        float3 MetalColor;
-        float RoughnessMetalLow;
+        float3 MetalColor = float3(1.0f);
+        float RoughnessMetalLow = 0.0f;
 
-        float EmberAnimSpeed;
-        float Glow;
-        TextureIndex AlbedoTexture;
-        TextureIndex MaskTexture;
+        float EmberAnimSpeed = 1.0f;
+        float Glow = 5.0f;
+        TextureIndex AlbedoTexture = 0u;
+        TextureIndex MaskTexture = 0u;
 
-        TextureIndex NormalTexture;
+        TextureIndex NormalTexture = 0u;
         float3 __Pad;
     };
 
@@ -280,17 +346,17 @@ class WaterMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
-        float3 Color;
-        float Distance;
+        float3 Color = float3(1.0f);
+        float Distance = 2000.0f;
 
-        float Scale1;
-        float Scale2;
-        float Speed;
-        float Speed2;
+        float Scale1 = 0.2f;
+        float Scale2 = 0.2f;
+        float Speed = 0.2f;
+        float Speed2 = 0.2f;
 
-        DynamicBool UseDistanceFade;
-        float NormalIntensity;
-        TextureIndex NormalTexture;
+        DynamicBool UseDistanceFade = 0;
+        float NormalIntensity = 1.0f;
+        TextureIndex NormalTexture = 0u;
         float __Pad;
     };
 
