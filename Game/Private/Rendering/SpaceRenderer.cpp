@@ -162,6 +162,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniformsBuffer);
 		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
 
+		int index = 0;
 		for (const SpatialRenderingBatch_s& Batch : Collector.MainPass.Batches)
 		{
 			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
@@ -170,7 +171,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, Batch.MaterialUniforms);
 
 			Ctx.SetIndexBuffer(Batch.IndexBuffer, Batch.IndexBufferFormat, 0);
-			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, 0, 0, 0);
+			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, Batch.IndexOffset, 0, 0);
+			index++;
 		}
 	});
 

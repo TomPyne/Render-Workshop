@@ -18,6 +18,7 @@ PRIVATE
 
 target_sources(HalfPipe
 PUBLIC
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/GltfReader.h"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/HalfPipe.h"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/HPModel.h"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/HPTexture.h"
@@ -29,6 +30,7 @@ PUBLIC
 
 target_sources(HalfPipe
 PRIVATE
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/Private/GltfReader.cpp"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private/HPPipe.cpp"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private/HPPipe.h"
 "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private/HPModel.cpp"

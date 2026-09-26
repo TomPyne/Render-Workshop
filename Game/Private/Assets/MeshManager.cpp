@@ -4,6 +4,7 @@
 #include "Rendering/Materials.h"
 #include "Rendering/Mesh.h"
 
+#include <HalfPipe/Source/Public/GltfReader.h>
 #include <HalfPipe/Source/Public/WaveFrontReader.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/FileUtils/JsonValue.h>
@@ -19,6 +20,9 @@
 #define MESH_ASSET_VERSION_INITIAL 1
 #define MESH_ASSET_VERSION_CURRENT MESH_ASSET_VERSION_INITIAL
 
+static_assert(kMeshMaxTexcoords == kTangentSpaceMaxTexcoords, "Mesh and tangent space texcoord limits must match");
+static_assert(kMeshMaxTexcoords == GltfReader_c::MaxTexcoords, "Mesh and glTF reader texcoord limits must match");
+
 namespace MeshManager
 {
 
@@ -28,65 +32,49 @@ struct MeshManagerGlobals_s
 	std::unordered_map<uint64_t, std::shared_ptr<Mesh_s>> LoadedMeshes;
 } G;
 
-std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
+// Geometry from a source file reader, already converted into engine space.
+struct SourceMesh_s
 {
-	// Compute hash of data to use as a key for caching
-	auto It = G.LoadedMeshes.find(Data.GetHash());
-	if (It != G.LoadedMeshes.end())
-	{
-		return It->second;
-	}
+	TangentSpaceStream_s Positions;
+	TangentSpaceStream_s Normals;
+	TangentSpaceStream_s Texcoords[kMeshMaxTexcoords];
+	uint32_t TexcoordCount = 0;
+	uint32_t VertexCount = 0;
 
-	Path_s Path;
-	if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", Path), "[MeshManager::RequestMesh] Missing SourceFile field"))
-	{
-		return nullptr;
-	}
+	const std::vector<uint32_t>* Indices = nullptr;
+	// Material slot of each triangle, indexing SlotNames.
+	const std::vector<uint32_t>* Attributes = nullptr;
+	std::vector<std::wstring> SlotNames;
 
-	LOGINFO("[MeshManager::RequestMesh] Building mesh: %s", Path.ToString().c_str());
+	// Set when the conversion into engine space mirrored the geometry.
+	bool ReverseWinding = false;
+};
 
-	std::shared_ptr<Mesh_s> NewMesh = std::make_shared<Mesh_s>();	
+std::shared_ptr<Mesh_s> BuildMesh(const JsonValue_s& Data, const Path_s& Path, const SourceMesh_s& Source)
+{
+	std::shared_ptr<Mesh_s> NewMesh = std::make_shared<Mesh_s>();
 
-	WaveFrontReader_c Reader;
-	if (!Reader.Load(Path.ToWString().c_str()))
-	{
-		LOGWARNING("[MeshManager::RequestMesh] Failed to load mesh: %s", Path.ToString().c_str());
-		return nullptr;
-	}
-
-	if (Reader.Vertices.empty() || Reader.Indices.empty())
-	{
-		LOGWARNING("[MeshManager::RequestMesh] Mesh has no geometry: %s", Path.ToString().c_str());
-		return nullptr;
-	}
-
-	// Blender exports right handed OBJ, so mirror X into our left handed space. The winding is
-	// reversed below to match, otherwise the mirror would flip which faces get culled.
-	for (WaveFrontReader_c::Vertex_s& Vertex : Reader.Vertices)
-	{
-		Vertex.Position.x = -Vertex.Position.x;
-		Vertex.Normal.x = -Vertex.Normal.x;
-		Vertex.Texcoord.y = 1.0f - Vertex.Texcoord.y;
-	}
+	const std::vector<uint32_t>& Indices = *Source.Indices;
+	const std::vector<uint32_t>& Attributes = *Source.Attributes;
 
 	std::vector<std::vector<uint32_t>> SurfaceIndices;
 
-	for (uint32_t AttrIt = 0; AttrIt < Reader.Attributes.size(); AttrIt++)
+	for (uint32_t AttrIt = 0; AttrIt < Attributes.size(); AttrIt++)
 	{
 		uint32_t IndexOffset = AttrIt * 3;
-		uint32_t Attribute = Reader.Attributes[AttrIt];
+		uint32_t Attribute = Attributes[AttrIt];
 		if (Attribute >= SurfaceIndices.size())
 		{
 			SurfaceIndices.resize(Attribute + 1);
 		}
 
-		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 0]);
-		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 2]);
-		SurfaceIndices[Attribute].push_back(Reader.Indices[IndexOffset + 1]);
+		SurfaceIndices[Attribute].push_back(Indices[IndexOffset + 0]);
+		SurfaceIndices[Attribute].push_back(Indices[IndexOffset + (Source.ReverseWinding ? 2 : 1)]);
+		SurfaceIndices[Attribute].push_back(Indices[IndexOffset + (Source.ReverseWinding ? 1 : 2)]);
 	}
 
-	// The obj reader reserves slot 0 for a synthetic "default" material that exports never
-	// reference, so drop any slot that ended up with no faces and keep the usemtl name of the
+	// The readers reserve slot 0 for a synthetic "default" material that exports never
+	// reference, so drop any slot that ended up with no faces and keep the material name of the
 	// slots that survive, which is what MaterialSlot binds against below.
 	std::vector<std::wstring> SurfaceNames;
 	{
@@ -99,24 +87,28 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 			}
 
 			UsedSurfaceIndices.push_back(std::move(SurfaceIndices[SlotIt]));
-			SurfaceNames.push_back(SlotIt < Reader.Materials.size() ? Reader.Materials[SlotIt].Name : std::wstring{});
+			SurfaceNames.push_back(SlotIt < Source.SlotNames.size() ? Source.SlotNames[SlotIt] : std::wstring{});
 		}
 
 		SurfaceIndices = std::move(UsedSurfaceIndices);
 	}
 
 	std::vector<uint32_t> SourceIndices;
-	SourceIndices.reserve(Reader.Indices.size());
+	SourceIndices.reserve(Indices.size());
 	for (const std::vector<uint32_t>& Surface : SurfaceIndices)
 	{
 		SourceIndices.insert(SourceIndices.end(), Surface.begin(), Surface.end());
 	}
 
 	TangentSpaceInput_s TangentInput = {};
-	TangentInput.Positions = { &Reader.Vertices[0].Position, sizeof(WaveFrontReader_c::Vertex_s) };
-	TangentInput.Normals = { &Reader.Vertices[0].Normal, sizeof(WaveFrontReader_c::Vertex_s) };
-	TangentInput.Texcoords = { &Reader.Vertices[0].Texcoord, sizeof(WaveFrontReader_c::Vertex_s) };
-	TangentInput.VertexCount = static_cast<uint32_t>(Reader.Vertices.size());
+	TangentInput.Positions = Source.Positions;
+	TangentInput.Normals = Source.Normals;
+	for (uint32_t Channel = 0; Channel < Source.TexcoordCount; Channel++)
+	{
+		TangentInput.Texcoords[Channel] = Source.Texcoords[Channel];
+	}
+	TangentInput.TexcoordCount = Source.TexcoordCount;
+	TangentInput.VertexCount = Source.VertexCount;
 	TangentInput.Indices = SourceIndices.data();
 	TangentInput.IndexCount = static_cast<uint32_t>(SourceIndices.size());
 
@@ -140,12 +132,16 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	NewMesh->PositionBuffer = rl::CreateStructuredBuffer(NewMesh->Vertices.data(), VertexCount);
 	NewMesh->NormalBuffer = rl::CreateStructuredBuffer(TangentOutput.Normals.data(), VertexCount);
 	NewMesh->TangentBuffer = rl::CreateStructuredBuffer(TangentOutput.Tangents.data(), VertexCount);
-	NewMesh->Texcoord0Buffer = rl::CreateStructuredBuffer(TangentOutput.Texcoords.data(), VertexCount);
 
 	NewMesh->PositionBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->PositionBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float3)));
 	NewMesh->NormalBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->NormalBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float3)));
 	NewMesh->TangentBufferSRV = rl::CreateStructuredBufferSRV(NewMesh->TangentBuffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float4)));
-	NewMesh->Texcoord0BufferSRV = rl::CreateStructuredBufferSRV(NewMesh->Texcoord0Buffer, 0u, VertexCount, static_cast<uint32_t>(sizeof(float2)));
+
+	for (uint32_t Channel = 0; Channel < Source.TexcoordCount; Channel++)
+	{
+		NewMesh->TexcoordBuffers[Channel] = rl::CreateStructuredBuffer(TangentOutput.Texcoords[Channel].data(), VertexCount);
+		NewMesh->TexcoordBufferSRVs[Channel] = rl::CreateStructuredBufferSRV(NewMesh->TexcoordBuffers[Channel], 0u, VertexCount, static_cast<uint32_t>(sizeof(float2)));
+	}
 
 	NewMesh->IndexBuffer = rl::CreateIndexBufferFromArray(NewMesh->Indices.data(), NewMesh->Indices.size());
 
@@ -153,7 +149,10 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	MeshUniformData.PositionBufferIndex = rl::GetDescriptorIndex(NewMesh->PositionBufferSRV);
 	MeshUniformData.NormalBufferIndex = rl::GetDescriptorIndex(NewMesh->NormalBufferSRV);
 	MeshUniformData.TangentBufferIndex = rl::GetDescriptorIndex(NewMesh->TangentBufferSRV);
-	MeshUniformData.Texcoord0BufferIndex = rl::GetDescriptorIndex(NewMesh->Texcoord0BufferSRV);
+	for (uint32_t Channel = 0; Channel < Source.TexcoordCount; Channel++)
+	{
+		MeshUniformData.TexcoordBufferIndices[Channel] = rl::GetDescriptorIndex(NewMesh->TexcoordBufferSRVs[Channel]);
+	}
 	NewMesh->MeshUniforms = rl::CreateConstantBuffer(&MeshUniformData);
 
 	std::vector<std::shared_ptr<MaterialShaderInstance_c>> Materials;
@@ -174,7 +173,7 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 					continue;
 				}
 
-				// MaterialSlot binds to the usemtl name it matches, so reordering the slots in
+				// MaterialSlot binds to the material name it matches, so reordering the slots in
 				// blender cannot silently swap two materials over. Entries without one fall back
 				// to the order they are authored in.
 				uint32_t Slot = EntryIndex;
@@ -244,6 +243,87 @@ std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data)
 	return NewMesh;
 }
 
+std::shared_ptr<Mesh_s> RequestMeshObj(const JsonValue_s& Data, const Path_s& Path)
+{
+	WaveFrontReader_c Reader;
+	if (!Reader.Load(Path.ToWString().c_str()))
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to load mesh: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	if (Reader.Vertices.empty() || Reader.Indices.empty())
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Mesh has no geometry: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	// Blender exports right handed OBJ, so mirror X into our left handed space. The winding is
+	// reversed when building to match, otherwise the mirror would flip which faces get culled.
+	for (WaveFrontReader_c::Vertex_s& Vertex : Reader.Vertices)
+	{
+		Vertex.Position.x = -Vertex.Position.x;
+		Vertex.Normal.x = -Vertex.Normal.x;
+		Vertex.Texcoord.y = 1.0f - Vertex.Texcoord.y;
+	}
+
+	SourceMesh_s Source;
+	Source.Positions = { &Reader.Vertices[0].Position, sizeof(WaveFrontReader_c::Vertex_s) };
+	Source.Normals = { &Reader.Vertices[0].Normal, sizeof(WaveFrontReader_c::Vertex_s) };
+	Source.Texcoords[0] = { &Reader.Vertices[0].Texcoord, sizeof(WaveFrontReader_c::Vertex_s) };
+	Source.TexcoordCount = 1;
+	Source.VertexCount = static_cast<uint32_t>(Reader.Vertices.size());
+	Source.Indices = &Reader.Indices;
+	Source.Attributes = &Reader.Attributes;
+	Source.ReverseWinding = true;
+
+	for (const WaveFrontReader_c::Material_s& Material : Reader.Materials)
+	{
+		Source.SlotNames.push_back(Material.Name);
+	}
+
+	return BuildMesh(Data, Path, Source);
+}
+
+std::shared_ptr<Mesh_s> RequestMeshGlb(const JsonValue_s& Data, const Path_s& Path)
+{
+	GltfReader_c Reader;
+	if (!Reader.Load(Path.ToWString().c_str()))
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to load mesh: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	if (Reader.Vertices.empty() || Reader.Indices.empty())
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Mesh has no geometry: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	if (Reader.TexcoordCount == 0)
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Mesh needs TEXCOORD_0 to build tangents: %s", Path.ToString().c_str());
+		return nullptr;
+	}
+
+	// Blender's glTF export already lands in our space, with the same handedness, winding and
+	// top left UV origin, so unlike the OBJ path nothing is mirrored or flipped.
+	SourceMesh_s Source;
+	Source.Positions = { &Reader.Vertices[0].Position, sizeof(GltfReader_c::Vertex_s) };
+	Source.Normals = { &Reader.Vertices[0].Normal, sizeof(GltfReader_c::Vertex_s) };
+	for (uint32_t Channel = 0; Channel < Reader.TexcoordCount; Channel++)
+	{
+		Source.Texcoords[Channel] = { &Reader.Vertices[0].Texcoords[Channel], sizeof(GltfReader_c::Vertex_s) };
+	}
+	Source.TexcoordCount = Reader.TexcoordCount;
+	Source.VertexCount = static_cast<uint32_t>(Reader.Vertices.size());
+	Source.Indices = &Reader.Indices;
+	Source.Attributes = &Reader.Attributes;
+	Source.SlotNames = Reader.MaterialNames;
+
+	return BuildMesh(Data, Path, Source);
+}
+
 std::shared_ptr<Mesh_s> RequestErrorMesh()
 {
 	Path_s ErrorMeshPath = Path_s(PathDirectory_e::Assets, L"Game", L"Meshes/ErrorText.hp_mdl");
@@ -265,6 +345,13 @@ std::shared_ptr<Mesh_s> RequestMesh(const Path_s& Path, bool ErrorMeshIfMissing)
 
 std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data, bool ErrorMeshIfMissing)
 {
+	// Compute hash of data to use as a key for caching
+	auto It = G.LoadedMeshes.find(Data.GetHash());
+	if (It != G.LoadedMeshes.end())
+	{
+		return It->second;
+	}
+
 	int32_t Version = -1;
 	JsonHelpers::ParseInt(Data, "Version", Version);
 	if (Version != MESH_ASSET_VERSION_CURRENT)
@@ -280,13 +367,21 @@ std::shared_ptr<Mesh_s> RequestMesh(const JsonValue_s& Data, bool ErrorMeshIfMis
 		return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
 	}
 
-	if (FileFormat == "obj")
+	if (FileFormat != "obj" && FileFormat != "glb")
 	{
-		return RequestMeshObj(Data);
+		LOGWARNING("[MeshManager::RequestMesh] Unsupported file format for mesh: %s", FileFormat.c_str());
+		return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
 	}
 
-	LOGWARNING("[MeshManager::RequestMesh] Unsupported file format for mesh: %s", FileFormat.c_str());
-	return ErrorMeshIfMissing ? RequestErrorMesh() : nullptr;
+	Path_s Path;
+	if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", Path), "[MeshManager::RequestMesh] Missing SourceFile field"))
+	{
+		return nullptr;
+	}
+
+	LOGINFO("[MeshManager::RequestMesh] Building mesh: %s", Path.ToString().c_str());
+
+	return FileFormat == "obj" ? RequestMeshObj(Data, Path) : RequestMeshGlb(Data, Path);
 }
 
 }

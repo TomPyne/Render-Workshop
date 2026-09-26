@@ -15,12 +15,17 @@ struct Surface_s
 	AABB Bounds = {};
 };
 
+constexpr uint32_t kMeshMaxTexcoords = 4;
+
 struct MeshUniformData_s
 {
 	uint32_t PositionBufferIndex;
 	uint32_t NormalBufferIndex;
 	uint32_t TangentBufferIndex;
-	uint32_t Texcoord0BufferIndex;
+	// Declared as separate scalars in Model.h, since a cbuffer array would pad each element to 16
+	// bytes. A channel the mesh does not have is left at descriptor index 0.
+	uint32_t TexcoordBufferIndices[kMeshMaxTexcoords];
+	uint32_t __Pad;
 };
 
 struct ObjectUniforms_s
@@ -43,11 +48,11 @@ struct Mesh_s
 	rl::StructuredBufferPtr PositionBuffer = {};
 	rl::StructuredBufferPtr NormalBuffer = {};
 	rl::StructuredBufferPtr TangentBuffer = {};
-	rl::StructuredBufferPtr Texcoord0Buffer = {};
+	rl::StructuredBufferPtr TexcoordBuffers[kMeshMaxTexcoords] = {};
 	rl::ShaderResourceViewPtr PositionBufferSRV = {};
 	rl::ShaderResourceViewPtr NormalBufferSRV = {};
 	rl::ShaderResourceViewPtr TangentBufferSRV = {};
-	rl::ShaderResourceViewPtr Texcoord0BufferSRV = {};
+	rl::ShaderResourceViewPtr TexcoordBufferSRVs[kMeshMaxTexcoords] = {};
 
 	rl::IndexBufferPtr IndexBuffer = {};
 

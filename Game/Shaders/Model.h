@@ -14,4 +14,8 @@ struct ModelUniforms_s
     uint NormalBufferIndex;
     uint TangentBufferIndex;
     uint Texcoord0BufferIndex;
+    uint Texcoord1BufferIndex;
+    uint Texcoord2BufferIndex;
+    uint Texcoord3BufferIndex;
+    uint __Pad;
 };

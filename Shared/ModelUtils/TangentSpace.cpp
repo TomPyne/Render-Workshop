@@ -65,7 +65,7 @@ void GetNormal(const SMikkTSpaceContext* Context, float Out[], const int Face, c
 void GetTexCoord(const SMikkTSpaceContext* Context, float Out[], const int Face, const int Vert)
 {
 	const MikkUserData_s& Data = GetUserData(Context);
-	const float2& Value = Fetch<float2>(Data.Input->Texcoords, SourceIndex(Data, Face, Vert));
+	const float2& Value = Fetch<float2>(Data.Input->Texcoords[0], SourceIndex(Data, Face, Vert));
 	Out[0] = Value.x;
 	Out[1] = Value.y;
 }
@@ -92,7 +92,10 @@ void SetTSpaceBasic(const SMikkTSpaceContext* Context, const float Tangent[], co
 	const uint32_t NewIndex = static_cast<uint32_t>(Out.Positions.size());
 	Out.Positions.push_back(Fetch<float3>(Data.Input->Positions, Source));
 	Out.Normals.push_back(Fetch<float3>(Data.Input->Normals, Source));
-	Out.Texcoords.push_back(Fetch<float2>(Data.Input->Texcoords, Source));
+	for (uint32_t Channel = 0; Channel < Data.Input->TexcoordCount; Channel++)
+	{
+		Out.Texcoords[Channel].push_back(Fetch<float2>(Data.Input->Texcoords[Channel], Source));
+	}
 	Out.Tangents.push_back(NewTangent);
 
 	Emitted.push_back(NewIndex);
@@ -103,9 +106,22 @@ void SetTSpaceBasic(const SMikkTSpaceContext* Context, const float Tangent[], co
 
 bool GenerateTangents(const TangentSpaceInput_s& Input, TangentSpaceOutput_s& Output)
 {
-	if (!Input.Positions.Data || !Input.Normals.Data || !Input.Texcoords.Data)
+	if (!Input.Positions.Data || !Input.Normals.Data)
 	{
 		return false;
+	}
+
+	if (Input.TexcoordCount == 0 || Input.TexcoordCount > kTangentSpaceMaxTexcoords)
+	{
+		return false;
+	}
+
+	for (uint32_t Channel = 0; Channel < Input.TexcoordCount; Channel++)
+	{
+		if (!Input.Texcoords[Channel].Data)
+		{
+			return false;
+		}
 	}
 
 	if (!Input.Indices || Input.IndexCount == 0 || Input.IndexCount % 3 != 0)
@@ -116,7 +132,10 @@ bool GenerateTangents(const TangentSpaceInput_s& Input, TangentSpaceOutput_s& Ou
 	Output.Indices.assign(Input.IndexCount, 0u);
 	Output.Positions.reserve(Input.VertexCount);
 	Output.Normals.reserve(Input.VertexCount);
-	Output.Texcoords.reserve(Input.VertexCount);
+	for (uint32_t Channel = 0; Channel < Input.TexcoordCount; Channel++)
+	{
+		Output.Texcoords[Channel].reserve(Input.VertexCount);
+	}
 	Output.Tangents.reserve(Input.VertexCount);
 
 	MikkUserData_s UserData = {};

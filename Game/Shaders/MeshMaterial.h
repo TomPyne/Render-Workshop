@@ -37,12 +37,32 @@ float2 LoadUV0(uint VertexID)
 
 float2 LoadUV1(uint VertexID)
 {
-    return float2(0.0f, 0.0f);
+    if (c_Model.Texcoord1BufferIndex == 0)
+    {
+        return float2(0.0f, 0.0f);
+    }
+
+    return t_sbuf_f2[c_Model.Texcoord1BufferIndex][VertexID];
 }
 
 float2 LoadUV2(uint VertexID)
 {
-    return float2(0.0f, 0.0f);
+    if (c_Model.Texcoord2BufferIndex == 0)
+    {
+        return float2(0.0f, 0.0f);
+    }
+
+    return t_sbuf_f2[c_Model.Texcoord2BufferIndex][VertexID];
+}
+
+float2 LoadUV3(uint VertexID)
+{
+    if (c_Model.Texcoord3BufferIndex == 0)
+    {
+        return float2(0.0f, 0.0f);
+    }
+
+    return t_sbuf_f2[c_Model.Texcoord3BufferIndex][VertexID];
 }
 
 float3 ModelToWorld(float3 ModelPosition)
