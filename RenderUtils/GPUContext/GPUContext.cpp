@@ -629,6 +629,16 @@ void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, rl::DynamicBuf
 	AddCommand<GPUCommand_SetComputeRootCBV_c<rl::DynamicBuffer_t>>(RootParameterIndex, CBV);
 }
 
+void GPUContext_s::SetGraphicsRootCBV(uint32_t RootParameterIndex, rl::GPUAddress_t CBV)
+{
+	AddCommand<GPUCommand_SetGraphicsRootCBV_c<rl::GPUAddress_t>>(RootParameterIndex, CBV);
+}
+
+void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, rl::GPUAddress_t CBV)
+{
+	AddCommand<GPUCommand_SetComputeRootCBV_c<rl::GPUAddress_t>>(RootParameterIndex, CBV);
+}
+
 void GPUContext_s::SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV)
 {
 	AddCommand<GPUCommand_SetComputeRootSRV_c<rl::RaytracingScene_t>>(RootParameterIndex, SRV);
