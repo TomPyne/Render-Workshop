@@ -1,5 +1,8 @@
 set(
 	source_list
+    "FrameBuffer/FrameBuffer.cpp"
+    "FrameBuffer/FrameBuffer.h"
+    "FrameBuffer/FrameBufferAlloc.h"
     "GPUContext/GPUContext.cpp"
     "GPUContext/GPUContext.h"
     "RenderGraph/RenderGraph.cpp"
