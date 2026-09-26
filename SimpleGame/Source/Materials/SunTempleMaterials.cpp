@@ -91,6 +91,7 @@ BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
     ASSIGN_SHADER_PARAM(float, ScaleMarble1);
     ASSIGN_SHADER_PARAM(float3, ColorMetal);
     ASSIGN_SHADER_PARAM(float, RoughnessMetalHigh);
+    ASSIGN_SHADER_PARAM(DynamicBool, UseUV3);
     ASSIGN_SHADER_PARAM(TextureIndex, MaskTexture);
     ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTexture);
     ASSIGN_SHADER_PARAM(TextureIndex, NormalTexture);
@@ -207,6 +208,7 @@ TrimMaterialShader_c::TrimMaterialShader_c()
     ASSIGN_SHADER_PARAM(float, RoughnessMarble2);
     ASSIGN_SHADER_PARAM(float, ScaleMarble1);
     ASSIGN_SHADER_PARAM(float, UTile);
+    ASSIGN_SHADER_PARAM(DynamicBool, UseUV3);
     ASSIGN_SHADER_PARAM(TextureIndex, MaskTexture);
     ASSIGN_SHADER_PARAM(TextureIndex, AlbedoTexture);
     ASSIGN_SHADER_PARAM(TextureIndex, NormalTexture);

@@ -14,10 +14,13 @@ struct MaterialUniforms_s
     float3 ColorMetal;
     float RoughnessMetalHigh;
 
-    uint MaskTextureIndex;
-    uint AlbedoTextureIndex;
-    uint NormalTextureIndex;
-    uint DetailNormalIndex;
+    uint UseUV3;
+    uint MaskTexture;
+    uint AlbedoTexture;
+    uint NormalTexture;
+
+    uint DetailNormalTexture;
+    float3 __Pad;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"
@@ -35,9 +38,9 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormalTangentUV0(VertexId, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
+    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
 
-    const float2 SecondUV = USE_UV3 ? LoadUV2(VertexID) : Output.UV0;
+    const float2 SecondUV = c_Material.UseUV3 ? LoadUV2(VertexID) : Output.UV0;
     Output.UV1 = SecondUV / c_Material.ScaleMarble1;
 }
 
@@ -52,16 +55,16 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
 
 float3 CalcNormals(Interpolants_s Input)
 {
-    float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTextureIndex].Sample(SharedWrappedSampler, Input.UV1).rgb * 2.0f - 1.0f;
+    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
+    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).rgb * 2.0f - 1.0f;
     DetailNormal = DetailNormal * float3(c_Material.NormalIntensity.xx, 1.0f);
-    float3  BlendDetailNormals(normalize(Normal), DetailNormal);
+    return BlendDetailNormals(Normal, DetailNormal);
 }
 
 float CalcRoughness(float MaskR, float AlbedoAlpha, float MetallicAlpa)
 {
     float RougnessAlpha = (1.0f - MaskR) + AlbedoAlpha;
-    float RoughnessMetal = lerp(c_Material.RoughnessMetalHigh, c_Material.RoughnenssMetalLow, RougnessAlpha);
+    float RoughnessMetal = lerp(c_Material.RoughnessMetalHigh, c_Material.RoughnessMetalLow, RougnessAlpha);
     float RoughnessMarble = lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, RougnessAlpha);
     return saturate(lerp(RoughnessMarble, RoughnessMetal, MetallicAlpa));
 }
@@ -81,10 +84,10 @@ float CalcAO(float MaskR)
 
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    float3 Mask = t_tex2d_f4[c_Material.MaskTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb;
+    float3 Mask = t_tex2d_f4[c_Material.MaskTexture].Sample(SharedWrappedSampler, Input.UV0).rgb;
     float AO = CalcAO(Mask.r);
     float MetallicAlpa = Mask.g + Mask.b;
-    float AlbedoAlpha = t_tex2d_f4[c_Material.AlbedoTextureIndex].Sample(SharedWrappedSampler, Input.UV1).r;
+    float AlbedoAlpha = t_tex2d_f4[c_Material.AlbedoTexture].Sample(SharedWrappedSampler, Input.UV1).r;
 
     float3 TangentNormals = CalcNormals(Input);
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);

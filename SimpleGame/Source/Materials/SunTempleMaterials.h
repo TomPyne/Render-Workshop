@@ -86,10 +86,13 @@ class BottomTrimMaterialShader_c : public MaterialShader_c
         float3 ColorMetal = float3(1.0f);
         float RoughnessMetalHigh = 0.3f;
 
+        DynamicBool UseUV3 = 0;
         TextureIndex MaskTexture = 0u;
         TextureIndex AlbedoTexture = 0u;
         TextureIndex NormalTexture = 0u;
+
         TextureIndex DetailNormalTexture = 0u;
+        float3 __Pad;
     };
 
 public:
@@ -154,10 +157,13 @@ class TrimMaterialShader_c : public MaterialShader_c
         float ScaleMarble1 = 1.0f;
         float UTile = 1.0f;
 
+        DynamicBool UseUV3 = 0;
         TextureIndex MaskTexture = 0u;
         TextureIndex AlbedoTexture = 0u;
         TextureIndex NormalTexture = 0u;
+
         TextureIndex DetailNormalTexture = 0u;
+        float3 __Pad;
     };
 
 public:

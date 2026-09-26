@@ -306,8 +306,16 @@ std::shared_ptr<Mesh_s> RequestMeshGlb(const JsonValue_s& Data, const Path_s& Pa
 		return nullptr;
 	}
 
-	// Blender's glTF export already lands in our space, with the same handedness, winding and
-	// top left UV origin, so unlike the OBJ path nothing is mirrored or flipped.
+	// The Unreal to FBX to Blender round trip leaves the glb right handed, and with Blender's FBX
+	// import axes the node transform lands the mirror on Z, so flip Z into our left handed space.
+	// The winding is reversed when building to match, otherwise the mirror would flip which faces
+	// get culled. glTF already uses a top left UV origin, so unlike the OBJ path the UVs are not flipped.
+	for (GltfReader_c::Vertex_s& Vertex : Reader.Vertices)
+	{
+		Vertex.Position.z = -Vertex.Position.z;
+		Vertex.Normal.z = -Vertex.Normal.z;
+	}
+
 	SourceMesh_s Source;
 	Source.Positions = { &Reader.Vertices[0].Position, sizeof(GltfReader_c::Vertex_s) };
 	Source.Normals = { &Reader.Vertices[0].Normal, sizeof(GltfReader_c::Vertex_s) };
@@ -320,6 +328,7 @@ std::shared_ptr<Mesh_s> RequestMeshGlb(const JsonValue_s& Data, const Path_s& Pa
 	Source.Indices = &Reader.Indices;
 	Source.Attributes = &Reader.Attributes;
 	Source.SlotNames = Reader.MaterialNames;
+	Source.ReverseWinding = true;
 
 	return BuildMesh(Data, Path, Source);
 }

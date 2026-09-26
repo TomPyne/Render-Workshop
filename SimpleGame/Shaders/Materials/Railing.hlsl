@@ -52,7 +52,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float Mask = t_tex2d_f4[c_Material.MaskTexture].Sample(SharedWrappedSampler, Input.UV0).r;
 
     float AlbedoAlpha = t_tex2d_f4[c_Material.AlbedoTexture].Sample(SharedWrappedSampler, Input.UV1).r;
-    AlbedoAlpha = lerp(-1.5f, 2.0f, AlphaAlpha);
+    AlbedoAlpha = lerp(-1.5f, 2.0f, AlbedoAlpha);
 
     float Roughness = lerp(c_Material.RoughnessMarbleHigh, c_Material.RoughnessMarbleLow, Mask * AlbedoAlpha);
 

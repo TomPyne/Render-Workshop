@@ -11,10 +11,13 @@ struct MaterialUniforms_s
     float ScaleMarble1;
     float UTile;
 
+    uint UseUV3;
     uint MaskTexture;
     uint AlbedoTexture;
     uint NormalTexture;
+
     uint DetailNormalTexture;
+    float3 __Pad;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"
@@ -30,15 +33,11 @@ struct Interpolants_s
 
 #ifdef _VS
 
-#ifndef USE_UV3
-#define USE_UV3 0
-#endif
-
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
     VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
 
-    Output.UV1 = USE_UV3 ? LoadUV2(VertexID) : Output.UV0;
+    Output.UV1 = c_Material.UseUV3 ? LoadUV2(VertexID) : Output.UV0;
     Output.UV1 *= float2(c_Material.UTile, 1.0f);
     Output.UV1 /= c_Material.ScaleMarble1;
 
