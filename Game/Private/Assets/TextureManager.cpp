@@ -6,6 +6,7 @@
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
+#include <Shared/Jobs/JobSystem.h>
 #include <Shared/Logging/Logging.h>
 
 #include <unordered_map>
@@ -52,96 +53,112 @@ constexpr int TexFormatRequiredChannels(TextureFormat_e TexFormat, bool HasAlpha
 std::shared_ptr<Texture_s> RequestErrorTexture()
 {
     static const Path_s ErrorMeshPath = Path_s(PathDirectory_e::Assets, L"Game", L"Textures/ErrorTexture.hp_tex");
-    return RequestTexture(ErrorMeshPath, false);
+    return RequestTexture(ErrorMeshPath, false, true);
 }
 
-std::shared_ptr<Texture_s> RequestTextureSTB(const JsonValue_s& Data)
+struct TextureLoadRequest_s
 {
-    Path_s Path;
-    if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", Path), "[TextureManager::RequestTextureSTB] Missing SourceFile field"))
+    Path_s SourcePath;
+    TextureFormat_e Format = TextureFormat_e::Unknown;
+    bool HasAlpha = false;
+};
+
+// Main thread. Validates the asset json without touching the source file
+bool ParseTextureRequestSTB(const JsonValue_s& Data, TextureLoadRequest_s& OutRequest)
+{
+    if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", OutRequest.SourcePath), "[TextureManager::ParseTextureRequestSTB] Missing SourceFile field"))
     {
-        return nullptr;
+        return false;
     }
 
     int TexFormatRaw = 0;
-    if (!ENSUREMSG(JsonHelpers::ParseInt(Data, "Format", TexFormatRaw), "[TextureManager::RequestTextureSTB] Missing Format field"))
+    if (!ENSUREMSG(JsonHelpers::ParseInt(Data, "Format", TexFormatRaw), "[TextureManager::ParseTextureRequestSTB] Missing Format field"))
     {
-        return nullptr;
+        return false;
     }
 
-    const TextureFormat_e TexFormat = static_cast<TextureFormat_e>(TexFormatRaw);
-    if (TexFormat >= TextureFormat_e::Count || TexFormat == TextureFormat_e::Unknown)
+    OutRequest.Format = static_cast<TextureFormat_e>(TexFormatRaw);
+    if (OutRequest.Format >= TextureFormat_e::Count || OutRequest.Format == TextureFormat_e::Unknown)
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Texture contains an invalid format : %s", Path.ToString().c_str());
-        return nullptr;
+        LOGWARNING("[TextureManager::ParseTextureRequestSTB] Texture contains an invalid format : %s", OutRequest.SourcePath.ToString().c_str());
+        return false;
     }
 
-    LOGINFO("[TextureManager::RequestTextureSTB] Building texture: %s", Path.ToString().c_str());
+    JsonHelpers::ParseBool(Data, "HasAlpha", OutRequest.HasAlpha);
+
+    return true;
+}
+
+// Any thread. Only writes OutTexture on success
+bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
+{
+    const Path_s& Path = Request.SourcePath;
+
+    LOGINFO("[TextureManager::BuildTextureSTB] Building texture: %s", Path.ToString().c_str());
 
     int X, Y, Channels;
     stbi_uc* RawData = stbi_load(Path.ToString().c_str(), &X, &Y, &Channels, 4);
 
     if (!RawData)
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Failed to load texture : %s", Path.ToString().c_str());
-        return nullptr;
+        LOGWARNING("[TextureManager::BuildTextureSTB] Failed to load texture : %s", Path.ToString().c_str());
+        return false;
     }
 
     if (X <= 0 || Y <= 0 || Channels <= 0)
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Texture has 0 dimension : %s", Path.ToString().c_str());
+        LOGWARNING("[TextureManager::BuildTextureSTB] Texture has 0 dimension : %s", Path.ToString().c_str());
         stbi_image_free(RawData);
-        return nullptr;
+        return false;
     }
 
-    bool HasAlpha = false;
-    JsonHelpers::ParseBool(Data, "HasAlpha", HasAlpha);
-
-    if (Channels < TexFormatRequiredChannels(TexFormat, HasAlpha)) // TODO: Texture optional alpha
+    if (Channels < TexFormatRequiredChannels(Request.Format, Request.HasAlpha)) // TODO: Texture optional alpha
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Loaded Texture does not contain the required number of channels: %s", Path.ToString().c_str());
+        LOGWARNING("[TextureManager::BuildTextureSTB] Loaded Texture does not contain the required number of channels: %s", Path.ToString().c_str());
         stbi_image_free(RawData);
-        return nullptr;
+        return false;
     }
 
-    std::shared_ptr<Texture_s> NewTexture = std::make_shared<Texture_s>();
-
-    NewTexture->Size.x = static_cast<u32>(X);
-    NewTexture->Size.y = static_cast<u32>(Y);
-    NewTexture->Format = TexToRenderFormat(TexFormat);
-    NewTexture->MipCount = 1; // TODO: Texture mips
+    const uint2 Size = uint2(static_cast<u32>(X), static_cast<u32>(Y));
+    const rl::RenderFormat Format = TexToRenderFormat(Request.Format);
 
     rl::TextureCreateDesc Desc = {};
-    rl::MipData Mip0(RawData, NewTexture->Format, NewTexture->Size.x, NewTexture->Size.y);
+    rl::MipData Mip0(RawData, Format, Size.x, Size.y);
 
     Desc.Data = &Mip0;
     Desc.DebugName = Path.ToWString();
     Desc.Flags = rl::RenderResourceFlags::SRV;
-    Desc.Format = NewTexture->Format;
-    Desc.Width = NewTexture->Size.x;
-    Desc.Height = NewTexture->Size.y;
+    Desc.Format = Format;
+    Desc.Width = Size.x;
+    Desc.Height = Size.y;
 
-    NewTexture->Texture = rl::CreateTexture(Desc);
+    rl::TexturePtr Texture = rl::CreateTexture(Desc);
 
     stbi_image_free(RawData);
-    if (!NewTexture->Texture)
+    if (!Texture)
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Texture failed to upload to GPU: %s", Path.ToString().c_str());
-        return nullptr;
+        LOGWARNING("[TextureManager::BuildTextureSTB] Texture failed to upload to GPU: %s", Path.ToString().c_str());
+        return false;
     }
 
-    NewTexture->SRV = rl::CreateTextureSRV(NewTexture->Texture);
+    rl::ShaderResourceViewPtr SRV = rl::CreateTextureSRV(Texture);
 
-    if (!NewTexture->SRV)
+    if (!SRV)
     {
-        LOGWARNING("[TextureManager::RequestTextureSTB] Texture failed to create SRV: %s", Path.ToString().c_str());
-        return nullptr;
+        LOGWARNING("[TextureManager::BuildTextureSTB] Texture failed to create SRV: %s", Path.ToString().c_str());
+        return false;
     }
 
-    return NewTexture;
+    OutTexture.Texture = std::move(Texture);
+    OutTexture.SRV = std::move(SRV);
+    OutTexture.Size = Size;
+    OutTexture.Format = Format;
+    OutTexture.MipCount = 1; // TODO: Texture mips
+
+    return true;
 }
 
-std::shared_ptr<Texture_s> RequestTexture(const Path_s& Path, bool ErrorTextureIfMissing)
+std::shared_ptr<Texture_s> RequestTexture(const Path_s& Path, bool ErrorTextureIfMissing, bool Blocking)
 {
     Json_t Json;
     const bool JsonLoaded = LoadJsonFromFile(Path.ToWString(), Json);
@@ -151,10 +168,10 @@ std::shared_ptr<Texture_s> RequestTexture(const Path_s& Path, bool ErrorTextureI
         return ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
     }
 
-    return RequestTexture(Json, ErrorTextureIfMissing);
+    return RequestTexture(Json, ErrorTextureIfMissing, Blocking);
 }
 
-std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTextureIfMissing)
+std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTextureIfMissing, bool Blocking)
 {
     std::shared_ptr<Texture_s> Texture = AssetManager_c::TryGetTexture(Data.GetHash());
     if (Texture)
@@ -177,17 +194,46 @@ std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTex
 
     if (FileFormat == "png" || FileFormat == "tga")
     {
-        std::shared_ptr<Texture_s> NewTexture = RequestTextureSTB(Data);
-        if (!NewTexture)
+        TextureLoadRequest_s Request;
+        if (!ParseTextureRequestSTB(Data, Request))
         {
             return ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
         }
+
+        // Cached before the load so repeat requests share this texture rather than loading it again
+        std::shared_ptr<Texture_s> NewTexture = std::make_shared<Texture_s>();
+        AssetManager_c::CacheTexture(Data.GetHash(), NewTexture);
+
+        // Fetched here as the job must not touch the asset manager
+        std::shared_ptr<Texture_s> Fallback = ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
+
+        auto LoadJob = [NewTexture, Request = std::move(Request), Fallback = std::move(Fallback)]()
+        {
+            if (!BuildTextureSTB(Request, *NewTexture))
+            {
+                if (!Fallback)
+                    return;
+
+                NewTexture->Texture = Fallback->Texture;
+                NewTexture->SRV = Fallback->SRV;
+                NewTexture->Size = Fallback->Size;
+                NewTexture->Format = Fallback->Format;
+                NewTexture->MipCount = Fallback->MipCount;
+            }
+
+            NewTexture->Ready.store(true, std::memory_order_release);
+        };
+
+        if (Blocking)
+        {
+            JobWaitOrHelp(JobSubmit(std::move(LoadJob), "LoadTextureSTB"));
+        }
         else
         {
-            AssetManager_c::CacheTexture(Data.GetHash(), NewTexture);
-            NewTexture->Ready.store(true);
-            return NewTexture;
+            JobSubmitDetached(std::move(LoadJob), "LoadTextureSTB");
         }
+
+        return NewTexture;
     }
 
     LOGWARNING("[TextureManager::RequestTexture] Unsupported file format for texture: %s", FileFormat.c_str());

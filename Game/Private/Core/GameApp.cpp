@@ -20,6 +20,7 @@
 #include <RenderImGui/imgui/backends/imgui_impl_win32.h>
 #include <RenderImGui/Source/Public/imgui_impl_render.h>
 #include <Render/Render.h>
+#include <Shared/Jobs/JobSystem.h>
 
 GameApp_c* GApp;
 
@@ -31,6 +32,9 @@ GameApp_c::~GameApp_c()
 
 bool GameApp_c::Init()
 {
+	// First so Shutdown is always balanced, it runs even when Init fails
+	JobSystemInit({ .ReservedThreads = 1 });
+
 	rl::RenderInitParams Params = GetAppRenderParams();	
 
 	if (!rl::Render_Init(Params))
@@ -77,6 +81,9 @@ void GameApp_c::Main()
 
 void GameApp_c::Shutdown()
 {
+	// Before anything jobs write into. Running loads finish, queued ones are discarded
+	JobSystemShutdown();
+
 	AssetManager.reset();
 	SpaceRenderer.reset();
 	rl::Render_ShutDown();
