@@ -57,7 +57,7 @@ bool MaterialShader_c::IsReady() const
 
     for (const ShaderTexture_s& Tex : ShaderTextures)
     {
-        if (Tex.Texture && !Tex.Texture->Ready.load())
+        if (Tex.Texture && !Tex.Texture->IsReady())
         {
             return false;
         }
@@ -73,7 +73,7 @@ void MaterialShader_c::AssignTextureParams(void* const ParamData, size_t ParamSi
     {
 #ifndef NDEBUG
         CHECK(Tex.Texture != nullptr);
-        CHECK(Tex.Texture->Ready.load());
+        CHECK(Tex.Texture->IsReady());
         CHECK(Tex.Texture->Texture.IsValid());
         CHECK(Tex.Texture->SRV.IsValid());
         CHECK(ParamSize >= Tex.ParamOffset + sizeof(uint32_t));
@@ -239,7 +239,7 @@ void MaterialShaderInstance_c::AssignOverrideTextureParams(void* const ParamData
     {
 #ifndef NDEBUG
         CHECK(Tex.Texture != nullptr);
-        CHECK(Tex.Texture->Ready.load());
+        CHECK(Tex.Texture->IsReady());
         CHECK(Tex.Texture->Texture.IsValid());
         CHECK(Tex.Texture->SRV.IsValid());
         CHECK(ParamSize >= Tex.ParamOffset + sizeof(uint32_t));
@@ -390,7 +390,7 @@ bool MaterialShaderInstance_c::IsReady() const
 
     for (const ShaderTexture_s& Tex : OverrideShaderTextures)
     {
-        if (Tex.Texture && !Tex.Texture->Ready.load())
+        if (Tex.Texture && !Tex.Texture->IsReady())
         {
             return false;
         }
