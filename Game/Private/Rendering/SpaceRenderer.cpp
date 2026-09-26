@@ -128,9 +128,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
 
-	rl::DynamicBuffer_t ViewUniformsBuffer = rl::CreateDynamicConstantBuffer(&ViewUniforms);
-
 	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
+
+	FrameBufferAlloc_s ViewUniformsBuffer = RGBuilder.Alloc(ViewUniforms);
 
 	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorMetallicTexture");
 	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalRoughnessTexture");
@@ -201,21 +201,22 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 			uint32_t SceneDepthTextureIndex;
 			float3 __Pad;
-		} Uniforms;
+		};
 		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
 
+		FrameBufferAlloc_s DeferredCBuf;
+		DeferredConstants_s* Uniforms = RG.Alloc<DeferredConstants_s>(DeferredCBuf);
+
 		// TODO: replace with a light component
-		Uniforms.InvViewProjection = InverseMatrix(ViewUniforms.ViewProjection);
-		Uniforms.LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
-		Uniforms.LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
-		Uniforms.AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
+		Uniforms->InvViewProjection = InverseMatrix(ViewUniforms.ViewProjection);
+		Uniforms->LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
+		Uniforms->LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
+		Uniforms->AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
 
-		Uniforms.SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
-		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
-		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
-		Uniforms.SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
-
-		rl::DynamicBuffer_t DeferredCBuf = rl::CreateDynamicConstantBuffer(&Uniforms);
+		Uniforms->SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
+		Uniforms->SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
+		Uniforms->SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
+		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
 
 		Ctx.SetRootSignature(G.RootSignature);
 
