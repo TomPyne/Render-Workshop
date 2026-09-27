@@ -26,10 +26,10 @@ ArchMaterialShader_c::ArchMaterialShader_c()
 
 void ArchMaterialShader_c::Load()
 {
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_M.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Arch_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Arch_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Arch_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
@@ -45,7 +45,7 @@ BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
 
 void BackgroundMatteMaterialShader_c::Load()
 {
-    LoadShaderTexture("MatteTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BackgroundMatte.hp_tex"));
+    LoadShaderTexture("MatteTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_BackgroundMatte.hp_tex"));
 }
 
 BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
@@ -72,10 +72,10 @@ BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
 
 void BottomTrimMaterialShader_c::Load()
 {
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_M.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_BottomTrim_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_BottomTrim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_BottomTrim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 TreeTrunkMaterialShader_c::TreeTrunkMaterialShader_c()
@@ -91,8 +91,8 @@ TreeTrunkMaterialShader_c::TreeTrunkMaterialShader_c()
 
 void TreeTrunkMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Bark01_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Bark01_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Bark01_N.hp_tex"));
 }
 
 TreeBranchesMaterialShader_c::TreeBranchesMaterialShader_c()
@@ -108,8 +108,8 @@ TreeBranchesMaterialShader_c::TreeBranchesMaterialShader_c()
 
 void TreeBranchesMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_COG_Foliage_Leaves_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_COG_Foliage_Leaves_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_COG_Foliage_Leaves_N.hp_tex"));
 }
 
 TrimMaterialShader_c::TrimMaterialShader_c()
@@ -134,10 +134,10 @@ TrimMaterialShader_c::TrimMaterialShader_c()
 
 void TrimMaterialShader_c::Load()
 {
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Trim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Trim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 StoneBrickWallMaterialShader_c::StoneBrickWallMaterialShader_c()
@@ -156,10 +156,10 @@ StoneBrickWallMaterialShader_c::StoneBrickWallMaterialShader_c()
 
 void StoneBrickWallMaterialShader_c::Load()
 {
-    LoadShaderTexture("AOTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_AO.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_StoneBrickWall_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("AOTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_StoneBrickWall_AO.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_StoneBrickWall_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 SoulRocksMaterialShader_c::SoulRocksMaterialShader_c()
@@ -191,11 +191,11 @@ SoulRocksMaterialShader_c::SoulRocksMaterialShader_c()
 
 void SoulRocksMaterialShader_c::Load()
 {
-    LoadShaderTexture("GrassAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_D.hp_tex"));
-    LoadShaderTexture("RocksAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_D.hp_tex"));
-    LoadShaderTexture("GrassNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Grass_N.hp_tex"));
-    LoadShaderTexture("RocksNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Rocks_N.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Cave_Rock_Large02_N.hp_tex"));
+    LoadShaderTexture("GrassAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Grass_D.hp_tex"));
+    LoadShaderTexture("RocksAlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Rocks_D.hp_tex"));
+    LoadShaderTexture("GrassNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Grass_N.hp_tex"));
+    LoadShaderTexture("RocksNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Rocks_N.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Cave_Rock_Large02_N.hp_tex"));
 }
 
 DomeMaterialShader_c::DomeMaterialShader_c()
@@ -219,10 +219,10 @@ DomeMaterialShader_c::DomeMaterialShader_c()
 
 void DomeMaterialShader_c::Load()
 {
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_M.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Trim_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Trim_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Trim_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 FirePitMaterialShader_c::FirePitMaterialShader_c()
@@ -251,9 +251,9 @@ FirePitMaterialShader_c::FirePitMaterialShader_c()
 
 void FirePitMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FirePit_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FirePit_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FirePit_N.hp_tex"));
 }
 
 FloorMaterialShader_c::FloorMaterialShader_c()
@@ -287,10 +287,10 @@ FloorMaterialShader_c::FloorMaterialShader_c()
 
 void FloorMaterialShader_c::Load()
 {
-    LoadShaderTexture("PatternMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTileMasks_M.hp_tex"));
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_N.hp_tex"));
-    LoadShaderTexture("TileMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorTiles_M.hp_tex"));
+    LoadShaderTexture("PatternMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorTileMasks_M.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorTiles_N.hp_tex"));
+    LoadShaderTexture("TileMaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorTiles_M.hp_tex"));
 }
 
 WaterMaterialShader_c::WaterMaterialShader_c()
@@ -311,7 +311,7 @@ WaterMaterialShader_c::WaterMaterialShader_c()
 
 void WaterMaterialShader_c::Load()
 {
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Water2_N.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Water2_N.hp_tex"));
 }
 
 PillarMaterialShader_c::PillarMaterialShader_c()
@@ -341,10 +341,10 @@ PillarMaterialShader_c::PillarMaterialShader_c()
 
 void PillarMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Pillar_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Pillar_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Pillar_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 RailingMaterialShader_c::RailingMaterialShader_c()
@@ -365,9 +365,9 @@ RailingMaterialShader_c::RailingMaterialShader_c()
 
 void RailingMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Railing_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Railing_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Railing_N.hp_tex"));
 }
 
 StatueMaterialShader_c::StatueMaterialShader_c()
@@ -399,10 +399,10 @@ StatueMaterialShader_c::StatueMaterialShader_c()
 
 void StatueMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Statue_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Crackle_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Crackle.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Statue_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Statue_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Crackle_N.hp_tex"));
 }
 
 StairsMaterialShader_c::StairsMaterialShader_c()
@@ -424,10 +424,10 @@ StairsMaterialShader_c::StairsMaterialShader_c()
 
 void StairsMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Stairs_N.hp_tex"));
-    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Marble_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Stairs_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Stairs_N.hp_tex"));
+    LoadShaderTexture("DetailNormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Marble_N.hp_tex"));
 }
 
 ShieldMaterialShader_c::ShieldMaterialShader_c()
@@ -449,9 +449,9 @@ ShieldMaterialShader_c::ShieldMaterialShader_c()
 
 void ShieldMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_FloorMarble_D.hp_tex"));
-    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_M.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/T_Shield_N.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_FloorMarble_D.hp_tex"));
+    LoadShaderTexture("MaskTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Shield_M.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Shield_N.hp_tex"));
 }
 
 WaveFoamMaterialShader_c::WaveFoamMaterialShader_c()
@@ -479,6 +479,6 @@ SoulTreeMaterialShader_c::SoulTreeMaterialShader_c()
 
 void SoulTreeMaterialShader_c::Load()
 {
-    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01DF.hp_tex"));
-    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/SunTemple/Soul_Tree01NRM.hp_tex"));
+    LoadShaderTexture("AlbedoTexture", Path_s(PathDirectory_e::Assets, L"Textures/Soul_Tree01DF.hp_tex"));
+    LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/Soul_Tree01NRM.hp_tex"));
 }

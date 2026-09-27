@@ -30,6 +30,13 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 	{
 		SetMesh(MeshManager::RequestMesh(MeshAssetPath));
 	}
+
+	bool LoadVisible = true;
+	JsonHelpers::ParseBool(Data, "Visible", LoadVisible);
+	if (!LoadVisible)
+	{
+		SetVisible(false);
+	}
 }
 
 void MeshComponent_c::PreDestroy()
@@ -156,6 +163,13 @@ void MeshObject_c::Deserialize(const JsonValue_s& Data)
 		if (JsonHelpers::ParsePath(Data, "MeshAssetPath", MeshAssetPath))
 		{
 			MeshComponent->SetMesh(MeshManager::RequestMesh(MeshAssetPath));
+		}
+
+		bool LoadVisible = true;
+		JsonHelpers::ParseBool(Data, "Visible", LoadVisible);
+		if (!LoadVisible)
+		{
+			MeshComponent->SetVisible(false);
 		}
 	}
 }

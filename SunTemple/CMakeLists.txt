@@ -3,22 +3,10 @@ function(create_proj projname rapi)
 	set(
 		source_list
 		"Source/${projname}.cpp"
-		"Source/SimpleGameApp.cpp"
-		"Source/SimpleGameApp.h"
-		"Source/Components/FighterControllerComponent.cpp"
-		"Source/Components/FighterControllerComponent.h"
-		"Source/Modes/BuildingMode.cpp"
-		"Source/Modes/BuildingMode.h"
-		"Source/Modes/ColonyMode.cpp"
-		"Source/Modes/ColonyMode.h"
-		"Source/Modes/RoadMode.cpp"
-		"Source/Modes/RoadMode.h"
-		"Source/Objects/BuildingObject.cpp"
-		"Source/Objects/BuildingObject.h"
-		"Source/Objects/RoadObject.cpp"
-		"Source/Objects/RoadObject.h"
-		"Source/Objects/SelectionCursorObject.cpp"
-		"Source/Objects/SelectionCursorObject.h"
+		"Source/SunTempleApp.cpp"
+		"Source/SunTempleApp.h"
+		"Source/Materials/SunTempleMaterials.h"
+		"Source/Materials/SunTempleMaterials.cpp"
 	)
 
 	add_executable(${projname}${rapi} ${source_list})
@@ -48,10 +36,10 @@ function(create_proj projname rapi)
 	"${PROJECT_SOURCE_DIR}/Render"
 	"${PROJECT_SOURCE_DIR}/RenderImGui"
 	"${PROJECT_SOURCE_DIR}/Shared"
-	"${PROJECT_SOURCE_DIR}/SimpleGame/Source"
+	"${PROJECT_SOURCE_DIR}/SunTemple/Source"
 	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
 	)
 
 endfunction()
 
-create_proj(SimpleGame Dx12)
+create_proj(SunTemple Dx12)

@@ -151,4 +151,6 @@ public:
 private:
 
 	std::weak_ptr<Space_c> OwningSpace;
+
+	std::string Name;
 };

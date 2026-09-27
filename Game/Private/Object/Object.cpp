@@ -12,6 +12,8 @@ Object_c::Object_c(const ObjectArgs_s& Args)
 
 void Object_c::Deserialize(const JsonValue_s& Data)
 {
+	JsonHelpers::ParseString(Data, "Name", Name);
+
 	const Json_t& Node = Data.Json;
 	auto ComponentsIt = Node.find("Components");
 	if (ComponentsIt != Node.end())

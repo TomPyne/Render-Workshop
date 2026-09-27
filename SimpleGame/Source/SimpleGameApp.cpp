@@ -1,7 +1,6 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
-#include "Materials/SunTempleMaterials.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
@@ -72,25 +71,6 @@ void SimpleGameApp_c::RegisterClasses()
 	Space->RegisterComponentClass<FighterControllerComponent_c>();
 
 	// Materials
-	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<BackgroundMatteMaterialShader_c>(L"BackgroundMatteMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<BottomTrimMaterialShader_c>(L"BottomTrimMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<TreeBranchesMaterialShader_c>(L"TreeBranchesMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<TreeTrunkMaterialShader_c>(L"TreeTrunkMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<TrimMaterialShader_c>(L"TrimMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<StoneBrickWallMaterialShader_c>(L"StoneBrickWallMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<SoulRocksMaterialShader_c>(L"SoulRocksMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<DomeMaterialShader_c>(L"DomeMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<FirePitMaterialShader_c>(L"FirePitMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<FloorMaterialShader_c>(L"FloorTilesMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<WaterMaterialShader_c>(L"WaterMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<PillarMaterialShader_c>(L"PillarMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<RailingMaterialShader_c>(L"RailingMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<StatueMaterialShader_c>(L"StatueMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<StairsMaterialShader_c>(L"StairsMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<ShieldMaterialShader_c>(L"ShieldMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<WaveFoamMaterialShader_c>(L"WaveFoamMaterialShader");
-	MaterialManager::RegisterMaterialShaderClass<SoulTreeMaterialShader_c>(L"SoulTreeMaterialShader");
 }
 
 void SimpleGameApp_c::Load()
@@ -100,7 +80,7 @@ void SimpleGameApp_c::Load()
 	G.ColonyModes[Mode_e::NONE] = nullptr;
 	G.ColonyModes[Mode_e::BUILDING] = std::make_unique<BuildingMode_c>(Space.get());
 
-	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SunTemple.hp_lvl");
+	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
 
 	if (Space)
 	{
