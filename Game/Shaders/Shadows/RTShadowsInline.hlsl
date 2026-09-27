@@ -39,9 +39,18 @@ float3 GetWorldPos(float2 ScreenPos, float Depth)
 [NumThreads(8, 8, 1)]
 void main(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
+    if (any(float2(DispatchThreadID.xy) >= c_Uniforms.ScreenResolution))
+        return;
+
     float2 Pixel = float2(DispatchThreadID.xy) + 0.5f;
 
     float SceneDepth = t_tex2d_f1[c_Uniforms.SceneDepthTexture].Load(int3(Pixel, 0));
+
+    if (SceneDepth >= 1.0f)
+    {
+        u_tex2d_f1[c_Uniforms.SceneShadowTexture][DispatchThreadID.xy] = 1.0f;
+        return;
+    }
 
     float2 ScreenPos = Pixel / c_Uniforms.ScreenResolution * 2.0f - 1.0f;
     ScreenPos.y = -ScreenPos.y;

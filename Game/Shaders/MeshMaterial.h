@@ -167,7 +167,7 @@ struct PSOutput_s
     float4 AlbedoMetallic : SV_TARGET0;
     float4 NormalRoughness : SV_TARGET1;
     float4 EmissiveSpecular : SV_Target2;
-    float2 Velocity : SV_Target3;
+    float4 Velocity : SV_Target3;
 };
 
 float3 TangentToWorldNormals(float3 Normal, float3 VertexNormal, float4 Tangent)
@@ -179,19 +179,22 @@ float3 TangentToWorldNormals(float3 Normal, float3 VertexNormal, float4 Tangent)
     return normalize(Normal.x * T + Normal.y * B + Normal.z * N);
 }
 
-// Velocity is CurrentUV - PrevUV, so consumers find last frame's sample at UV - Velocity
+// Velocity.xy is CurrentUV - PrevUV, so consumers find last frame's sample at UV - Velocity.xy
+// Velocity.z is the surface's view depth last frame, to validate history against, 0 when invalid
 void MaterialOutput_Velocity(float4 SvPosition, float4 PrevPosition, inout PSOutput_s Output)
 {
     const float2 CurrentUV = SvPosition.xy * c_View.InvViewportSize;
 
     // Behind the camera last frame, push the previous sample off-screen so temporal effects reject it
     float2 PrevUV = float2(-1.0f, -1.0f);
+    float PrevDepth = 0.0f;
     if (PrevPosition.w > 0.0f)
     {
         PrevUV = (PrevPosition.xy / PrevPosition.w) * float2(0.5f, -0.5f) + 0.5f;
+        PrevDepth = PrevPosition.w;
     }
 
-    Output.Velocity = CurrentUV - PrevUV;
+    Output.Velocity = float4(CurrentUV - PrevUV, PrevDepth, 0.0f);
 }
 
 // Initialises every output, call first as the other helpers only write their own fields
@@ -200,7 +203,7 @@ void MaterialOutput_Default(float3 Normal, out PSOutput_s Output)
     Output.AlbedoMetallic = float4(0.0f, 0.0f, 0.0f, 0.0f);
     Output.NormalRoughness = float4(Normal, 0.5f);
     Output.EmissiveSpecular = float4(0.0f, 0.0f, 0.0f, 0.5f);
-    Output.Velocity = float2(0.0f, 0.0f);
+    Output.Velocity = float4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void MaterialOutput_Albedo(float3 Albedo, inout PSOutput_s Output)
