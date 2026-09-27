@@ -83,6 +83,14 @@ void SpatialObject_c::RotateLocal(quat Delta)
 	NotifyComponentsTransformed();
 }
 
+void SpatialObject_c::ResetMotion()
+{
+	for (SpatialObjectComponent_c* Component : GetComponents<SpatialObjectComponent_c>())
+	{
+		Component->ResetMotion();
+	}
+}
+
 void SpatialObject_c::NotifyComponentsTransformed()
 {
 	for (SpatialObjectComponent_c* Component : GetComponents<SpatialObjectComponent_c>())

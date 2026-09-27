@@ -30,6 +30,9 @@ class RuntimeMeshComponent_c : public SpatialObjectComponent_c, public IRenderab
 	void UpdateMesh(const RuntimeMeshDesc_s& Desc);
 
 	std::shared_ptr<Mesh_s> Mesh = {};
+
+protected:
+	ObjectMotionHistory_s MotionHistory;
 };
 
 class RuntimeMeshObject_c : public SpatialObject_c

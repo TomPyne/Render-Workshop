@@ -202,6 +202,11 @@ void GameApp_c::ImGuiUpdate()
 void GameApp_c::Resize(int Width, int Height)
 {
 	MainRenderView->Resize(Width, Height);
+
+	if (SpaceRenderer)
+	{
+		SpaceRenderer->ResetTemporalHistory();
+	}
 }
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

@@ -3,6 +3,7 @@
 struct ViewUniforms_s
 {
     float4x4 ViewProjectionMatrix;
+    float4x4 PrevViewProjectionMatrix;
 
     float3 CamPos;
     float Time;

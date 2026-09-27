@@ -4,6 +4,7 @@
 #include "Object/SpatialObjectComponent.h"
 #include "Physics/IPhysical.h"
 #include "Rendering/IRenderable.h"
+#include "Rendering/Mesh.h"
 
 class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, public IPhysical_c
 {
@@ -40,6 +41,8 @@ protected:
 	std::shared_ptr<struct Mesh_s> Mesh = {};
 	bool Visible = true;
 	bool Collidable = true;
+
+	ObjectMotionHistory_s MotionHistory;
 };
 
 class MeshObject_c : public SpatialObject_c

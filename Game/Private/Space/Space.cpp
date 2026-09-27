@@ -116,6 +116,7 @@ void Space_c::PushCameraComponent(CameraComponent_c* Camera)
 	if(Camera)
 	{		
 		CameraStack.push_back(SharedFrom(Camera));
+		ActiveCameraChanged = true;
 		LOGINFO("[Space] Camera pushed to stack - %d", CameraStack.size());
 	}
 }
@@ -125,6 +126,7 @@ void Space_c::PopCameraComponent(CameraComponent_c* Camera)
 	if (Camera)
 	{
 		const size_t CameraCount = CameraStack.size();
+		const CameraComponent_c* PrevActiveCamera = GetCamera();
 		std::erase_if(CameraStack, [Camera](const std::weak_ptr<CameraComponent_c>& Registered)
 		{
 			const std::shared_ptr<CameraComponent_c> RegisteredShared = Registered.lock();
@@ -134,6 +136,11 @@ void Space_c::PopCameraComponent(CameraComponent_c* Camera)
 		if (CameraStack.size() != CameraCount)
 		{
 			LOGINFO("[Space] Camera popped from stack - %d", CameraStack.size());
+		}
+
+		if (GetCamera() != PrevActiveCamera)
+		{
+			ActiveCameraChanged = true;
 		}
 	}
 }

@@ -25,6 +25,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
     float4 Tangent : TANGENT;
     float2 UV0 : TEXCOORD0;
@@ -37,6 +38,7 @@ struct Interpolants_s
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
     Output.Position = ModelToClip(LoadPosition(VertexID));
+    Output.PrevPosition = ModelToPrevClip(LoadPosition(VertexID));
     Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
     Output.Tangent = TangentModelToWorld(LoadTangent(VertexID));
 
@@ -90,6 +92,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 
     Output.AlbedoMetallic = float4(Albedo, Metallic);
     Output.NormalRoughness = float4(Normal, Roughness);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

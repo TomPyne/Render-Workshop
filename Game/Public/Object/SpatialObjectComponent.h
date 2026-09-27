@@ -47,8 +47,20 @@ class SpatialObjectComponent_c : public ObjectComponent_c
 		return SpatialOwner.lock().get();
 	}
 
+	// Call after a teleport so the jump is not treated as motion by velocity and temporal effects
+	void ResetMotion() { MotionResetPending = true; }
+
 protected:
 	Transform_s Transform;
+
+	bool ConsumeMotionReset()
+	{
+		const bool Pending = MotionResetPending;
+		MotionResetPending = false;
+		return Pending;
+	}
+
+	bool MotionResetPending = false;
 
 private:
 

@@ -19,6 +19,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
     float4 Tangent : TANGENT;
     float2 UV0 : TEXCOORD0;
@@ -31,7 +32,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormalTangent(VertexID, Output.Position, Output.Normal, Output.Tangent);
+    VS_PosNormalTangent(VertexID, Output.Position, Output.PrevPosition, Output.Normal, Output.Tangent);
     float2 UV0 = LoadUV0(VertexID);
 
     Output.UV0 = Panner2(UV0 * c_Material.Scale1, c_View.Time * c_Material.Speed, float2(0.3131f, 0.123f));
@@ -52,7 +53,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float3 Normal2 = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
     float3 TangentNormals = BlendDetailNormals(Normal1, Normal2);
 
-    TangenNormals *= float3(c_Material.NormalIntensity.xx, 1.0f);
+    TangentNormals *= float3(c_Material.NormalIntensity.xx, 1.0f);
 
     float3 Albedo = c_Material.Color;
 
@@ -67,7 +68,9 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
     MaterialOutput_Metallic(1.0f, Output);
     MaterialOutput_Roughness(0.01f, Output);
-    MaterialOutput_Albedo(Albedo, Output);   
+    MaterialOutput_Albedo(Albedo, Output);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

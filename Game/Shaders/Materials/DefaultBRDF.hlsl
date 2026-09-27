@@ -9,6 +9,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
 };
 
@@ -16,7 +17,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormal(VertexID, Output.Position, Output.Normal);
+    VS_PosNormal(VertexID, Output.Position, Output.PrevPosition, Output.Normal);
 }
 
 #endif // #ifdef _VS
@@ -27,6 +28,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 {
     MaterialOutput_Default(Input.Normal, Output);
     MaterialOutput_Albedo(c_Material.Albedo, Output);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

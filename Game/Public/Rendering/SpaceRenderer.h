@@ -48,8 +48,9 @@ enum class SpatialShaderPass_t : uint32_t
 
 struct SpatialRenderingCollector_s
 {
-	explicit SpatialRenderingCollector_s(FrameBuffer_s& InFrameBuffer)
-		: FrameBuffer(InFrameBuffer)
+	SpatialRenderingCollector_s(FrameBuffer_s& InFrameBuffer, uint64_t InFrameIndex)
+		: FrameIndex(InFrameIndex)
+		, FrameBuffer(InFrameBuffer)
 	{}
 
 	template<typename T>
@@ -62,6 +63,9 @@ struct SpatialRenderingCollector_s
 	FrameBufferAlloc_s Alloc(const void* Data, uint32_t Size);
 
 	SpatialRenderingMeshPass_s MainPass;
+
+	// Lets renderables detect whether they were drawn on the previous frame
+	const uint64_t FrameIndex;
 
 private:
 	FrameBuffer_s& FrameBuffer;
@@ -80,6 +84,9 @@ public:
 	void Init();
 	void RenderSpace(const SpaceRendererScreenInfo_s& Screen, class Space_c* Space, rl::CommandListSubmissionGroup& clGroup);
 
+	// Call whenever last frame's view can no longer be reprojected into, e.g. resize or camera change
+	void ResetTemporalHistory();
+
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
 protected:
@@ -87,6 +94,11 @@ protected:
 	RenderGraphResourcePool_s RenderGraphResourcePool;
 
 	SurfClock Clock;
+
+	uint64_t FrameIndex = 0;
+
+	matrix PrevViewProjection;
+	bool HasPrevView = false;
 
 	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
 

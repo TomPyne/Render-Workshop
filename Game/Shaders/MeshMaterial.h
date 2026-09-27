@@ -80,6 +80,12 @@ float4 ModelToClip(float3 ModelPosition)
     return WorldToClip(ModelToWorld(ModelPosition));
 }
 
+float4 ModelToPrevClip(float3 ModelPosition)
+{
+    const float3 PrevWorldPosition = mul(c_Dynamic.PrevModelMatrix, float4(ModelPosition, 1.0f)).xyz;
+    return mul(c_View.PrevViewProjectionMatrix, float4(PrevWorldPosition, 1.0f));
+}
+
 float3 NormalModelToWorld(float3 Normal)
 {
     return normalize(mul((float3x3)c_Dynamic.NormalMatrix, Normal));
@@ -93,46 +99,58 @@ float4 TangentModelToWorld(float4 Tangent)
     );
 }
 
-void VS_PosNormal(in uint VertexID, out float4 Position, out float3 Normal)
+void VS_PosNormal(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
 }
 
-void VS_PosNormalUV0(in uint VertexID, out float4 Position, out float3 Normal, out float2 UV0)
+void VS_PosNormalUV0(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal, out float2 UV0)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     UV0 = LoadUV0(VertexID);
 }
 
-void VS_PosNormalTangent(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent)
+void VS_PosNormalTangent(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal, out float4 Tangent)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     Tangent = TangentModelToWorld(LoadTangent(VertexID));
 }
 
-void VS_PosNormalTangentUV0(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0)
+void VS_PosNormalTangentUV0(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal, out float4 Tangent, out float2 UV0)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     Tangent = TangentModelToWorld(LoadTangent(VertexID));
     UV0 = LoadUV0(VertexID);
 }
 
-void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1)
+void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     Tangent = TangentModelToWorld(LoadTangent(VertexID));
     UV0 = LoadUV0(VertexID);
     UV1 = LoadUV1(VertexID);
 }
 
-void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1, out float2 UV2)
+void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float4 PrevPosition, out float3 Normal, out float4 Tangent, out float2 UV0, out float2 UV1, out float2 UV2)
 {
-    Position = ModelToClip(LoadPosition(VertexID));
+    const float3 ModelPosition = LoadPosition(VertexID);
+    Position = ModelToClip(ModelPosition);
+    PrevPosition = ModelToPrevClip(ModelPosition);
     Normal = NormalModelToWorld(LoadNormal(VertexID));
     Tangent = TangentModelToWorld(LoadTangent(VertexID));
     UV0 = LoadUV0(VertexID);
@@ -149,6 +167,7 @@ struct PSOutput_s
     float4 AlbedoMetallic : SV_TARGET0;
     float4 NormalRoughness : SV_TARGET1;
     float4 EmissiveSpecular : SV_Target2;
+    float2 Velocity : SV_Target3;
 };
 
 float3 TangentToWorldNormals(float3 Normal, float3 VertexNormal, float4 Tangent)
@@ -160,39 +179,56 @@ float3 TangentToWorldNormals(float3 Normal, float3 VertexNormal, float4 Tangent)
     return normalize(Normal.x * T + Normal.y * B + Normal.z * N);
 }
 
+// Velocity is CurrentUV - PrevUV, so consumers find last frame's sample at UV - Velocity
+void MaterialOutput_Velocity(float4 SvPosition, float4 PrevPosition, inout PSOutput_s Output)
+{
+    const float2 CurrentUV = SvPosition.xy * c_View.InvViewportSize;
+
+    // Behind the camera last frame, push the previous sample off-screen so temporal effects reject it
+    float2 PrevUV = float2(-1.0f, -1.0f);
+    if (PrevPosition.w > 0.0f)
+    {
+        PrevUV = (PrevPosition.xy / PrevPosition.w) * float2(0.5f, -0.5f) + 0.5f;
+    }
+
+    Output.Velocity = CurrentUV - PrevUV;
+}
+
+// Initialises every output, call first as the other helpers only write their own fields
 void MaterialOutput_Default(float3 Normal, out PSOutput_s Output)
 {
     Output.AlbedoMetallic = float4(0.0f, 0.0f, 0.0f, 0.0f);
     Output.NormalRoughness = float4(Normal, 0.5f);
     Output.EmissiveSpecular = float4(0.0f, 0.0f, 0.0f, 0.5f);
+    Output.Velocity = float2(0.0f, 0.0f);
 }
 
-void MaterialOutput_Albedo(float3 Albedo, out PSOutput_s Output)
+void MaterialOutput_Albedo(float3 Albedo, inout PSOutput_s Output)
 {
     Output.AlbedoMetallic.rgb = Albedo;
 }
 
-void MaterialOutput_Metallic(float Metallic, out PSOutput_s Output)
+void MaterialOutput_Metallic(float Metallic, inout PSOutput_s Output)
 {
     Output.AlbedoMetallic.a = Metallic;
 }
 
-void MaterialOutput_Roughness(float Roughness, out PSOutput_s Output)
+void MaterialOutput_Roughness(float Roughness, inout PSOutput_s Output)
 {
     Output.NormalRoughness.a = Roughness;
 }
 
-void MaterialOutput_Specular(float Specular, out PSOutput_s Output)
+void MaterialOutput_Specular(float Specular, inout PSOutput_s Output)
 {
     Output.EmissiveSpecular.a = Specular;
 }
 
-void MaterialOutput_Emissive(float3 Emissive, out PSOutput_s Output)
+void MaterialOutput_Emissive(float3 Emissive, inout PSOutput_s Output)
 {
     Output.EmissiveSpecular.rgb = Emissive;
 }
 
-void MaterialOutput_AmbientOcclusion(float AO, out PSOutput_s Output)
+void MaterialOutput_AmbientOcclusion(float AO, inout PSOutput_s Output)
 {
     // TODO
 }

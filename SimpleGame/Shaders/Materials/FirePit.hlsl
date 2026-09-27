@@ -31,6 +31,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
     float4 Tangent : TANGENT;
     float2 UV0 : TEXCOORD0;
@@ -44,7 +45,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
+    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.PrevPosition, Output.Normal, Output.Tangent, Output.UV0);
     Output.UV1 = Output.UV0 * c_Material.ScaleDirt;
     Output.UV2 = Panner2(Output.UV0 * c_Material.EmberAnimScale, c_View.Time, float2(0.1f, 0.033f));
 }
@@ -87,6 +88,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Metallic(Metallic, Output);
     MaterialOutput_Roughness(Roughness, Output);
     MaterialOutput_Emissive(EmissiveColor, Output);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

@@ -108,6 +108,7 @@ protected:
 
 	// Camera
 	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
+	bool ActiveCameraChanged = false; // Consumed by the renderer to reset temporal history
 
 	// Controllers
 	std::vector<std::weak_ptr<ControllerComponent_c>> ControllerStack;

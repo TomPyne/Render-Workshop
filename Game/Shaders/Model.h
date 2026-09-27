@@ -4,6 +4,7 @@ struct DynamicUniforms_s
 {
     float4x4 ModelMatrix;
     float4x4 NormalMatrix;
+    float4x4 PrevModelMatrix;
     float DeterminantSign;
     float3 __Pad;
 };

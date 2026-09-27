@@ -33,12 +33,25 @@ struct ObjectUniforms_s
 {
 	matrix ModelMatrix;
 	matrix NormalMatrix;
+	matrix PrevModelMatrix;
 	float DeterminantSign;
 	float __Pad[3];
 };
 
 // Returns true when the transform mirrors, so the caller can select the front-face-culling PSO.
-bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms);
+bool MakeObjectUniforms(const matrix& WorldMatrix, const matrix& PrevWorldMatrix, ObjectUniforms_s& OutUniforms);
+
+// Tracks the world matrix a renderable was drawn with on the previous frame, for velocity
+struct ObjectMotionHistory_s
+{
+	// Returns last frame's world matrix, or the current one if the object was not drawn last frame or was reset
+	const matrix& Update(const matrix& WorldMatrix, uint64_t FrameIndex, bool Reset);
+
+private:
+	matrix PrevWorldMatrix;
+	matrix CurrWorldMatrix;
+	uint64_t LastFrameIndex = 0; // 0 means never drawn, frame indices start at 1
+};
 
 struct Mesh_s
 {

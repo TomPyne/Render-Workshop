@@ -30,6 +30,9 @@ class SpatialObject_c : public Object_c
 	void Rotate(quat Delta);
 	void RotateLocal(quat Delta);
 
+	// Call after a teleport, resets motion on every spatial component as their world matrix includes this transform
+	void ResetMotion();
+
 protected:
 	Transform_s Transform;
 

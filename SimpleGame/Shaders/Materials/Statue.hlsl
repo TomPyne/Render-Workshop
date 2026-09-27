@@ -33,6 +33,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
     float4 Tangent : TANGENT;
     float2 UV0 : TEXCOORD0;
@@ -45,7 +46,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.Normal, Output.Tangent, Output.UV0);
+    VS_PosNormalTangentUV0(VertexID, Output.Position, Output.PrevPosition, Output.Normal, Output.Tangent, Output.UV0);
     Output.UV1 = Output.UV0 * c_Material.CrackleScale;
 }
 
@@ -94,7 +95,9 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
     MaterialOutput_Metallic(c_Material.Metallic, Output);
     MaterialOutput_Roughness(saturate(Roughness), Output);
-    MaterialOutput_Albedo(Albedo * AO * Shadow, Output);   
+    MaterialOutput_Albedo(Albedo * AO * Shadow, Output);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

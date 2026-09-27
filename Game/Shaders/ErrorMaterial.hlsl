@@ -8,6 +8,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 WorldPosition : WORLDPOS;
     float3 Normal : NORMAL;
 };
@@ -21,6 +22,7 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
     
     Output.WorldPosition = ModelToWorld(LoadPosition(VertexID));
     Output.Position = WorldToClip(Output.WorldPosition);
+    Output.PrevPosition = ModelToPrevClip(LoadPosition(VertexID));
     Output.Normal = NormalModelToWorld(LoadNormal(VertexID));
 }
 
@@ -48,6 +50,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 {
     Output.AlbedoMetallic = float4(Checkerboard3D(Input.WorldPosition, float3(1.0f, 0.04f, 0.68f), float3(0.0f, 0.0f, 0.0f), 10.0f), 0.0f);
     Output.NormalRoughness = float4(Input.Normal, 1.0f);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif

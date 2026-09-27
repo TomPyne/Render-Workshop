@@ -6,7 +6,7 @@
 #include <Render/Render.h>
 #include <Shared/Logging/Logging.h>
 
-bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms)
+bool MakeObjectUniforms(const matrix& WorldMatrix, const matrix& PrevWorldMatrix, ObjectUniforms_s& OutUniforms)
 {
 	float Determinant = 0.0f;
 	const matrix Inverse = InverseMatrix(WorldMatrix, &Determinant);
@@ -17,9 +17,28 @@ bool MakeObjectUniforms(const matrix& WorldMatrix, ObjectUniforms_s& OutUniforms
 
 	OutUniforms.ModelMatrix = WorldMatrix;
 	OutUniforms.NormalMatrix = TransposeMatrix(Inverse);
+	OutUniforms.PrevModelMatrix = PrevWorldMatrix;
 	OutUniforms.DeterminantSign = Mirrored ? -1.0f : 1.0f;
 
 	return Mirrored;
+}
+
+const matrix& ObjectMotionHistory_s::Update(const matrix& WorldMatrix, uint64_t FrameIndex, bool Reset)
+{
+	// A second draw in the same frame (another view) must not advance the history
+	if (FrameIndex != LastFrameIndex)
+	{
+		const bool DrawnLastFrame = LastFrameIndex != 0 && LastFrameIndex + 1 == FrameIndex;
+		PrevWorldMatrix = (DrawnLastFrame && !Reset) ? CurrWorldMatrix : WorldMatrix;
+		CurrWorldMatrix = WorldMatrix;
+		LastFrameIndex = FrameIndex;
+	}
+	else if (Reset)
+	{
+		PrevWorldMatrix = WorldMatrix;
+	}
+
+	return PrevWorldMatrix;
 }
 
 void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored) const

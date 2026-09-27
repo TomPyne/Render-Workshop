@@ -44,6 +44,7 @@ namespace SpaceRendererRootSigSlots
 struct SpaceViewUniforms_s
 {
 	matrix ViewProjection;
+	matrix PrevViewProjection;
 
 	float3 CamPos;
 	float Time;
@@ -149,7 +150,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
 
-	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer());
+	FrameIndex++;
+
+	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer(), FrameIndex);
 
 	for (IRenderable_c* Renderable : Space->RenderableComponents)
 	{
@@ -191,6 +194,18 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	const matrix ViewProjection = ViewMatrix * ProjectionMatrix;
 	const matrix InverseViewProjection = InverseMatrix(ViewProjection);
 
+	if (Space->ActiveCameraChanged)
+	{
+		ResetTemporalHistory();
+		Space->ActiveCameraChanged = false;
+	}
+
+	if (!HasPrevView)
+	{
+		PrevViewProjection = ViewProjection;
+		HasPrevView = true;
+	}
+
 	// TODO: Create directional light actor
 	const float3 LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
 	const float3 LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
@@ -199,6 +214,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewProjection;
+	ViewUniforms.PrevViewProjection = PrevViewProjection;
 	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
@@ -208,12 +224,14 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorMetallicTexture");
 	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalRoughnessTexture");
 	RenderGraphResourceHandle_t SceneEmissiveSpecularTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneEmissiveSpecularTexture");
+	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
 	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -223,6 +241,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			RG.GetRTV(SceneColorMetallicTexture),
 			RG.GetRTV(SceneNormalRoughnessTexture),
 			RG.GetRTV(SceneEmissiveSpecularTexture),
+			RG.GetRTV(SceneVelocityTexture),
 		};
 
 		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
@@ -253,10 +272,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"ShadowTexture");
 
 	uint32_t BlueNoiseSrvIndex = BlueNoiseTexture && BlueNoiseTexture->IsReady() ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;
-	static uint32_t FrameID = 0;
-
-	FrameID++;
-
 	RenderGraphPass_s& ShadowPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Pass")
 	.AccessResource(RaytracingSceneResource, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -287,7 +302,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms.SceneDepthTexture = RG.GetSRVIndex(SceneDepthTexture);
 		Uniforms.SceneShadowTexture = RG.GetUAVIndex(ShadowTexture);
 		Uniforms.BlueNoiseTexture = BlueNoiseSrvIndex;
-		Uniforms.FrameID = FrameID;
+		Uniforms.FrameID = static_cast<uint32_t>(FrameIndex);
 
 		Ctx.SetRootSignature(G.RootSignature);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
@@ -372,6 +387,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraph_s Graph = RGBuilder.Build();
 
 	Graph.Execute(&clGroup);
+
+	PrevViewProjection = ViewProjection;
+}
+
+void SpaceRenderer_c::ResetTemporalHistory()
+{
+	HasPrevView = false;
 }
 
 rl::RootSignature_t SpaceRenderer_c::GetRootSignature()
@@ -388,8 +410,10 @@ const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTarget
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Normal + Roughness
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Emissive + Specular
-		}, 
-		{ 
+			rl::RenderFormat::R16G16_FLOAT, // Velocity
+		},
+		{
+			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),

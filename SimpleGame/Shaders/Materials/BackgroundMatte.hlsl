@@ -13,6 +13,7 @@ struct MaterialUniforms_s
 struct Interpolants_s
 {
     float4 Position : SV_POSITION;
+    float4 PrevPosition : PREV_POSITION;
     float3 Normal : NORMAL;
     float2 UV0 : TEXCOORD0;
 };
@@ -21,7 +22,7 @@ struct Interpolants_s
 
 void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 {
-    VS_PosNormalUV0(VertexID, Output.Position, Output.Normal, Output.UV0);
+    VS_PosNormalUV0(VertexID, Output.Position, Output.PrevPosition, Output.Normal, Output.UV0);
 }
 
 #endif // #ifdef _VS
@@ -50,6 +51,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Specular(0.0f, Output);
     MaterialOutput_Roughness(1.0f, Output);
     MaterialOutput_Emissive(Emissive, Output);
+
+    MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 
 #endif
