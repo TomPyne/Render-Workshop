@@ -221,10 +221,17 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 
 	// TODO: Create directional light actor
-	const float3 LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
 	const float3 LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
 	const float3 AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
 	const float SunSoftAngle = 0.02f;
+	const float LightPitch = ConvertToRadians(-18.37f);
+	const float LightYaw = ConvertToRadians(50.0f);
+
+	const float3 LightDirection = -float3(
+		cosf(LightPitch) * sinf(LightYaw),
+		sinf(LightPitch),
+		cosf(LightPitch) * cosf(LightYaw)
+	);
 
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewProjection;
