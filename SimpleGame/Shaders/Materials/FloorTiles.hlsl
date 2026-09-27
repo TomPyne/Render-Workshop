@@ -69,7 +69,7 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
 
 #include "../../../Game/Shaders/Samplers.h"
 
-Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
+Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 
 float PatternMaskSample(Interpolants_s Input, float2 OffsetMask, float MaskScale)
 {

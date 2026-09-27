@@ -18,12 +18,13 @@ struct DeferredData_s
     uint SceneEmissiveSpecularTextureIndex;
 
     uint SceneDepthTextureIndex;
-    float3 __Pad;
+    uint ShadowTextureIndex;
+    float2 __Pad;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
 ConstantBuffer<DeferredData_s> c_Deferred : register(b2);
-Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
+Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 
 static const float PI = 3.14159265f;
 
@@ -103,9 +104,11 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const float NoH = saturate(dot(N, H));
     const float VoH = saturate(dot(V, H));
 
+    const float Shadow = t_tex2d_f4[c_Deferred.ShadowTextureIndex].Load(Pixel).r;
+
     const float3 DiffuseBRDF = DiffuseColor / PI;
     const float3 SpecularBRDF = D_GGX(NoH, A2) * V_SmithGGXCorrelated(NoV, NoL, A2) * F_Schlick(F0, VoH);
-    const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightRadiance * NoL;
+    const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightRadiance * NoL * Shadow;
 
     const float3 Ambient = c_Deferred.AmbientColor * (DiffuseColor + EnvBRDFApprox(F0, Roughness, NoV));
 

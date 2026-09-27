@@ -19,6 +19,7 @@ static struct SpaceRendererPrivate_s
 {
 	rl::RootSignaturePtr RootSignature;
 	rl::GraphicsPipelineStatePtr DeferredPSO;
+	rl::ComputePipelineStatePtr ShadowPSO;
 	TonemapRenderer_s TonemapRenderer;
 	bool Initialized = false;
 } G;
@@ -31,6 +32,7 @@ namespace SpaceRendererRootSigSlots
 		RS_VIEW_BUF,
 		RS_MODEL_BUF,
 		RS_MAT_BUF,
+		RS_TLAS,
 		RS_SRV_TABLE,
 		RS_UAV_TABLE,
 		RS_COUNT,
@@ -61,7 +63,8 @@ void SpaceRenderer_c::Init()
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(ViewCBVRegister, 0);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(ModelCBVRegister, 0);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(MatCBVRegister, 0);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::SRV);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_TLAS] = rl::RootSignatureSlot::SRVSlot(0, 0); // Sticking the TLAS here makes all my other SRVs need to start at t1, SM6.6 allows a workaround with ResourceDescriptorHeap
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::SRV);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_UAV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
 	RootSigDesc.GlobalSamplers.resize(2);
@@ -91,6 +94,21 @@ void SpaceRenderer_c::Init()
 		PsoDesc.DebugName = L"DeferredPSO";
 
 		G.DeferredPSO = CreateGraphicsPipelineState(PsoDesc);
+
+		ASSERTMSG(G.DeferredPSO.IsValid(), "Failed to create Deferred PSO");
+	}
+
+	// Shadow PSO
+	{
+		static const Path_s ShadowCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Shadows/RTShadowsInline.hlsl");
+		rl::ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = rl::CreateComputeShader(ShadowCSPath.ToString().c_str());
+		PsoDesc.RootSignatureOverride = G.RootSignature;
+		PsoDesc.DebugName = L"RTShadowsInline";
+
+		G.ShadowPSO = rl::CreateComputePipelineState(PsoDesc);
+
+		ASSERTMSG(G.ShadowPSO.IsValid(), "Failed to create Shadow PSO");
 	}
 
 	Clock = {};
@@ -165,8 +183,17 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	Space->RenderSceneDirty = false;
 
+	const matrix ViewProjection = ViewMatrix * ProjectionMatrix;
+	const matrix InverseViewProjection = InverseMatrix(ViewProjection);
+
+	// TODO: Create directional light actor
+	const float3 LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
+	const float3 LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
+	const float3 AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
+	const float SunSoftAngle = 0.02f;
+
 	SpaceViewUniforms_s ViewUniforms = {};
-	ViewUniforms.ViewProjection = ViewMatrix * ProjectionMatrix;
+	ViewUniforms.ViewProjection = ViewProjection;
 	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
@@ -217,6 +244,51 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		}
 	});
 
+	RenderGraphResourceHandle_t RaytracingSceneResource = RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene");
+	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"ShadowTexture");
+
+	RenderGraphPass_s& ShadowPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Pass")
+	.AccessResource(RaytracingSceneResource, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=, &InverseViewProjection](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		struct ShadowUniforms_s
+		{
+			matrix CamToWorld;
+			
+			float3 SunDirection;
+			float SunSoftAngle;
+
+			float2 ScreenResolution;
+			uint32_t SceneDepthTexture;
+			uint32_t SceneShadowTexture;
+
+			float Time;
+			float3 __Pad;
+		};
+
+		ShadowUniforms_s Uniforms;
+		Uniforms.CamToWorld = InverseViewProjection;
+		Uniforms.SunDirection = LightDirection;
+		Uniforms.SunSoftAngle = SunSoftAngle;
+		Uniforms.ScreenResolution = float2(static_cast<float>(Screen.Width), static_cast<float>(Screen.Height));
+		Uniforms.SceneDepthTexture = RG.GetSRVIndex(SceneDepthTexture);
+		Uniforms.SceneShadowTexture = RG.GetUAVIndex(ShadowTexture);
+		Uniforms.Time = Clock.GetTotalSeconds();
+
+		Ctx.SetRootSignature(G.RootSignature);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+
+		Ctx.SetPipelineState(G.ShadowPSO);
+
+		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_TLAS, RG.GetRaytracingScene(RaytracingSceneResource));
+
+		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
+	});
+
 	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"LitTexture");
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
@@ -224,8 +296,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
-	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
+	.SetExecuteCallback([=, &InverseViewProjection](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct DeferredConstants_s
 		{
@@ -241,7 +314,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t SceneEmissiveSpecularTextureIndex;
 
 			uint32_t SceneDepthTextureIndex;
-			float3 __Pad;
+			uint32_t ShadowTextureIndex;
+			float2 __Pad;
 		};
 		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
 
@@ -249,15 +323,16 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		DeferredConstants_s* Uniforms = RG.Alloc<DeferredConstants_s>(DeferredCBuf);
 
 		// TODO: replace with a light component
-		Uniforms->InvViewProjection = InverseMatrix(ViewUniforms.ViewProjection);
-		Uniforms->LightDirection = Normalize(float3(-0.5f, 1.0f, 0.5f));
-		Uniforms->LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
-		Uniforms->AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
+		Uniforms->InvViewProjection = InverseViewProjection;
+		Uniforms->LightDirection = LightDirection;
+		Uniforms->LightRadiance = LightRadiance;
+		Uniforms->AmbientColor = AmbientColor;
 
 		Uniforms->SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
 		Uniforms->SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
 		Uniforms->SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
 		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
+		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(ShadowTexture);
 
 		Ctx.SetRootSignature(G.RootSignature);
 

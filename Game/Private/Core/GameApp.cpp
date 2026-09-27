@@ -229,6 +229,6 @@ AssetManager_c* GameApp_c::GetAssetManager() const
 rl::RenderInitParams GameApp_c::GetAppRenderParams() const
 {
 	rl::RenderInitParams Params = {};
-	//Params.DebugEnabled = true;
+	Params.DebugEnabled = true;
 	return Params;
 }

@@ -11,9 +11,9 @@ ConstantBuffer<ModelUniforms_s> c_Model : register(b2);
 ConstantBuffer<MaterialUniforms_s> c_Material : register(b3);
 
 #ifdef _VS
-StructuredBuffer<float2> t_sbuf_f2[8192] : register(t0, space0);
-StructuredBuffer<float3> t_sbuf_f3[8192] : register(t0, space1);
-StructuredBuffer<float4> t_sbuf_f4[8192] : register(t0, space2);
+StructuredBuffer<float2> t_sbuf_f2[8192] : register(t1, space0);
+StructuredBuffer<float3> t_sbuf_f3[8192] : register(t1, space1);
+StructuredBuffer<float4> t_sbuf_f4[8192] : register(t1, space2);
 
 float3 LoadPosition(uint VertexID)
 {

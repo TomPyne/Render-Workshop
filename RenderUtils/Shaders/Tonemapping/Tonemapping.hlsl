@@ -13,7 +13,7 @@
 
 #include "../ScreenPass/ScreenPassShared.h"
 
-Texture2D<float4> t_tex2d_f4[8192] : register(t0, space0);
+Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 SamplerState ClampedSampler : register(s1);
 
 struct PS_OUTPUT
