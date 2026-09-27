@@ -13,6 +13,7 @@
 #include <RenderUtils/RenderGraph/RenderGraph.h>
 #include <RenderUtils/RenderPasses/BloomRenderPass.h>
 #include <RenderUtils/RenderPasses/DisocclusionRenderPass.h>
+#include <RenderUtils/RenderPasses/RaytracingBuildPass.h>
 #include <RenderUtils/RenderPasses/SkyRenderPass.h>
 #include <RenderUtils/RenderPasses/ScreenTracedAmbientOcclusion.h>
 #include <RenderUtils/RenderPasses/ScreenTracedReflections.h>
@@ -104,6 +105,7 @@ struct Globals_s
 	bool UseMeshShaders = true;
 	bool ShowMeshID = false;
 	bool ShowShadows = true;
+	bool RaytracingStructuresDirty = true;
 	int32_t DrawMode = 0;
 
 	bool SunMenuOpen = false;
@@ -412,6 +414,10 @@ void ImguiUpdate()
 			}
 			ImGui::Checkbox("Use Mesh Shaders", &G.UseMeshShaders);
 			ImGui::Checkbox("Show Mesh ID", &G.ShowMeshID);
+			if (ImGui::Button("Rebuild Acceleration Structures"))
+			{
+				G.RaytracingStructuresDirty = true;
+			}
 			ImGui::EndMenu();
 		}
 
@@ -611,12 +617,34 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 	RenderGraphResourceHandle_t ConfidenceTexture = G.DisocclusionPass.AddPass(RGBuilder, SceneDepthTexture, DepthHistoryTexture, SceneVelocityTexture, ViewProjection, G.PrevViewProjection, uint2(G.ScreenWidth, G.ScreenHeight));
 
-	// TODO RT MIGRATE (step 4): the TLAS isn't built until the demo moves to the in-frame build
-	constexpr bool RaytracingSceneBuilt = false;
+	RenderGraphResourceHandle_t RaytracingSceneResource = RGBuilder.ImportRaytracingScene(Glob.RaytracingScene, L"RaytracingScene");
 
-	if (G.ShowShadows && RaytracingSceneBuilt)
+	if (G.RaytracingStructuresDirty)
+	{
+		std::vector<rl::RaytracingGeometry_t> Geometries;
+		std::vector<rl::RaytracingInstance> Instances;
+
+		for (const RTDModel_s& Model : G.Models)
+		{
+			Geometries.push_back(Model.RaytracingGeometry);
+
+			// Models are drawn untransformed
+			rl::RaytracingInstance& Instance = Instances.emplace_back();
+			Instance.Geometry = Model.RaytracingGeometry;
+			Instance.Transform[0][0] = 1.0f;
+			Instance.Transform[1][1] = 1.0f;
+			Instance.Transform[2][2] = 1.0f;
+		}
+
+		AddRaytracingBuildPass(RGBuilder, RaytracingSceneResource, Geometries, Instances);
+
+		G.RaytracingStructuresDirty = false;
+	}
+
+	if (G.ShowShadows)
 	{
 		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::RAYTRACING, L"RT Shadows")
+		.AccessResource(RaytracingSceneResource, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 		.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
 		.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
@@ -656,7 +684,7 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 			Ctx.SetPipelineState(G.RTPSO);
 
 			Ctx.SetComputeRootCBV(RTRootSigSlots::RS_CONSTANTS, RayCBuf);
-			Ctx.SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, Glob.RaytracingScene);
+			Ctx.SetComputeRootSRV(RTRootSigSlots::RS_RAYTRACING_SCENE, RG.GetRaytracingScene(RaytracingSceneResource));
 
 			Ctx.DispatchRays(G.RaytracingShaderTable, G.ScreenWidth, G.ScreenHeight, 1);
 		});

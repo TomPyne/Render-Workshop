@@ -224,6 +224,7 @@ struct RenderGraphResource_s
 	RenderGraphResourceKind_e Kind = RenderGraphResourceKind_e::TEXTURE;
 	RenderGraphTexturePtr_t Texture;
 	rl::RaytracingScene_t RaytracingScene = {};
+	bool WrittenSinceBarrier = false;	// Raytracing scenes only, the next access needs a UAV barrier
 	bool Extracted = false;
 	std::wstring DebugName;
 };

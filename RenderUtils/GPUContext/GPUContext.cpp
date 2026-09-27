@@ -21,6 +21,7 @@ static rl::GPUAddress_t ToRootCBV(const FrameBufferAlloc_s& CBV)
 class GPUCommand_c
 {
 public:
+	virtual ~GPUCommand_c() = default;
 	virtual void Execute(rl::CommandList* CL) = 0;
 };
 
@@ -374,18 +375,54 @@ public:
 	}
 };
 
-class GPUCommand_RWBarrier_c : public GPUCommand_c
+class GPUCommand_BuildRaytracingGeometry_c : public GPUCommand_c
 {
-	rl::Texture_t Texture;
+	std::vector<rl::RaytracingGeometry_t> Geometries;
 
 public:
-	GPUCommand_RWBarrier_c(rl::Texture_t InTexture)
-		: Texture(InTexture)
+	GPUCommand_BuildRaytracingGeometry_c(const rl::RaytracingGeometry_t* InGeometries, uint32_t Count)
+		: Geometries(InGeometries, InGeometries + Count)
 	{}
 
 	void Execute(rl::CommandList* CL)
 	{
-		CL->UAVBarrier(Texture);
+		CL->BuildRaytracingGeometry(Geometries.data(), static_cast<uint32_t>(Geometries.size()));
+	}
+};
+
+class GPUCommand_BuildRaytracingScene_c : public GPUCommand_c
+{
+	rl::RaytracingScene_t Scene;
+	FrameBufferAlloc_s Instances;
+	uint32_t InstanceCount;
+
+public:
+	GPUCommand_BuildRaytracingScene_c(rl::RaytracingScene_t InScene, FrameBufferAlloc_s InInstances, uint32_t InInstanceCount)
+		: Scene(InScene)
+		, Instances(InInstances)
+		, InstanceCount(InInstanceCount)
+	{}
+
+	void Execute(rl::CommandList* CL)
+	{
+		const rl::GPUAddress_t InstanceDescs = Instances.IsValid() ? Instances.Owner->Resolve(Instances) : rl::GPUAddress_t::INVALID;
+		CL->BuildRaytracingScene(Scene, InstanceDescs, InstanceCount);
+	}
+};
+
+template<typename ResourceType>
+class GPUCommand_RWBarrier_c : public GPUCommand_c
+{
+	ResourceType Resource;
+
+public:
+	GPUCommand_RWBarrier_c(ResourceType InResource)
+		: Resource(InResource)
+	{}
+
+	void Execute(rl::CommandList* CL)
+	{
+		CL->UAVBarrier(Resource);
 	}
 };
 
@@ -777,7 +814,25 @@ void GPUContext_s::TransitionResource(rl::Texture_t Texture, rl::ResourceTransit
 
 void GPUContext_s::RWBarrier(rl::Texture_t Texture)
 {
-	AddCommand<GPUCommand_RWBarrier_c>(Texture);
+	AddCommand<GPUCommand_RWBarrier_c<rl::Texture_t>>(Texture);
+}
+
+void GPUContext_s::BuildRaytracingGeometry(const rl::RaytracingGeometry_t* Geometries, uint32_t Count)
+{
+	AddCommand<GPUCommand_BuildRaytracingGeometry_c>(Geometries, Count);
+}
+
+void GPUContext_s::BuildRaytracingScene(rl::RaytracingScene_t Scene, FrameBufferAlloc_s Instances, uint32_t InstanceCount)
+{
+#ifndef NDEBUG
+	ASSERTMSG(!Instances.IsValid() || std::find(FrameBuffers.begin(), FrameBuffers.end(), Instances.Owner) != FrameBuffers.end(), "FrameBufferAlloc_s bound to a GPUContext that won't upload its FrameBuffer");
+#endif
+	AddCommand<GPUCommand_BuildRaytracingScene_c>(Scene, Instances, InstanceCount);
+}
+
+void GPUContext_s::RWBarrier(rl::RaytracingScene_t Scene)
+{
+	AddCommand<GPUCommand_RWBarrier_c<rl::RaytracingScene_t>>(Scene);
 }
 
 void GPUContext_s::ClearRenderTarget(rl::RenderTargetView_t RTV, const float Color[4])

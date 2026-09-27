@@ -173,6 +173,7 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 	RTDesc.VertexStride = static_cast<uint32_t>(sizeof(float3));
 	RTDesc.StructuredIndexBuffer = IndexBuffer.StructuredBuffer;
 	RTDesc.IndexFormat = Asset->IndexFormat;
+	RTDesc.SubGeometries.reserve(Asset->Meshes.size());
 
 	Meshes.reserve(Asset->Meshes.size());
 	for (const HPModel_s::Mesh_s& MeshFromAsset : Asset->Meshes)
@@ -183,10 +184,7 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
 		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
 
-		RTDesc.SubGeometries = { { MeshFromAsset.IndexOffset, MeshFromAsset.IndexCount } };
-
-		// TODO RT MIGRATE (step 4): one geometry per model with a sub-geometry per mesh, built in frame
-		Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
+		RTDesc.SubGeometries.push_back({ MeshFromAsset.IndexOffset, MeshFromAsset.IndexCount });
 
 		std::wstring MaterialKey = Asset->MaterialLibPath + MeshFromAsset.LibMaterialName;
 		auto It = Glob.MaterialMap.find(MaterialKey);
@@ -226,6 +224,8 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 
 		Meshes.push_back(Mesh);
 	}
+
+	RaytracingGeometry = rl::CreateRaytracingGeometry(RTDesc);
 
 	return true;
 }

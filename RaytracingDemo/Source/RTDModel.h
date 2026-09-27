@@ -87,8 +87,6 @@ struct RTDMesh_s
 	uint32_t MeshletOffset;
 	uint32_t MeshletCount;
 
-	rl::RaytracingGeometryPtr RaytracingGeometry = {};
-
 	std::shared_ptr<RTDMaterial_s> Material = nullptr;
 };
 
@@ -106,6 +104,9 @@ struct RTDModel_s
 	RTDBuffer_s PrimitiveIndexBuffer;
 
 	rl::ConstantBufferPtr ModelConstantBuffer;
+
+	// One sub-geometry per mesh, in mesh order
+	rl::RaytracingGeometryPtr RaytracingGeometry = {};
 
 	std::vector<RTDMesh_s> Meshes;
 

@@ -158,6 +158,7 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::ImportRaytracingScene(rl::Rayt
 	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, ResourceName);
 	Resource->Kind = RenderGraphResourceKind_e::RAYTRACING_SCENE;
 	Resource->RaytracingScene = Scene;
+	Resource->IsInjected = true;	// Persists across frames, so it can be traced on frames that don't build it
 	return Handle;
 }
 
@@ -408,7 +409,12 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 
 			if (Resource.Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE)
 			{
-				// Acceleration structures never change state
+				// Acceleration structures never change state, a UAV barrier orders a build before later accesses
+				if (Resource.WrittenSinceBarrier)
+				{
+					Ctx.RWBarrier(Resource.RaytracingScene);
+				}
+				Resource.WrittenSinceBarrier = rl::HasEnumFlags(ResourceUsage.AccessType, RenderGraphResourceAccessType_e::UAV);
 				continue;
 			}
 
