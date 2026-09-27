@@ -1,0 +1,8 @@
+{
+    "Version": 1,
+    "SourceFilePath": "Game/Raw/Textures/Error.png",
+    "SourceFileType": "png",
+    "Format": 1,
+    "HasAlpha": false,
+    "GenMips": true
+}

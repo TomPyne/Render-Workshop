@@ -13,14 +13,16 @@ struct Uniforms_s
     uint SceneDepthTexture;
     uint SceneShadowTexture;
 
-    float Time;
-    float3 __Pad;
+    uint BlueNoiseTexture;
+    uint FrameID;
+    float2 __Pad;
 };
 
 ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
 
 RaytracingAccelerationStructure t_accel : register(t0, space0);
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space0); // Depth
+Texture2DArray<float2> t_tex2darr_f2[8192] : register(t1, space1); // BlueNoise
 RWTexture2D<float> u_tex2d_f1[8192] : register(u0, space0); // Shadow Buffer
 
 float Random(float3 Seed)
@@ -45,10 +47,22 @@ void main(uint3 DispatchThreadID : SV_DispatchThreadID)
     ScreenPos.y = -ScreenPos.y;
     float3 WorldPos = GetWorldPos(ScreenPos, SceneDepth);
 
-    float3 Axis = c_Uniforms.SunDirection;
+    float2 Xi;
+    if (c_Uniforms.BlueNoiseTexture != 0)
+    {
+        // 128x128 tile across the screen, one slice per frame
+        int4 NoiseCoord = int4(DispatchThreadID.xy & 127, c_Uniforms.FrameID % 64, 0);
+        Xi = t_tex2darr_f2[c_Uniforms.BlueNoiseTexture].Load(NoiseCoord, 0);
+    }
+    else
+    {
+        Xi = float2(Random(WorldPos + c_Uniforms.FrameID), Random(WorldPos * 2.0f + c_Uniforms.FrameID));
+    }
 
-    float R1 = saturate(Random(WorldPos + c_Uniforms.Time.xxx));
-    float R2 = saturate(Random(WorldPos * 2.0f + c_Uniforms.Time.xxx));
+    float R1 = Xi.x;
+    float R2 = Xi.y;
+
+    float3 Axis = c_Uniforms.SunDirection;
 
     float3 Ortho1 = normalize(cross(Axis, float3(0, 0, 1)));
     float3 Ortho2 = cross(Axis, Ortho1);

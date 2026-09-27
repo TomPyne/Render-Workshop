@@ -1,11 +1,14 @@
 #include "Rendering/SpaceRenderer.h"
 
 #include "Assets/AssetManager.h"
+#include "Assets/TextureManager.h"
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Rendering/IRenderable.h"
 #include "Rendering/Mesh.h"
+#include "Rendering/Texture.h"
 #include "Space/Space.h"
+
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <RenderUtils/RenderPasses/RaytracingBuildPass.h>
@@ -121,6 +124,8 @@ void SpaceRenderer_c::Init()
 	{
 		LOGINFO("[SpaceRenderer_c::Init] Raytracing not supported, acceleration structures will not be built");
 	}
+
+	BlueNoiseTexture = TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Game", L"Textures/BlueNoise.hp_tex"), false, true);
 
 	G.Initialized = true;
 }
@@ -247,6 +252,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t RaytracingSceneResource = RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene");
 	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"ShadowTexture");
 
+	uint32_t BlueNoiseSrvIndex = BlueNoiseTexture && BlueNoiseTexture->IsReady() ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;
+	static uint32_t FrameID = 0;
+
+	FrameID++;
+
 	RenderGraphPass_s& ShadowPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Pass")
 	.AccessResource(RaytracingSceneResource, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -264,8 +274,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t SceneDepthTexture;
 			uint32_t SceneShadowTexture;
 
-			float Time;
-			float3 __Pad;
+			uint32_t BlueNoiseTexture;
+			uint32_t FrameID;
+			float2 __Pad;
 		};
 
 		ShadowUniforms_s Uniforms;
@@ -275,7 +286,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms.ScreenResolution = float2(static_cast<float>(Screen.Width), static_cast<float>(Screen.Height));
 		Uniforms.SceneDepthTexture = RG.GetSRVIndex(SceneDepthTexture);
 		Uniforms.SceneShadowTexture = RG.GetUAVIndex(ShadowTexture);
-		Uniforms.Time = Clock.GetTotalSeconds();
+		Uniforms.BlueNoiseTexture = BlueNoiseSrvIndex;
+		Uniforms.FrameID = FrameID;
 
 		Ctx.SetRootSignature(G.RootSignature);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);

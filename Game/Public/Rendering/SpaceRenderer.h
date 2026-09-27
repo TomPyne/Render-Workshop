@@ -89,4 +89,6 @@ protected:
 	SurfClock Clock;
 
 	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
+
+	std::shared_ptr<struct Texture_s> BlueNoiseTexture;
 };

@@ -8,8 +8,10 @@
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Jobs/JobSystem.h>
 #include <Shared/Logging/Logging.h>
+#include <Shared/TextureUtils/DDSTextureLoader.h>
 
 #include <unordered_map>
+#include <vector>
 
 #include <stb/stb_image.h>
 
@@ -52,16 +54,64 @@ constexpr int TexFormatRequiredChannels(TextureFormat_e TexFormat, bool HasAlpha
 
 std::shared_ptr<Texture_s> RequestErrorTexture()
 {
-    static const Path_s ErrorMeshPath = Path_s(PathDirectory_e::Assets, L"Game", L"Textures/ErrorTexture.hp_tex");
+    static const Path_s ErrorMeshPath = Path_s(PathDirectory_e::Assets, L"Game", L"Textures/Error.hp_tex");
     return RequestTexture(ErrorMeshPath, false, true);
 }
+
+enum class TextureSourceType_e
+{
+    STB,
+    DDS,
+};
 
 struct TextureLoadRequest_s
 {
     Path_s SourcePath;
+    TextureSourceType_e SourceType = TextureSourceType_e::STB;
+    rl::TextureDimension Dimension = rl::TextureDimension::TEX2D;
+
+    // STB only, DDS takes its format from the file
     TextureFormat_e Format = TextureFormat_e::Unknown;
     bool HasAlpha = false;
 };
+
+bool ParseTextureDimension(const std::string& Name, rl::TextureDimension& OutDimension)
+{
+    if (Name == "Tex2D")
+    {
+        OutDimension = rl::TextureDimension::TEX2D;
+        return true;
+    }
+
+    if (Name == "Tex2DArray")
+    {
+        OutDimension = rl::TextureDimension::TEX2D_ARRAY;
+        return true;
+    }
+
+    if (Name == "Tex3D")
+    {
+        OutDimension = rl::TextureDimension::TEX3D;
+        return true;
+    }
+
+    return false;
+}
+
+rl::TextureDimension DDSToTextureDimension(const DDSTexture_s& Dds)
+{
+    switch (Dds.Dimension)
+    {
+    case DDSTexture_s::Dimension_e::ONEDIM:
+        return Dds.DepthOrArraySize > 1 ? rl::TextureDimension::TEX1D_ARRAY : rl::TextureDimension::TEX1D;
+    case DDSTexture_s::Dimension_e::TWODIM:
+        return Dds.DepthOrArraySize > 1 ? rl::TextureDimension::TEX2D_ARRAY : rl::TextureDimension::TEX2D;
+    case DDSTexture_s::Dimension_e::THREEDIM:
+        return rl::TextureDimension::TEX3D;
+    }
+
+    return rl::TextureDimension::UNKNOWN;
+}
 
 // Main thread. Validates the asset json without touching the source file
 bool ParseTextureRequestSTB(const JsonValue_s& Data, TextureLoadRequest_s& OutRequest)
@@ -158,6 +208,145 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     return true;
 }
 
+// Main thread. Validates the asset json without touching the source file
+bool ParseTextureRequestDDS(const JsonValue_s& Data, TextureLoadRequest_s& OutRequest)
+{
+    // Required, and parsed first, so the 2D fallback is skipped for other dimensions even if a later field fails
+    std::string DimensionName;
+    if (!ENSUREMSG(JsonHelpers::ParseString(Data, "Dimension", DimensionName), "[TextureManager::ParseTextureRequestDDS] Missing Dimension field"))
+    {
+        return false;
+    }
+
+    if (!ParseTextureDimension(DimensionName, OutRequest.Dimension))
+    {
+        LOGWARNING("[TextureManager::ParseTextureRequestDDS] Texture contains an invalid dimension '%s'", DimensionName.c_str());
+        return false;
+    }
+
+    if (!ENSUREMSG(JsonHelpers::ParsePath(Data, "SourceFilePath", OutRequest.SourcePath), "[TextureManager::ParseTextureRequestDDS] Missing SourceFile field"))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+// Any thread. Only writes OutTexture on success
+bool BuildTextureDDS(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
+{
+    const Path_s& Path = Request.SourcePath;
+
+    LOGINFO("[TextureManager::BuildTextureDDS] Building texture: %s", Path.ToString().c_str());
+
+    DDSTexture_s Dds;
+    if (!LoadDDSTexture(Path.ToWString().c_str(), &Dds))
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Failed to load texture : %s", Path.ToString().c_str());
+        return false;
+    }
+
+    if (Dds.Cubemap)
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Cubemaps are not supported : %s", Path.ToString().c_str());
+        return false;
+    }
+
+    // A single mip volume is stored as contiguous depth slices, the same layout as a 2D array
+    const bool VolumeAsArray = Request.Dimension == rl::TextureDimension::TEX2D_ARRAY && Dds.Dimension == DDSTexture_s::Dimension_e::THREEDIM;
+
+    if (VolumeAsArray && Dds.MipCount != 1)
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Volume textures can only be loaded as an array with a single mip : %s", Path.ToString().c_str());
+        return false;
+    }
+
+    if (!VolumeAsArray && DDSToTextureDimension(Dds) != Request.Dimension)
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Texture dimension does not match the asset : %s", Path.ToString().c_str());
+        return false;
+    }
+
+    std::vector<rl::MipData> Subresources;
+
+    if (VolumeAsArray)
+    {
+        const DDSTexture_s::Subresource_s& Src = Dds.SubResourceInfos[0];
+        Subresources.reserve(Dds.DepthOrArraySize);
+
+        for (u32 SliceIt = 0; SliceIt < Dds.DepthOrArraySize; SliceIt++)
+        {
+            rl::MipData& Mip = Subresources.emplace_back();
+            Mip.Data = Dds.Data.data() + Src.DataOffset + static_cast<size_t>(Src.SlicePitch) * SliceIt;
+            Mip.RowPitch = Src.RowPitch;
+            Mip.SlicePitch = Src.SlicePitch;
+        }
+    }
+    else
+    {
+        Subresources.reserve(Dds.SubResourceInfos.size());
+
+        for (const DDSTexture_s::Subresource_s& Src : Dds.SubResourceInfos)
+        {
+            rl::MipData& Mip = Subresources.emplace_back();
+            Mip.Data = Dds.Data.data() + Src.DataOffset;
+            Mip.RowPitch = Src.RowPitch;
+            Mip.SlicePitch = Src.SlicePitch;
+        }
+    }
+
+    rl::TextureCreateDescEx Desc = {};
+    Desc.Width = Dds.Width;
+    Desc.Height = Dds.Height;
+    Desc.DepthOrArraySize = Dds.DepthOrArraySize;
+    Desc.MipCount = Dds.MipCount;
+    Desc.Dimension = Request.Dimension;
+    Desc.Flags = rl::RenderResourceFlags::SRV;
+    Desc.ResourceFormat = Dds.Format;
+    Desc.Data = Subresources.data();
+    Desc.DebugName = Path.ToWString();
+
+    // The source data is copied into an upload buffer before this returns
+    rl::TexturePtr Texture = rl::CreateTextureEx(Desc);
+
+    if (!Texture)
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Texture failed to upload to GPU: %s", Path.ToString().c_str());
+        return false;
+    }
+
+    rl::ShaderResourceViewPtr SRV = rl::CreateTextureSRV(Texture);
+
+    if (!SRV)
+    {
+        LOGWARNING("[TextureManager::BuildTextureDDS] Texture failed to create SRV: %s", Path.ToString().c_str());
+        return false;
+    }
+
+    OutTexture.Texture = std::move(Texture);
+    OutTexture.SRV = std::move(SRV);
+    OutTexture.Size = uint2(Dds.Width, Dds.Height);
+    OutTexture.DepthOrArraySize = Dds.DepthOrArraySize;
+    OutTexture.Format = Dds.Format;
+    OutTexture.MipCount = Dds.MipCount;
+    OutTexture.Dimension = Request.Dimension;
+
+    return true;
+}
+
+bool BuildTexture(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
+{
+    switch (Request.SourceType)
+    {
+    case TextureSourceType_e::STB:
+        return BuildTextureSTB(Request, OutTexture);
+    case TextureSourceType_e::DDS:
+        return BuildTextureDDS(Request, OutTexture);
+    }
+
+    return false;
+}
+
 std::shared_ptr<Texture_s> RequestTexture(const Path_s& Path, bool ErrorTextureIfMissing, bool Blocking)
 {
     Json_t Json;
@@ -192,52 +381,68 @@ std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTex
         return ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
     }
 
+    TextureLoadRequest_s Request;
+    bool RequestParsed = false;
+
     if (FileFormat == "png" || FileFormat == "tga")
     {
-        TextureLoadRequest_s Request;
-        if (!ParseTextureRequestSTB(Data, Request))
-        {
-            return ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
-        }
-
-        // Cached before the load so repeat requests share this texture rather than loading it again
-        std::shared_ptr<Texture_s> NewTexture = std::make_shared<Texture_s>();
-        AssetManager_c::CacheTexture(Data.GetHash(), NewTexture);
-
-        // Fetched here as the job must not touch the asset manager
-        std::shared_ptr<Texture_s> Fallback = ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
-
-        auto LoadJob = [NewTexture, Request = std::move(Request), Fallback = std::move(Fallback)]()
-        {
-            if (!BuildTextureSTB(Request, *NewTexture))
-            {
-                if (!Fallback)
-                    return;
-
-                NewTexture->Texture = Fallback->Texture;
-                NewTexture->SRV = Fallback->SRV;
-                NewTexture->Size = Fallback->Size;
-                NewTexture->Format = Fallback->Format;
-                NewTexture->MipCount = Fallback->MipCount;
-            }
-
-            NewTexture->Ready.store(true, std::memory_order_release);
-        };
-
-        if (Blocking)
-        {
-            JobWaitOrHelp(JobSubmit(std::move(LoadJob), "LoadTextureSTB"));
-        }
-        else
-        {
-            JobSubmitDetached(std::move(LoadJob), "LoadTextureSTB");
-        }
-
-        return NewTexture;
+        Request.SourceType = TextureSourceType_e::STB;
+        RequestParsed = ParseTextureRequestSTB(Data, Request);
+    }
+    else if (FileFormat == "dds")
+    {
+        Request.SourceType = TextureSourceType_e::DDS;
+        RequestParsed = ParseTextureRequestDDS(Data, Request);
+    }
+    else
+    {
+        LOGWARNING("[TextureManager::RequestTexture] Unsupported file format for texture: %s", FileFormat.c_str());
     }
 
-    LOGWARNING("[TextureManager::RequestTexture] Unsupported file format for texture: %s", FileFormat.c_str());
-    return ErrorTextureIfMissing ? RequestErrorTexture() : nullptr;
+    // The error texture is 2D, binding it in place of another dimension would mismatch the shader's view
+    const bool UseFallback = ErrorTextureIfMissing && Request.Dimension == rl::TextureDimension::TEX2D;
+
+    if (!RequestParsed)
+    {
+        return UseFallback ? RequestErrorTexture() : nullptr;
+    }
+
+    // Cached before the load so repeat requests share this texture rather than loading it again
+    std::shared_ptr<Texture_s> NewTexture = std::make_shared<Texture_s>();
+    AssetManager_c::CacheTexture(Data.GetHash(), NewTexture);
+
+    // Fetched here as the job must not touch the asset manager
+    std::shared_ptr<Texture_s> Fallback = UseFallback ? RequestErrorTexture() : nullptr;
+
+    auto LoadJob = [NewTexture, Request = std::move(Request), Fallback = std::move(Fallback)]()
+    {
+        if (!BuildTexture(Request, *NewTexture))
+        {
+            if (!Fallback)
+                return;
+
+            NewTexture->Texture = Fallback->Texture;
+            NewTexture->SRV = Fallback->SRV;
+            NewTexture->Size = Fallback->Size;
+            NewTexture->DepthOrArraySize = Fallback->DepthOrArraySize;
+            NewTexture->Format = Fallback->Format;
+            NewTexture->MipCount = Fallback->MipCount;
+            NewTexture->Dimension = Fallback->Dimension;
+        }
+
+        NewTexture->Ready.store(true, std::memory_order_release);
+    };
+
+    if (Blocking)
+    {
+        JobWaitOrHelp(JobSubmit(std::move(LoadJob), "LoadTexture"));
+    }
+    else
+    {
+        JobSubmitDetached(std::move(LoadJob), "LoadTexture");
+    }
+
+    return NewTexture;
 }
 
 }
