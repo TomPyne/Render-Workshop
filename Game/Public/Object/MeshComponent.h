@@ -32,6 +32,7 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	virtual void SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh);
 	void SetVisible(bool InVisible);
 	void SetCollidable(bool InCollidable) { Collidable = InCollidable; }
+	void SetCastShadow(bool InCastShadow);
 
 	uint32_t GetMaterialCount() const;
 	class MaterialShaderInstance_c* GetMaterial(uint32_t Index) const;
@@ -41,6 +42,7 @@ protected:
 	std::shared_ptr<struct Mesh_s> Mesh = {};
 	bool Visible = true;
 	bool Collidable = true;
+	bool CastShadow = true;
 
 	ObjectMotionHistory_s MotionHistory;
 };

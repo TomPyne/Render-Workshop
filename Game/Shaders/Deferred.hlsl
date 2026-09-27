@@ -71,21 +71,23 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const int3 Pixel = int3(Input.SVPosition.xy, 0);
 
     const float Depth = t_tex2d_f4[c_Deferred.SceneDepthTextureIndex].Load(Pixel).r;
+    const float4 EmissiveSpecular = t_tex2d_f4[c_Deferred.SceneEmissiveSpecularTextureIndex].Load(Pixel);
+    const float3 Emissive = EmissiveSpecular.rgb;
+
     if (Depth >= 1.0f)
     {
-        Output = float4(c_Deferred.AmbientColor, 0.0f);
+        Output = float4(Emissive, 0.0f);
         return;
     }
 
     const float4 AlbedoMetallic = t_tex2d_f4[c_Deferred.SceneColorMetallicTextureIndex].Load(Pixel);
-    const float4 NormalRoughness = t_tex2d_f4[c_Deferred.SceneNormalRoughnessTextureIndex].Load(Pixel);
-    const float4 EmissiveSpecular = t_tex2d_f4[c_Deferred.SceneEmissiveSpecularTextureIndex].Load(Pixel);
+    const float4 NormalRoughness = t_tex2d_f4[c_Deferred.SceneNormalRoughnessTextureIndex].Load(Pixel);    
 
     const float3 Albedo = AlbedoMetallic.rgb;
     const float Metallic = saturate(AlbedoMetallic.a);
     const float Roughness = saturate(NormalRoughness.a);
     const float Specular = saturate(EmissiveSpecular.a);
-    const float3 Emissive = EmissiveSpecular.rgb;
+    
 
     const float3 DiffuseColor = Albedo * (1.0f - Metallic);
     const float3 F0 = lerp(0.08f * Specular.xxx, Albedo, Metallic);

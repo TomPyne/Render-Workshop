@@ -37,6 +37,13 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 	{
 		SetVisible(false);
 	}
+
+	bool LoadCastsShadow = true;
+	JsonHelpers::ParseBool(Data, "CastShadow", LoadCastsShadow);
+	if (!LoadCastsShadow)
+	{
+		SetCastShadow(false);
+	}
 }
 
 void MeshComponent_c::PreDestroy()
@@ -74,7 +81,9 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 void MeshComponent_c::CollectRaytracingInstances(std::vector<rl::RaytracingInstance>& OutInstances)
 {
 	// A valid RTGeom was either built on an earlier frame or is being built with this scene
-	if (!Visible || !Mesh || !Mesh->RTGeom)
+	// TODO RT: For now we only use rays to cast shadows so we can disable shadow casting by removing from the RT scene
+	// but in the future we should use instance masks instead in case we want reflections e.g
+	if (!Visible || !CastShadow || !Mesh || !Mesh->RTGeom)
 		return;
 
 	rl::RaytracingInstance& Instance = OutInstances.emplace_back();
@@ -132,6 +141,19 @@ void MeshComponent_c::SetVisible(bool InVisible)
 	}
 }
 
+void MeshComponent_c::SetCastShadow(bool InCastShadow)
+{
+	if (CastShadow == InCastShadow)
+		return;
+
+	CastShadow = InCastShadow;
+
+	if (Space_c* Space = GetSpace())
+	{
+		Space->DirtyRenderScene();
+	}
+}
+
 uint32_t MeshComponent_c::GetMaterialCount() const
 {
 	return Mesh ? static_cast<uint32_t>(Mesh->Surfaces.size()) : 0;
@@ -170,6 +192,13 @@ void MeshObject_c::Deserialize(const JsonValue_s& Data)
 		if (!LoadVisible)
 		{
 			MeshComponent->SetVisible(false);
+		}
+
+		bool LoadCastsShadow = true;
+		JsonHelpers::ParseBool(Data, "CastShadow", LoadCastsShadow);
+		if (!LoadCastsShadow)
+		{
+			MeshComponent->SetCastShadow(false);
 		}
 	}
 }

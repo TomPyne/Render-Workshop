@@ -370,6 +370,19 @@ void RailingMaterialShader_c::Load()
     LoadShaderTexture("NormalTexture", Path_s(PathDirectory_e::Assets, L"Textures/T_Railing_N.hp_tex"));
 }
 
+SkyMaterialShader_c::SkyMaterialShader_c()
+{
+    ShaderFilePath = L"Materials/Sky.hlsl";
+    ShaderDebugName = L"SkyShader";
+
+    ASSIGN_SHADER_PARAM(TextureIndex, SkyTexture);
+}
+
+void SkyMaterialShader_c::Load()
+{
+    LoadShaderTexture("SkyTexture", Path_s(PathDirectory_e::Assets, L"Textures/Sky.hp_tex"));
+}
+
 StatueMaterialShader_c::StatueMaterialShader_c()
 {
     ShaderFilePath = L"Materials/Statue.hlsl";

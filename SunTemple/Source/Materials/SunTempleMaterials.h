@@ -430,6 +430,22 @@ public:
     virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 };
 
+class SkyMaterialShader_c : public MaterialShader_c 
+{
+    struct Parameters_s
+    {
+        TextureIndex SkyTexture;
+        float3 __Pad;
+    };
+
+public:
+
+    SkyMaterialShader_c();
+    virtual void Load() override;
+    virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
+    virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
+};
+
 class StairsMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
