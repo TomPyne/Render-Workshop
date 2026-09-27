@@ -79,5 +79,5 @@ struct Mesh_s
 
 	AABB Bounds = {};
 
-	void Render(struct SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored) const;
+	void Render(struct SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored, const std::vector<std::shared_ptr<MaterialShaderInstance_c>>& MaterialOverrides) const;
 };

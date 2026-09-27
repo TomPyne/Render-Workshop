@@ -6,6 +6,10 @@
 #include "Rendering/IRenderable.h"
 #include "Rendering/Mesh.h"
 
+#include <vector>
+
+class MaterialShaderInstance_c;
+
 class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, public IPhysical_c
 {
 	OBJECTCOMPONENT_BODY(MeshComponent_c, SpatialObjectComponent_c)
@@ -43,6 +47,8 @@ protected:
 	bool Visible = true;
 	bool Collidable = true;
 	bool CastShadow = true;
+
+	std::vector<std::shared_ptr<MaterialShaderInstance_c>> OverrideMaterials;
 
 	ObjectMotionHistory_s MotionHistory;
 };

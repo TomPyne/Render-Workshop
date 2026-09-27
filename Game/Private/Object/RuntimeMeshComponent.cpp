@@ -6,6 +6,7 @@
 
 void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
+#if 0
 	const matrix& WorldMatrix = GetWorldMatrix();
 	const matrix& PrevWorldMatrix = MotionHistory.Update(WorldMatrix, Collector.FrameIndex, ConsumeMotionReset());
 
@@ -13,6 +14,7 @@ void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 	const bool Mirrored = MakeObjectUniforms(WorldMatrix, PrevWorldMatrix, Uniforms);
 
 	Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored);
+#endif
 }
 
 void RuntimeMeshComponent_c::UpdateMesh(const RuntimeMeshDesc_s& Desc)

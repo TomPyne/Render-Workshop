@@ -41,14 +41,20 @@ const matrix& ObjectMotionHistory_s::Update(const matrix& WorldMatrix, uint64_t 
 	return PrevWorldMatrix;
 }
 
-void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored) const
+void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored, const std::vector<std::shared_ptr<MaterialShaderInstance_c>>& MaterialOverrides) const
 {
 	if (!Ready)
 		return;
-
-	for (const Surface_s& Surface : Surfaces)
+	for (uint32_t SurfaceIt = 0; SurfaceIt < Surfaces.size(); SurfaceIt++)
 	{
+		const Surface_s& Surface = Surfaces[SurfaceIt];
+
 		MaterialShaderInstance_c* Material = Surface.Material.get();
+		if (MaterialOverrides.size() > SurfaceIt && MaterialOverrides[SurfaceIt] != nullptr)
+		{
+			Material = MaterialOverrides[SurfaceIt].get();
+		}
+		
 		if (Material)
 		{
 			if (!Material->IsReady())

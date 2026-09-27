@@ -1,5 +1,6 @@
 #include "Object/MeshComponent.h"
 
+#include "Assets/MaterialManager.h"
 #include "Assets/MeshManager.h"
 #include "Space/Space.h"
 #include "Physics/Intersection.h"
@@ -9,6 +10,7 @@
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
+#include <Shared/Logging/Logging.h>
 
 void MeshComponent_c::OnCreate()
 {
@@ -44,6 +46,30 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 	{
 		SetCastShadow(false);
 	}
+
+	uint32_t CurrentSlot = 0;
+	auto MaterialsIt = Data.Json.find("MaterialOverrides");
+	if (MaterialsIt != Data.Json.end() && MaterialsIt->is_array())
+	{
+		for (const Json_t& MaterialNode : *MaterialsIt)
+		{
+			uint32_t Slot = CurrentSlot;
+			JsonHelpers::ParseInt(MaterialNode, "Slot", Slot);
+
+			if (OverrideMaterials.size() <= Slot)
+			{
+				OverrideMaterials.resize(Slot + 1, nullptr);
+			}
+
+			Path_s MaterialOverridePath;
+			if (ENSUREMSG(JsonHelpers::ParsePath(MaterialNode, "MaterialAssetPath", MaterialOverridePath), "[MeshComponent_c::Deserialize] Failed to load override path"))
+			{
+				OverrideMaterials[Slot] = MaterialManager::RequestMaterialInstance(MaterialOverridePath);
+			}
+
+			CurrentSlot = OverrideMaterials.size();
+		}
+	}
 }
 
 void MeshComponent_c::PreDestroy()
@@ -74,7 +100,7 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 		ObjectUniforms_s Uniforms = {};
 		const bool Mirrored = MakeObjectUniforms(WorldMatrix, PrevWorldMatrix, Uniforms);
 
-		Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored);
+		Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored, OverrideMaterials);
 	}
 }
 
