@@ -21,6 +21,7 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 
 	// Begin IRenderable_c interface
 	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
+	virtual void CollectRaytracingInstances(std::vector<rl::RaytracingInstance>& OutInstances) override;
 	// End IRenderable_c interface
 
 	// Begin IPhysical interface
@@ -28,7 +29,7 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	// End IPhysical interface
 
 	virtual void SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh);
-	void SetVisible(bool InVisible) { Visible = InVisible; }
+	void SetVisible(bool InVisible);
 	void SetCollidable(bool InCollidable) { Collidable = InCollidable; }
 
 	uint32_t GetMaterialCount() const;

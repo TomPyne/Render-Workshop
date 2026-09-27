@@ -88,5 +88,5 @@ protected:
 
 	SurfClock Clock;
 
-	rl::RaytracingScenePtr RTScene = {}; // TODO RT: Process new BLASs, or handle movement of objects and rebuild TLAS.
+	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
 };

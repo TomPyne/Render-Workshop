@@ -1,11 +1,14 @@
 #include "Rendering/SpaceRenderer.h"
 
+#include "Assets/AssetManager.h"
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Rendering/IRenderable.h"
+#include "Rendering/Mesh.h"
 #include "Space/Space.h"
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
+#include <RenderUtils/RenderPasses/RaytracingBuildPass.h>
 #include <RenderUtils/RenderPasses/Tonemapping.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
@@ -92,6 +95,15 @@ void SpaceRenderer_c::Init()
 
 	Clock = {};
 
+	if (rl::Render_SupportsRaytracing())
+	{
+		RTScene = rl::CreateRaytracingScene();
+	}
+	else
+	{
+		LOGINFO("[SpaceRenderer_c::Init] Raytracing not supported, acceleration structures will not be built");
+	}
+
 	G.Initialized = true;
 }
 
@@ -123,15 +135,35 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	Clock.Tick();
 
-	// TODO RT: Process AssetManager_c::CollectMeshesForRTBuild
-
-	if (Space->RenderSceneDirty)
+	if (RTScene)
 	{
-		// TODO RT: If any new meshes have been built update the TLAS
-		// TODO RT: If the scene changed update the TLAS.
+		std::vector<Mesh_s*> MeshesToBuild;
+		AssetManager_c::Get().CollectMeshesForRTBuild(MeshesToBuild);
 
-		Space->RenderSceneDirty = false;
+		std::vector<rl::RaytracingGeometry_t> Geometries;
+		Geometries.reserve(MeshesToBuild.size());
+		for (Mesh_s* Mesh : MeshesToBuild)
+		{
+			if (Mesh->RTGeom)
+			{
+				Geometries.push_back(Mesh->RTGeom);
+			}
+		}
+
+		// New geometry has no instances in the current scene, so it always needs a rebuild
+		if (!Geometries.empty() || Space->RenderSceneDirty)
+		{
+			std::vector<rl::RaytracingInstance> Instances;
+			for (IRenderable_c* Renderable : Space->RenderableComponents)
+			{
+				Renderable->CollectRaytracingInstances(Instances);
+			}
+
+			AddRaytracingBuildPass(RGBuilder, RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene"), Geometries, Instances);
+		}
 	}
+
+	Space->RenderSceneDirty = false;
 
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewMatrix * ProjectionMatrix;

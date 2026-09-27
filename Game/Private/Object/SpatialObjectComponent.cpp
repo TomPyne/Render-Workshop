@@ -68,12 +68,14 @@ void SpatialObjectComponent_c::SetScale(float NewScale)
 
 void SpatialObjectComponent_c::Rotate(quat Delta) 
 { 
-	Transform.Rotate(Delta); 
+	Transform.Rotate(Delta);
+	OnTransformed();
 }
 
 void SpatialObjectComponent_c::RotateLocal(quat Delta) 
 { 
-	Transform.RotateLocal(Delta); 
+	Transform.RotateLocal(Delta);
+	OnTransformed();
 }
 
 const matrix& SpatialObjectComponent_c::GetWorldMatrix() const

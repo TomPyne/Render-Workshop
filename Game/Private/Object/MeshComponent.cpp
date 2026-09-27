@@ -61,6 +61,22 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 	}
 }
 
+void MeshComponent_c::CollectRaytracingInstances(std::vector<rl::RaytracingInstance>& OutInstances)
+{
+	// A valid RTGeom was either built on an earlier frame or is being built with this scene
+	if (!Visible || !Mesh || !Mesh->RTGeom)
+		return;
+
+	rl::RaytracingInstance& Instance = OutInstances.emplace_back();
+	Instance.Geometry = Mesh->RTGeom;
+
+	// Row vectors, so the instance's column vector 3x4 is the transposed upper 4x3
+	const matrix3x4 Transform = MakeMatrix3x4(TransposeMatrix(GetWorldMatrix()));
+	memcpy(Instance.Transform, Transform.m, sizeof(Instance.Transform));
+
+	// TODO RT: mirrored instances need TRIANGLE_FRONT_COUNTERCLOCKWISE once rays are traced
+}
+
 void MeshComponent_c::Intersect(IntersectionCtx_s& Context) const
 {
 	if (!Collidable)
@@ -86,6 +102,24 @@ void MeshComponent_c::Intersect(IntersectionCtx_s& Context) const
 void MeshComponent_c::SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh)
 {
 	Mesh = InMesh;
+
+	if (Space_c* Space = GetSpace())
+	{
+		Space->DirtyRenderScene();
+	}
+}
+
+void MeshComponent_c::SetVisible(bool InVisible)
+{
+	if (Visible == InVisible)
+		return;
+
+	Visible = InVisible;
+
+	if (Space_c* Space = GetSpace())
+	{
+		Space->DirtyRenderScene();
+	}
 }
 
 uint32_t MeshComponent_c::GetMaterialCount() const

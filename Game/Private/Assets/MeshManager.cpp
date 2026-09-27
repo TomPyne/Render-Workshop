@@ -13,6 +13,7 @@
 #include <Shared/Logging/Logging.h>
 #include <Shared/ModelUtils/TangentSpace.h>
 #include <Shared/StringUtils/StringUtils.h>
+#include <Render/Raytracing.h>
 #include <Render/Render.h>
 #include <SurfMath.h>
 
@@ -230,6 +231,26 @@ std::shared_ptr<Mesh_s> BuildMesh(const JsonValue_s& Data, const Path_s& Path, c
 
 		CurrentIndexOffset += NewSurface.IndexCount;
 		NewMesh->Surfaces.push_back(NewSurface);
+	}
+
+	if (rl::Render_SupportsRaytracing())
+	{
+		rl::RaytracingGeometryDesc RTDesc = {};
+		RTDesc.StructuredVertexBuffer = NewMesh->PositionBuffer;
+		RTDesc.VertexFormat = rl::RenderFormat::R32G32B32_FLOAT;
+		RTDesc.VertexCount = VertexCount;
+		RTDesc.VertexStride = static_cast<uint32_t>(sizeof(float3));
+		RTDesc.IndexBuffer = NewMesh->IndexBuffer;
+		RTDesc.IndexFormat = rl::RenderFormat::R32_UINT;
+
+		RTDesc.SubGeometries.reserve(NewMesh->Surfaces.size());
+		for (const Surface_s& Surface : NewMesh->Surfaces)
+		{
+			RTDesc.SubGeometries.push_back({ Surface.IndexOffset, Surface.IndexCount });
+		}
+
+		NewMesh->RTGeom = rl::CreateRaytracingGeometry(RTDesc);
+		CLOGWARNING(!NewMesh->RTGeom, "[MeshManager::RequestMesh] Failed to create raytracing geometry for mesh: %s", Path.ToString().c_str());
 	}
 
 	AssetManager_c::CacheMesh(Data.GetHash(), NewMesh);

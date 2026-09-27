@@ -59,7 +59,7 @@ struct Mesh_s
 
 	rl::ConstantBuffer_t MeshUniforms = {};
 
-	rl::RaytracingGeometryPtr RTGeom = {}; // TODO RT: On mesh load queue a BLAS build for this geometry
+	rl::RaytracingGeometryPtr RTGeom = {}; // One sub-geometry per surface, invalid without raytracing support
 
 	std::vector<float3> Vertices;
 	std::vector<uint32_t> Indices;

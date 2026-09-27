@@ -18,17 +18,21 @@ class SpatialObject_c : public Object_c
 
 	const Transform_s& GetTransform() const { return Transform; }
 
-	void SetPosition(const float3& NewPosition) { Transform.SetPosition(NewPosition); }
-	void SetRotation(const float3& NewRotation) { Transform.SetRotation(NewRotation); }
-	void SetRotation(quat NewRotation) { Transform.SetRotation(NewRotation); }
-	void SetScale(const float3& NewScale) { Transform.SetScale(NewScale); }
-	void SetScale(float NewScale) { Transform.SetScale(NewScale); }
+	// Each setter calls OnTransformed on the spatial components, as their world matrix includes this transform
+	void SetPosition(const float3& NewPosition);
+	void SetRotation(const float3& NewRotation);
+	void SetRotation(quat NewRotation);
+	void SetScale(const float3& NewScale);
+	void SetScale(float NewScale);
 
-	void Translate(const float3& Translation) { Transform.SetPosition(Transform.GetPosition() + Translation); }
+	void Translate(const float3& Translation);
 
-	void Rotate(quat Delta) { Transform.Rotate(Delta); }
-	void RotateLocal(quat Delta) { Transform.RotateLocal(Delta); }
+	void Rotate(quat Delta);
+	void RotateLocal(quat Delta);
 
 protected:
 	Transform_s Transform;
+
+private:
+	void NotifyComponentsTransformed();
 };
