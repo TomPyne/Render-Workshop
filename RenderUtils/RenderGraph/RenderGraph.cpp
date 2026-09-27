@@ -47,6 +47,11 @@ RenderGraphPass_s& RenderGraphPass_s::AccessResource(RenderGraphResourceHandle_t
 		ASSERTMSG(LoadOp != RenderGraphLoadOp_e::CLEAR, "Clear not yet supported for UAVs"); //TODO
 	}
 
+	if (Builder.GetResourceDesc(Resource).Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE)
+	{
+		ASSERTMSG(AccessType == RenderGraphResourceAccessType_e::UAV || AccessType == RenderGraphResourceAccessType_e::SRV, "Raytracing scenes can only be built (UAV) or traced (SRV)");
+	}
+
 	if (!rl::HasEnumFlags(AccessType, RenderGraphResourceAccessType_e::SRV | RenderGraphResourceAccessType_e::COPYSRC) && Builder.IsResourceExternal(Resource))
 	{
 		WritesToExternal = true;
@@ -131,7 +136,28 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::RefBackBufferTexture(rl::Textu
 
 	RenderGraphResourceDesc_s* Resource = nullptr;
 	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, L"BackbufferTexture");
-	Resource->IsBackBuffer = true;
+	Resource->Kind = RenderGraphResourceKind_e::BACKBUFFER;
+	return Handle;
+}
+
+RenderGraphResourceHandle_t RenderGraphBuilder_s::ImportRaytracingScene(rl::RaytracingScene_t Scene, const wchar_t* ResourceName)
+{
+	if (!ENSUREMSG(rl::IsValid(Scene), "ImportRaytracingScene passed an invalid scene"))
+		return RenderGraphResourceHandle_t::NONE;
+
+	// A second handle for the same scene would split its dependency chain
+	for (size_t ResourceIndex = 1; ResourceIndex < ResourceDescs.size(); ResourceIndex++)
+	{
+		if (ResourceDescs[ResourceIndex].Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE && ResourceDescs[ResourceIndex].RaytracingScene == Scene)
+		{
+			return static_cast<RenderGraphResourceHandle_t>(ResourceIndex);
+		}
+	}
+
+	RenderGraphResourceDesc_s* Resource = nullptr;
+	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, ResourceName);
+	Resource->Kind = RenderGraphResourceKind_e::RAYTRACING_SCENE;
+	Resource->RaytracingScene = Scene;
 	return Handle;
 }
 
@@ -189,7 +215,8 @@ RenderGraphResourceDesc_s& RenderGraphBuilder_s::GetResourceDesc(RenderGraphReso
 bool RenderGraphBuilder_s::IsResourceExternal(RenderGraphResourceHandle_t Resource) const
 {
 	const size_t ResourceIndex = static_cast<size_t>(Resource);
-	return ResourceDescs[ResourceIndex].ExternalTextureRef != nullptr || ResourceDescs[ResourceIndex].IsBackBuffer;
+	const RenderGraphResourceDesc_s& Desc = ResourceDescs[ResourceIndex];
+	return Desc.ExternalTextureRef != nullptr || Desc.Kind == RenderGraphResourceKind_e::BACKBUFFER || Desc.Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE;
 }
 
 FrameBuffer_s& RenderGraphBuilder_s::CreateWorkerFrameBuffer()
@@ -298,13 +325,11 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 			const RenderGraphResourceDesc_s& Desc = ResourceDescs[ResIt + 1];
 
 			Resource.DebugName = Desc.ResourceName;
+			Resource.Kind = Desc.Kind;
 
-			if (Desc.IsBackBuffer)
+			switch (Desc.Kind)
 			{
-				Resource.IsBackBuffer = true;
-			}
-			else
-			{
+			case RenderGraphResourceKind_e::TEXTURE:
 				if (Desc.ExternalTextureRef == nullptr)
 				{
 					Resource.Texture = ResourcePool.GetOrCreateTexture(
@@ -318,6 +343,12 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 				{
 					Resource.Texture = Desc.ExternalTextureRef;
 				}
+				break;
+			case RenderGraphResourceKind_e::BACKBUFFER:
+				break;
+			case RenderGraphResourceKind_e::RAYTRACING_SCENE:
+				Resource.RaytracingScene = Desc.RaytracingScene;
+				break;
 			}
 
 			RenderGraph.Resources.push_back(std::move(Resource));
@@ -375,7 +406,13 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 		{
 			RenderGraphResource_s& Resource = Resources[static_cast<uint32_t>(ResourceUsage.Resource)];
 
-			if (Resource.IsBackBuffer)
+			if (Resource.Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE)
+			{
+				// Acceleration structures never change state
+				continue;
+			}
+
+			if (Resource.Kind == RenderGraphResourceKind_e::BACKBUFFER)
 			{
 				if (Backbuffer.BackBufferTransitionState != ResourceUsage.DesiredState)
 				{
@@ -423,9 +460,9 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 
 rl::ShaderResourceView_t RenderGraph_s::GetSRV(RenderGraphResourceHandle_t Resource)
 {
-	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
 	{
-		return ActiveResource->Texture->SRV;
+		return Texture->SRV;
 	}
 	return rl::ShaderResourceView_t::INVALID;
 }
@@ -434,41 +471,42 @@ rl::RenderTargetView_t RenderGraph_s::GetRTV(RenderGraphResourceHandle_t Resourc
 {
 	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
 	{
-		if (ActiveResource->IsBackBuffer)
+		if (ActiveResource->Kind == RenderGraphResourceKind_e::BACKBUFFER)
 		{
 			return Backbuffer.BackBufferRTV;
 		}
-		else
-		{
-			return ActiveResource->Texture->RTV;
-		}
+	}
+
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
+	{
+		return Texture->RTV;
 	}
 	return rl::RenderTargetView_t::INVALID;
 }
 
 rl::DepthStencilView_t RenderGraph_s::GetDSV(RenderGraphResourceHandle_t Resource)
 {
-	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
 	{
-		return ActiveResource->Texture->DSV;
+		return Texture->DSV;
 	}
 	return rl::DepthStencilView_t::INVALID;
 }
 
 rl::UnorderedAccessView_t RenderGraph_s::GetUAV(RenderGraphResourceHandle_t Resource)
 {
-	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
 	{
-		return ActiveResource->Texture->UAV;
+		return Texture->UAV;
 	}
 	return rl::UnorderedAccessView_t::INVALID;
 }
 
 rl::Texture_t RenderGraph_s::GetTexture(RenderGraphResourceHandle_t Resource)
 {
-	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
 	{
-		return ActiveResource->Texture->Texture;
+		return Texture->Texture;
 	}
 	return rl::Texture_t::INVALID;
 }
@@ -487,16 +525,29 @@ uint2 RenderGraph_s::GetTextureDimensions(RenderGraphResourceHandle_t Resource)
 {
 	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
 	{
-		if (ActiveResource->IsBackBuffer)
+		if (ActiveResource->Kind == RenderGraphResourceKind_e::BACKBUFFER)
 		{
 			return uint2(Backbuffer.BackbufferWidth, Backbuffer.BackbufferHeight);
 		}
-		else if (ActiveResource->Texture)
-		{
-			return uint2(ActiveResource->Texture->Desc.Width, ActiveResource->Texture->Desc.Height);
-		}
+	}
+
+	if (const RenderGraphTexture_s* Texture = GetTextureResource(Resource))
+	{
+		return uint2(Texture->Desc.Width, Texture->Desc.Height);
 	}
 	return uint2(0u, 0u);
+}
+
+rl::RaytracingScene_t RenderGraph_s::GetRaytracingScene(RenderGraphResourceHandle_t Resource)
+{
+	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	{
+		if (ENSUREMSG(ActiveResource->Kind == RenderGraphResourceKind_e::RAYTRACING_SCENE, "GetRaytracingScene called on a resource that isn't a raytracing scene"))
+		{
+			return ActiveResource->RaytracingScene;
+		}
+	}
+	return rl::RaytracingScene_t::INVALID;
 }
 
 void RenderGraph_s::ExtractTexture(RenderGraphResourceHandle_t Texture)
@@ -515,6 +566,18 @@ void RenderGraph_s::ExtractTexture(RenderGraphResourceHandle_t Texture)
 RenderGraphResource_s* RenderGraph_s::GetResource(RenderGraphResourceHandle_t Resource)
 {
 	return Resource != RenderGraphResourceHandle_t::NONE ? &Resources[static_cast<uint32_t>(Resource)] : nullptr;
+}
+
+RenderGraphTexture_s* RenderGraph_s::GetTextureResource(RenderGraphResourceHandle_t Resource)
+{
+	if (RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	{
+		if (ENSUREMSG(ActiveResource->Kind == RenderGraphResourceKind_e::TEXTURE, "Texture getter called on a resource that isn't a texture"))
+		{
+			return ActiveResource->Texture.get();
+		}
+	}
+	return nullptr;
 }
 
 RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)

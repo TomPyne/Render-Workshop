@@ -6,7 +6,7 @@
 
 void TonemapRenderer_s::Init(rl::RootSignature_t InRootSignaure, uint32_t InCBVRootSlot, uint32_t InCBVSlot, uint32_t InSRVTableRootSigSlot)
 {
-	RootSignaure = InRootSignaure;
+	RootSignaure = rl::RootSignaturePtr::Ref(InRootSignaure);
 	SRVTableRootSigSlot = InSRVTableRootSigSlot;
 	CBVRootSigSlot = InCBVRootSlot;
 	std::string CBVSlotDef = "b" + std::to_string(InCBVSlot);

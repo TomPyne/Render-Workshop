@@ -330,8 +330,6 @@ bool InitializeApp()
 		RTDesc.RootSig = G.RTRootSignature;
 		G.RTPSO = CreateRaytracingPipelineState(RTDesc);
 
-		BuildRaytracingScene(Glob.RaytracingScene);
-
 		RaytracingShaderTableLayout ShaderTableLayout;
 		ShaderTableLayout.RayGenShader = RTDesc.RayGenShader;
 		ShaderTableLayout.MissShader = RTDesc.MissShader;
@@ -613,7 +611,10 @@ void Render(rl::RenderView* View, rl::CommandListSubmissionGroup* clGroup, float
 
 	RenderGraphResourceHandle_t ConfidenceTexture = G.DisocclusionPass.AddPass(RGBuilder, SceneDepthTexture, DepthHistoryTexture, SceneVelocityTexture, ViewProjection, G.PrevViewProjection, uint2(G.ScreenWidth, G.ScreenHeight));
 
-	if (G.ShowShadows)
+	// TODO RT MIGRATE (step 4): the TLAS isn't built until the demo moves to the in-frame build
+	constexpr bool RaytracingSceneBuilt = false;
+
+	if (G.ShowShadows && RaytracingSceneBuilt)
 	{
 		RenderGraphPass_s& RTShadowsPass = RGBuilder.AddPass(RenderGraphPassType_e::RAYTRACING, L"RT Shadows")
 		.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)

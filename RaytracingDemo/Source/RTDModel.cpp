@@ -183,14 +183,10 @@ bool RTDModel_s::Init(const HPModel_s* Asset)
 		Mesh.MeshletOffset = MeshFromAsset.MeshletOffset;
 		Mesh.MeshletCount = MeshFromAsset.MeshletCount;
 
-		RTDesc.IndexCount = MeshFromAsset.IndexCount;
-		RTDesc.IndexOffset = MeshFromAsset.IndexOffset;
+		RTDesc.SubGeometries = { { MeshFromAsset.IndexOffset, MeshFromAsset.IndexCount } };
 
-		{
-			Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
-
-			rl::AddRaytracingGeometryToScene(Mesh.RaytracingGeometry, Glob.RaytracingScene);
-		}
+		// TODO RT MIGRATE (step 4): one geometry per model with a sub-geometry per mesh, built in frame
+		Mesh.RaytracingGeometry = CreateRaytracingGeometry(RTDesc);
 
 		std::wstring MaterialKey = Asset->MaterialLibPath + MeshFromAsset.LibMaterialName;
 		auto It = Glob.MaterialMap.find(MaterialKey);

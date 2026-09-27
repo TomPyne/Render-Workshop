@@ -11,6 +11,13 @@
 enum class RenderGraphResourceHandle_t : uint32_t {NONE};
 enum class RenderGraphPassHandle_t : uint32_t {NONE};
 
+enum class RenderGraphResourceKind_e : uint8_t
+{
+	TEXTURE,
+	BACKBUFFER,
+	RAYTRACING_SCENE,	// External, never changes state. Written (UAV) by builds, read (SRV) by traces.
+};
+
 enum class RenderGraphLoadOp_e : uint8_t
 {
 	UNKNOWN,
@@ -144,9 +151,10 @@ struct RenderGraphResourceDesc_s
 	{
 	}
 
+	RenderGraphResourceKind_e Kind = RenderGraphResourceKind_e::TEXTURE;
 	RenderGraphTextureDesc_s Texture = {};
 	RenderGraphTexturePtr_t ExternalTextureRef = nullptr;
-	bool IsBackBuffer = false;
+	rl::RaytracingScene_t RaytracingScene = {};
 	bool IsInjected = false;
 	std::wstring ResourceName;
 };
@@ -179,6 +187,9 @@ struct RenderGraphBuilder_s
 	RenderGraphResourceHandle_t RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState, uint32_t Width, uint32_t Height);
 
+	// Returns the existing handle when the scene has already been imported into this builder
+	RenderGraphResourceHandle_t ImportRaytracingScene(rl::RaytracingScene_t Scene, const wchar_t* ResourceName);
+
 	// TODO: Support dynamic release and injection, for now use copy
 	RenderGraphResourceHandle_t InjectTexture(RenderGraphTexturePtr_t& ExtractedTexture, const wchar_t* ResourceName);
 	void QueueTextureExtraction(RenderGraphResourceHandle_t Resource, RenderGraphTexturePtr_t& OutTexture);
@@ -210,8 +221,9 @@ protected:
 
 struct RenderGraphResource_s
 {
+	RenderGraphResourceKind_e Kind = RenderGraphResourceKind_e::TEXTURE;
 	RenderGraphTexturePtr_t Texture;
-	bool IsBackBuffer = false;
+	rl::RaytracingScene_t RaytracingScene = {};
 	bool Extracted = false;
 	std::wstring DebugName;
 };
@@ -237,10 +249,13 @@ struct RenderGraph_s
 
 	uint2 GetTextureDimensions(RenderGraphResourceHandle_t Resource);
 
+	rl::RaytracingScene_t GetRaytracingScene(RenderGraphResourceHandle_t Resource);
+
 	void ExtractTexture(RenderGraphResourceHandle_t Texture);
 
 private:
 	RenderGraphResource_s* GetResource(RenderGraphResourceHandle_t Resource);
+	RenderGraphTexture_s* GetTextureResource(RenderGraphResourceHandle_t Resource);
 
 	RenderGraphBackbufferDesc_s Backbuffer = {};
 
