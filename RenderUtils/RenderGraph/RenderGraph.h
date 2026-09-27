@@ -116,7 +116,8 @@ enum class RenderGraphPassType_e : uint8_t
 struct RenderGraphPass_s
 {
 	RenderGraphPass_s(RenderGraphBuilder_s& InBuilder, RenderGraphPassType_e InPassType, const wchar_t* InPassName)
-		: Builder(InBuilder)
+		: PassType(InPassType)
+		, Builder(InBuilder)
 	{
 		PassName = InPassName ? InPassName : L"Unknown";
 	}
