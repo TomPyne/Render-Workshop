@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 class MaterialShaderInstance_c;
 
@@ -26,6 +27,9 @@ public:
 
 	static AssetManager_c& Get();
 
+	// Consumes internal queue and returns a list of raw pointers to meshes requiring a build
+	void CollectMeshesForRTBuild(std::vector<Mesh_s*>& MeshesToBuild);
+
 private:
 
 	std::unordered_map<uint64_t, std::shared_ptr<Mesh_s>> LoadedMeshes;
@@ -33,4 +37,6 @@ private:
 	std::unordered_map<uint64_t, std::shared_ptr<MaterialShaderInstance_c>> LoadedMaterialInstances;
 
 	std::shared_ptr<MaterialShaderInstance_c> DefaultMaterial;
+
+	std::vector<std::weak_ptr<Mesh_s>> MeshesQueuedForRTBuild;
 };

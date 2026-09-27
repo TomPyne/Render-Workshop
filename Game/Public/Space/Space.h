@@ -102,6 +102,7 @@ public:
 	// Rendering //////////////////////////////////////////////////////////////////////////////////
 	void RegisterRenderable(IRenderable_c* Renderable);
 	void UnregisterRenderable(IRenderable_c* Renderable);
+	void DirtyRenderScene();
 
 protected:
 
@@ -116,6 +117,7 @@ protected:
 
 	// Rendering
 	std::vector<IRenderable_c*> RenderableComponents;
+	bool RenderSceneDirty = false;
 
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
 

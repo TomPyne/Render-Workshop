@@ -36,6 +36,46 @@ void SpatialObjectComponent_c::Deserialize(const JsonValue_s& Data)
 	Transform.Set(Position, ConvertToRadians(RotationDegrees), Scale);
 }
 
+void SpatialObjectComponent_c::SetPosition(const float3& NewPosition) 
+{ 
+	Transform.SetPosition(NewPosition);
+	OnTransformed();
+}
+
+void SpatialObjectComponent_c::SetRotation(const float3& NewRotation)
+{ 
+	Transform.SetRotation(NewRotation);
+	OnTransformed();
+}
+
+void SpatialObjectComponent_c::SetRotation(quat NewRotation)
+{ 
+	Transform.SetRotation(NewRotation);
+	OnTransformed();
+}
+
+void SpatialObjectComponent_c::SetScale(const float3& NewScale) 
+{ 
+	Transform.SetScale(NewScale);
+	OnTransformed();
+}
+
+void SpatialObjectComponent_c::SetScale(float NewScale) 
+{ 
+	Transform.SetScale(NewScale);
+	OnTransformed();
+}
+
+void SpatialObjectComponent_c::Rotate(quat Delta) 
+{ 
+	Transform.Rotate(Delta); 
+}
+
+void SpatialObjectComponent_c::RotateLocal(quat Delta) 
+{ 
+	Transform.RotateLocal(Delta); 
+}
+
 const matrix& SpatialObjectComponent_c::GetWorldMatrix() const
 {
 	const SpatialObject_c* Owner = GetSpatialOwner();

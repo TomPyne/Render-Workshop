@@ -18,16 +18,18 @@ class SpatialObjectComponent_c : public ObjectComponent_c
 	virtual void Deserialize(const struct JsonValue_s& Data) override;
 	// End ObjectComponent_c interface
 
+	virtual void OnTransformed() {}
+
 	const Transform_s& GetTransform() const { return Transform; }
 
-	void SetPosition(const float3& NewPosition) { Transform.SetPosition(NewPosition); }
-	void SetRotation(const float3& NewRotation) { Transform.SetRotation(NewRotation); }
-	void SetRotation(quat NewRotation) { Transform.SetRotation(NewRotation); }
-	void SetScale(const float3& NewScale) { Transform.SetScale(NewScale); }
-	void SetScale(float NewScale) { Transform.SetScale(NewScale); }
+	void SetPosition(const float3& NewPosition);
+	void SetRotation(const float3& NewRotation);
+	void SetRotation(quat NewRotation);
+	void SetScale(const float3& NewScale);
+	void SetScale(float NewScale);
 
-	void Rotate(quat Delta) { Transform.Rotate(Delta); }
-	void RotateLocal(quat Delta) { Transform.RotateLocal(Delta); }
+	void Rotate(quat Delta);
+	void RotateLocal(quat Delta);
 
 	const matrix& GetWorldMatrix() const;
 

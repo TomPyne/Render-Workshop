@@ -42,6 +42,14 @@ void MeshComponent_c::PreDestroy()
 	Super::PreDestroy();
 }
 
+void MeshComponent_c::OnTransformed()
+{
+	if (Space_c* Space = GetSpace())
+	{
+		Space->DirtyRenderScene();
+	}
+}
+
 void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
 	if (Visible && Mesh)

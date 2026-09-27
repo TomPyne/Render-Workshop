@@ -31,6 +31,8 @@ std::shared_ptr<Mesh_s> AssetManager_c::TryGetMesh(uint64_t Hash)
 void AssetManager_c::CacheMesh(uint64_t Hash, const std::shared_ptr<Mesh_s>& Mesh)
 {
     Get().LoadedMeshes[Hash] = Mesh;
+
+    Get().MeshesQueuedForRTBuild.push_back(Mesh);
 }
 
 std::shared_ptr<MaterialShaderInstance_c> AssetManager_c::TryGetMaterialInstance(uint64_t Hash)
@@ -75,4 +77,18 @@ AssetManager_c& AssetManager_c::Get()
     AssetManager_c* AssetManager = GApp->GetAssetManager();
     ASSERTMSG(AssetManager, "[AssetManager_c::Get] GameApp has not initialized the asset manager");
     return *AssetManager;
+}
+
+void AssetManager_c::CollectMeshesForRTBuild(std::vector<Mesh_s*>& MeshesToBuild)
+{
+    MeshesToBuild.reserve(MeshesQueuedForRTBuild.size());
+    for (const std::weak_ptr<Mesh_s>& QueuedMesh : MeshesQueuedForRTBuild)
+    {
+        if (QueuedMesh.expired())
+            continue;
+
+        MeshesToBuild.push_back(QueuedMesh.lock().get());
+    }
+
+    MeshesQueuedForRTBuild.clear();
 }

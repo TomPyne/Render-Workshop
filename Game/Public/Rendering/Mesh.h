@@ -59,6 +59,8 @@ struct Mesh_s
 
 	rl::ConstantBuffer_t MeshUniforms = {};
 
+	rl::RaytracingGeometryPtr RTGeom = {}; // TODO RT: On mesh load queue a BLAS build for this geometry
+
 	std::vector<float3> Vertices;
 	std::vector<uint32_t> Indices;
 

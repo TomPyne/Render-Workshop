@@ -218,6 +218,7 @@ void Space_c::RegisterRenderable(IRenderable_c* Renderable)
 	if (Renderable)
 	{
 		RenderableComponents.push_back(Renderable);
+		DirtyRenderScene();
 	}
 }
 
@@ -226,5 +227,11 @@ void Space_c::UnregisterRenderable(IRenderable_c* Renderable)
 	if (Renderable)
 	{
 		std::erase(RenderableComponents, Renderable);
+		DirtyRenderScene();
 	}
+}
+
+void Space_c::DirtyRenderScene()
+{
+	RenderSceneDirty = true;
 }

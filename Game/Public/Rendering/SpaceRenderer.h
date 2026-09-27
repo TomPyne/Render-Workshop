@@ -87,4 +87,6 @@ protected:
 	RenderGraphResourcePool_s RenderGraphResourcePool;
 
 	SurfClock Clock;
+
+	rl::RaytracingScenePtr RTScene = {}; // TODO RT: Process new BLASs, or handle movement of objects and rebuild TLAS.
 };

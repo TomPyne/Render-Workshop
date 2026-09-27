@@ -15,6 +15,10 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	virtual void PreDestroy() override;
 	// End ObjectComponent_c interface
 
+	// Begin SpatialObjectComponent_c interface
+	virtual void OnTransformed() override;
+	// End SpatialObjectComponent_c interface
+
 	// Begin IRenderable_c interface
 	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
 	// End IRenderable_c interface

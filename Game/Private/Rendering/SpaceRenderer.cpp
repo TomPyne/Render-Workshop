@@ -123,6 +123,16 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	Clock.Tick();
 
+	// TODO RT: Process AssetManager_c::CollectMeshesForRTBuild
+
+	if (Space->RenderSceneDirty)
+	{
+		// TODO RT: If any new meshes have been built update the TLAS
+		// TODO RT: If the scene changed update the TLAS.
+
+		Space->RenderSceneDirty = false;
+	}
+
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewMatrix * ProjectionMatrix;
 	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
