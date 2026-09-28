@@ -26,6 +26,7 @@ static struct SpaceRendererPrivate_s
 	rl::ComputePipelineStatePtr ShadowPSO;
 	rl::ComputePipelineStatePtr ShadowTemporalPSO;
 	TonemapRenderer_s TonemapRenderer;
+	DebugViewRenderer_s DebugViewRenderer;
 	bool Initialized = false;
 } G;
 
@@ -80,6 +81,7 @@ void SpaceRenderer_c::Init()
 	G.RootSignature = rl::CreateRootSignature(RootSigDesc);
 
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewCBVRegister, SpaceRendererRootSigSlots::RS_SRV_TABLE);
+	G.DebugViewRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
 	rl::VertexShader_t ScreenPassVS = rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str());
@@ -491,7 +493,20 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
-	G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
+	if (DebugViewMode == DebugViewMode_e::Lit)
+	{
+		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
+	}
+	else
+	{
+		DebugViewInputs_s DebugViewInputs = {};
+		DebugViewInputs.SceneColorMetallic = SceneColorMetallicTexture;
+		DebugViewInputs.SceneNormalRoughness = SceneNormalRoughnessTexture;
+		DebugViewInputs.SceneEmissiveSpecular = SceneEmissiveSpecularTexture;
+		DebugViewInputs.SceneDepth = SceneDepthTexture;
+
+		G.DebugViewRenderer.AddPass(RGBuilder, DebugViewMode, DebugViewInputs, BackBufferTexture);
+	}
 
 	RenderGraph_s Graph = RGBuilder.Build();
 

@@ -199,6 +199,25 @@ void GameApp_c::ImGuiUpdate()
 	ImGui::NewFrame();
 }
 
+void GameApp_c::DrawViewModeMenu()
+{
+	if (!SpaceRenderer)
+		return;
+
+	if (ImGui::BeginMenu("View Mode"))
+	{
+		for (uint32_t ModeIt = 0; ModeIt < static_cast<uint32_t>(DebugViewMode_e::Count); ModeIt++)
+		{
+			const DebugViewMode_e Mode = static_cast<DebugViewMode_e>(ModeIt);
+			if (ImGui::MenuItem(GetDebugViewModeName(Mode), nullptr, SpaceRenderer->DebugViewMode == Mode))
+			{
+				SpaceRenderer->DebugViewMode = Mode;
+			}
+		}
+		ImGui::EndMenu();
+	}
+}
+
 void GameApp_c::Resize(int Width, int Height)
 {
 	MainRenderView->Resize(Width, Height);

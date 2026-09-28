@@ -57,6 +57,8 @@ function(create_proj projname rapi)
 		"Public/Physics/IntersectionKernels.h"
 		"Public/Physics/IntersectionTypes.h"
 		"Public/Rendering/IRenderable.h"
+		"Private/Rendering/DebugViewPass.cpp"
+		"Public/Rendering/DebugViewPass.h"
 		"Private/Rendering/GameRenderer.cpp"
 		"Public/Rendering/GameRenderer.h"
 		"Private/Rendering/Materials.cpp"
@@ -82,6 +84,7 @@ function(create_proj projname rapi)
 	set(
 		shader_list
 		"Shaders/BasicMaterial.hlsl"
+		"Shaders/DebugView.hlsl"
 		"Shaders/ShaderDefines.h"
 	)
 

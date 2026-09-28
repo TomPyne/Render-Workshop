@@ -88,6 +88,7 @@ void SunTempleApp_c::ImGuiUpdate()
 
 	if (ImGui::BeginMainMenuBar())
 	{
+		DrawViewModeMenu();
 		if (ImGui::MenuItem("Performance", nullptr, G.ShowPerfWindow))
 		{
 			G.ShowPerfWindow = !G.ShowPerfWindow;

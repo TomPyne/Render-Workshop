@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Rendering/DebugViewPass.h"
+
 #include <Render/RenderTypes.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
 #include <SurfClock.h>
@@ -93,6 +95,8 @@ public:
 	float ShadowTemporalConfidenceRate = 0.1f;
 	// History is rejected when its view depth differs from the expected depth by more than this fraction
 	float ShadowTemporalDepthTolerance = 0.02f;
+
+	DebugViewMode_e DebugViewMode = DebugViewMode_e::Lit;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();

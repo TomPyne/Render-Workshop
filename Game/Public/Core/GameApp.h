@@ -32,6 +32,9 @@ public:
 
 	virtual void ImGuiUpdate();
 
+	// Call between ImGui::BeginMainMenuBar and ImGui::EndMainMenuBar
+	void DrawViewModeMenu();
+
 	virtual void Resize(int Width, int Height);
 	virtual LRESULT HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

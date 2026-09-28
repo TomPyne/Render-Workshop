@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "SourceFilePath": "Game/Raw/Meshes/Plane.glb",
+    "SourceFileType": "glb",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/DefaultBRDF.hp_mtl"
+        }
+    ]
+}

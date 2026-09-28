@@ -129,6 +129,7 @@ void SimpleGameApp_c::ImGuiUpdate()
 		{
 			G.ShowPerfWindow = !G.ShowPerfWindow;
 		}
+		DrawViewModeMenu();
 		ImGui::EndMainMenuBar();
 	}
 
