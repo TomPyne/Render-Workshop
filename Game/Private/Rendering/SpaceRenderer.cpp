@@ -505,6 +505,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		DebugViewInputs.SceneEmissiveSpecular = SceneEmissiveSpecularTexture;
 		DebugViewInputs.SceneDepth = SceneDepthTexture;
 
+		DebugViewInputs.BlueNoiseSRVIndex = BlueNoiseTexture ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;
+		DebugViewInputs.Frame = static_cast<uint32_t>(FrameIndex);
+		DebugViewInputs.Time = Clock.GetTotalSeconds();
+
 		G.DebugViewRenderer.AddPass(RGBuilder, DebugViewMode, DebugViewInputs, BackBufferTexture);
 	}
 

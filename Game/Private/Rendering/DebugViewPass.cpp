@@ -16,6 +16,7 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	case DebugViewMode_e::Metallic:		return "Metallic";
 	case DebugViewMode_e::Specular:		return "Specular";
 	case DebugViewMode_e::Emissive:		return "Emissive";
+	case DebugViewMode_e::Noise:		return "Noise";
 	default:							return "Unknown";
 	}
 }
@@ -62,7 +63,9 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 			uint32_t SceneEmissiveSpecularTextureIndex;
 
 			uint32_t SceneDepthTextureIndex;
-			float3 __Pad;
+			uint32_t BlueNoiseTextureIndex;
+			uint32_t FrameID;
+			float Time;
 		};
 		static_assert(sizeof(DebugViewUniforms_s) == 32, "Must match DebugViewUniforms_s in DebugView.hlsl");
 
@@ -72,6 +75,9 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(Inputs.SceneNormalRoughness);
 		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(Inputs.SceneEmissiveSpecular);
 		Uniforms.SceneDepthTextureIndex = RG.GetSRVIndex(Inputs.SceneDepth);
+		Uniforms.BlueNoiseTextureIndex = Inputs.BlueNoiseSRVIndex;
+		Uniforms.FrameID = Inputs.Frame;
+		Uniforms.Time = Inputs.Time;
 
 		Ctx.SetRootSignature(RootSignature);
 
