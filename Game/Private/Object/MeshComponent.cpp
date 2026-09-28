@@ -67,7 +67,7 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 				OverrideMaterials[Slot] = MaterialManager::RequestMaterialInstance(MaterialOverridePath);
 			}
 
-			CurrentSlot = OverrideMaterials.size();
+			CurrentSlot = static_cast<uint32_t>(OverrideMaterials.size());
 		}
 	}
 }

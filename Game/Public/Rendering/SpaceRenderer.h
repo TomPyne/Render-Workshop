@@ -89,7 +89,7 @@ public:
 
 	// Shadow history weight approaches MaxConfidence at ConfidenceRate per frame while reprojection succeeds.
 	// Higher values are less noisy but ghost longer behind moving shadow casters.
-	float ShadowTemporalMaxConfidence = 0.99f;
+	float ShadowTemporalMaxConfidence = 0.9f;
 	float ShadowTemporalConfidenceRate = 0.1f;
 	// History is rejected when its view depth differs from the expected depth by more than this fraction
 	float ShadowTemporalDepthTolerance = 0.02f;

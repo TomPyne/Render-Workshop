@@ -1,10 +1,15 @@
 #include "SunTempleApp.h"
 
+#include "Components/MoverComponent.h"
 #include "Materials/SunTempleMaterials.h"
 
 #include <Assets/MaterialManager.h>
+#include <Assets/MeshManager.h>
+#include <Object/MeshComponent.h>
+#include <Object/SpatialObject.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Space/Space.h>
+#include <Tools/GameStats.h>
 #include <Tools/PerfStats.h>
 
 #include <RenderImGui/imgui/imgui.h>
@@ -12,6 +17,7 @@ static struct
 {
 	bool ShowUI = true;
 	bool ShowPerfWindow = true;
+	bool ShowGameWindow = true;
 } G;
 
 void SunTempleApp_c::RegisterClasses()
@@ -20,6 +26,9 @@ void SunTempleApp_c::RegisterClasses()
 
 	if (!Space)
 		return;
+
+	// Components
+	Space->RegisterComponentClass<MoverComponent_c>();
 
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
@@ -53,6 +62,16 @@ void SunTempleApp_c::Load()
 	if (Space)
 	{
 		Space->LoadLevel(Path);
+
+		if (std::shared_ptr<SpatialObject_c> MoverObject = Space->CreateObject<SpatialObject_c>())
+		{
+			MoverObject->SetPosition(float3(-13.8f, 6.9f, -9.2f));
+			MoverObject->AddComponent<MoverComponent_c>();
+			if (MeshComponent_c* MeshComp = MoverObject->AddComponent<MeshComponent_c>())
+			{
+				MeshComp->SetMesh(MeshManager::RequestMesh(Path_s(PathDirectory_e::Assets, L"Game", L"Meshes/Sphere.hp_mdl")));
+			}
+		}
 	}
 }
 
@@ -73,11 +92,20 @@ void SunTempleApp_c::ImGuiUpdate()
 		{
 			G.ShowPerfWindow = !G.ShowPerfWindow;
 		}
+		if (ImGui::MenuItem("Game", nullptr, G.ShowGameWindow))
+		{
+			G.ShowGameWindow = !G.ShowGameWindow;
+		}
 		ImGui::EndMainMenuBar();
 	}
 
 	if (G.ShowPerfWindow)
 	{
 		PerfStats::DrawPerfWindow(&G.ShowPerfWindow);
+	}
+
+	if (G.ShowGameWindow)
+	{
+		GameStats::DrawGameStatsWindow(&G.ShowGameWindow);
 	}
 }

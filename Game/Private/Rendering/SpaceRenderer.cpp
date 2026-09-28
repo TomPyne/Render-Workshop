@@ -8,6 +8,7 @@
 #include "Rendering/Mesh.h"
 #include "Rendering/Texture.h"
 #include "Space/Space.h"
+#include "Tools/GameStats.h"
 
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
@@ -159,6 +160,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (!PrimaryCamera)
 		return;
 
+	GameStats::UpdateCamera(PrimaryCamera);
+
 	matrix ProjectionMatrix = PrimaryCamera->CalculateProjectionMatrix(Screen.Width, Screen.Height);
 	matrix ViewMatrix = PrimaryCamera->CalculateViewMatrix();
 
@@ -172,6 +175,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		Renderable->Render(Collector);
 	}
+
+	GameStats::UpdatePrimCount(Collector.MainPass.Batches.size());
 
 	Clock.Tick();
 
