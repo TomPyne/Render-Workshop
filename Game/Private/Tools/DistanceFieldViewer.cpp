@@ -164,11 +164,19 @@ void DrawGlobalDistanceField(SpaceRenderer_c& Renderer)
 	ImGui::SliderFloat("Extent", &Settings.Extent, 8.0f, 256.0f, "%.0fm");
 	ImGui::SliderFloat("Band (voxels)", &Settings.BandVoxels, 1.0f, 16.0f, "%.1f");
 	ImGui::Checkbox("Freeze", &Settings.Freeze);
+	ImGui::Checkbox("Brick culling", &Settings.BrickCulling);
 
 	const AABB& Bounds = Global.GetVolumeBounds();
 	const float3 Centre = Bounds.Origin();
 	ImGui::Text("Centre %.2f, %.2f, %.2f%s", Centre.x, Centre.y, Centre.z, Settings.Freeze ? " (frozen)" : "");
 	ImGui::Text("Voxel %.3fm, band %.2fm, %.1fMB", Global.GetVoxelSize(), Global.GetBand(), Settings.Resolution * Settings.Resolution * Settings.Resolution * 2.0f / (1024.0f * 1024.0f));
+
+	const GlobalDistanceFieldBrickStats_s& BrickStats = Global.GetBrickStats();
+	if (Settings.BrickCulling)
+	{
+		ImGui::Text("Bricks %u (%u empty), %u list entries", BrickStats.BrickCount, BrickStats.EmptyBrickCount, BrickStats.TotalEntries);
+		ImGui::Text("Instances per brick min %u, avg %.1f, max %u", BrickStats.MinInstances, BrickStats.AverageInstances, BrickStats.MaxInstances);
+	}
 
 	int32_t SliceIndex = static_cast<int32_t>(Min(Renderer.DistanceFieldVisualise.SliceIndex, Settings.Resolution - 1));
 	if (ImGui::SliderInt("Slice (Y)", &SliceIndex, 0, static_cast<int32_t>(Settings.Resolution) - 1))

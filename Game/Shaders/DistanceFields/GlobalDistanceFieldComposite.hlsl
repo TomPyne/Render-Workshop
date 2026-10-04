@@ -11,8 +11,16 @@ struct Uniforms_s
     uint InstanceBufferIndex;
     uint InstanceCount;
     uint OutVolumeTexture;
+    uint BricksPerAxis;
+
+    uint BrickRangesBufferIndex;
+    uint BrickInstancesBufferIndex;
+    uint UseBrickCulling;
     float __Pad;
 };
+
+// Must match GlobalDistanceField_c::kBrickSize
+static const uint kBrickSize = 8;
 
 // Must match DistanceFieldInstance_s in DistanceFieldScene.h
 struct DistanceFieldInstance_s
@@ -33,6 +41,8 @@ ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
 
 StructuredBuffer<DistanceFieldInstance_s> t_sbuf_dfinstance[8192] : register(t1, space0);
 Texture3D<float> t_tex3d_f1[8192] : register(t1, space1);
+StructuredBuffer<uint2> t_sbuf_u2[8192] : register(t1, space2); // Brick (offset, count)
+StructuredBuffer<uint> t_sbuf_u1[8192] : register(t1, space3); // Brick instance indices
 RWTexture3D<float> u_tex3d_f1[8192] : register(u0, space0);
 
 SamplerState s_LinearClamp : register(s1);
@@ -64,9 +74,23 @@ void main(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float Distance = c_Uniforms.Band;
 
-    for (uint InstanceIt = 0; InstanceIt < c_Uniforms.InstanceCount; InstanceIt++)
+    const bool UseBrickCulling = c_Uniforms.UseBrickCulling != 0;
+    uint ListOffset = 0;
+    uint ListCount = c_Uniforms.InstanceCount;
+
+    if (UseBrickCulling)
     {
-        const DistanceFieldInstance_s Instance = t_sbuf_dfinstance[c_Uniforms.InstanceBufferIndex][InstanceIt];
+        const uint3 Brick = DispatchThreadID / kBrickSize;
+        const uint BrickIndex = Brick.x + (Brick.y + Brick.z * c_Uniforms.BricksPerAxis) * c_Uniforms.BricksPerAxis;
+        const uint2 BrickRange = t_sbuf_u2[c_Uniforms.BrickRangesBufferIndex][BrickIndex];
+        ListOffset = BrickRange.x;
+        ListCount = BrickRange.y;
+    }
+
+    for (uint ListIt = 0; ListIt < ListCount; ListIt++)
+    {
+        const uint InstanceIndex = UseBrickCulling ? t_sbuf_u1[c_Uniforms.BrickInstancesBufferIndex][ListOffset + ListIt] : ListIt;
+        const DistanceFieldInstance_s Instance = t_sbuf_dfinstance[c_Uniforms.InstanceBufferIndex][InstanceIndex];
 
         // Anything a band or more away from the instance's bounds would be clamped to the band anyway
         const float3 BoundsDelta = max(max(Instance.WorldBoundsMin - VoxelCentre, VoxelCentre - Instance.WorldBoundsMax), 0.0f);
