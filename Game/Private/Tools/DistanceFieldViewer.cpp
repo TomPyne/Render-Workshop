@@ -184,6 +184,32 @@ void DrawGlobalDistanceField(SpaceRenderer_c& Renderer)
 		Renderer.DistanceFieldVisualise.SliceIndex = static_cast<uint32_t>(SliceIndex);
 	}
 	ImGui::Text("Slice at Y = %.2f", Bounds.mins.y + (SliceIndex + 0.5f) * Global.GetVoxelSize());
+
+	ImGui::SeparatorText("Visualise");
+
+	DistanceFieldVisualiseSettings_s& Visualise = Renderer.DistanceFieldVisualise;
+
+	static const char* kTraceViewNames[] = { "Shaded", "Step heatmap" };
+	int32_t TraceView = static_cast<int32_t>(Visualise.TraceView);
+	if (ImGui::Combo("Trace view", &TraceView, kTraceViewNames, 2))
+	{
+		Visualise.TraceView = static_cast<DistanceFieldTraceView_e>(TraceView);
+	}
+
+	static const char* kGridNames[] = { "None", "Voxel", "Brick" };
+	int32_t Grid = static_cast<int32_t>(Visualise.Grid);
+	if (ImGui::Combo("Grid", &Grid, kGridNames, 3))
+	{
+		Visualise.Grid = static_cast<DistanceFieldGridMode_e>(Grid);
+	}
+
+	ImGui::Checkbox("Exit tint", &Visualise.ExitTint);
+
+	int32_t MaxSteps = static_cast<int32_t>(Visualise.MaxSteps);
+	if (ImGui::SliderInt("Max steps", &MaxSteps, 8, 512))
+	{
+		Visualise.MaxSteps = static_cast<uint32_t>(MaxSteps);
+	}
 }
 
 }

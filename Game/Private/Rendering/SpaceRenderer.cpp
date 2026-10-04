@@ -502,8 +502,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
 
+	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
+
 	RenderGraphResourceHandle_t GlobalVolume = {};
-	if (DistanceFieldScene.GetInstanceCount() > 0 || DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice)
+	if (DistanceFieldScene.GetInstanceCount() > 0 || IsDistanceFieldView)
 	{
 		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition(), DistanceFieldScene);
 	}
@@ -514,9 +516,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
 	}
-	else if (DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice)
+	else if (IsDistanceFieldView)
 	{
-		const RenderGraphResourceHandle_t VisualiseTexture = G.DistanceFieldVisualiseRenderer.AddPass(RGBuilder, DistanceFieldVisualiseMode_e::GlobalSlice, DistanceFieldVisualise, GlobalDistanceField, GlobalVolume, uint2(Screen.Width, Screen.Height));
+		const DistanceFieldVisualiseMode_e VisualiseMode = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice ? DistanceFieldVisualiseMode_e::GlobalSlice : DistanceFieldVisualiseMode_e::GlobalTrace;
+		const RenderGraphResourceHandle_t VisualiseTexture = G.DistanceFieldVisualiseRenderer.AddPass(RGBuilder, VisualiseMode, DistanceFieldVisualise, GlobalDistanceField, GlobalVolume, InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
 		// The visualisation is already display ready, so this is a straight copy
 		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::None, VisualiseTexture, BackBufferTexture);

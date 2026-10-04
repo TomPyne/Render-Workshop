@@ -14,6 +14,7 @@ enum class DebugViewMode_e : uint32_t
 	Emissive,
 	Noise,
 	GlobalDistanceFieldSlice,
+	GlobalDistanceField,
 	Count
 };
 
