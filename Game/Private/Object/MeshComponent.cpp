@@ -4,6 +4,7 @@
 #include "Assets/MeshManager.h"
 #include "Space/Space.h"
 #include "Physics/Intersection.h"
+#include "Rendering/DistanceFieldScene.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/SpaceRenderer.h"
 
@@ -120,6 +121,15 @@ void MeshComponent_c::CollectRaytracingInstances(std::vector<rl::RaytracingInsta
 	memcpy(Instance.Transform, Transform.m, sizeof(Instance.Transform));
 
 	// TODO RT: mirrored instances need TRIANGLE_FRONT_COUNTERCLOCKWISE once rays are traced
+}
+
+void MeshComponent_c::CollectDistanceFieldInstances(std::vector<DistanceFieldInstance_s>& OutInstances)
+{
+	if (!Visible || !Mesh || !Mesh->SDF)
+		return;
+
+	const SignedDistanceField_s& SDF = *Mesh->SDF;
+	OutInstances.push_back(MakeDistanceFieldInstance(GetWorldMatrix(), SDF.VolumeBounds, rl::GetDescriptorIndex(SDF.TextureSRV), SDF.MaxDistance));
 }
 
 void MeshComponent_c::Intersect(IntersectionCtx_s& Context) const

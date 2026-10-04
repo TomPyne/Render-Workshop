@@ -1,6 +1,7 @@
 #include "Tools/DistanceFieldViewer.h"
 
 #include "Assets/AssetManager.h"
+#include "Rendering/DistanceFieldScene.h"
 #include "Rendering/Mesh.h"
 
 #include <RenderImGui/imgui/imgui.h>
@@ -22,6 +23,7 @@ struct
 	std::string SelectedMesh;
 	int32_t Axis = 2;
 	int32_t Slice = 0;
+	int32_t Instance = 0;
 } G;
 
 constexpr float kSliceViewSize = 512.0f;
@@ -108,9 +110,39 @@ void DrawSlice(const SignedDistanceField_s& SDF)
 	}
 }
 
+void DrawSceneInstances(const DistanceFieldScene_c& Scene)
+{
+	const uint32_t Count = Scene.GetInstanceCount();
+	ImGui::Text("Instances %u / capacity %u, %.1fKB per buffer", Count, Scene.GetCapacity(), Scene.GetCapacity() * sizeof(DistanceFieldInstance_s) / 1024.0f);
+
+	if (Count == 0)
+	{
+		return;
+	}
+
+	G.Instance = std::clamp(G.Instance, 0, static_cast<int32_t>(Count) - 1);
+	ImGui::SliderInt("Instance", &G.Instance, 0, static_cast<int32_t>(Count) - 1);
+
+	const DistanceFieldInstance_s& Instance = Scene.GetInstances()[G.Instance];
+	ImGui::Text("SDF SRV %u, max distance %.3f, distance scale %.3f", Instance.SDFTextureIndex, Instance.MaxDistance, Instance.DistanceScale);
+	ImGui::Text("Volume size %.2f, %.2f, %.2f", Instance.VolumeSize.x, Instance.VolumeSize.y, Instance.VolumeSize.z);
+	ImGui::Text("World min %.2f, %.2f, %.2f", Instance.WorldBoundsMin.x, Instance.WorldBoundsMin.y, Instance.WorldBoundsMin.z);
+	ImGui::Text("World max %.2f, %.2f, %.2f", Instance.WorldBoundsMax.x, Instance.WorldBoundsMax.y, Instance.WorldBoundsMax.z);
+	for (uint32_t Row = 0; Row < 3; Row++)
+	{
+		const float4& R = Instance.WorldToVolume[Row];
+		ImGui::Text("WorldToVolume[%u] %8.4f %8.4f %8.4f %8.4f", Row, R.x, R.y, R.z, R.w);
+	}
+
+	// An affine transform keeps the box centre, so this should be 0.5 for every instance
+	const float3 Centre = (Instance.WorldBoundsMin + Instance.WorldBoundsMax) * 0.5f;
+	const float4 Point = float4(Centre.x, Centre.y, Centre.z, 1.0f);
+	ImGui::Text("World bounds centre -> UVW %.3f, %.3f, %.3f", Dot(Instance.WorldToVolume[0], Point), Dot(Instance.WorldToVolume[1], Point), Dot(Instance.WorldToVolume[2], Point));
 }
 
-void DrawWindow(bool* Open)
+}
+
+void DrawWindow(bool* Open, const DistanceFieldScene_c* Scene)
 {
 	if (!ImGui::Begin("Distance Fields", Open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -157,6 +189,11 @@ void DrawWindow(bool* Open)
 	}
 
 	ImGui::Text("Total %.0fKB", TotalKB);
+
+	if (Scene && ImGui::CollapsingHeader("Scene Instances"))
+	{
+		DrawSceneInstances(*Scene);
+	}
 
 	if (Selected)
 	{

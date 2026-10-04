@@ -180,6 +180,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.MainPass.Batches.size()));
 
+	DistanceFieldInstances.clear();
+	for (IRenderable_c* Renderable : Space->RenderableComponents)
+	{
+		Renderable->CollectDistanceFieldInstances(DistanceFieldInstances);
+	}
+	DistanceFieldScene.Update(DistanceFieldInstances);
+
 	Clock.Tick();
 
 	if (RTScene)

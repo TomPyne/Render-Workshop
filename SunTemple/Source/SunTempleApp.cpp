@@ -8,6 +8,7 @@
 #include <Object/MeshComponent.h>
 #include <Object/SpatialObject.h>
 #include <Shared/FileUtils/PathUtils.h>
+#include <Rendering/SpaceRenderer.h>
 #include <Space/Space.h>
 #include <Tools/DistanceFieldViewer.h>
 #include <Tools/GameStats.h>
@@ -120,6 +121,6 @@ void SunTempleApp_c::ImGuiUpdate()
 
 	if (G.ShowDistanceFieldWindow)
 	{
-		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow);
+		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow, SpaceRenderer ? &SpaceRenderer->GetDistanceFieldScene() : nullptr);
 	}
 }
