@@ -34,6 +34,8 @@ set(
     "ModelUtils/SphereBuilder.h"
     "ModelUtils/TangentSpace.cpp"
     "ModelUtils/TangentSpace.h"
+    "ModelUtils/Voxelizer.cpp"
+    "ModelUtils/Voxelizer.h"
     "Noise/Perlin.cpp"
     "Noise/Perlin.h"
     "Profiling/ScopeTimer.cpp"

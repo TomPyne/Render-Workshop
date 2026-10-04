@@ -12,12 +12,17 @@
 #include <Shared/FileUtils/JsonHelpers.h>
 #include <Shared/Logging/Logging.h>
 #include <Shared/ModelUtils/TangentSpace.h>
+#include <Shared/ModelUtils/Voxelizer.h>
 #include <Shared/StringUtils/StringUtils.h>
 #include <Render/Raytracing.h>
 #include <Render/Render.h>
 #include <SurfMath.h>
 
+#include <chrono>
+#include <filesystem>
 #include <unordered_map>
+
+constexpr uint32_t kDefaultDistanceFieldResolution = 64;
 
 #define MESH_ASSET_VERSION_INITIAL 1
 #define MESH_ASSET_VERSION_CURRENT MESH_ASSET_VERSION_INITIAL
@@ -27,6 +32,8 @@ static_assert(kMeshMaxTexcoords == GltfReader_c::MaxTexcoords, "Mesh and glTF re
 
 namespace MeshManager
 {
+
+bool GGenerateDistanceFields = false;
 
 // Geometry from a source file reader, already converted into engine space.
 struct SourceMesh_s
@@ -46,9 +53,88 @@ struct SourceMesh_s
 	bool ReverseWinding = false;
 };
 
+void BuildDistanceField(const JsonValue_s& Data, Mesh_s& Mesh)
+{
+	bool Generate = true;
+	JsonHelpers::ParseBool(Data, "GenerateDistanceField", Generate);
+	if (!Generate)
+	{
+		return;
+	}
+
+	const auto StartTime = std::chrono::high_resolution_clock::now();
+
+	VoxelizerInput_s Input = {};
+	Input.Positions = Mesh.Vertices.data();
+	Input.VertexCount = static_cast<uint32_t>(Mesh.Vertices.size());
+	Input.Indices = Mesh.Indices.data();
+	Input.IndexCount = static_cast<uint32_t>(Mesh.Indices.size());
+	Input.Resolution = kDefaultDistanceFieldResolution;
+	Input.Parallel = true;
+	JsonHelpers::ParseInt(Data, "DistanceFieldResolution", Input.Resolution);
+
+	VoxelizerOutput_s Output;
+	if (!VoxelizeGeometry(Input, Output))
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to voxelize distance field for mesh: %s", Mesh.Name.c_str());
+		return;
+	}
+
+	// Half the longest padded extent keeps far field values useful for cone steps at about a
+	// quarter voxel of precision.
+	const float3 HalfExtents = Output.VolumeBounds.Extents();
+	const float MaxDistance = Max(Max(HalfExtents.x, HalfExtents.y), HalfExtents.z);
+
+	std::vector<uint8_t> Voxels = QuantizeDistances(Output.Distances, MaxDistance);
+
+	rl::MipData Mip = {};
+	Mip.Data = Voxels.data();
+	Mip.RowPitch = Output.Dims.x;
+	Mip.SlicePitch = static_cast<size_t>(Output.Dims.x) * Output.Dims.y;
+
+	rl::TextureCreateDescEx Desc = {};
+	Desc.Width = Output.Dims.x;
+	Desc.Height = Output.Dims.y;
+	Desc.DepthOrArraySize = Output.Dims.z;
+	Desc.Dimension = rl::TextureDimension::TEX3D;
+	Desc.Flags = rl::RenderResourceFlags::SRV;
+	Desc.ResourceFormat = rl::RenderFormat::R8_UNORM;
+	Desc.Data = &Mip;
+	Desc.DebugName = L"SDF " + NarrowToWide(Mesh.Name);
+
+	rl::TexturePtr Texture = rl::CreateTextureEx(Desc);
+	if (!Texture)
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to create distance field texture for mesh: %s", Mesh.Name.c_str());
+		return;
+	}
+
+	rl::ShaderResourceViewPtr SRV = rl::CreateTextureSRV(Texture);
+	if (!SRV)
+	{
+		LOGWARNING("[MeshManager::RequestMesh] Failed to create distance field SRV for mesh: %s", Mesh.Name.c_str());
+		return;
+	}
+
+	Mesh.SDF = std::make_unique<SignedDistanceField_s>();
+
+	Mesh.SDF->Texture = std::move(Texture);
+	Mesh.SDF->TextureSRV = std::move(SRV);
+	Mesh.SDF->Dims = Output.Dims;
+	Mesh.SDF->VolumeBounds = Output.VolumeBounds;
+	Mesh.SDF->VoxelSize = Output.VoxelSize;
+	Mesh.SDF->MaxDistance = MaxDistance;
+	Mesh.SDF->Voxels = std::move(Voxels);
+
+	const float SDFBuildMs = std::chrono::duration<float, std::milli>(std::chrono::high_resolution_clock::now() - StartTime).count();
+
+	LOGINFO("[MeshManager::RequestMesh] Built %ux%ux%u distance field in %.1fms for mesh: %s", Mesh.SDF->Dims.x, Mesh.SDF->Dims.y, Mesh.SDF->Dims.z, SDFBuildMs, Mesh.Name.c_str());
+}
+
 std::shared_ptr<Mesh_s> BuildMesh(const JsonValue_s& Data, const Path_s& Path, const SourceMesh_s& Source)
 {
 	std::shared_ptr<Mesh_s> NewMesh = std::make_shared<Mesh_s>();
+	NewMesh->Name = std::filesystem::path(Path.ToString()).stem().string();
 
 	const std::vector<uint32_t>& Indices = *Source.Indices;
 	const std::vector<uint32_t>& Attributes = *Source.Attributes;
@@ -251,6 +337,11 @@ std::shared_ptr<Mesh_s> BuildMesh(const JsonValue_s& Data, const Path_s& Path, c
 
 		NewMesh->RTGeom = rl::CreateRaytracingGeometry(RTDesc);
 		CLOGWARNING(!NewMesh->RTGeom, "[MeshManager::RequestMesh] Failed to create raytracing geometry for mesh: %s", Path.ToString().c_str());
+	}
+
+	if (GGenerateDistanceFields)
+	{
+		BuildDistanceField(Data, *NewMesh);
 	}
 
 	AssetManager_c::CacheMesh(Data.GetHash(), NewMesh);

@@ -178,7 +178,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Renderable->Render(Collector);
 	}
 
-	GameStats::UpdatePrimCount(Collector.MainPass.Batches.size());
+	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.MainPass.Batches.size()));
 
 	Clock.Tick();
 

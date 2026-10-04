@@ -73,6 +73,8 @@ function(create_proj projname rapi)
 		"Private/Rendering/Materials/BRDFMaterial.h"
 		"Private/Space/Space.cpp"
 		"Public/Space/Space.h"
+		"Private/Tools/DistanceFieldViewer.cpp"
+		"Public/Tools/DistanceFieldViewer.h"
 		"Private/Tools/GameStats.cpp"
 		"Public/Tools/GameStats.h"
 		"Private/Tools/PerfStats.cpp"

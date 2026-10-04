@@ -53,6 +53,19 @@ private:
 	uint64_t LastFrameIndex = 0; // 0 means never drawn, frame indices start at 1
 };
 
+struct SignedDistanceField_s
+{
+	rl::TexturePtr Texture = {};
+	rl::ShaderResourceViewPtr TextureSRV = {};
+	uint3 Dims = {};
+	AABB VolumeBounds = {};
+	float VoxelSize = 0.0f;
+	// Texel values encode distance as (Value - 128) / 127 * SDFMaxDistance.
+	float MaxDistance = 0.0f;
+	// CPU Copy, 
+	std::vector<uint8_t> Voxels;
+};
+
 struct Mesh_s
 {
 	bool Ready = false;
@@ -78,6 +91,10 @@ struct Mesh_s
 	std::vector<uint32_t> Indices;
 
 	AABB Bounds = {};
+
+	std::string Name;
+
+	std::unique_ptr<SignedDistanceField_s> SDF;
 
 	void Render(struct SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s DynamicUniforms, bool Mirrored, const std::vector<std::shared_ptr<MaterialShaderInstance_c>>& MaterialOverrides) const;
 };

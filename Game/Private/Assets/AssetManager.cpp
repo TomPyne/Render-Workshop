@@ -35,6 +35,14 @@ void AssetManager_c::CacheMesh(uint64_t Hash, const std::shared_ptr<Mesh_s>& Mes
     Get().MeshesQueuedForRTBuild.push_back(Mesh);
 }
 
+void AssetManager_c::GetLoadedMeshes(std::vector<std::shared_ptr<Mesh_s>>& OutMeshes)
+{
+    for (const auto& [Hash, Mesh] : Get().LoadedMeshes)
+    {
+        OutMeshes.push_back(Mesh);
+    }
+}
+
 std::shared_ptr<MaterialShaderInstance_c> AssetManager_c::TryGetMaterialInstance(uint64_t Hash)
 {
     auto& LoadedMaterialInstances = Get().LoadedMaterialInstances;

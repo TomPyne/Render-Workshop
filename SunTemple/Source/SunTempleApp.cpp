@@ -9,6 +9,7 @@
 #include <Object/SpatialObject.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Space/Space.h>
+#include <Tools/DistanceFieldViewer.h>
 #include <Tools/GameStats.h>
 #include <Tools/PerfStats.h>
 
@@ -18,6 +19,7 @@ static struct
 	bool ShowUI = true;
 	bool ShowPerfWindow = true;
 	bool ShowGameWindow = true;
+	bool ShowDistanceFieldWindow = false;
 } G;
 
 void SunTempleApp_c::RegisterClasses()
@@ -56,6 +58,8 @@ void SunTempleApp_c::RegisterClasses()
 void SunTempleApp_c::Load()
 {
 	GameApp_c::Load();
+
+	MeshManager::GGenerateDistanceFields = true;
 
 	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SunTemple.hp_lvl");
 
@@ -97,6 +101,10 @@ void SunTempleApp_c::ImGuiUpdate()
 		{
 			G.ShowGameWindow = !G.ShowGameWindow;
 		}
+		if (ImGui::MenuItem("Distance Fields", nullptr, G.ShowDistanceFieldWindow))
+		{
+			G.ShowDistanceFieldWindow = !G.ShowDistanceFieldWindow;
+		}
 		ImGui::EndMainMenuBar();
 	}
 
@@ -108,5 +116,10 @@ void SunTempleApp_c::ImGuiUpdate()
 	if (G.ShowGameWindow)
 	{
 		GameStats::DrawGameStatsWindow(&G.ShowGameWindow);
+	}
+
+	if (G.ShowDistanceFieldWindow)
+	{
+		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow);
 	}
 }

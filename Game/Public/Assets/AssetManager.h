@@ -16,6 +16,7 @@ public:
 
 	static std::shared_ptr<Mesh_s> TryGetMesh(uint64_t Hash);
 	static void CacheMesh(uint64_t Hash, const std::shared_ptr<Mesh_s>& Mesh);
+	static void GetLoadedMeshes(std::vector<std::shared_ptr<Mesh_s>>& OutMeshes);
 
 	static std::shared_ptr<MaterialShaderInstance_c> TryGetMaterialInstance(uint64_t Hash);
 	static void CacheMaterialInstance(uint64_t Hash, const std::shared_ptr<MaterialShaderInstance_c>& MaterialInstance);
