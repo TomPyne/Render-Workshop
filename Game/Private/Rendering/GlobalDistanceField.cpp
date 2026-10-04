@@ -1,5 +1,7 @@
 #include "Rendering/GlobalDistanceField.h"
 
+#include "Rendering/DistanceFieldScene.h"
+
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <Shared/FileUtils/PathUtils.h>
@@ -7,11 +9,12 @@
 
 #include <cmath>
 
-void GlobalDistanceField_c::Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InUAVTableRootSigSlot)
+void GlobalDistanceField_c::Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot)
 {
 	RootSignature = rl::RootSignaturePtr::Ref(InRootSignature);
 	CBVRootSigSlot = InCBVRootSigSlot;
 	UAVTableRootSigSlot = InUAVTableRootSigSlot;
+	SRVTableRootSigSlot = InSRVTableRootSigSlot;
 
 	static const Path_s CompositeCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"DistanceFields/GlobalDistanceFieldComposite.hlsl");
 
@@ -25,9 +28,14 @@ void GlobalDistanceField_c::Init(rl::RootSignature_t InRootSignature, uint32_t I
 	ASSERTMSG(CompositePSO.IsValid(), "Failed to create Global Distance Field Composite PSO");
 }
 
-RenderGraphResourceHandle_t GlobalDistanceField_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const float3& CameraPos)
+RenderGraphResourceHandle_t GlobalDistanceField_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const float3& CameraPos, const DistanceFieldScene_c& Scene)
 {
 	const uint32_t Resolution = Settings.Resolution;
+
+	if (Volume && Volume->Desc.Width == Resolution && Settings.Freeze)
+	{
+		return RGBuilder.InjectTexture(Volume, L"GlobalDistanceField");
+	}
 
 	if (!Volume || Volume->Desc.Width != Resolution)
 	{
@@ -44,6 +52,8 @@ RenderGraphResourceHandle_t GlobalDistanceField_c::AddPasses(RenderGraphBuilder_
 
 	const AABB Bounds = VolumeBounds;
 	const float Band = GetBand();
+	const uint32_t InstanceCount = Scene.GetInstanceCount();
+	const uint32_t InstanceBufferIndex = InstanceCount > 0 ? Scene.GetInstanceBufferSRVIndex() : 0;
 
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Global Distance Field Composite")
 	.AccessResource(VolumeTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
@@ -57,25 +67,25 @@ RenderGraphResourceHandle_t GlobalDistanceField_c::AddPasses(RenderGraphBuilder_
 			uint3 Resolution;
 			float Band;
 
-			float3 TestSphereCentre;
-			float TestSphereRadius;
-
+			uint32_t InstanceBufferIndex;
+			uint32_t InstanceCount;
 			uint32_t OutVolumeTexture;
-			float3 __Pad;
+			float __Pad;
 		};
-		static_assert(sizeof(CompositeUniforms_s) == 64, "Must match Uniforms_s in GlobalDistanceFieldComposite.hlsl");
+		static_assert(sizeof(CompositeUniforms_s) == 48, "Must match Uniforms_s in GlobalDistanceFieldComposite.hlsl");
 
 		CompositeUniforms_s Uniforms = {};
 		Uniforms.VolumeMin = Bounds.mins;
 		Uniforms.VoxelSize = VoxelSize;
 		Uniforms.Resolution = uint3(Resolution, Resolution, Resolution);
 		Uniforms.Band = Band;
-		Uniforms.TestSphereCentre = Bounds.Origin();
-		Uniforms.TestSphereRadius = (Bounds.maxs.x - Bounds.mins.x) * 0.25f;
+		Uniforms.InstanceBufferIndex = InstanceBufferIndex;
+		Uniforms.InstanceCount = InstanceCount;
 		Uniforms.OutVolumeTexture = RG.GetUAVIndex(VolumeTexture);
 
 		Ctx.SetRootSignature(RootSignature);
 		Ctx.SetComputeRootDescriptorTable(UAVTableRootSigSlot);
+		Ctx.SetComputeRootDescriptorTable(SRVTableRootSigSlot);
 
 		Ctx.SetPipelineState(CompositePSO);
 

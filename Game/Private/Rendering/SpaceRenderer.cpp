@@ -147,7 +147,7 @@ void SpaceRenderer_c::Init()
 
 	BlueNoiseTexture = TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Game", L"Textures/BlueNoise.hp_tex"), false, true);
 
-	GlobalDistanceField.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_UAV_TABLE);
+	GlobalDistanceField.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_UAV_TABLE, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 	G.Initialized = true;
 }
@@ -502,6 +502,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
 
+	RenderGraphResourceHandle_t GlobalVolume = {};
+	if (DistanceFieldScene.GetInstanceCount() > 0 || DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice)
+	{
+		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition(), DistanceFieldScene);
+	}
+
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
 	if (DebugViewMode == DebugViewMode_e::Lit)
@@ -510,7 +516,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 	else if (DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice)
 	{
-		const RenderGraphResourceHandle_t GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition());
 		const RenderGraphResourceHandle_t VisualiseTexture = G.DistanceFieldVisualiseRenderer.AddPass(RGBuilder, DistanceFieldVisualiseMode_e::GlobalSlice, DistanceFieldVisualise, GlobalDistanceField, GlobalVolume, uint2(Screen.Width, Screen.Height));
 
 		// The visualisation is already display ready, so this is a straight copy

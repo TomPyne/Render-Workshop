@@ -163,10 +163,11 @@ void DrawGlobalDistanceField(SpaceRenderer_c& Renderer)
 
 	ImGui::SliderFloat("Extent", &Settings.Extent, 8.0f, 256.0f, "%.0fm");
 	ImGui::SliderFloat("Band (voxels)", &Settings.BandVoxels, 1.0f, 16.0f, "%.1f");
+	ImGui::Checkbox("Freeze", &Settings.Freeze);
 
 	const AABB& Bounds = Global.GetVolumeBounds();
 	const float3 Centre = Bounds.Origin();
-	ImGui::Text("Centre %.2f, %.2f, %.2f", Centre.x, Centre.y, Centre.z);
+	ImGui::Text("Centre %.2f, %.2f, %.2f%s", Centre.x, Centre.y, Centre.z, Settings.Freeze ? " (frozen)" : "");
 	ImGui::Text("Voxel %.3fm, band %.2fm, %.1fMB", Global.GetVoxelSize(), Global.GetBand(), Settings.Resolution * Settings.Resolution * Settings.Resolution * 2.0f / (1024.0f * 1024.0f));
 
 	int32_t SliceIndex = static_cast<int32_t>(Min(Renderer.DistanceFieldVisualise.SliceIndex, Settings.Resolution - 1));
