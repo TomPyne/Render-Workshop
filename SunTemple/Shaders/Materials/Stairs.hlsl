@@ -50,7 +50,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 
     // Base Color
     float AO = saturate(Mask + c_Material.AOStrength);
-    float3 BaseColor = AlbedoSample.rgb * c_Material.ColorMarble1 * AO;
+    float3 BaseColor = AlbedoSample.rgb * c_Material.ColorMarble1;
     
     // Roughness
     float Roughness = saturate(lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, Mask * AlbedoSample.r));
@@ -64,7 +64,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Albedo(BaseColor, Output);
     MaterialOutput_Metallic(0.0f, Output);
     MaterialOutput_Roughness(Roughness, Output);
-
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

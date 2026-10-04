@@ -80,7 +80,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float AO = saturate((1.0f - Mask.g) + c_Material.AOStrength2);
     AO = saturate(AO + c_Material.AOStrength);
 
-    Albedo = Albedo * Color * AO;
+    Albedo = Albedo * Color;
 
     float Metallic = 0.0f;
 
@@ -92,7 +92,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 
     Output.AlbedoMetallic = float4(Albedo, Metallic);
     Output.NormalRoughness = float4(Normal, Roughness);
-
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

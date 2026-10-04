@@ -12,7 +12,7 @@ enum class DebugViewMode_e : uint32_t
 	Metallic,
 	Specular,
 	Emissive,
-	Noise,
+	AO,
 	GlobalDistanceFieldSlice,
 	GlobalDistanceField,
 	Count
@@ -25,10 +25,10 @@ struct DebugViewInputs_s
 	RenderGraphResourceHandle_t SceneColorMetallic;
 	RenderGraphResourceHandle_t SceneNormalRoughness;
 	RenderGraphResourceHandle_t SceneEmissiveSpecular;
+	RenderGraphResourceHandle_t SceneAO;
 	RenderGraphResourceHandle_t SceneDepth;
 
 	// Temp
-	uint32_t BlueNoiseSRVIndex;
 	uint32_t Frame;
 	float Time;
 	float Pad;

@@ -19,12 +19,14 @@ struct DeferredData_s
 
     uint SceneDepthTextureIndex;
     uint ShadowTextureIndex;
-    float2 __Pad;
+    uint SceneAOTextureIndex;
+    float __Pad;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
 ConstantBuffer<DeferredData_s> c_Deferred : register(b2);
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
+Texture2D<float> t_tex2d_f1[8192] : register(t1, space1);
 
 static const float PI = 3.14159265f;
 
@@ -81,7 +83,8 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     }
 
     const float4 AlbedoMetallic = t_tex2d_f4[c_Deferred.SceneColorMetallicTextureIndex].Load(Pixel);
-    const float4 NormalRoughness = t_tex2d_f4[c_Deferred.SceneNormalRoughnessTextureIndex].Load(Pixel);    
+    const float4 NormalRoughness = t_tex2d_f4[c_Deferred.SceneNormalRoughnessTextureIndex].Load(Pixel);
+    const float AO = t_tex2d_f1[c_Deferred.SceneAOTextureIndex].Load(Pixel);
 
     const float3 Albedo = AlbedoMetallic.rgb;
     const float Metallic = saturate(AlbedoMetallic.a);
@@ -106,13 +109,15 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const float NoH = saturate(dot(N, H));
     const float VoH = saturate(dot(V, H));
 
+    const float SpecularAO = saturate(pow(NoV + AO, exp2(-16.0f * Roughness - 1.0f)) - 1.0f + AO);
+
     const float Shadow = t_tex2d_f4[c_Deferred.ShadowTextureIndex].Load(Pixel).r;
 
     const float3 DiffuseBRDF = DiffuseColor / PI;
     const float3 SpecularBRDF = D_GGX(NoH, A2) * V_SmithGGXCorrelated(NoV, NoL, A2) * F_Schlick(F0, VoH);
     const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightRadiance * NoL * Shadow;
 
-    const float3 Ambient = c_Deferred.AmbientColor * (DiffuseColor + EnvBRDFApprox(F0, Roughness, NoV));
+    const float3 Ambient = c_Deferred.AmbientColor * (DiffuseColor * AO + EnvBRDFApprox(F0, Roughness, NoV) * SpecularAO);
 
     Output = float4(Direct + Ambient + Emissive, 0.0f);
 }

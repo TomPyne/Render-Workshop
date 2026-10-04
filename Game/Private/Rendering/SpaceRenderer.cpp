@@ -260,16 +260,32 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	FrameBufferAlloc_s ViewUniformsBuffer = RGBuilder.Alloc(ViewUniforms);
 
-	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneColorMetallicTexture");
-	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneNormalRoughnessTexture");
-	RenderGraphResourceHandle_t SceneEmissiveSpecularTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneEmissiveSpecularTexture");
-	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"SceneVelocityTexture");
-	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV, L"SceneDepthTexture");
+	RenderGraphTextureDesc_s GBufferTextureDesc = {};
+	GBufferTextureDesc.Width = Screen.Width;
+	GBufferTextureDesc.Height = Screen.Height;
+	GBufferTextureDesc.Format = rl::RenderFormat::R16G16B16A16_FLOAT;
+	GBufferTextureDesc.AccessTypes = RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV;
+
+	RenderGraphResourceHandle_t SceneColorMetallicTexture = RGBuilder.CreateTexture(GBufferTextureDesc, L"SceneColorMetallicTexture");
+	RenderGraphResourceHandle_t SceneNormalRoughnessTexture = RGBuilder.CreateTexture(GBufferTextureDesc, L"SceneNormalRoughnessTexture");
+	RenderGraphResourceHandle_t SceneEmissiveSpecularTexture = RGBuilder.CreateTexture(GBufferTextureDesc, L"SceneEmissiveSpecularTexture");	
+	RenderGraphResourceHandle_t SceneVelocityTexture = RGBuilder.CreateTexture(GBufferTextureDesc, L"SceneVelocityTexture");
+
+	RenderGraphTextureDesc_s AOSceneTextureDesc = GBufferTextureDesc;
+	AOSceneTextureDesc.Format = rl::RenderFormat::R8_UNORM;
+	AOSceneTextureDesc.ClearValue = float4(1.f, 0.f, 0.f, 0.f);
+	RenderGraphResourceHandle_t SceneAOTexture = RGBuilder.CreateTexture(AOSceneTextureDesc, L"SceneAOTexture");
+
+	RenderGraphTextureDesc_s SceneDepthTextureDesc = AOSceneTextureDesc;
+	SceneDepthTextureDesc.Format = rl::RenderFormat::R32_FLOAT;
+	SceneDepthTextureDesc.AccessTypes = RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::SRV;
+	RenderGraphResourceHandle_t SceneDepthTexture = RGBuilder.CreateTexture(SceneDepthTextureDesc, L"SceneDepthTexture");
 
 	RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Mesh Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
+	.AccessResource(SceneAOTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::CLEAR)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::CLEAR)
 	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
@@ -280,6 +296,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			RG.GetRTV(SceneColorMetallicTexture),
 			RG.GetRTV(SceneNormalRoughnessTexture),
 			RG.GetRTV(SceneEmissiveSpecularTexture),
+			RG.GetRTV(SceneAOTexture),
 			RG.GetRTV(SceneVelocityTexture),
 		};
 
@@ -444,6 +461,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(AccumulatedShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
@@ -464,7 +482,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 			uint32_t SceneDepthTextureIndex;
 			uint32_t ShadowTextureIndex;
-			float2 __Pad;
+			uint32_t SceneAOTextureIndex;
+			float __Pad;
 		};
 		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
 
@@ -482,6 +501,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
 		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
 		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(AccumulatedShadowTexture);
+		Uniforms->SceneAOTextureIndex = RG.GetSRVIndex(SceneAOTexture);
 
 		Ctx.SetRootSignature(G.RootSignature);
 
@@ -531,8 +551,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		DebugViewInputs.SceneNormalRoughness = SceneNormalRoughnessTexture;
 		DebugViewInputs.SceneEmissiveSpecular = SceneEmissiveSpecularTexture;
 		DebugViewInputs.SceneDepth = SceneDepthTexture;
-
-		DebugViewInputs.BlueNoiseSRVIndex = BlueNoiseTexture ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;
+		DebugViewInputs.SceneAO = SceneAOTexture;
 		DebugViewInputs.Frame = static_cast<uint32_t>(FrameIndex);
 		DebugViewInputs.Time = Clock.GetTotalSeconds();
 
@@ -569,9 +588,11 @@ const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTarget
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Normal + Roughness
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Emissive + Specular
+			rl::RenderFormat::R8_UNORM, // AO
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Velocity + previous view depth
 		},
 		{
+			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),

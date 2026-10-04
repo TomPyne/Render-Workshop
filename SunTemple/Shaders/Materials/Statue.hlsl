@@ -95,8 +95,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
     MaterialOutput_Metallic(c_Material.Metallic, Output);
     MaterialOutput_Roughness(saturate(Roughness), Output);
-    MaterialOutput_Albedo(Albedo * AO * Shadow, Output);
-
+    MaterialOutput_Albedo(Albedo * Shadow, Output);
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

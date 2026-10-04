@@ -109,6 +109,14 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::CreateTexture(uint32_t Width, 
 	return Handle;
 }
 
+RenderGraphResourceHandle_t RenderGraphBuilder_s::CreateTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName)
+{
+	RenderGraphResourceDesc_s* Resource = nullptr;
+	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, ResourceName);
+	Resource->Texture = Desc;
+	return Handle;
+}
+
 RenderGraphResourceHandle_t RenderGraphBuilder_s::CreateTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
 {
 	RenderGraphResourceDesc_s* Resource = nullptr;
@@ -455,12 +463,11 @@ void RenderGraph_s::Execute(rl::CommandListSubmissionGroup* CLGroup)
 			// Clearing
 			if (rl::HasEnumFlags(ResourceUsage.AccessType,RenderGraphResourceAccessType_e::RTV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 			{
-				const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				Ctx.ClearRenderTarget(Resource.Texture->RTV, ClearColor);
+				Ctx.ClearRenderTarget(Resource.Texture->RTV, &Resource.Texture->Desc.ClearValue.x);
 			}
 			else if (rl::HasEnumFlags(ResourceUsage.AccessType, RenderGraphResourceAccessType_e::DSV) && ResourceUsage.LoadOp == RenderGraphLoadOp_e::CLEAR)
 			{
-				Ctx.ClearDepth(Resource.Texture->DSV, 1.0f);
+				Ctx.ClearDepth(Resource.Texture->DSV, Resource.Texture->Desc.ClearValue.x);
 			}
 		}		
 
@@ -635,7 +642,7 @@ RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(const Rend
 		LOGINFO("Creating Texture %S - %d x %d x %d - Fmt=%d", ResourceName, Desc.Width, Desc.Height, Desc.Depth, (uint32_t)Desc.Format);
 		NewTexture = Desc.Dimension == rl::TextureDimension::TEX3D
 			? CreateRenderGraphTexture3D(Desc.Width, Desc.Height, Desc.Depth, Desc.Format, Desc.AccessTypes, ResourceName)
-			: CreateRenderGraphTexture(Desc.Width, Desc.Height, Desc.Format, Desc.AccessTypes, ResourceName);
+			: CreateRenderGraphTexture(Desc, ResourceName);
 	}
 
 	NewTextures.push_back(NewTexture);
@@ -653,26 +660,37 @@ void RenderGraphResourcePool_s::FinishFrame()
 	NewTextures.clear();
 }
 
-RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
+RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName, const void* const Data)
 {
-	return CreateRenderGraphTexture(Width, Height, Format, AccessTypes, nullptr, ResourceName);
+	RenderGraphTextureDesc_s Desc = {};
+	Desc.Width = Width;
+	Desc.Height = Height;
+	Desc.Format = Format;
+	Desc.AccessTypes = AccessTypes;
+
+	return CreateRenderGraphTexture(Desc, Data, ResourceName);
 }
 
-RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const void* const Data, const wchar_t* ResourceName)
+RenderGraphTexturePtr_t CreateRenderGraphTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName)
 {
-	if (Width == 0 || Width > 16238 || Height == 0 || Height > 16238)
+	return CreateRenderGraphTexture(Desc, nullptr, ResourceName);
+}
+
+RenderGraphTexturePtr_t CreateRenderGraphTexture(const RenderGraphTextureDesc_s& Desc, const void* const Data, const wchar_t* ResourceName)
+{
+	if (Desc.Width == 0 || Desc.Width > 16238 || Desc.Height == 0 || Desc.Height > 16238)
 	{
 		ENSUREMSG(false, "Invalid texture dimensions");
 		return nullptr;
 	}
 
-	if (Format == rl::RenderFormat::UNKNOWN)
+	if (Desc.Format == rl::RenderFormat::UNKNOWN)
 	{
 		ENSUREMSG(false, "Invalid texture format");
 		return nullptr;
 	}
 
-	if (AccessTypes == RenderGraphResourceAccessType_e::UNKNOWN)
+	if (Desc.AccessTypes == RenderGraphResourceAccessType_e::UNKNOWN)
 	{
 		ENSUREMSG(false, "Invalid texture access types");
 		return nullptr;
@@ -680,32 +698,29 @@ RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height
 
 	std::shared_ptr<RenderGraphTexture_s> OutTexture = std::make_shared<RenderGraphTexture_s>();
 
-	OutTexture->Desc.Width = Width;
-	OutTexture->Desc.Height = Height;
-	OutTexture->Desc.Format = Format;
-	OutTexture->AccessTypes = AccessTypes;
+	OutTexture->Desc = Desc;
 
 	rl::TextureCreateDesc TexDesc = {};
-	TexDesc.Width = Width;
-	TexDesc.Height = Height;
-	TexDesc.Format = Format;
+	TexDesc.Width = Desc.Width;
+	TexDesc.Height = Desc.Height;
+	TexDesc.Format = Desc.Format;
 	
-	rl::MipData mipData{ Data, Format, Width, Height };
+	rl::MipData mipData{ Data, Desc.Format, Desc.Width, Desc.Height };
 	TexDesc.Data = Data ? &mipData : nullptr;
 
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::SRV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::SRV))
 	{
 		TexDesc.Flags |= rl::RenderResourceFlags::SRV;
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::UAV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::UAV))
 	{
 		TexDesc.Flags |= rl::RenderResourceFlags::UAV;
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::RTV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::RTV))
 	{
 		TexDesc.Flags |= rl::RenderResourceFlags::RTV;
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::DSV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::DSV))
 	{
 		TexDesc.Flags |= rl::RenderResourceFlags::DSV;
 	}
@@ -714,21 +729,21 @@ RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height
 
 	OutTexture->Texture = rl::CreateTexture(TexDesc);
 
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::SRV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::SRV))
 	{
 		OutTexture->SRV = rl::CreateTextureSRV(OutTexture->Texture, TexDesc.Format, rl::TextureDimension::TEX2D, 1u, 1u);
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::UAV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::UAV))
 	{
 		OutTexture->UAV = rl::CreateTextureUAV(OutTexture->Texture, TexDesc.Format, rl::TextureDimension::TEX2D, 1u);
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::RTV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::RTV))
 	{
 		OutTexture->RTV = rl::CreateTextureRTV(OutTexture->Texture, TexDesc.Format, rl::TextureDimension::TEX2D, 1u);
 	}
-	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::DSV))
+	if (rl::HasEnumFlags(Desc.AccessTypes, RenderGraphResourceAccessType_e::DSV))
 	{
-		rl::RenderFormat DepthFormat = Format == rl::RenderFormat::R32_FLOAT ? rl::RenderFormat::D32_FLOAT : rl::RenderFormat::D16_UNORM;
+		rl::RenderFormat DepthFormat = Desc.Format == rl::RenderFormat::R32_FLOAT ? rl::RenderFormat::D32_FLOAT : rl::RenderFormat::D16_UNORM;
 		OutTexture->DSV = rl::CreateTextureDSV(OutTexture->Texture, DepthFormat, rl::TextureDimension::TEX2D, 1u);
 	}
 

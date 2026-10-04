@@ -70,7 +70,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float AO = saturate((1.0f - Mask.g) + c_Material.AOStrength2);
     AO = saturate(AO + c_Material.AOStrength);
 
-    Albedo = Albedo * Color * AO;
+    Albedo = Albedo * Color;
 
     float3 Normal = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
     float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalIndex].Sample(SharedWrappedSampler, CustomUV).rgb * 2.0f - 1.0f;
@@ -81,7 +81,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     MaterialOutput_Default(TangentToWorldNormals(Normal, Input.Normal, Input.Tangent), Output);
     MaterialOutput_Albedo(Albedo, Output);
     MaterialOutput_Roughness(Roughness, Output);
-
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

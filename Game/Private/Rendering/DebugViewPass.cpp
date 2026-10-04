@@ -16,7 +16,7 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	case DebugViewMode_e::Metallic:		return "Metallic";
 	case DebugViewMode_e::Specular:		return "Specular";
 	case DebugViewMode_e::Emissive:		return "Emissive";
-	case DebugViewMode_e::Noise:		return "Noise";
+	case DebugViewMode_e::AO:			return "AO";
 	case DebugViewMode_e::GlobalDistanceFieldSlice:	return "Global Distance Field Slice";
 	case DebugViewMode_e::GlobalDistanceField:		return "Global Distance Field";
 	default:							return "Unknown";
@@ -53,6 +53,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 	.AccessResource(Inputs.SceneColorMetallic, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneNormalRoughness, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneEmissiveSpecular, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(Inputs.SceneAO, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Output, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=, this](RenderGraph_s& RG, GPUContext_s& Ctx)
@@ -65,7 +66,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 			uint32_t SceneEmissiveSpecularTextureIndex;
 
 			uint32_t SceneDepthTextureIndex;
-			uint32_t BlueNoiseTextureIndex;
+			uint32_t SceneAOTextureIndex;
 			uint32_t FrameID;
 			float Time;
 		};
@@ -77,7 +78,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Uniforms.SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(Inputs.SceneNormalRoughness);
 		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(Inputs.SceneEmissiveSpecular);
 		Uniforms.SceneDepthTextureIndex = RG.GetSRVIndex(Inputs.SceneDepth);
-		Uniforms.BlueNoiseTextureIndex = Inputs.BlueNoiseSRVIndex;
+		Uniforms.SceneAOTextureIndex = RG.GetSRVIndex(Inputs.SceneAO);
 		Uniforms.FrameID = Inputs.Frame;
 		Uniforms.Time = Inputs.Time;
 

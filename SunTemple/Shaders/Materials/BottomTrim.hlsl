@@ -92,11 +92,10 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 
     float3 TangentNormals = CalcNormals(Input);
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
-    MaterialOutput_Albedo(CalcAlbedo(Input, AlbedoAlpha, MetallicAlpa) * CalcAO(Mask.r), Output);
+    MaterialOutput_Albedo(CalcAlbedo(Input, AlbedoAlpha, MetallicAlpa), Output);
     MaterialOutput_Metallic(MetallicAlpa, Output);
     MaterialOutput_Roughness(CalcRoughness(Mask.r, AlbedoAlpha, MetallicAlpa), Output);
-    // TODO: AO
-
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

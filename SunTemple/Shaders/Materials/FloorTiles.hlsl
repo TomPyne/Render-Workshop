@@ -111,10 +111,10 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float AO = saturate(Mask.r + c_Material.AOStrength);
 
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);
-    MaterialOutput_Albedo(Albedo * AO, Output);  
+    MaterialOutput_Albedo(Albedo, Output);  
     MaterialOutput_Metallic(0.0f, Output);
     MaterialOutput_Roughness(Roughness, Output);
-
+    MaterialOutput_AmbientOcclusion(AO, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

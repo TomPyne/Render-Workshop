@@ -166,8 +166,9 @@ struct PSOutput_s
 {
     float4 AlbedoMetallic : SV_TARGET0;
     float4 NormalRoughness : SV_TARGET1;
-    float4 EmissiveSpecular : SV_Target2;
-    float4 Velocity : SV_Target3;
+    float4 EmissiveSpecular : SV_TARGET2;
+    float AO : SV_TARGET3;
+    float4 Velocity : SV_TARGET4;
 };
 
 float3 TangentToWorldNormals(float3 Normal, float3 VertexNormal, float4 Tangent)
@@ -203,6 +204,7 @@ void MaterialOutput_Default(float3 Normal, out PSOutput_s Output)
     Output.AlbedoMetallic = float4(0.0f, 0.0f, 0.0f, 0.0f);
     Output.NormalRoughness = float4(Normal, 0.5f);
     Output.EmissiveSpecular = float4(0.0f, 0.0f, 0.0f, 0.5f);
+    Output.AO = 1.0f;
     Output.Velocity = float4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
@@ -233,6 +235,6 @@ void MaterialOutput_Emissive(float3 Emissive, inout PSOutput_s Output)
 
 void MaterialOutput_AmbientOcclusion(float AO, inout PSOutput_s Output)
 {
-    // TODO
+    Output.AO = AO;
 }
 #endif // #ifdef _PS

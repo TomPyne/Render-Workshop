@@ -64,6 +64,7 @@ struct RenderGraphTextureDesc_s
 	rl::TextureDimension Dimension = rl::TextureDimension::TEX2D;
 	rl::RenderFormat Format = rl::RenderFormat::UNKNOWN;
 	RenderGraphResourceAccessType_e AccessTypes = RenderGraphResourceAccessType_e::UNKNOWN;
+	float4 ClearValue = float4(0.f, 0.f, 0.f, 1.f);
 };
 
 struct RenderGraphTexture_s
@@ -186,6 +187,7 @@ struct RenderGraphBuilder_s
 	FrameBuffer_s& CreateWorkerFrameBuffer();
 
 	RenderGraphResourceHandle_t CreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
+	RenderGraphResourceHandle_t CreateTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName);
 	// SRV and UAV access only
 	RenderGraphResourceHandle_t CreateTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName);
@@ -274,7 +276,8 @@ private:
 	friend struct RenderGraphBuilder_s;
 };
 
-RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
-RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const void* const Data, const wchar_t* ResourceName);
+RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName, const void* const Data = nullptr);
+RenderGraphTexturePtr_t CreateRenderGraphTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName);
+RenderGraphTexturePtr_t CreateRenderGraphTexture(const RenderGraphTextureDesc_s& Desc, const void* const Data, const wchar_t* ResourceName);
 // SRV and UAV access only
 RenderGraphTexturePtr_t CreateRenderGraphTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
