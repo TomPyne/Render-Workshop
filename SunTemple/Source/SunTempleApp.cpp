@@ -121,6 +121,6 @@ void SunTempleApp_c::ImGuiUpdate()
 
 	if (G.ShowDistanceFieldWindow)
 	{
-		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow, SpaceRenderer ? &SpaceRenderer->GetDistanceFieldScene() : nullptr);
+		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow, SpaceRenderer.get());
 	}
 }

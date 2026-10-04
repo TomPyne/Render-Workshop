@@ -27,6 +27,7 @@ static struct SpaceRendererPrivate_s
 	rl::ComputePipelineStatePtr ShadowTemporalPSO;
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
+	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
 	bool Initialized = false;
 } G;
 
@@ -82,6 +83,7 @@ void SpaceRenderer_c::Init()
 
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewCBVRegister, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 	G.DebugViewRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_SRV_TABLE);
+	G.DistanceFieldVisualiseRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_UAV_TABLE, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
 	rl::VertexShader_t ScreenPassVS = rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str());
@@ -144,6 +146,8 @@ void SpaceRenderer_c::Init()
 	}
 
 	BlueNoiseTexture = TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Game", L"Textures/BlueNoise.hp_tex"), false, true);
+
+	GlobalDistanceField.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_UAV_TABLE);
 
 	G.Initialized = true;
 }
@@ -503,6 +507,14 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (DebugViewMode == DebugViewMode_e::Lit)
 	{
 		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
+	}
+	else if (DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice)
+	{
+		const RenderGraphResourceHandle_t GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition());
+		const RenderGraphResourceHandle_t VisualiseTexture = G.DistanceFieldVisualiseRenderer.AddPass(RGBuilder, DistanceFieldVisualiseMode_e::GlobalSlice, DistanceFieldVisualise, GlobalDistanceField, GlobalVolume, uint2(Screen.Width, Screen.Height));
+
+		// The visualisation is already display ready, so this is a straight copy
+		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::None, VisualiseTexture, BackBufferTexture);
 	}
 	else
 	{

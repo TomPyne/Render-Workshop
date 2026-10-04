@@ -2,6 +2,8 @@
 
 #include "Rendering/DebugViewPass.h"
 #include "Rendering/DistanceFieldScene.h"
+#include "Rendering/DistanceFieldVisualisePass.h"
+#include "Rendering/GlobalDistanceField.h"
 
 #include <Render/RenderTypes.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
@@ -100,6 +102,9 @@ public:
 	DebugViewMode_e DebugViewMode = DebugViewMode_e::Lit;
 
 	const DistanceFieldScene_c& GetDistanceFieldScene() const { return DistanceFieldScene; }
+	GlobalDistanceField_c& GetGlobalDistanceField() { return GlobalDistanceField; }
+
+	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
@@ -124,6 +129,7 @@ protected:
 	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
 
 	DistanceFieldScene_c DistanceFieldScene;
+	GlobalDistanceField_c GlobalDistanceField;
 	std::vector<DistanceFieldInstance_s> DistanceFieldInstances;
 
 	std::shared_ptr<struct Texture_s> BlueNoiseTexture;

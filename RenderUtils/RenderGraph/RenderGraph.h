@@ -60,6 +60,8 @@ struct RenderGraphTextureDesc_s
 {
 	uint32_t Width = 0u;
 	uint32_t Height = 0u;
+	uint32_t Depth = 1u; // Only TEX3D uses more than 1
+	rl::TextureDimension Dimension = rl::TextureDimension::TEX2D;
 	rl::RenderFormat Format = rl::RenderFormat::UNKNOWN;
 	RenderGraphResourceAccessType_e AccessTypes = RenderGraphResourceAccessType_e::UNKNOWN;
 };
@@ -86,7 +88,7 @@ struct RenderGraphResourcePool_s
 	std::vector<RenderGraphTexturePtr_t> Textures;
 	std::vector<RenderGraphTexturePtr_t> NewTextures;
 
-	RenderGraphTexturePtr_t GetOrCreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
+	RenderGraphTexturePtr_t GetOrCreateTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName);
 	RenderGraphTexturePtr_t CreateEmptyTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 	void FinishFrame();
 };
@@ -184,6 +186,8 @@ struct RenderGraphBuilder_s
 	FrameBuffer_s& CreateWorkerFrameBuffer();
 
 	RenderGraphResourceHandle_t CreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
+	// SRV and UAV access only
+	RenderGraphResourceHandle_t CreateTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName);
 	RenderGraphResourceHandle_t RefBackBufferTexture(rl::Texture_t Texture, rl::RenderTargetView_t RTV, rl::ResourceTransitionState TransitionState, uint32_t Width, uint32_t Height);
 
@@ -249,6 +253,8 @@ struct RenderGraph_s
 	uint32_t GetUAVIndex(RenderGraphResourceHandle_t Resource);
 
 	uint2 GetTextureDimensions(RenderGraphResourceHandle_t Resource);
+	// Depth is 1 for anything but a 3D texture
+	uint3 GetTextureDimensions3D(RenderGraphResourceHandle_t Resource);
 
 	rl::RaytracingScene_t GetRaytracingScene(RenderGraphResourceHandle_t Resource);
 
@@ -270,3 +276,5 @@ private:
 
 RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);
 RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const void* const Data, const wchar_t* ResourceName);
+// SRV and UAV access only
+RenderGraphTexturePtr_t CreateRenderGraphTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName);

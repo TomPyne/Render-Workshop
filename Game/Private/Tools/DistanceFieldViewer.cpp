@@ -2,6 +2,7 @@
 
 #include "Assets/AssetManager.h"
 #include "Rendering/DistanceFieldScene.h"
+#include "Rendering/SpaceRenderer.h"
 #include "Rendering/Mesh.h"
 
 #include <RenderImGui/imgui/imgui.h>
@@ -140,9 +141,45 @@ void DrawSceneInstances(const DistanceFieldScene_c& Scene)
 	ImGui::Text("World bounds centre -> UVW %.3f, %.3f, %.3f", Dot(Instance.WorldToVolume[0], Point), Dot(Instance.WorldToVolume[1], Point), Dot(Instance.WorldToVolume[2], Point));
 }
 
+void DrawGlobalDistanceField(SpaceRenderer_c& Renderer)
+{
+	GlobalDistanceField_c& Global = Renderer.GetGlobalDistanceField();
+	GlobalDistanceFieldSettings_s& Settings = Global.Settings;
+
+	static const uint32_t kResolutions[] = { 64, 128, 256 };
+	static const char* kResolutionNames[] = { "64", "128", "256" };
+	int32_t ResolutionIndex = 0;
+	for (int32_t It = 0; It < 3; It++)
+	{
+		if (kResolutions[It] == Settings.Resolution)
+		{
+			ResolutionIndex = It;
+		}
+	}
+	if (ImGui::Combo("Resolution", &ResolutionIndex, kResolutionNames, 3))
+	{
+		Settings.Resolution = kResolutions[ResolutionIndex];
+	}
+
+	ImGui::SliderFloat("Extent", &Settings.Extent, 8.0f, 256.0f, "%.0fm");
+	ImGui::SliderFloat("Band (voxels)", &Settings.BandVoxels, 1.0f, 16.0f, "%.1f");
+
+	const AABB& Bounds = Global.GetVolumeBounds();
+	const float3 Centre = Bounds.Origin();
+	ImGui::Text("Centre %.2f, %.2f, %.2f", Centre.x, Centre.y, Centre.z);
+	ImGui::Text("Voxel %.3fm, band %.2fm, %.1fMB", Global.GetVoxelSize(), Global.GetBand(), Settings.Resolution * Settings.Resolution * Settings.Resolution * 2.0f / (1024.0f * 1024.0f));
+
+	int32_t SliceIndex = static_cast<int32_t>(Min(Renderer.DistanceFieldVisualise.SliceIndex, Settings.Resolution - 1));
+	if (ImGui::SliderInt("Slice (Y)", &SliceIndex, 0, static_cast<int32_t>(Settings.Resolution) - 1))
+	{
+		Renderer.DistanceFieldVisualise.SliceIndex = static_cast<uint32_t>(SliceIndex);
+	}
+	ImGui::Text("Slice at Y = %.2f", Bounds.mins.y + (SliceIndex + 0.5f) * Global.GetVoxelSize());
 }
 
-void DrawWindow(bool* Open, const DistanceFieldScene_c* Scene)
+}
+
+void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 {
 	if (!ImGui::Begin("Distance Fields", Open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -190,9 +227,14 @@ void DrawWindow(bool* Open, const DistanceFieldScene_c* Scene)
 
 	ImGui::Text("Total %.0fKB", TotalKB);
 
-	if (Scene && ImGui::CollapsingHeader("Scene Instances"))
+	if (Renderer && ImGui::CollapsingHeader("Scene Instances"))
 	{
-		DrawSceneInstances(*Scene);
+		DrawSceneInstances(Renderer->GetDistanceFieldScene());
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Global Distance Field"))
+	{
+		DrawGlobalDistanceField(*Renderer);
 	}
 
 	if (Selected)

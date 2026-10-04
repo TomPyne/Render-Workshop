@@ -60,6 +60,10 @@ function(create_proj projname rapi)
 		"Private/Rendering/DebugViewPass.cpp"
 		"Private/Rendering/DistanceFieldScene.cpp"
 		"Public/Rendering/DistanceFieldScene.h"
+		"Private/Rendering/DistanceFieldVisualisePass.cpp"
+		"Public/Rendering/DistanceFieldVisualisePass.h"
+		"Private/Rendering/GlobalDistanceField.cpp"
+		"Public/Rendering/GlobalDistanceField.h"
 		"Public/Rendering/DebugViewPass.h"
 		"Private/Rendering/GameRenderer.cpp"
 		"Public/Rendering/GameRenderer.h"
@@ -89,6 +93,8 @@ function(create_proj projname rapi)
 		shader_list
 		"Shaders/BasicMaterial.hlsl"
 		"Shaders/DebugView.hlsl"
+		"Shaders/DistanceFields/DistanceFieldVisualise.hlsl"
+		"Shaders/DistanceFields/GlobalDistanceFieldComposite.hlsl"
 		"Shaders/ShaderDefines.h"
 	)
 

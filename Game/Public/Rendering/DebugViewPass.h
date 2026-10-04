@@ -13,6 +13,7 @@ enum class DebugViewMode_e : uint32_t
 	Specular,
 	Emissive,
 	Noise,
+	GlobalDistanceFieldSlice,
 	Count
 };
 

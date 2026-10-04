@@ -17,6 +17,7 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	case DebugViewMode_e::Specular:		return "Specular";
 	case DebugViewMode_e::Emissive:		return "Emissive";
 	case DebugViewMode_e::Noise:		return "Noise";
+	case DebugViewMode_e::GlobalDistanceFieldSlice:	return "Global Distance Field Slice";
 	default:							return "Unknown";
 	}
 }

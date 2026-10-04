@@ -109,6 +109,19 @@ RenderGraphResourceHandle_t RenderGraphBuilder_s::CreateTexture(uint32_t Width, 
 	return Handle;
 }
 
+RenderGraphResourceHandle_t RenderGraphBuilder_s::CreateTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
+{
+	RenderGraphResourceDesc_s* Resource = nullptr;
+	const RenderGraphResourceHandle_t Handle = AllocateResourceDesc(&Resource, ResourceName);
+	Resource->Texture.Width = Width;
+	Resource->Texture.Height = Height;
+	Resource->Texture.Depth = Depth;
+	Resource->Texture.Dimension = rl::TextureDimension::TEX3D;
+	Resource->Texture.Format = Format;
+	Resource->Texture.AccessTypes = AccessTypes;
+	return Handle;
+}
+
 RenderGraphResourceHandle_t RenderGraphBuilder_s::RefExternalTexture(RenderGraphTexturePtr_t Texture, const wchar_t* ResourceName)
 {
 	RenderGraphResourceDesc_s* Resource = nullptr;
@@ -333,12 +346,7 @@ RenderGraph_s RenderGraphBuilder_s::Build()
 			case RenderGraphResourceKind_e::TEXTURE:
 				if (Desc.ExternalTextureRef == nullptr)
 				{
-					Resource.Texture = ResourcePool.GetOrCreateTexture(
-						Desc.Texture.Width,
-						Desc.Texture.Height,
-						Desc.Texture.Format,
-						Desc.Texture.AccessTypes,
-						Desc.ResourceName.c_str());
+					Resource.Texture = ResourcePool.GetOrCreateTexture(Desc.Texture, Desc.ResourceName.c_str());
 				}
 				else
 				{
@@ -544,6 +552,21 @@ uint2 RenderGraph_s::GetTextureDimensions(RenderGraphResourceHandle_t Resource)
 	return uint2(0u, 0u);
 }
 
+uint3 RenderGraph_s::GetTextureDimensions3D(RenderGraphResourceHandle_t Resource)
+{
+	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
+	{
+		if (ActiveResource->Kind == RenderGraphResourceKind_e::TEXTURE && ActiveResource->Texture)
+		{
+			const RenderGraphTextureDesc_s& Desc = ActiveResource->Texture->Desc;
+			return uint3(Desc.Width, Desc.Height, Desc.Depth);
+		}
+	}
+
+	const uint2 Dimensions = GetTextureDimensions(Resource);
+	return uint3(Dimensions.x, Dimensions.y, 1u);
+}
+
 rl::RaytracingScene_t RenderGraph_s::GetRaytracingScene(RenderGraphResourceHandle_t Resource)
 {
 	if (const RenderGraphResource_s* ActiveResource = GetResource(Resource))
@@ -586,12 +609,14 @@ RenderGraphTexture_s* RenderGraph_s::GetTextureResource(RenderGraphResourceHandl
 	return nullptr;
 }
 
-RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(uint32_t Width, uint32_t Height, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
+RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(const RenderGraphTextureDesc_s& Desc, const wchar_t* ResourceName)
 {
 	size_t TexIt = 0;
 	for(; TexIt < Textures.size(); TexIt++)
 	{
-		if (Textures[TexIt]->Desc.Width == Width && Textures[TexIt]->Desc.Height == Height && Textures[TexIt]->Desc.Format == Format && Textures[TexIt]->AccessTypes == AccessTypes)
+		const RenderGraphTexture_s& Texture = *Textures[TexIt];
+		if (Texture.Desc.Width == Desc.Width && Texture.Desc.Height == Desc.Height && Texture.Desc.Depth == Desc.Depth && Texture.Desc.Dimension == Desc.Dimension
+			&& Texture.Desc.Format == Desc.Format && Texture.AccessTypes == Desc.AccessTypes)
 		{
 			break;
 		}
@@ -607,8 +632,10 @@ RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(uint32_t W
 	}
 	else
 	{
-		LOGINFO("Creating Texture %S - %d x %d - Fmt=%d", ResourceName, Width, Height, (uint32_t)Format);
-		NewTexture = CreateRenderGraphTexture(Width, Height, Format, AccessTypes, ResourceName);
+		LOGINFO("Creating Texture %S - %d x %d x %d - Fmt=%d", ResourceName, Desc.Width, Desc.Height, Desc.Depth, (uint32_t)Desc.Format);
+		NewTexture = Desc.Dimension == rl::TextureDimension::TEX3D
+			? CreateRenderGraphTexture3D(Desc.Width, Desc.Height, Desc.Depth, Desc.Format, Desc.AccessTypes, ResourceName)
+			: CreateRenderGraphTexture(Desc.Width, Desc.Height, Desc.Format, Desc.AccessTypes, ResourceName);
 	}
 
 	NewTextures.push_back(NewTexture);
@@ -703,6 +730,67 @@ RenderGraphTexturePtr_t CreateRenderGraphTexture(uint32_t Width, uint32_t Height
 	{
 		rl::RenderFormat DepthFormat = Format == rl::RenderFormat::R32_FLOAT ? rl::RenderFormat::D32_FLOAT : rl::RenderFormat::D16_UNORM;
 		OutTexture->DSV = rl::CreateTextureDSV(OutTexture->Texture, DepthFormat, rl::TextureDimension::TEX2D, 1u);
+	}
+
+	return OutTexture;
+}
+
+RenderGraphTexturePtr_t CreateRenderGraphTexture3D(uint32_t Width, uint32_t Height, uint32_t Depth, rl::RenderFormat Format, RenderGraphResourceAccessType_e AccessTypes, const wchar_t* ResourceName)
+{
+	if (Width == 0 || Width > 2048 || Height == 0 || Height > 2048 || Depth == 0 || Depth > 2048)
+	{
+		ENSUREMSG(false, "Invalid 3D texture dimensions");
+		return nullptr;
+	}
+
+	if (Format == rl::RenderFormat::UNKNOWN)
+	{
+		ENSUREMSG(false, "Invalid texture format");
+		return nullptr;
+	}
+
+	const RenderGraphResourceAccessType_e UnsupportedAccess = RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::DSV | RenderGraphResourceAccessType_e::COPYSRC | RenderGraphResourceAccessType_e::COPYDST;
+	if (AccessTypes == RenderGraphResourceAccessType_e::UNKNOWN || rl::HasEnumFlags(AccessTypes, UnsupportedAccess))
+	{
+		ENSUREMSG(false, "3D textures only support SRV and UAV access");
+		return nullptr;
+	}
+
+	std::shared_ptr<RenderGraphTexture_s> OutTexture = std::make_shared<RenderGraphTexture_s>();
+
+	OutTexture->Desc.Width = Width;
+	OutTexture->Desc.Height = Height;
+	OutTexture->Desc.Depth = Depth;
+	OutTexture->Desc.Dimension = rl::TextureDimension::TEX3D;
+	OutTexture->Desc.Format = Format;
+	OutTexture->AccessTypes = AccessTypes;
+
+	rl::TextureCreateDescEx TexDesc = {};
+	TexDesc.Width = Width;
+	TexDesc.Height = Height;
+	TexDesc.DepthOrArraySize = Depth;
+	TexDesc.Dimension = rl::TextureDimension::TEX3D;
+	TexDesc.ResourceFormat = Format;
+	TexDesc.DebugName = ResourceName ? ResourceName : L"";
+
+	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::SRV))
+	{
+		TexDesc.Flags |= rl::RenderResourceFlags::SRV;
+	}
+	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::UAV))
+	{
+		TexDesc.Flags |= rl::RenderResourceFlags::UAV;
+	}
+
+	OutTexture->Texture = rl::CreateTextureEx(TexDesc);
+
+	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::SRV))
+	{
+		OutTexture->SRV = rl::CreateTextureSRV(OutTexture->Texture, Format, rl::TextureDimension::TEX3D, 1u, Depth);
+	}
+	if (rl::HasEnumFlags(AccessTypes, RenderGraphResourceAccessType_e::UAV))
+	{
+		OutTexture->UAV = rl::CreateTextureUAV(OutTexture->Texture, Format, rl::TextureDimension::TEX3D, Depth);
 	}
 
 	return OutTexture;
