@@ -212,6 +212,23 @@ void DrawGlobalDistanceField(SpaceRenderer_c& Renderer)
 	}
 }
 
+void DrawDistanceFieldAO(SpaceRenderer_c& Renderer)
+{
+	DistanceFieldAOSettings_s& Settings = Renderer.DistanceFieldAO;
+
+	ImGui::Checkbox("Enabled", &Settings.Enabled);
+	ImGui::SliderFloat("Max distance", &Settings.MaxDistance, 0.5f, 16.0f, "%.1fm");
+	ImGui::SliderFloat("Normal bias (voxels)", &Settings.NormalBiasVoxels, 0.0f, 4.0f, "%.2f");
+
+	int32_t StepsPerCone = static_cast<int32_t>(Settings.StepsPerCone);
+	if (ImGui::SliderInt("Steps per cone", &StepsPerCone, 2, 32))
+	{
+		Settings.StepsPerCone = static_cast<uint32_t>(StepsPerCone);
+	}
+
+	ImGui::SliderFloat("Power", &Settings.Power, 0.25f, 4.0f, "%.2f");
+}
+
 }
 
 void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
@@ -270,6 +287,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 	if (Renderer && ImGui::CollapsingHeader("Global Distance Field"))
 	{
 		DrawGlobalDistanceField(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Distance Field AO"))
+	{
+		DrawDistanceFieldAO(*Renderer);
 	}
 
 	if (Selected)

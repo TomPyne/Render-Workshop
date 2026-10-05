@@ -19,6 +19,7 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	case DebugViewMode_e::Specular:		return "Specular";
 	case DebugViewMode_e::Emissive:		return "Emissive";
 	case DebugViewMode_e::AO:			return "AO";
+	case DebugViewMode_e::DistanceFieldAO:	return "Distance Field AO";
 	case DebugViewMode_e::GlobalDistanceFieldSlice:	return "Global Distance Field Slice";
 	case DebugViewMode_e::GlobalDistanceField:		return "Global Distance Field";
 	default:							return "Unknown";
@@ -53,6 +54,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 	.AccessResource(Inputs.SceneNormalRoughness, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneEmissiveSpecular, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneAO, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(Inputs.DistanceFieldAO, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Inputs.SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(Output, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=, this](RenderGraph_s& RG, GPUContext_s& Ctx)
@@ -68,8 +70,11 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 			uint32_t SceneAOTextureIndex;
 			uint32_t FrameID;
 			float Time;
+
+			uint32_t DistanceFieldAOTextureIndex;
+			float3 __Pad;
 		};
-		static_assert(sizeof(DebugViewUniforms_s) == 32, "Must match DebugViewUniforms_s in DebugView.hlsl");
+		static_assert(sizeof(DebugViewUniforms_s) == 48, "Must match DebugViewUniforms_s in DebugView.hlsl");
 
 		DebugViewUniforms_s Uniforms = {};
 		Uniforms.Mode = static_cast<uint32_t>(Mode);
@@ -78,6 +83,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Uniforms.SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(Inputs.SceneEmissiveSpecular);
 		Uniforms.SceneDepthTextureIndex = RG.GetSRVIndex(Inputs.SceneDepth);
 		Uniforms.SceneAOTextureIndex = RG.GetSRVIndex(Inputs.SceneAO);
+		Uniforms.DistanceFieldAOTextureIndex = RG.GetSRVIndex(Inputs.DistanceFieldAO);
 		Uniforms.FrameID = Inputs.Frame;
 		Uniforms.Time = Inputs.Time;
 

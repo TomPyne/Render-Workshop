@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rendering/DebugViewPass.h"
+#include "Rendering/DistanceFieldAOPass.h"
 #include "Rendering/DistanceFieldScene.h"
 #include "Rendering/DistanceFieldVisualisePass.h"
 #include "Rendering/GlobalDistanceField.h"
@@ -131,6 +132,7 @@ public:
 	GlobalDistanceField_c& GetGlobalDistanceField() { return GlobalDistanceField; }
 
 	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
+	DistanceFieldAOSettings_s DistanceFieldAO;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();

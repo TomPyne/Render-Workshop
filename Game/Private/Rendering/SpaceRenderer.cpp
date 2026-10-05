@@ -29,6 +29,7 @@ static struct SpaceRendererPrivate_s
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
+	DistanceFieldAORenderer_s DistanceFieldAORenderer;
 	BloomRenderer_s BloomRenderer;
 	bool Initialized = false;
 } G;
@@ -68,6 +69,7 @@ void SpaceRenderer_c::Init()
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, SpaceRendererCBVRegister::CBV_VIEW_BUF, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 	G.DebugViewRenderer.Init();
 	G.DistanceFieldVisualiseRenderer.Init();
+	G.DistanceFieldAORenderer.Init();
 	G.BloomRenderer.Init();
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
@@ -440,6 +442,17 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
 	});
 
+	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
+
+	RenderGraphResourceHandle_t GlobalVolume = {};
+	if (DistanceFieldScene.GetInstanceCount() > 0 || IsDistanceFieldView)
+	{
+		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition(), DistanceFieldScene);
+	}
+
+	RenderGraphResourceHandle_t DistanceFieldAOTexture = G.DistanceFieldAORenderer.AddPass(RGBuilder, DistanceFieldAO, GlobalDistanceField, GlobalVolume,
+		SceneDepthTexture, SceneNormalRoughnessTexture, InverseViewProjection, uint2(Screen.Width, Screen.Height));
+
 	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
@@ -507,14 +520,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
 
-	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
-
-	RenderGraphResourceHandle_t GlobalVolume = {};
-	if (DistanceFieldScene.GetInstanceCount() > 0 || IsDistanceFieldView)
-	{
-		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition(), DistanceFieldScene);
-	}
-
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
 	if (DebugViewMode == DebugViewMode_e::Lit)
@@ -539,6 +544,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		DebugViewInputs.SceneEmissiveSpecular = SceneEmissiveSpecularTexture;
 		DebugViewInputs.SceneDepth = SceneDepthTexture;
 		DebugViewInputs.SceneAO = SceneAOTexture;
+		DebugViewInputs.DistanceFieldAO = DistanceFieldAOTexture;
 		DebugViewInputs.Frame = static_cast<uint32_t>(FrameIndex);
 		DebugViewInputs.Time = Clock.GetTotalSeconds();
 

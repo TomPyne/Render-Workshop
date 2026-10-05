@@ -346,7 +346,7 @@ bool InitializeApp()
 
 	std::vector<uint8_t> WhiteTextureData(16 * 16 * 4, 255);
 
-	G.WhiteRGTexture = CreateRenderGraphTexture(16u, 16u, RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::SRV, WhiteTextureData.data(), L"WhiteTexture");
+	G.WhiteRGTexture = CreateRenderGraphTexture(16u, 16u, RenderFormat::R8G8B8A8_UNORM, RenderGraphResourceAccessType_e::SRV, L"WhiteTexture", WhiteTextureData.data());
 
 	// Create default material
 	G.DefaultMaterial.MaterialConstantBuffer = rl::CreateConstantBuffer(&G.DefaultMaterial.Params);

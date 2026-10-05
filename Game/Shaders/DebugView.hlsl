@@ -11,6 +11,7 @@
 #define DEBUGVIEW_SPECULAR 5
 #define DEBUGVIEW_EMISSIVE 6
 #define DEBUGVIEW_AO 7
+#define DEBUGVIEW_DISTANCE_FIELD_AO 8
 
 struct DebugViewUniforms_s
 {
@@ -23,6 +24,9 @@ struct DebugViewUniforms_s
     uint SceneAOTextureIndex;
     uint FrameID;
     float Time;
+
+    uint DistanceFieldAOTextureIndex;
+    float3 __Pad;
 };
 
 ConstantBuffer<DebugViewUniforms_s> c_DebugView : register(b0);
@@ -74,6 +78,10 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
         else if(c_DebugView.Mode == DEBUGVIEW_AO)
         {
             Color = saturate(t_tex2d_f1[c_DebugView.SceneAOTextureIndex].Load(Pixel).r);
+        }
+        else if (c_DebugView.Mode == DEBUGVIEW_DISTANCE_FIELD_AO)
+        {
+            Color = saturate(t_tex2d_f1[c_DebugView.DistanceFieldAOTextureIndex].Load(Pixel).r);
         }
     }
 

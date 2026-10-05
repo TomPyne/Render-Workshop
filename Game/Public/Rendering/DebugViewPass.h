@@ -13,6 +13,7 @@ enum class DebugViewMode_e : uint32_t
 	Specular,
 	Emissive,
 	AO,
+	DistanceFieldAO,
 	GlobalDistanceFieldSlice,
 	GlobalDistanceField,
 	Count
@@ -26,6 +27,7 @@ struct DebugViewInputs_s
 	RenderGraphResourceHandle_t SceneNormalRoughness;
 	RenderGraphResourceHandle_t SceneEmissiveSpecular;
 	RenderGraphResourceHandle_t SceneAO;
+	RenderGraphResourceHandle_t DistanceFieldAO;
 	RenderGraphResourceHandle_t SceneDepth;
 
 	// Temp
