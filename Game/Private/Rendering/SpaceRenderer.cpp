@@ -460,6 +460,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneEmissiveSpecularTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(DistanceFieldAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(AccumulatedShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
@@ -481,7 +482,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t SceneDepthTextureIndex;
 			uint32_t ShadowTextureIndex;
 			uint32_t SceneAOTextureIndex;
-			float __Pad;
+			uint32_t DistanceFieldAOTextureIndex;
 		};
 		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
 
@@ -500,6 +501,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
 		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(AccumulatedShadowTexture);
 		Uniforms->SceneAOTextureIndex = RG.GetSRVIndex(SceneAOTexture);
+		Uniforms->DistanceFieldAOTextureIndex = RG.GetSRVIndex(DistanceFieldAOTexture);
 
 		Ctx.SetRootSignature(G.RootSignature);
 

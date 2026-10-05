@@ -20,7 +20,7 @@ struct DeferredData_s
     uint SceneDepthTextureIndex;
     uint ShadowTextureIndex;
     uint SceneAOTextureIndex;
-    float __Pad;
+    uint DistanceFieldAOTextureIndex;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
@@ -84,7 +84,9 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 
     const float4 AlbedoMetallic = t_tex2d_f4[c_Deferred.SceneColorMetallicTextureIndex].Load(Pixel);
     const float4 NormalRoughness = t_tex2d_f4[c_Deferred.SceneNormalRoughnessTextureIndex].Load(Pixel);
-    const float AO = t_tex2d_f1[c_Deferred.SceneAOTextureIndex].Load(Pixel);
+    const float MaterialAO = t_tex2d_f1[c_Deferred.SceneAOTextureIndex].Load(Pixel);
+    const float DistanceFieldAO = t_tex2d_f1[c_Deferred.DistanceFieldAOTextureIndex].Load(Pixel);
+    const float AO = MaterialAO * DistanceFieldAO;
 
     const float3 Albedo = AlbedoMetallic.rgb;
     const float Metallic = saturate(AlbedoMetallic.a);

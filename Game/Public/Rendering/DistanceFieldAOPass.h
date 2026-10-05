@@ -10,10 +10,10 @@ struct DistanceFieldAOSettings_s
 {
 	bool Enabled = true;
 	// World distance each cone is traced to
-	float MaxDistance = 4.0f;
+	float MaxDistance = 1.0f;
 	// Cone origins are pushed this many voxels out along the normal, so the surface doesn't occlude itself
 	float NormalBiasVoxels = 1.0f;
-	uint32_t StepsPerCone = 10;
+	uint32_t StepsPerCone = 4;
 	// Exponent applied to the result, above 1 darkens
 	float Power = 1.0f;
 };
