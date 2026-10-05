@@ -60,6 +60,8 @@ function(create_proj projname rapi)
 		"Private/Rendering/Bloom.cpp"
 		"Private/Rendering/Bloom.h"
 		"Private/Rendering/DebugViewPass.cpp"
+		"Private/Rendering/DistanceFieldAOPass.cpp"
+		"Public/Rendering/DistanceFieldAOPass.h"
 		"Private/Rendering/DistanceFieldScene.cpp"
 		"Public/Rendering/DistanceFieldScene.h"
 		"Private/Rendering/DistanceFieldVisualisePass.cpp"
@@ -95,6 +97,7 @@ function(create_proj projname rapi)
 		shader_list
 		"Shaders/BasicMaterial.hlsl"
 		"Shaders/DebugView.hlsl"
+		"Shaders/DistanceFields/DistanceFieldAO.hlsl"
 		"Shaders/DistanceFields/DistanceFieldVisualise.hlsl"
 		"Shaders/DistanceFields/GlobalDistanceFieldComposite.hlsl"
 		"Shaders/ShaderDefines.h"
