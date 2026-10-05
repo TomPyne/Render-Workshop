@@ -1,5 +1,7 @@
 #include "Rendering/DebugViewPass.h"
 
+#include "Rendering/SpaceRenderer.h"
+
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <Shared/FileUtils/PathUtils.h>
@@ -23,11 +25,8 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	}
 }
 
-void DebugViewRenderer_s::Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InSRVTableRootSigSlot)
+void DebugViewRenderer_s::Init()
 {
-	RootSignature = rl::RootSignaturePtr::Ref(InRootSignature);
-	CBVRootSigSlot = InCBVRootSigSlot;
-	SRVTableRootSigSlot = InSRVTableRootSigSlot;
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
 	static const Path_s DebugViewPSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"DebugView.hlsl");
@@ -38,7 +37,7 @@ void DebugViewRenderer_s::Init(rl::RootSignature_t InRootSignature, uint32_t InC
 		.TargetBlendDesc({ rl::RenderFormat::R8G8B8A8_UNORM }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
 		.VertexShader(rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str()))
 		.PixelShader(rl::CreatePixelShader(DebugViewPSPath.ToString().c_str()))
-		.RootSignature(RootSignature);
+		.RootSignature(SpaceRenderer_c::GetRootSignature());
 
 	PsoDesc.DebugName = L"DebugViewPSO";
 
@@ -82,7 +81,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Uniforms.FrameID = Inputs.Frame;
 		Uniforms.Time = Inputs.Time;
 
-		Ctx.SetRootSignature(RootSignature);
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 
 		rl::RenderTargetView_t RTV = RG.GetRTV(Output);
 		const uint2 Dimensions = RG.GetTextureDimensions(Output);
@@ -93,8 +92,8 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Ctx.SetViewports(&vp, 1);
 		Ctx.SetDefaultScissor();
 
-		Ctx.SetGraphicsRootCBV(CBVRootSigSlot, RG.Alloc(Uniforms));
-		Ctx.SetGraphicsRootDescriptorTable(SRVTableRootSigSlot);
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 		Ctx.SetPipelineState(PSO);
 

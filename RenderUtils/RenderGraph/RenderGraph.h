@@ -36,6 +36,12 @@ enum class RenderGraphResourceAccessType_e : uint8_t
 	DSV = 1 << 3,
 	COPYSRC = 1 << 4,
 	COPYDST = 1 << 5,
+
+	// Common combos
+	SRV_UAV = SRV | UAV,
+	SRV_RTV = SRV | RTV,
+	SRV_DSV = SRV | DSV,
+	SRV_UAV_RTV = SRV | UAV | RTV,
 };
 IMPLEMENT_FLAGS(RenderGraphResourceAccessType_e, uint8_t)
 

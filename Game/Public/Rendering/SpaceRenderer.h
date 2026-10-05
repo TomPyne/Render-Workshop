@@ -12,6 +12,32 @@
 #include <unordered_map>
 #include <vector>
 
+namespace SpaceRendererRootSigSlots
+{
+	enum Value
+	{
+		RS_DRAWCONSTANTS,
+		RS_VIEW_BUF,
+		RS_MODEL_BUF,
+		RS_MAT_BUF,
+		RS_TLAS,
+		RS_SRV_TABLE,
+		RS_UAV_TABLE,
+		RS_COUNT,
+	};
+}
+
+namespace SpaceRendererCBVRegister
+{
+	enum Value
+	{
+		CBV_DRAWCONSTANTS = 0,
+		CBV_VIEW_BUF = 1,
+		CBV_MODEL_BUF = 2,
+		CBV_MAT_BUF = 3,
+	};
+}
+
 struct SpatialRenderingBatch_s
 {
 	FrameBufferAlloc_s DynamicUniforms;
@@ -108,6 +134,7 @@ public:
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
+
 protected:
 
 	RenderGraphResourcePool_s RenderGraphResourcePool;

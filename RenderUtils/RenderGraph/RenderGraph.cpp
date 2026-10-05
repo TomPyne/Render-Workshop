@@ -623,7 +623,7 @@ RenderGraphTexturePtr_t RenderGraphResourcePool_s::GetOrCreateTexture(const Rend
 	{
 		const RenderGraphTexture_s& Texture = *Textures[TexIt];
 		if (Texture.Desc.Width == Desc.Width && Texture.Desc.Height == Desc.Height && Texture.Desc.Depth == Desc.Depth && Texture.Desc.Dimension == Desc.Dimension
-			&& Texture.Desc.Format == Desc.Format && Texture.AccessTypes == Desc.AccessTypes)
+			&& Texture.Desc.Format == Desc.Format && Texture.Desc.AccessTypes == Desc.AccessTypes)
 		{
 			break;
 		}

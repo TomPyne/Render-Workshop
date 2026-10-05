@@ -2,6 +2,7 @@
 
 #include "Assets/AssetManager.h"
 #include "Assets/TextureManager.h"
+#include "Bloom.h"
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Rendering/IRenderable.h"
@@ -28,23 +29,10 @@ static struct SpaceRendererPrivate_s
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
+	BloomRenderer_s BloomRenderer;
 	bool Initialized = false;
 } G;
 
-namespace SpaceRendererRootSigSlots
-{
-	enum Value
-	{
-		RS_DRAWCONSTANTS,
-		RS_VIEW_BUF,
-		RS_MODEL_BUF,
-		RS_MAT_BUF,
-		RS_TLAS,
-		RS_SRV_TABLE,
-		RS_UAV_TABLE,
-		RS_COUNT,
-	};
-}
 struct SpaceViewUniforms_s
 {
 	matrix ViewProjection;
@@ -60,17 +48,13 @@ struct SpaceViewUniforms_s
 void SpaceRenderer_c::Init()
 {
 	ASSERTMSG(G.Initialized == false, "Space Renderer has already been initialized");
-	static const uint32_t DrawCBVRegister = 0;
-	static const uint32_t ViewCBVRegister = 1;
-	static const uint32_t ModelCBVRegister = 2;
-	static const uint32_t MatCBVRegister = 3;
 
 	rl::RootSignatureDesc RootSigDesc = {};
 	RootSigDesc.Slots.resize(SpaceRendererRootSigSlots::RS_COUNT);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::CBVSlot(DrawCBVRegister, 0);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(ViewCBVRegister, 0);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(ModelCBVRegister, 0);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(MatCBVRegister, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_DRAWCONSTANTS, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_VIEW_BUF, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_MODEL_BUF, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_MAT_BUF, 0);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_TLAS] = rl::RootSignatureSlot::SRVSlot(0, 0); // Sticking the TLAS here makes all my other SRVs need to start at t1, SM6.6 allows a workaround with ResourceDescriptorHeap
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::SRV);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_UAV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
@@ -81,9 +65,10 @@ void SpaceRenderer_c::Init()
 
 	G.RootSignature = rl::CreateRootSignature(RootSigDesc);
 
-	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewCBVRegister, SpaceRendererRootSigSlots::RS_SRV_TABLE);
-	G.DebugViewRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_SRV_TABLE);
-	G.DistanceFieldVisualiseRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, SpaceRendererRootSigSlots::RS_UAV_TABLE, SpaceRendererRootSigSlots::RS_SRV_TABLE);
+	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, SpaceRendererCBVRegister::CBV_VIEW_BUF, SpaceRendererRootSigSlots::RS_SRV_TABLE);
+	G.DebugViewRenderer.Init();
+	G.DistanceFieldVisualiseRenderer.Init();
+	G.BloomRenderer.Init();
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
 	rl::VertexShader_t ScreenPassVS = rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str());
@@ -325,7 +310,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	});
 
 	RenderGraphResourceHandle_t RaytracingSceneResource = RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene");
-	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"ShadowTexture");
+	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowTexture");
 
 	uint32_t BlueNoiseSrvIndex = BlueNoiseTexture && BlueNoiseTexture->IsReady() ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;
 	RenderGraphPass_s& ShadowPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Pass")
@@ -376,8 +361,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		for (uint32_t HistoryIt = 0; HistoryIt < 2; HistoryIt++)
 		{
-			ShadowHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"ShadowHistory");
-			LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, L"LinearDepthHistory");
+			ShadowHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
+			LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"LinearDepthHistory");
 		}
 
 		ShadowHistorySize = uint2(Screen.Width, Screen.Height);
@@ -455,7 +440,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
 	});
 
-	RenderGraphResourceHandle_t LitTexture =RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::SRV, L"LitTexture");
+	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -534,6 +519,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	if (DebugViewMode == DebugViewMode_e::Lit)
 	{
+		G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height));
+
 		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
 	}
 	else if (IsDistanceFieldView)
@@ -576,7 +563,7 @@ void SpaceRenderer_c::ResetTemporalHistory()
 
 rl::RootSignature_t SpaceRenderer_c::GetRootSignature()
 {
-	ASSERTMSG(G.Initialized, "SpaceRenderer has not been initialized");
+	ASSERTMSG(G.RootSignature.IsValid(), "SpaceRenderer has not been initialized");
 
 	return G.RootSignature;
 }

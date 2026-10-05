@@ -57,6 +57,8 @@ function(create_proj projname rapi)
 		"Public/Physics/IntersectionKernels.h"
 		"Public/Physics/IntersectionTypes.h"
 		"Public/Rendering/IRenderable.h"
+		"Private/Rendering/Bloom.cpp"
+		"Private/Rendering/Bloom.h"
 		"Private/Rendering/DebugViewPass.cpp"
 		"Private/Rendering/DistanceFieldScene.cpp"
 		"Public/Rendering/DistanceFieldScene.h"

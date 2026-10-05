@@ -1,24 +1,20 @@
 #include "Rendering/DistanceFieldVisualisePass.h"
 
 #include "Rendering/GlobalDistanceField.h"
+#include "Rendering/SpaceRenderer.h"
 
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
-void DistanceFieldVisualiseRenderer_s::Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot)
+void DistanceFieldVisualiseRenderer_s::Init()
 {
-	RootSignature = rl::RootSignaturePtr::Ref(InRootSignature);
-	CBVRootSigSlot = InCBVRootSigSlot;
-	UAVTableRootSigSlot = InUAVTableRootSigSlot;
-	SRVTableRootSigSlot = InSRVTableRootSigSlot;
-
 	static const Path_s VisualiseCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"DistanceFields/DistanceFieldVisualise.hlsl");
 
 	rl::ComputePipelineStateDesc PsoDesc = {};
 	PsoDesc.Cs = rl::CreateComputeShader(VisualiseCSPath.ToString().c_str());
-	PsoDesc.RootSignatureOverride = RootSignature;
+	PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
 	PsoDesc.DebugName = L"DistanceFieldVisualise";
 
 	PSO = rl::CreateComputePipelineState(PsoDesc);
@@ -91,13 +87,13 @@ RenderGraphResourceHandle_t DistanceFieldVisualiseRenderer_s::AddPass(RenderGrap
 		Uniforms.ExitTint = Settings.ExitTint ? 1u : 0u;
 		Uniforms.GridCellSize = GridCellSize;
 
-		Ctx.SetRootSignature(RootSignature);
-		Ctx.SetComputeRootDescriptorTable(UAVTableRootSigSlot);
-		Ctx.SetComputeRootDescriptorTable(SRVTableRootSigSlot);
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 		Ctx.SetPipelineState(PSO);
 
-		Ctx.SetComputeRootCBV(CBVRootSigSlot, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 
 		Ctx.Dispatch(DivideRoundUp(OutputSize.x, 8u), DivideRoundUp(OutputSize.y, 8u), 1u);
 	});
