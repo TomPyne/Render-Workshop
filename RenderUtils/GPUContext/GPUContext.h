@@ -67,12 +67,15 @@ public:
 	void Dispatch(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
 	void DispatchMesh(uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
 	void DispatchRays(rl::RaytracingShaderTable_t ShaderTable, uint32_t ThreadGroupCountX, uint32_t ThreadGroupCountY, uint32_t ThreadGroupCountZ);
+	void ExecuteIndirect(rl::IndirectCommand_t Command, rl::StructuredBuffer_t ArgBuffer, uint64_t ArgBufferOffset = 0u);
 	// The builds must have been prepared this frame, see Render/Raytracing.h. Instances resolves at replay, invalid when InstanceCount is 0.
 	void BuildRaytracingGeometry(const rl::RaytracingGeometry_t* Geometries, uint32_t Count);
 	void BuildRaytracingScene(rl::RaytracingScene_t Scene, FrameBufferAlloc_s Instances, uint32_t InstanceCount);
 	void CopyTexture(rl::Texture_t Dst, rl::Texture_t Src);
 	void TransitionResource(rl::Texture_t Texture, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState);
+	void TransitionResource(rl::StructuredBuffer_t Buffer, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState);
 	void RWBarrier(rl::Texture_t Texture);
+	void RWBarrier(rl::StructuredBuffer_t Buffer);
 	void RWBarrier(rl::RaytracingScene_t Scene);
 	void ClearRenderTarget(rl::RenderTargetView_t RTV, const float Color[4]);
 	void ClearDepth(rl::DepthStencilView_t DSV, float Depth);

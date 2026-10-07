@@ -358,20 +358,40 @@ public:
 	}
 };
 
+template<typename ResourceType>
 class GPUCommand_TransitionResource_c : public GPUCommand_c
 {
-	rl::Texture_t Texture;
+	ResourceType Resource;
 	rl::ResourceTransitionState BeforeState;
 	rl::ResourceTransitionState AfterState;
 public:
-	GPUCommand_TransitionResource_c(rl::Texture_t InTexture, rl::ResourceTransitionState InBeforeState, rl::ResourceTransitionState InAfterState)
-		: Texture(InTexture)
+	GPUCommand_TransitionResource_c(ResourceType InResource, rl::ResourceTransitionState InBeforeState, rl::ResourceTransitionState InAfterState)
+		: Resource(InResource)
 		, BeforeState(InBeforeState)
 		, AfterState(InAfterState)
 	{}
 	void Execute(rl::CommandList* CL)
 	{
-		CL->TransitionResource(Texture, BeforeState, AfterState);
+		CL->TransitionResource(Resource, BeforeState, AfterState);
+	}
+};
+
+class GPUCommand_ExecuteIndirect_c : public GPUCommand_c
+{
+	rl::IndirectCommand_t Command;
+	rl::StructuredBuffer_t ArgBuffer;
+	uint64_t ArgBufferOffset;
+
+public:
+	GPUCommand_ExecuteIndirect_c(rl::IndirectCommand_t InCommand, rl::StructuredBuffer_t InArgBuffer, uint64_t InArgBufferOffset)
+		: Command(InCommand)
+		, ArgBuffer(InArgBuffer)
+		, ArgBufferOffset(InArgBufferOffset)
+	{}
+
+	void Execute(rl::CommandList* CL)
+	{
+		CL->ExecuteIndirect(Command, ArgBuffer, ArgBufferOffset);
 	}
 };
 
@@ -809,12 +829,27 @@ void GPUContext_s::CopyTexture(rl::Texture_t Dst, rl::Texture_t Src)
 
 void GPUContext_s::TransitionResource(rl::Texture_t Texture, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState)
 {
-	AddCommand<GPUCommand_TransitionResource_c>(Texture, BeforeState, AfterState);
+	AddCommand<GPUCommand_TransitionResource_c<rl::Texture_t>>(Texture, BeforeState, AfterState);
+}
+
+void GPUContext_s::TransitionResource(rl::StructuredBuffer_t Buffer, rl::ResourceTransitionState BeforeState, rl::ResourceTransitionState AfterState)
+{
+	AddCommand<GPUCommand_TransitionResource_c<rl::StructuredBuffer_t>>(Buffer, BeforeState, AfterState);
 }
 
 void GPUContext_s::RWBarrier(rl::Texture_t Texture)
 {
 	AddCommand<GPUCommand_RWBarrier_c<rl::Texture_t>>(Texture);
+}
+
+void GPUContext_s::RWBarrier(rl::StructuredBuffer_t Buffer)
+{
+	AddCommand<GPUCommand_RWBarrier_c<rl::StructuredBuffer_t>>(Buffer);
+}
+
+void GPUContext_s::ExecuteIndirect(rl::IndirectCommand_t Command, rl::StructuredBuffer_t ArgBuffer, uint64_t ArgBufferOffset)
+{
+	AddCommand<GPUCommand_ExecuteIndirect_c>(Command, ArgBuffer, ArgBufferOffset);
 }
 
 void GPUContext_s::BuildRaytracingGeometry(const rl::RaytracingGeometry_t* Geometries, uint32_t Count)

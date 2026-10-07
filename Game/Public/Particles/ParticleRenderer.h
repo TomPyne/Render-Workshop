@@ -9,16 +9,16 @@
 struct ParticleSystemInfo_s
 {
 	std::string Name;
-	float3 Position;
-	float Scale = 0.1f;
+	float3 Position; // Spawn location for particles
+	float Scale = 0.1f; // Size of particle billboard
 
 	uint32_t MaxCount = 1000u;
-	float Lifetime = 5.0f;
-	float SpawnRate = 100.0f;
-	float MaxAngle = 5.0f;
+	float Lifetime = 5.0f; // how long until a particle dies
+	float SpawnRate = 100.0f; // how many per second
+	float MaxAngle = 5.0f; // Choose between 0 and this in a random cone
 	float3 SpawnDirection = float3(0.0f, 1.0f, 0.0f);
 	float VelocityMin = 0.1f;
-	float VelocityMax = 1.0f;
+	float VelocityMax = 1.0f; // rand between min and max in units per second
 };
 
 struct ParticleRenderer_s
