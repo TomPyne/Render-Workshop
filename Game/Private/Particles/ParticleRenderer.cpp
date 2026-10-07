@@ -4,8 +4,83 @@
 #include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
 
+#include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
+#include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
+
+// Must match Particle_s in Particles/ParticleCommon.h
+struct Particle_s
+{
+	float3 Position;
+	float Age;
+
+	float3 Velocity;
+	float Lifetime;
+};
+static_assert(sizeof(Particle_s) == 32);
+
+// Must match ParticleDrawArgs_s in Particles/ParticleCommon.h
+struct ParticleDrawArgs_s
+{
+	uint32_t VertexCountPerInstance;
+	uint32_t InstanceCount;
+	uint32_t StartVertexLocation;
+	uint32_t StartInstanceLocation;
+};
+
+// Must match ParticleSystemUniforms_s in Particles/ParticleCommon.h
+struct ParticleSystemUniforms_s
+{
+	float3 EmitterPosition;
+	float DeltaTime;
+
+	float3 SpawnDirection;
+	float MaxAngleRadians;
+
+	float VelocityMin;
+	float VelocityMax;
+	float Lifetime;
+	float Scale;
+
+	uint32_t MaxCount;
+	uint32_t SpawnStart;
+	uint32_t SpawnCount;
+	uint32_t Seed;
+
+	uint32_t FrameIndex;
+	uint32_t ParticlesUAV;
+	uint32_t AliveListUAV;
+	uint32_t DrawArgsUAV;
+
+	uint32_t ParticlesSRV;
+	uint32_t AliveListSRV;
+	uint32_t __Pad[2];
+};
+static_assert(sizeof(ParticleSystemUniforms_s) == 96);
+
+static constexpr float MaxParticleDeltaSeconds = 0.5f;
+static constexpr uint32_t ParticleSimulateGroupSize = 64u; // Must match numthreads in ParticleSimulate.hlsl
+
+struct ParticleSystemRenderData_s
+{
+	rl::StructuredBufferPtr Particles;
+	rl::StructuredBufferPtr AliveList;
+	rl::StructuredBufferPtr DrawArgs;
+
+	rl::UnorderedAccessViewPtr ParticlesUAV;
+	rl::ShaderResourceViewPtr ParticlesSRV;
+	rl::UnorderedAccessViewPtr AliveListUAV;
+	rl::ShaderResourceViewPtr AliveListSRV;
+	rl::UnorderedAccessViewPtr DrawArgsUAV;
+
+	uint32_t RingHead = 0u;
+	float SpawnAccumulator = 0.0f;
+	uint32_t Seed = 0u;
+};
+
+ParticleSystemInfo_s::ParticleSystemInfo_s() = default;
+ParticleSystemInfo_s::~ParticleSystemInfo_s() = default;
 
 class ParticleBillboardMaterialShader_c : public MaterialShader_c
 {
@@ -42,8 +117,8 @@ public:
         const std::string ShaderPath = ShaderFilePath.ToString();
 
         static rl::GraphicsPipelineTargetDesc MaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
-			{ rl::RenderFormat::R16G16B16A16_FLOAT },
-			{ rl::BlendMode::Default()},
+			{ rl::RenderFormat::R11G11B10_FLOAT },
+			{ rl::BlendMode::Add() },
             SpaceRenderer_c::GetMaterialPipelineDepthFormat());
 
         rl::GraphicsPipelineStateDesc PSODesc = {};
@@ -54,12 +129,10 @@ public:
             .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
             .RootSignature(SpaceRenderer_c::GetRootSignature());
 
-        PSODesc;
-
         PSODesc.DebugName = ShaderDebugName;
         PSO = rl::CreateGraphicsPipelineState(PSODesc);
 
-        return PSO.IsValid() && PSOMirrored.IsValid();
+        return PSO.IsValid();
     }
 
     virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
@@ -70,63 +143,177 @@ void ParticleRenderer_s::Init()
 {
     MaterialManager::RegisterMaterialShaderClass<ParticleBillboardMaterialShader_c>(L"ParticleShader");
     BillboardParticleMaterial = MaterialManager::RequestMaterialInstance(Path_s(PathDirectory_e::Assets, L"Game", L"Materials/Particles/DefaultSprite.hp_mtl"));
+
+	static const Path_s SimulatePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Particles/ParticleSimulate.hlsl");
+
+	rl::ComputePipelineStateDesc PSODesc = {};
+	PSODesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
+
+	PSODesc.Cs = rl::CreateComputeShader(SimulatePath.ToString().c_str(), { { "PARTICLE_RESET_ARGS" } });
+	PSODesc.DebugName = L"ParticleResetArgsCS";
+	ResetArgsPSO = rl::CreateComputePipelineState(PSODesc);
+
+	PSODesc.Cs = rl::CreateComputeShader(SimulatePath.ToString().c_str(), { { "PARTICLE_SIMULATE" } });
+	PSODesc.DebugName = L"ParticleSimulateCS";
+	SimulatePSO = rl::CreateComputePipelineState(PSODesc);
+
+	DrawCommand = rl::CreateIndirectDrawCommand();
+}
+
+void ParticleRenderer_s::CreateRenderData(const ParticleSystemInfo_s& ParticleSystem)
+{
+	const uint32_t MaxCount = ParticleSystem.MaxCount;
+
+	std::unique_ptr<ParticleSystemRenderData_s> Data = std::make_unique<ParticleSystemRenderData_s>();
+
+	// Zeroed particles have Age == Lifetime, so they start dead
+	const std::vector<Particle_s> InitialParticles(MaxCount, Particle_s{});
+	const std::vector<uint32_t> InitialAliveList(MaxCount, 0u);
+	const ParticleDrawArgs_s InitialDrawArgs = { 6u, 0u, 0u, 0u };
+
+	Data->Particles = rl::CreateRWStructuredBuffer(InitialParticles.data(), InitialParticles.size());
+	Data->AliveList = rl::CreateRWStructuredBuffer(InitialAliveList.data(), InitialAliveList.size());
+	Data->DrawArgs = rl::CreateRWStructuredBuffer(&InitialDrawArgs, 1u);
+
+	Data->ParticlesUAV = rl::CreateStructuredBufferUAV(Data->Particles, 0u, MaxCount, sizeof(Particle_s));
+	Data->ParticlesSRV = rl::CreateStructuredBufferSRV(Data->Particles, 0u, MaxCount, sizeof(Particle_s));
+	Data->AliveListUAV = rl::CreateStructuredBufferUAV(Data->AliveList, 0u, MaxCount, sizeof(uint32_t));
+	Data->AliveListSRV = rl::CreateStructuredBufferSRV(Data->AliveList, 0u, MaxCount, sizeof(uint32_t));
+	Data->DrawArgsUAV = rl::CreateStructuredBufferUAV(Data->DrawArgs, 0u, 1u, sizeof(ParticleDrawArgs_s));
+
+	Data->Seed = NextSeed++;
+
+	ParticleSystem.RenderData = std::move(Data);
 }
 
 
-void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize)
+void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize, float DeltaSeconds, uint64_t FrameIndex)
 {
-	if (ParticleSystems.empty() || !BillboardParticleMaterial)
+	if (ParticleSystems.empty() || !BillboardParticleMaterial || !ResetArgsPSO.IsValid() || !SimulatePSO.IsValid())
 		return;
 
-    RenderGraphPass_s& MeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Particle Pass")
-    .AccessResource(SceneColor, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
-    .AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD) // Reads depth only, maybe hinting this to RG is an optimization
-    .SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
-    {
+	struct ParticleSystemDraw_s
+	{
+		rl::StructuredBuffer_t Particles;
+		rl::StructuredBuffer_t AliveList;
+		rl::StructuredBuffer_t DrawArgs;
+		uint32_t MaxCount;
+		FrameBufferAlloc_s Uniforms;
+	};
 
-        // 1. Run a pass that handles lifetime and spawn rate.
-		// We should use a ring buffer sized to the max number of particles, and spawn new particles into the buffer as needed.
-		// If we spawn particles at a rate that exceeds the max number of particles, we should overwrite the oldest particles in the buffer.
+	std::vector<ParticleSystemDraw_s> Draws;
+	Draws.reserve(ParticleSystems.size());
 
-        // 2. Run a pass that updates the position of the particles.
-        // It should use projectile motion with gravity, so the initial velocity bleeds off and it falls back to the ground.
+	const float DeltaTime = Min(DeltaSeconds, MaxParticleDeltaSeconds);
+	const bool Simulate = DeltaTime > 0.0f;
 
-		// 3. We need to generate the indirect draw args using the particle count and the number of particles in the ring buffer. 
-        // This should be done in a compute shader that writes to an indirect draw args buffer.
+	for (const ParticleSystemInfo_s* ParticleSystem : ParticleSystems)
+	{
+		if (!ParticleSystem || ParticleSystem->MaxCount == 0u)
+			continue;
 
-         // 4. Modify the drawing code below to use an indirect draw, ParticleUniforms_s becomes defunct, the shader reads into the particle buffer for position. 
+		if (!ParticleSystem->RenderData)
+		{
+			// Initial contents upload at the start of next frame, until then the buffers hold garbage and aren't in READ
+			CreateRenderData(*ParticleSystem);
+			continue;
+		}
 
-        Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		ParticleSystemRenderData_s& Data = *ParticleSystem->RenderData;
 
-        rl::RenderTargetView_t SceneRTVs[] = { RG.GetRTV(SceneColor) };
-        Ctx.SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), RG.GetDSV(SceneDepth));
+		const uint32_t MaxCount = ParticleSystem->MaxCount;
 
-        rl::Viewport vp{ ScreenSize.x, ScreenSize.y };
-        Ctx.SetViewports(&vp, 1);
-        Ctx.SetDefaultScissor(); // Could also be captured by the command context
+		uint32_t SpawnCount = 0u;
+		const uint32_t SpawnStart = Data.RingHead;
+		
+		if (Simulate)
+		{
+			// Spawn rate is floating point, so rather than rounding down accumulate every frame until we have a round number. Means
+			// that spawn rates are never biased down by rounding, and means rates less than 1.0 can actually spawn
+			Data.SpawnAccumulator += ParticleSystem->SpawnRate * DeltaTime;
+			const float Spawned = std::floor(Data.SpawnAccumulator);
+			Data.SpawnAccumulator -= Spawned;
 
-        Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniforms);
-        Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, BillboardParticleMaterial->GetConstantBuffer());
-        Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+			SpawnCount = Min(static_cast<uint32_t>(Spawned), MaxCount);
+			Data.RingHead = (Data.RingHead + SpawnCount) % MaxCount;
+		}
 
-        struct ParticleUniforms_s
-        {
-            float3 Position;
-            float Size;
-        } Uniforms;
-        Uniforms.Size = 1.0f; // Default size, can be modified based on particle system properties
+		ParticleSystemUniforms_s Uniforms = {};
+		Uniforms.EmitterPosition = ParticleSystem->Position;
+		Uniforms.DeltaTime = DeltaTime;
+		Uniforms.SpawnDirection = ParticleSystem->SpawnDirection;
+		Uniforms.MaxAngleRadians = ConvertToRadians(ParticleSystem->MaxAngle);
+		Uniforms.VelocityMin = ParticleSystem->VelocityMin;
+		Uniforms.VelocityMax = ParticleSystem->VelocityMax;
+		Uniforms.Lifetime = ParticleSystem->Lifetime;
+		Uniforms.Scale = ParticleSystem->Scale;
+		Uniforms.MaxCount = MaxCount;
+		Uniforms.SpawnStart = SpawnStart;
+		Uniforms.SpawnCount = SpawnCount;
+		Uniforms.Seed = Data.Seed;
+		Uniforms.FrameIndex = static_cast<uint32_t>(FrameIndex);
+		Uniforms.ParticlesUAV = rl::GetDescriptorIndex(Data.ParticlesUAV);
+		Uniforms.AliveListUAV = rl::GetDescriptorIndex(Data.AliveListUAV);
+		Uniforms.DrawArgsUAV = rl::GetDescriptorIndex(Data.DrawArgsUAV);
+		Uniforms.ParticlesSRV = rl::GetDescriptorIndex(Data.ParticlesSRV);
+		Uniforms.AliveListSRV = rl::GetDescriptorIndex(Data.AliveListSRV);
 
-        for (const ParticleSystemInfo_s* ParticleSystem : ParticleSystems)
-        {
-            if (!ParticleSystem)
-                continue;
+		Draws.push_back({ Data.Particles, Data.AliveList, Data.DrawArgs, MaxCount, RGBuilder.Alloc(Uniforms) });
+	}
 
-            Uniforms.Position = ParticleSystem->Position;
+	if (Draws.empty())
+		return;
 
-            Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, RG.Alloc(Uniforms));
+	RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Particle Pass")
+	.AccessResource(SceneColor, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD) // Reads depth only, maybe hinting this to RG is an optimization
+	.SetExecuteCallback([this, Draws, Simulate, SceneColor, SceneDepth, ViewUniforms, ScreenSize](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 
-            Ctx.SetPipelineState(BillboardParticleMaterial->GetPSO(Uniforms.Size < 0.0f));
-            Ctx.DrawInstanced(6u, 1u, 0u, 0u);
-        }
-    });
+		// The particle buffers are invisible to the RG, so each one leaves this pass in READ as it entered
+		if (Simulate)
+		{
+			Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+
+			for (const ParticleSystemDraw_s& Draw : Draws)
+			{
+				Ctx.TransitionResource(Draw.Particles, rl::ResourceTransitionState::READ, rl::ResourceTransitionState::UNORDERED_ACCESS);
+				Ctx.TransitionResource(Draw.AliveList, rl::ResourceTransitionState::READ, rl::ResourceTransitionState::UNORDERED_ACCESS);
+				Ctx.TransitionResource(Draw.DrawArgs, rl::ResourceTransitionState::READ, rl::ResourceTransitionState::UNORDERED_ACCESS);
+
+				Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Draw.Uniforms);
+
+				Ctx.SetPipelineState(ResetArgsPSO.Get());
+				Ctx.Dispatch(1u, 1u, 1u);
+
+				Ctx.RWBarrier(Draw.DrawArgs);
+
+				Ctx.SetPipelineState(SimulatePSO.Get());
+				Ctx.Dispatch(DivideRoundUp(Draw.MaxCount, ParticleSimulateGroupSize), 1u, 1u);
+
+				Ctx.TransitionResource(Draw.Particles, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::READ);
+				Ctx.TransitionResource(Draw.AliveList, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::READ);
+				Ctx.TransitionResource(Draw.DrawArgs, rl::ResourceTransitionState::UNORDERED_ACCESS, rl::ResourceTransitionState::READ);
+			}
+		}
+
+		rl::RenderTargetView_t SceneRTVs[] = { RG.GetRTV(SceneColor) };
+		Ctx.SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), RG.GetDSV(SceneDepth));
+
+		rl::Viewport vp{ ScreenSize.x, ScreenSize.y };
+		Ctx.SetViewports(&vp, 1);
+		Ctx.SetDefaultScissor(); // Could also be captured by the command context
+
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniforms);
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, BillboardParticleMaterial->GetConstantBuffer());
+		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+		Ctx.SetPipelineState(BillboardParticleMaterial->GetPSO(false));
+
+		for (const ParticleSystemDraw_s& Draw : Draws)
+		{
+			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Draw.Uniforms);
+			Ctx.ExecuteIndirect(DrawCommand.Get(), Draw.DrawArgs);
+		}
+	});
 }

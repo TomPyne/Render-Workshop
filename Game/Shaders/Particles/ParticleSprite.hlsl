@@ -1,12 +1,6 @@
-
 #include "../ShaderDefines.h"
 #include "../View.h"
-
-struct ParticleUniforms_s
-{
-    float3 Position;
-    float Scale;
-};
+#include "ParticleCommon.h"
 
 struct MaterialUnforms_s
 {
@@ -15,7 +9,6 @@ struct MaterialUnforms_s
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
-ConstantBuffer<ParticleUniforms_s> c_Particle : register(b2);
 ConstantBuffer<MaterialUnforms_s> c_Material : register(b3);
 
 struct Interpolants_s
@@ -26,18 +19,24 @@ struct Interpolants_s
 
 #ifdef _VS
 
-static const float2 Verts[6] = 
+StructuredBuffer<Particle_s> t_sbuf_particle[8192] : register(t1, space1);
+StructuredBuffer<uint> t_sbuf_u1[8192] : register(t1, space2);
+
+static const float2 Verts[6] =
 {
     float2(0, 1), float2(1, 1), float2(1, 0),
     float2(1, 0), float2(0, 0), float2(0, 1)
 };
 
-void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
+void main(in uint VertexID : SV_VertexID, in uint InstanceID : SV_InstanceID, out Interpolants_s Output)
 {
     const float2 Vert = Verts[VertexID];
 
-    const float2 Corner = (Vert - 0.5f) * c_Particle.Scale;
-    const float3 World = c_Particle.Position + c_View.CamRight * Corner.x + c_View.CamUp * Corner.y;
+    const uint ParticleIndex = t_sbuf_u1[c_Particles.AliveListSRV][InstanceID];
+    const float3 Position = t_sbuf_particle[c_Particles.ParticlesSRV][ParticleIndex].Position;
+
+    const float2 Corner = (Vert - 0.5f) * c_Particles.Scale;
+    const float3 World = Position + c_View.CamRight * Corner.x + c_View.CamUp * Corner.y;
 
     Output.Position = mul(c_View.ViewProjectionMatrix, float4(World, 1.0f));
     Output.TexCoord = float2(Vert.x, 1.0f - Vert.y);
@@ -54,10 +53,9 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 {
     float4 Color = t_tex2d_f4[c_Material.TextureIndex].Sample(SharedWrappedSampler, Input.TexCoord);
-    Color.rgb *= c_Material.Color;
+    Color.rgb *= c_Material.Color * Color.a; // Additive blend ignores alpha
 
     Output = Color;
 }
 
 #endif
-
