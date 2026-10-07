@@ -49,8 +49,8 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    float3 Normal1 = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
-    float3 Normal2 = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
+    float3 Normal1 = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
+    float3 Normal2 = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f);
     float3 TangentNormals = BlendDetailNormals(Normal1, Normal2);
 
     TangentNormals *= float3(c_Material.NormalIntensity.xx, 1.0f);

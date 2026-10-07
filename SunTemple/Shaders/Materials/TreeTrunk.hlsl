@@ -37,8 +37,8 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
     float3 Albedo = t_tex2d_f4[c_Material.AlbedoTextureIndex].Sample(SharedWrappedSampler, Input.UV0 * float2(1.0f, 2.0f)).rgb;
-    float3 TangentNormals1 = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0 * 0.5f).xyz * 2.0f - 1.0f;
-    float3 TangentNormals2 = t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0 * 0.5f).xyz * 2.0f - 1.0f;
+    float3 TangentNormals1 = normalize(t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0 * 0.5f).xyz * 2.0f - 1.0f);
+    float3 TangentNormals2 = normalize(t_tex2d_f4[c_Material.NormalTextureIndex].Sample(SharedWrappedSampler, Input.UV0 * 0.5f).xyz * 2.0f - 1.0f);
     float3 TangentNormals = TangentNormals1 + (TangentNormals2 * float3(2.0f, 2.0f, 0.0f));
 
     MaterialOutput_Default(TangentToWorldNormals(normalize(TangentNormals), Input.Normal, Input.Tangent), Output);

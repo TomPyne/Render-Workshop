@@ -64,13 +64,13 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float3 RockAlbedo = t_tex2d_f4[c_Material.RocksAlbedoTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * c_Material.ColorRocks;
     float3 Albedo = lerp(RockAlbedo, GrassAlbedo, BlendAlpha);
 
-    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 Normal = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
     Normal *= float3(c_Material.NormalIntensityRocks.xx, 1.0f);
 
-    float3 RockDetailNormal = t_tex2d_f4[c_Material.RocksNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
+    float3 RockDetailNormal = normalize(t_tex2d_f4[c_Material.RocksNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f);
     RockDetailNormal *= float3(c_Material.DetailNormalIntensityRocks.xx, 1.0f);
 
-    float3 GrassNormal = t_tex2d_f4[c_Material.GrassNormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 GrassNormal = normalize(t_tex2d_f4[c_Material.GrassNormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
     GrassNormal *= float3(c_Material.NormalIntensityGrass.xx, 1.0f);
 
     float3 TangentNormals = BlendDetailNormals(Normal, lerp(RockDetailNormal, GrassNormal, BlendAlpha));

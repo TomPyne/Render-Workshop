@@ -62,9 +62,9 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
 {
     float3 Mask = t_tex2d_f4[c_Material.MaskTexture].Sample(SharedWrappedSampler, Input.UV0).rgb;
 
-    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 Normal = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
 
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
+    float3 DetailNormal = normalize(t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f);
     DetailNormal = lerp(DetailNormal, float3(0.0f, 0.0f, 1.0f), Mask.r);
     DetailNormal *= float3(c_Material.NormalIntensityCrackle.xx, 1.0f);
 

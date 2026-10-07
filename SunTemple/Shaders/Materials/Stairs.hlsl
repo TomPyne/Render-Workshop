@@ -56,8 +56,8 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     float Roughness = saturate(lerp(c_Material.RoughnessMarble1, c_Material.RoughnessMarble2, Mask * AlbedoSample.r));
 
     // Normal
-    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f;
+    float3 Normal = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
+    float3 DetailNormal = normalize(t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).xyz * 2.0f - 1.0f);
     float3 TangentNormals = BlendDetailNormals(Normal, DetailNormal * float3(c_Material.NormalIntensity.xx, 1.0f));
 
     MaterialOutput_Default(TangentToWorldNormals(normalize(TangentNormals), Input.Normal, Input.Tangent), Output);

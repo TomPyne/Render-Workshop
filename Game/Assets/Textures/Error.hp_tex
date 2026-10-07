@@ -4,5 +4,6 @@
     "SourceFileType": "png",
     "Format": 1,
     "HasAlpha": false,
-    "GenMips": true
+    "GenMips": true,
+    "MipFilter": "Color"
 }

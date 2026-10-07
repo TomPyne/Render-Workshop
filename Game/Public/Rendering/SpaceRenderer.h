@@ -136,6 +136,7 @@ public:
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
+	static const rl::RenderFormat GetMaterialPipelineDepthFormat();
 
 protected:
 

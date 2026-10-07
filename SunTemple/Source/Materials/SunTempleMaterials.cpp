@@ -5,7 +5,7 @@
 
 ArchMaterialShader_c::ArchMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Arch.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Arch.hlsl");
     ShaderDebugName = L"ArchShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -34,7 +34,7 @@ void ArchMaterialShader_c::Load()
 
 BackgroundMatteMaterialShader_c::BackgroundMatteMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/BackgroundMatte.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/BackgroundMatte.hlsl");
     ShaderDebugName = L"BackgroundMatteShader";
 
     ASSIGN_SHADER_PARAM(float3, Color);
@@ -50,7 +50,7 @@ void BackgroundMatteMaterialShader_c::Load()
 
 BottomTrimMaterialShader_c::BottomTrimMaterialShader_c()
 {
-	ShaderFilePath = L"Materials/BottomTrim.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/BottomTrim.hlsl");
 	ShaderDebugName = L"BottomTrimShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -80,7 +80,7 @@ void BottomTrimMaterialShader_c::Load()
 
 TreeTrunkMaterialShader_c::TreeTrunkMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/TreeTrunk.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/TreeTrunk.hlsl");
     ShaderDebugName = L"TreeTrunkShader";
 
     ASSIGN_SHADER_PARAM(float3, Color);
@@ -97,7 +97,7 @@ void TreeTrunkMaterialShader_c::Load()
 
 TreeBranchesMaterialShader_c::TreeBranchesMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/TreeBranches.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/TreeBranches.hlsl");
     ShaderDebugName = L"TreeBranchShader";
 
     ASSIGN_SHADER_PARAM(float3, DiffuseColor);
@@ -114,7 +114,7 @@ void TreeBranchesMaterialShader_c::Load()
 
 TrimMaterialShader_c::TrimMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Trim.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Trim.hlsl");
     ShaderDebugName = L"TrimShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -142,7 +142,7 @@ void TrimMaterialShader_c::Load()
 
 StoneBrickWallMaterialShader_c::StoneBrickWallMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/StoneBrickWall.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/StoneBrickWall.hlsl");
     ShaderDebugName = L"StoneBrickWallShader";
 
     ASSIGN_SHADER_PARAM(float, NormalIntensity);
@@ -164,7 +164,7 @@ void StoneBrickWallMaterialShader_c::Load()
 
 SoulRocksMaterialShader_c::SoulRocksMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/SoulRocks.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/SoulRocks.hlsl");
     ShaderDebugName = L"SoulRocksShader";
 
     ASSIGN_SHADER_PARAM(float3, GrassColor);
@@ -200,7 +200,7 @@ void SoulRocksMaterialShader_c::Load()
 
 DomeMaterialShader_c::DomeMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Dome.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Dome.hlsl");
     ShaderDebugName = L"DomeShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -227,7 +227,7 @@ void DomeMaterialShader_c::Load()
 
 FirePitMaterialShader_c::FirePitMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Firepit.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Firepit.hlsl");
     ShaderDebugName = L"FirePitShader";
 
     ASSIGN_SHADER_PARAM(float3, CoalColor);
@@ -258,7 +258,7 @@ void FirePitMaterialShader_c::Load()
 
 FloorMaterialShader_c::FloorMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/FloorTiles.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/FloorTiles.hlsl");
     ShaderDebugName = L"FloorTilesShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -295,7 +295,7 @@ void FloorMaterialShader_c::Load()
 
 WaterMaterialShader_c::WaterMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Water.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Water.hlsl");
     ShaderDebugName = L"OceanShader";
 
     ASSIGN_SHADER_PARAM(float3, Color);
@@ -316,7 +316,7 @@ void WaterMaterialShader_c::Load()
 
 PillarMaterialShader_c::PillarMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Pillar.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Pillar.hlsl");
     ShaderDebugName = L"PillarShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -349,7 +349,7 @@ void PillarMaterialShader_c::Load()
 
 RailingMaterialShader_c::RailingMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Railing.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Railing.hlsl");
     ShaderDebugName = L"RailingShader";
 
     ASSIGN_SHADER_PARAM(float3, ColorMarble1);
@@ -372,7 +372,7 @@ void RailingMaterialShader_c::Load()
 
 SkyMaterialShader_c::SkyMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Sky.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Sky.hlsl");
     ShaderDebugName = L"SkyShader";
 
     ASSIGN_SHADER_PARAM(TextureIndex, SkyTexture);
@@ -385,7 +385,7 @@ void SkyMaterialShader_c::Load()
 
 StatueMaterialShader_c::StatueMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Statue.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Statue.hlsl");
     ShaderDebugName = L"StatueShader";
 
     ASSIGN_SHADER_PARAM(float3, Color1);
@@ -420,7 +420,7 @@ void StatueMaterialShader_c::Load()
 
 StairsMaterialShader_c::StairsMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Stairs.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Stairs.hlsl");
     ShaderDebugName = L"StairsShader";
 
     ASSIGN_SHADER_PARAM(float, AOStrength);
@@ -445,7 +445,7 @@ void StairsMaterialShader_c::Load()
 
 ShieldMaterialShader_c::ShieldMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/Shield.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/Shield.hlsl");
     ShaderDebugName = L"ShieldShader";
 
     ASSIGN_SHADER_PARAM(float, DirtBrightness);
@@ -469,7 +469,7 @@ void ShieldMaterialShader_c::Load()
 
 WaveFoamMaterialShader_c::WaveFoamMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/WaveFoam.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/WaveFoam.hlsl");
     ShaderDebugName = L"WaveFoamShader";
 }
 
@@ -478,7 +478,7 @@ void WaveFoamMaterialShader_c::Load()
 
 SoulTreeMaterialShader_c::SoulTreeMaterialShader_c()
 {
-    ShaderFilePath = L"Materials/SoulTree.hlsl";
+    ShaderFilePath = Path_s(PathDirectory_e::Shaders, L"Materials/SoulTree.hlsl");
     ShaderDebugName = L"SoulTreeShader";
 
     ASSIGN_SHADER_PARAM(float3, Color);

@@ -10,6 +10,8 @@
 #include <Shared/Logging/Logging.h>
 #include <Shared/TextureUtils/DDSTextureLoader.h>
 
+#include <cmath>
+#include <cstring>
 #include <unordered_map>
 #include <vector>
 
@@ -64,6 +66,13 @@ enum class TextureSourceType_e
     DDS,
 };
 
+enum class MipFilter_e
+{
+    Color,  // RGB is sRGB encoded and averaged in linear space
+    Linear,
+    Normal, // RGB is a [0,1] encoded vector, renormalized after averaging
+};
+
 struct TextureLoadRequest_s
 {
     Path_s SourcePath;
@@ -73,7 +82,32 @@ struct TextureLoadRequest_s
     // STB only, DDS takes its format from the file
     TextureFormat_e Format = TextureFormat_e::Unknown;
     bool HasAlpha = false;
+    bool GenMips = false;
+    MipFilter_e MipFilter = MipFilter_e::Color;
 };
+
+bool ParseMipFilter(const std::string& Name, MipFilter_e& OutFilter)
+{
+    if (Name == "Color")
+    {
+        OutFilter = MipFilter_e::Color;
+        return true;
+    }
+
+    if (Name == "Linear")
+    {
+        OutFilter = MipFilter_e::Linear;
+        return true;
+    }
+
+    if (Name == "Normal")
+    {
+        OutFilter = MipFilter_e::Normal;
+        return true;
+    }
+
+    return false;
+}
 
 bool ParseTextureDimension(const std::string& Name, rl::TextureDimension& OutDimension)
 {
@@ -135,8 +169,188 @@ bool ParseTextureRequestSTB(const JsonValue_s& Data, TextureLoadRequest_s& OutRe
     }
 
     JsonHelpers::ParseBool(Data, "HasAlpha", OutRequest.HasAlpha);
+    JsonHelpers::ParseBool(Data, "GenMips", OutRequest.GenMips);
+
+    if (OutRequest.GenMips)
+    {
+        std::string MipFilterName;
+        if (!ENSUREMSG(JsonHelpers::ParseString(Data, "MipFilter", MipFilterName), "[TextureManager::ParseTextureRequestSTB] Missing MipFilter field"))
+        {
+            return false;
+        }
+
+        if (!ParseMipFilter(MipFilterName, OutRequest.MipFilter))
+        {
+            LOGWARNING("[TextureManager::ParseTextureRequestSTB] Texture contains an invalid mip filter '%s' : %s", MipFilterName.c_str(), OutRequest.SourcePath.ToString().c_str());
+            return false;
+        }
+    }
 
     return true;
+}
+
+float SRGBToLinear(float C)
+{
+    return C <= 0.04045f ? C / 12.92f : powf((C + 0.055f) / 1.055f, 2.4f);
+}
+
+float LinearToSRGB(float C)
+{
+    return C <= 0.0031308f ? C * 12.92f : 1.055f * powf(C, 1.0f / 2.4f) - 0.055f;
+}
+
+u8 UnormToByte(float V)
+{
+    return static_cast<u8>(Clamp(V, 0.0f, 1.0f) * 255.0f + 0.5f);
+}
+
+// Opposing normals can cancel to zero length, fall back to the tangent space up vector
+float3 SafeNormalizeNormal(float3 V)
+{
+    const float Len = Length(V);
+    return Len > 1e-5f ? V / Len : float3(0.0f, 0.0f, 1.0f);
+}
+
+float4 DecodeTexel(const u8* Texel, MipFilter_e Filter)
+{
+    const float4 Unorm = float4(Texel[0], Texel[1], Texel[2], Texel[3]) / 255.0f;
+
+    switch (Filter)
+    {
+    case MipFilter_e::Color:
+        return float4(SRGBToLinear(Unorm.x), SRGBToLinear(Unorm.y), SRGBToLinear(Unorm.z), Unorm.w);
+    case MipFilter_e::Normal:
+        return float4(SafeNormalizeNormal(Unorm.xyz * 2.0f - 1.0f), Unorm.w);
+    case MipFilter_e::Linear:
+        return Unorm;
+    }
+
+    return Unorm;
+}
+
+void EncodeTexel(float4 V, MipFilter_e Filter, u8* OutTexel)
+{
+    float3 RGB = V.xyz;
+
+    switch (Filter)
+    {
+    case MipFilter_e::Color:
+        RGB = float3(LinearToSRGB(RGB.x), LinearToSRGB(RGB.y), LinearToSRGB(RGB.z));
+        break;
+    case MipFilter_e::Normal:
+        RGB = SafeNormalizeNormal(RGB) * 0.5f + 0.5f;
+        break;
+    case MipFilter_e::Linear:
+        break;
+    }
+
+    OutTexel[0] = UnormToByte(RGB.x);
+    OutTexel[1] = UnormToByte(RGB.y);
+    OutTexel[2] = UnormToByte(RGB.z);
+    OutTexel[3] = UnormToByte(V.w);
+}
+
+u32 CalculateMipCount(uint2 Size)
+{
+    u32 MipCount = 1;
+    for (u32 Largest = Max(Size.x, Size.y); Largest > 1; Largest >>= 1)
+    {
+        MipCount++;
+    }
+    return MipCount;
+}
+
+uint2 CalculateMipSize(uint2 Size, u32 Mip)
+{
+    return uint2(Max(Size.x >> Mip, 1u), Max(Size.y >> Mip, 1u));
+}
+
+// Box filters SrcSize down to DstSize, keeping the unfiltered averages in OutAverages for the next level.
+// An odd source dimension folds its last row or column into the final texel so nothing is dropped
+template<typename FetchFunc>
+void ReduceMip(uint2 SrcSize, uint2 DstSize, MipFilter_e Filter, FetchFunc&& Fetch, std::vector<float4>& OutAverages, u8* OutTexels)
+{
+    OutAverages.resize(static_cast<size_t>(DstSize.x) * DstSize.y);
+
+    for (u32 Y = 0; Y < DstSize.y; Y++)
+    {
+        const u32 Y0 = Y * 2;
+        const u32 Y1 = Y == DstSize.y - 1 ? SrcSize.y : Y0 + 2;
+
+        for (u32 X = 0; X < DstSize.x; X++)
+        {
+            const u32 X0 = X * 2;
+            const u32 X1 = X == DstSize.x - 1 ? SrcSize.x : X0 + 2;
+
+            float4 Sum = float4(0.0f);
+            for (u32 SrcY = Y0; SrcY < Y1; SrcY++)
+            {
+                for (u32 SrcX = X0; SrcX < X1; SrcX++)
+                {
+                    Sum += Fetch(static_cast<size_t>(SrcY) * SrcSize.x + SrcX);
+                }
+            }
+
+            const size_t DstIndex = static_cast<size_t>(Y) * DstSize.x + X;
+            const float4 Average = Sum / static_cast<float>((Y1 - Y0) * (X1 - X0));
+
+            OutAverages[DstIndex] = Average;
+            EncodeTexel(Average, Filter, OutTexels + DstIndex * 4);
+        }
+    }
+}
+
+// Returns every mip packed tightly as RGBA8. Each level averages the previous level's unnormalized values
+// so normals match the average of the source texels beneath them
+std::vector<u8> GenerateMipChain(const u8* Source, uint2 Size, u32 MipCount, MipFilter_e Filter)
+{
+    size_t TotalTexels = 0;
+    for (u32 MipIt = 0; MipIt < MipCount; MipIt++)
+    {
+        const uint2 MipSize = CalculateMipSize(Size, MipIt);
+        TotalTexels += static_cast<size_t>(MipSize.x) * MipSize.y;
+    }
+
+    std::vector<u8> Data(TotalTexels * 4);
+
+    const size_t BaseTexels = static_cast<size_t>(Size.x) * Size.y;
+
+    if (Filter == MipFilter_e::Normal)
+    {
+        for (size_t TexelIt = 0; TexelIt < BaseTexels; TexelIt++)
+        {
+            EncodeTexel(DecodeTexel(Source + TexelIt * 4, Filter), Filter, Data.data() + TexelIt * 4);
+        }
+    }
+    else
+    {
+        memcpy(Data.data(), Source, BaseTexels * 4);
+    }
+
+    std::vector<float4> Prev;
+    std::vector<float4> Next;
+    u8* Dest = Data.data() + BaseTexels * 4;
+
+    for (u32 MipIt = 1; MipIt < MipCount; MipIt++)
+    {
+        const uint2 SrcSize = CalculateMipSize(Size, MipIt - 1);
+        const uint2 DstSize = CalculateMipSize(Size, MipIt);
+
+        // The first level decodes straight from the source to avoid a full size float copy of it
+        if (MipIt == 1)
+        {
+            ReduceMip(SrcSize, DstSize, Filter, [Source, Filter](size_t Index) { return DecodeTexel(Source + Index * 4, Filter); }, Next, Dest);
+        }
+        else
+        {
+            ReduceMip(SrcSize, DstSize, Filter, [&Prev](size_t Index) { return Prev[Index]; }, Next, Dest);
+        }
+
+        std::swap(Prev, Next);
+        Dest += static_cast<size_t>(DstSize.x) * DstSize.y * 4;
+    }
+
+    return Data;
 }
 
 // Any thread. Only writes OutTexture on success
@@ -172,17 +386,39 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     const uint2 Size = uint2(static_cast<u32>(X), static_cast<u32>(Y));
     const rl::RenderFormat Format = TexToRenderFormat(Request.Format);
 
-    rl::TextureCreateDesc Desc = {};
-    rl::MipData Mip0(RawData, Format, Size.x, Size.y);
+    const u32 MipCount = Request.GenMips ? CalculateMipCount(Size) : 1;
 
-    Desc.Data = &Mip0;
-    Desc.DebugName = Path.ToWString();
-    Desc.Flags = rl::RenderResourceFlags::SRV;
-    Desc.Format = Format;
+    std::vector<u8> MipChain;
+    if (Request.GenMips)
+    {
+        MipChain = GenerateMipChain(RawData, Size, MipCount, Request.MipFilter);
+    }
+
+    const u8* TexelData = Request.GenMips ? MipChain.data() : RawData;
+
+    std::vector<rl::MipData> Mips;
+    Mips.reserve(MipCount);
+
+    size_t MipOffset = 0;
+    for (u32 MipIt = 0; MipIt < MipCount; MipIt++)
+    {
+        const uint2 MipSize = CalculateMipSize(Size, MipIt);
+        const rl::MipData& Mip = Mips.emplace_back(TexelData + MipOffset, Format, MipSize.x, MipSize.y);
+        MipOffset += Mip.SlicePitch;
+    }
+
+    rl::TextureCreateDescEx Desc = {};
     Desc.Width = Size.x;
     Desc.Height = Size.y;
+    Desc.MipCount = MipCount;
+    Desc.Dimension = rl::TextureDimension::TEX2D;
+    Desc.Flags = rl::RenderResourceFlags::SRV;
+    Desc.ResourceFormat = Format;
+    Desc.Data = Mips.data();
+    Desc.DebugName = Path.ToWString();
 
-    rl::TexturePtr Texture = rl::CreateTexture(Desc);
+    // The source data is copied into an upload buffer before this returns
+    rl::TexturePtr Texture = rl::CreateTextureEx(Desc);
 
     stbi_image_free(RawData);
     if (!Texture)
@@ -203,7 +439,7 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     OutTexture.SRV = std::move(SRV);
     OutTexture.Size = Size;
     OutTexture.Format = Format;
-    OutTexture.MipCount = 1; // TODO: Texture mips
+    OutTexture.MipCount = MipCount;
 
     return true;
 }

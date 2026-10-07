@@ -31,7 +31,7 @@ void Space_c::DestroyObject(Object_c* Object)
 
 // Factory ////////////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data)
+std::shared_ptr<Object_c> Space_c::ConstructObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data)
 {
 	auto It = ObjectFactoryCallbacks.find(ClassName);
 	if (!ENSUREMSG(It != ObjectFactoryCallbacks.end(), "No object class registered for name '%S'", ClassName.c_str()))
@@ -49,11 +49,10 @@ std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassN
 		NewObject->Deserialize(*Data);
 	}
 
-	NewObject->OnCreate();
 	return NewObject;
 }
 
-std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data)
+std::shared_ptr<ObjectComponent_c> Space_c::ConstructComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data)
 {
 	if (!Owner)
 		return nullptr;
@@ -74,7 +73,26 @@ std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owne
 		NewComponent->Deserialize(*Data);
 	}
 
-	NewComponent->OnCreate();
+	return NewComponent;
+}
+
+std::shared_ptr<Object_c> Space_c::CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data)
+{
+	std::shared_ptr<Object_c> NewObject = ConstructObjectByName(ClassName, Data);
+	if(NewObject)
+	{
+		NewObject->OnCreate();
+	}
+	return NewObject;
+}
+
+std::shared_ptr<ObjectComponent_c> Space_c::CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data)
+{
+	std::shared_ptr<ObjectComponent_c> NewComponent = ConstructComponentByName(Owner, ClassName, Data);
+	if (NewComponent)
+	{
+		NewComponent->OnCreate();
+	}	
 	return NewComponent;
 }
 
@@ -241,4 +259,21 @@ void Space_c::UnregisterRenderable(IRenderable_c* Renderable)
 void Space_c::DirtyRenderScene()
 {
 	RenderSceneDirty = true;
+}
+
+void Space_c::RegisterParticleSystem(const ParticleSystemInfo_s* ParticleSystemInfo)
+{
+	if (ParticleSystemInfo)
+	{
+		ParticleSystems.push_back(ParticleSystemInfo);
+	}
+
+}
+
+void Space_c::UnregisterParticleSystem(const ParticleSystemInfo_s* ParticleSystemInfo)
+{
+	if (ParticleSystemInfo)
+	{
+		std::erase(ParticleSystems, ParticleSystemInfo);
+	}
 }

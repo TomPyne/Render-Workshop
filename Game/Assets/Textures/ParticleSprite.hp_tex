@@ -1,0 +1,9 @@
+{
+    "Version": 1,
+    "SourceFilePath": "Game/Raw/Textures/ParticleSprite.png",
+    "SourceFileType": "png",
+    "Format": 1,
+    "HasAlpha": true,
+    "GenMips": true,
+    "MipFilter": "Linear"
+}

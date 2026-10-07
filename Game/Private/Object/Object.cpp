@@ -37,6 +37,16 @@ void Object_c::Deserialize(const JsonValue_s& Data)
 	}
 }
 
+void Object_c::OnCreate()
+{
+	HasBeenCreated = true;
+
+	for (std::shared_ptr<ObjectComponent_c>& Component : Components)
+	{
+		Component->OnCreate();
+	}
+}
+
 void Object_c::OnDestroy()
 {
 	for (std::shared_ptr<ObjectComponent_c>& Component : Components)
@@ -59,6 +69,13 @@ void Object_c::AddComponentByName(const std::wstring& ClassName, const JsonValue
 {
 	if (Space_c* Space = GetSpace())
 	{
-		Space->CreateComponentByName(this, ClassName, Data);
+		if (HasBeenCreated)
+		{
+			Space->CreateComponentByName(this, ClassName, Data);
+		}
+		else
+		{
+			Space->ConstructComponentByName(this, ClassName, Data);
+		}		
 	}
 }

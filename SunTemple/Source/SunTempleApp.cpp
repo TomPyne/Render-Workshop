@@ -62,21 +62,23 @@ void SunTempleApp_c::Load()
 
 	MeshManager::GGenerateDistanceFields = true;
 
-	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/SunTemple.hp_lvl");
+	Path_s MainPath = Path_s(PathDirectory_e::Assets, L"Levels/SunTemple.hp_lvl");
+	Path_s ExtraPath = Path_s(PathDirectory_e::Assets, L"Levels/Particles.hp_lvl");
 
 	if (Space)
 	{
-		Space->LoadLevel(Path);
+		Space->LoadLevel(MainPath);
+		Space->LoadLevel(ExtraPath);
 
-		if (std::shared_ptr<SpatialObject_c> MoverObject = Space->CreateObject<SpatialObject_c>())
-		{
-			MoverObject->SetPosition(float3(-13.8f, 6.9f, -9.2f));
-			MoverObject->AddComponent<MoverComponent_c>();
-			if (MeshComponent_c* MeshComp = MoverObject->AddComponent<MeshComponent_c>())
-			{
-				MeshComp->SetMesh(MeshManager::RequestMesh(Path_s(PathDirectory_e::Assets, L"Game", L"Meshes/Sphere.hp_mdl")));
-			}
-		}
+		//if (std::shared_ptr<SpatialObject_c> MoverObject = Space->CreateObject<SpatialObject_c>())
+		//{
+		//	MoverObject->SetPosition(float3(-13.8f, 6.9f, -9.2f));
+		//	MoverObject->AddComponent<MoverComponent_c>();
+		//	if (MeshComponent_c* MeshComp = MoverObject->AddComponent<MeshComponent_c>())
+		//	{
+		//		MeshComp->SetMesh(MeshManager::RequestMesh(Path_s(PathDirectory_e::Assets, L"Game", L"Meshes/Sphere.hp_mdl")));
+		//	}
+		//}
 	}
 }
 

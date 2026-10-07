@@ -11,13 +11,13 @@
 
 bool MaterialShader_c::Compile()
 {
-    if (ShaderFilePath.empty())
+    if (!ShaderFilePath.IsValid())
     {
         LOGWARNING("[MaterialShader_c::Compile] Failed to compile due to ShaderFilePath being empty");
         return false;
     }
 
-    rl::GraphicsPipelineStateDesc PSODesc = MakeDefaultPSODesc(Path_s(PathDirectory_e::Shaders, ShaderFilePath), {});
+    rl::GraphicsPipelineStateDesc PSODesc = MakeDefaultPSODesc(ShaderFilePath, {});
 
     PSODesc.DebugName = ShaderDebugName;
     PSO = rl::CreateGraphicsPipelineState(PSODesc);

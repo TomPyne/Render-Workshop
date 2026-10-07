@@ -56,8 +56,8 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 
 float3 CalcNormals(Interpolants_s Input)
 {
-    float3 Normal = t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f;
-    float3 DetailNormal = t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).rgb * 2.0f - 1.0f;
+    float3 Normal = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).rgb * 2.0f - 1.0f);
+    float3 DetailNormal = normalize(t_tex2d_f4[c_Material.DetailNormalTexture].Sample(SharedWrappedSampler, Input.UV1).rgb * 2.0f - 1.0f);
     DetailNormal = DetailNormal * float3(c_Material.NormalIntensity.xx, 1.0f);
     return BlendDetailNormals(Normal, DetailNormal);
 }

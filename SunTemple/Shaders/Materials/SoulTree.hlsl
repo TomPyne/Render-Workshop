@@ -49,7 +49,7 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
         discard;
     }
 
-    float3 TangentNormals = t_tex2d_f4[c_Material.AlbedoTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f;
+    float3 TangentNormals = normalize(t_tex2d_f4[c_Material.NormalTexture].Sample(SharedWrappedSampler, Input.UV0).xyz * 2.0f - 1.0f);
     TangentNormals *= float3(c_Material.NormalIntensity.xx, 1.0f);
 
     MaterialOutput_Default(TangentToWorldNormals(TangentNormals, Input.Normal, Input.Tangent), Output);

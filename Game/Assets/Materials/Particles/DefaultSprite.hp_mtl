@@ -1,0 +1,10 @@
+{
+    "Version": 1,
+    "MaterialShaderClass": "ParticleShader",
+    "MaterialParams":
+    [
+        {
+            "Name": "Color", "Type": 3, "Value": "10.0, 7.0, 0.5"
+        }
+    ]
+}

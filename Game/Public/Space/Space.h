@@ -66,6 +66,8 @@ public:
 		};
 	}
 	
+	std::shared_ptr<Object_c> ConstructObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
+	std::shared_ptr<ObjectComponent_c> ConstructComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 	std::shared_ptr<Object_c> CreateObjectByName(const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 	std::shared_ptr<ObjectComponent_c> CreateComponentByName(Object_c* Owner, const std::wstring& ClassName, const JsonValue_s* const Data = nullptr);
 
@@ -104,6 +106,11 @@ public:
 	void UnregisterRenderable(IRenderable_c* Renderable);
 	void DirtyRenderScene();
 
+	// Particles //////////////////////////////////////////////////////////////////////////////////
+	void RegisterParticleSystem(const struct ParticleSystemInfo_s* ParticleSystemInfo);
+	void UnregisterParticleSystem(const struct ParticleSystemInfo_s* ParticleSystemInfo);
+	const std::vector<const ParticleSystemInfo_s*>& GetParticleSystems() const { return ParticleSystems; }
+
 protected:
 
 	// Camera
@@ -119,6 +126,9 @@ protected:
 	// Rendering
 	std::vector<IRenderable_c*> RenderableComponents;
 	bool RenderSceneDirty = false;
+
+	// Particles
+	std::vector<const ParticleSystemInfo_s*> ParticleSystems;
 
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
 

@@ -5,6 +5,7 @@
 #include "Bloom.h"
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
+#include "Particles/ParticleRenderer.h"
 #include "Rendering/IRenderable.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/Texture.h"
@@ -26,6 +27,7 @@ static struct SpaceRendererPrivate_s
 	rl::GraphicsPipelineStatePtr DeferredPSO;
 	rl::ComputePipelineStatePtr ShadowPSO;
 	rl::ComputePipelineStatePtr ShadowTemporalPSO;
+	ParticleRenderer_s ParticleRenderer;
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
@@ -44,6 +46,12 @@ struct SpaceViewUniforms_s
 
 	float2 InvViewportSize;
 	float2 Pad0;
+
+	float3 CamRight;
+	float Pad1;
+
+	float3 CamUp;
+	float Pad2;
 };
 
 void SpaceRenderer_c::Init()
@@ -66,6 +74,7 @@ void SpaceRenderer_c::Init()
 
 	G.RootSignature = rl::CreateRootSignature(RootSigDesc);
 
+	G.ParticleRenderer.Init();
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, SpaceRendererCBVRegister::CBV_VIEW_BUF, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 	G.DebugViewRenderer.Init();
 	G.DistanceFieldVisualiseRenderer.Init();
@@ -83,7 +92,7 @@ void SpaceRenderer_c::Init()
 		rl::GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
 			.DepthDesc(false)
-			.TargetBlendDesc({ rl::RenderFormat::R11G11B10_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
+			.TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
 			.VertexShader(ScreenPassVS)
 			.PixelShader(DeferredPS)
 			.RootSignature(G.RootSignature);
@@ -245,6 +254,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
 
+	// Same basis as MakeMatrixLookToLH in CameraComponent_c::CalculateViewMatrix.
+	const float3 CamForward = Normalize(PrimaryCamera->GetWorldForward());
+	ViewUniforms.CamRight = Normalize(Cross(float3(0.0f, 1.0f, 0.0f), CamForward));
+	ViewUniforms.CamUp = Cross(CamForward, ViewUniforms.CamRight);
+
 	FrameBufferAlloc_s ViewUniformsBuffer = RGBuilder.Alloc(ViewUniforms);
 
 	RenderGraphTextureDesc_s GBufferTextureDesc = {};
@@ -297,7 +311,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniformsBuffer);
 		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
 
-		int index = 0;
 		for (const SpatialRenderingBatch_s& Batch : Collector.MainPass.Batches)
 		{
 			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
@@ -307,7 +320,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 			Ctx.SetIndexBuffer(Batch.IndexBuffer, Batch.IndexBufferFormat, 0);
 			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, Batch.IndexOffset, 0, 0);
-			index++;
 		}
 	});
 
@@ -453,7 +465,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t DistanceFieldAOTexture = G.DistanceFieldAORenderer.AddPass(RGBuilder, DistanceFieldAO, GlobalDistanceField, GlobalVolume,
 		SceneDepthTexture, SceneNormalRoughnessTexture, InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
-	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
+	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -521,6 +533,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
+
+	G.ParticleRenderer.AddPass(RGBuilder, Space->GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height));
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
@@ -593,6 +607,11 @@ const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTarget
 			rl::BlendMode::None(),
 			rl::BlendMode::None(),
 		}, 
-		rl::RenderFormat::D32_FLOAT);
+		GetMaterialPipelineDepthFormat());
 	return MaterialPipelineTargetDesc;
+}
+
+const rl::RenderFormat SpaceRenderer_c::GetMaterialPipelineDepthFormat()
+{
+	return rl::RenderFormat::D32_FLOAT;
 }

@@ -36,7 +36,7 @@ public:
 	virtual void Deserialize(const JsonValue_s& Data);
 
 	// Called after deserialization
-	virtual void OnCreate() {}
+	virtual void OnCreate();
 
 	// Called before destructor
 	virtual void OnDestroy();
@@ -47,7 +47,7 @@ public:
 
 	// Constructs and adds component to object. If Deferred is true, OnCreate must be called manually after params are applied.
 	template<class ComponentType>
-	ComponentType* AddComponent(bool Deferred = false)
+	ComponentType* AddComponent()
 	{
 		static_assert(std::is_same_v<ComponentType, typename ComponentType::Self>, "Component class is missing an OBJECTCOMPONENT_BODY declaration");
 
@@ -58,11 +58,6 @@ public:
 
 		NewComponent->OnConstruct();
 
-		if (!Deferred)
-		{
-			NewComponent->OnCreate();
-		}
-		
 		return NewComponent.get();
 	}
 
@@ -153,4 +148,6 @@ private:
 	std::weak_ptr<Space_c> OwningSpace;
 
 	std::string Name;
+
+	bool HasBeenCreated = false;
 };

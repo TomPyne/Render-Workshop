@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <Shared/FileUtils/PathUtils.h>
 
 #include <memory>
 #include <unordered_map>
@@ -96,7 +97,7 @@ protected:
 	rl::GraphicsPipelineStatePtr PSOMirrored;
 
 	std::wstring ShaderDebugName;
-	std::wstring ShaderFilePath;
+	Path_s ShaderFilePath;
 
 	mutable bool Ready = false;
 };
