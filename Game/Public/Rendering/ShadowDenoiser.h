@@ -6,6 +6,13 @@
 
 #include <cstdint>
 
+enum class ShadowVisualise_e : uint32_t
+{
+	Shadow,
+	Variance,
+	Confidence,
+};
+
 struct ShadowDenoiseSettings_s
 {
 	// Off passes the raw shadow through. History is still written, with zero confidence, so re-enabling needs no reset.
@@ -16,6 +23,17 @@ struct ShadowDenoiseSettings_s
 	float ConfidenceRate = 0.1f;
 	// History is rejected when its view depth differs from the expected depth by more than this fraction
 	float DepthTolerance = 0.02f;
+
+	// Only applies in the Lighting view mode
+	ShadowVisualise_e Visualise = ShadowVisualise_e::Shadow;
+};
+
+struct ShadowDenoiseOutputs_s
+{
+	// .r is the shadow, .g its variance
+	RenderGraphResourceHandle_t Shadow = RenderGraphResourceHandle_t::NONE;
+	// Shadow mean, second moment, confidence
+	RenderGraphResourceHandle_t History = RenderGraphResourceHandle_t::NONE;
 };
 
 // Denoises the raytraced shadow mask, keeping history across frames
@@ -27,8 +45,7 @@ public:
 	// Call whenever last frame's view can no longer be reprojected into
 	void ResetHistory();
 
-	// Returns the denoised shadow texture, .r is the shadow
-	RenderGraphResourceHandle_t AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
+	ShadowDenoiseOutputs_s AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
 		RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, const matrix& InvViewProjection, uint2 Size);
 
 	// Call after the graph has executed, this frame's output becomes next frame's history
@@ -38,7 +55,7 @@ private:
 	rl::ComputePipelineStatePtr TemporalPSO = {};
 
 	// Ping-ponged, one is read as history while the other is written
-	RenderGraphTexturePtr_t HistoryTextures[2] = {}; // Shadow + confidence
+	RenderGraphTexturePtr_t HistoryTextures[2] = {}; // Shadow mean, second moment, confidence
 	RenderGraphTexturePtr_t LinearDepthHistoryTextures[2] = {};
 	uint2 HistorySize = { 0u, 0u };
 	uint32_t HistoryReadIndex = 0;

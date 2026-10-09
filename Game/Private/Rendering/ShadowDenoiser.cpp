@@ -26,14 +26,14 @@ void ShadowDenoiser_c::ResetHistory()
 	HistoryValid = false;
 }
 
-RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
+ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
 	RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, const matrix& InvViewProjection, uint2 Size)
 {
 	if (HistorySize.x != Size.x || HistorySize.y != Size.y)
 	{
 		for (uint32_t HistoryIt = 0; HistoryIt < 2; HistoryIt++)
 		{
-			HistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
+			HistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
 			LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"LinearDepthHistory");
 		}
 
@@ -47,6 +47,7 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 	RenderGraphResourceHandle_t LinearDepthHistoryTexture = RGBuilder.InjectTexture(LinearDepthHistoryTextures[HistoryReadIndex], L"LinearDepthHistory");
 	RenderGraphResourceHandle_t AccumulatedShadowTexture = RGBuilder.InjectTexture(HistoryTextures[HistoryWriteIndex], L"AccumulatedShadow");
 	RenderGraphResourceHandle_t LinearDepthTexture = RGBuilder.InjectTexture(LinearDepthHistoryTextures[HistoryWriteIndex], L"LinearDepth");
+	RenderGraphResourceHandle_t ShadowVarianceTexture = RGBuilder.CreateTexture(Size.x, Size.y, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowVariance");
 
 	const bool UseHistory = HistoryValid && Settings.TemporalEnabled;
 
@@ -58,6 +59,7 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 	.AccessResource(LinearDepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(AccumulatedShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
 	.AccessResource(LinearDepthTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+	.AccessResource(ShadowVarianceTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=, this](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		struct ShadowTemporalUniforms_s
@@ -80,7 +82,7 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 			float MaxConfidence;
 			float ConfidenceRate;
 			float DepthTolerance;
-			float __Pad;
+			uint32_t OutShadowVarianceTexture;
 		};
 		static_assert(sizeof(ShadowTemporalUniforms_s) == 128, "Must match Uniforms_s in ShadowTemporal.hlsl");
 
@@ -99,7 +101,7 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 		Uniforms.MaxConfidence = Settings.MaxConfidence;
 		Uniforms.ConfidenceRate = Settings.ConfidenceRate;
 		Uniforms.DepthTolerance = Settings.DepthTolerance;
-		Uniforms.__Pad = 0.0f;
+		Uniforms.OutShadowVarianceTexture = RG.GetUAVIndex(ShadowVarianceTexture);
 
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
@@ -112,7 +114,10 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 		Ctx.Dispatch(DivideRoundUp(Size.x, 8u), DivideRoundUp(Size.y, 8u), 1u);
 	});
 
-	return AccumulatedShadowTexture;
+	ShadowDenoiseOutputs_s Outputs;
+	Outputs.Shadow = ShadowVarianceTexture;
+	Outputs.History = AccumulatedShadowTexture;
+	return Outputs;
 }
 
 void ShadowDenoiser_c::EndFrame()

@@ -24,6 +24,22 @@ void DrawShadowTemporal(SpaceRenderer_c& Renderer)
 	}
 }
 
+void DrawVisualise(SpaceRenderer_c& Renderer)
+{
+	static const char* kVisualiseNames[] = { "Shadow", "Variance", "Confidence" };
+
+	int32_t Visualise = static_cast<int32_t>(Renderer.ShadowDenoise.Visualise);
+	if (ImGui::Combo("Shadow", &Visualise, kVisualiseNames, IM_ARRAYSIZE(kVisualiseNames)))
+	{
+		Renderer.ShadowDenoise.Visualise = static_cast<ShadowVisualise_e>(Visualise);
+	}
+
+	if (Renderer.DebugViewMode != DebugViewMode_e::Lighting)
+	{
+		ImGui::TextDisabled("Only applies in the Lighting view mode");
+	}
+}
+
 }
 
 void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
@@ -37,6 +53,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 	if (Renderer && ImGui::CollapsingHeader("Shadow Temporal", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		DrawShadowTemporal(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Visualise", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawVisualise(*Renderer);
 	}
 
 	ImGui::End();

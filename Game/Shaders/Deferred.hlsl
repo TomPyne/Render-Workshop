@@ -7,6 +7,8 @@
 // Must match DeferredLightingMode_e in SpaceRenderer.cpp
 #define LIGHTING_MODE_OFF 0
 #define LIGHTING_MODE_LIGHTING 1
+#define LIGHTING_MODE_VARIANCE 2
+#define LIGHTING_MODE_CONFIDENCE 3
 
 struct DeferredData_s
 {
@@ -27,7 +29,9 @@ struct DeferredData_s
     uint DistanceFieldAOTextureIndex;
 
     uint LightingMode;
-    float3 __Pad;
+    uint ShadowHistoryTextureIndex;
+    float MaxConfidence;
+    float __Pad;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
@@ -78,6 +82,21 @@ float3 ReconstructWorldPosition(float2 UV, float Depth)
 void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 {
     const int3 Pixel = int3(Input.SVPosition.xy, 0);
+
+    if (c_Deferred.LightingMode == LIGHTING_MODE_VARIANCE)
+    {
+        // A 0/1 signal's variance peaks at 0.25, so its standard deviation is scaled to fill 0-1
+        const float Variance = t_tex2d_f4[c_Deferred.ShadowTextureIndex].Load(Pixel).g;
+        Output = float4(saturate(2.0f * sqrt(Variance)).xxx, 0.0f);
+        return;
+    }
+
+    if (c_Deferred.LightingMode == LIGHTING_MODE_CONFIDENCE)
+    {
+        const float Confidence = t_tex2d_f4[c_Deferred.ShadowHistoryTextureIndex].Load(Pixel).b;
+        Output = float4(saturate(Confidence / max(c_Deferred.MaxConfidence, 1e-4f)).xxx, 0.0f);
+        return;
+    }
 
     const float Depth = t_tex2d_f4[c_Deferred.SceneDepthTextureIndex].Load(Pixel).r;
     const float4 EmissiveSpecular = t_tex2d_f4[c_Deferred.SceneEmissiveSpecularTextureIndex].Load(Pixel);

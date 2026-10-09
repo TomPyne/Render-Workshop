@@ -40,7 +40,23 @@ enum class DeferredLightingMode_e : uint32_t
 {
 	Off = 0,
 	Lighting,
+	Variance,
+	Confidence,
 };
+
+static DeferredLightingMode_e GetDeferredLightingMode(DebugViewMode_e ViewMode, ShadowVisualise_e Visualise)
+{
+	if (ViewMode != DebugViewMode_e::Lighting)
+		return DeferredLightingMode_e::Off;
+
+	switch (Visualise)
+	{
+	case ShadowVisualise_e::Shadow:		return DeferredLightingMode_e::Lighting;
+	case ShadowVisualise_e::Variance:	return DeferredLightingMode_e::Variance;
+	case ShadowVisualise_e::Confidence:	return DeferredLightingMode_e::Confidence;
+	}
+	return DeferredLightingMode_e::Lighting;
+}
 
 struct SpaceViewUniforms_s
 {
@@ -366,7 +382,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
 	});
 
-	RenderGraphResourceHandle_t DenoisedShadowTexture = ShadowDenoiser.AddPasses(RGBuilder, ShadowDenoise, ShadowTexture, SceneDepthTexture, SceneVelocityTexture,
+	const ShadowDenoiseOutputs_s DenoisedShadow = ShadowDenoiser.AddPasses(RGBuilder, ShadowDenoise, ShadowTexture, SceneDepthTexture, SceneVelocityTexture,
 		InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
 	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
@@ -382,7 +398,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
-	const DeferredLightingMode_e LightingMode = DebugViewMode == DebugViewMode_e::Lighting ? DeferredLightingMode_e::Lighting : DeferredLightingMode_e::Off;
+	const DeferredLightingMode_e LightingMode = GetDeferredLightingMode(DebugViewMode, ShadowDenoise.Visualise);
+	const float MaxConfidence = ShadowDenoise.MaxConfidence;
 
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -391,7 +408,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(DistanceFieldAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(DenoisedShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(DenoisedShadow.Shadow, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(DenoisedShadow.History, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=, &InverseViewProjection](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -414,7 +432,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t DistanceFieldAOTextureIndex;
 
 			uint32_t LightingMode;
-			float3 __Pad;
+			uint32_t ShadowHistoryTextureIndex;
+			float MaxConfidence;
+			float __Pad;
 		};
 		static_assert(sizeof(DeferredConstants_s) == 144, "Must match DeferredData_s in Deferred.hlsl");
 
@@ -431,10 +451,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
 		Uniforms->SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
 		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
-		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(DenoisedShadowTexture);
+		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(DenoisedShadow.Shadow);
 		Uniforms->SceneAOTextureIndex = RG.GetSRVIndex(SceneAOTexture);
 		Uniforms->DistanceFieldAOTextureIndex = RG.GetSRVIndex(DistanceFieldAOTexture);
 		Uniforms->LightingMode = static_cast<uint32_t>(LightingMode);
+		Uniforms->ShadowHistoryTextureIndex = RG.GetSRVIndex(DenoisedShadow.History);
+		Uniforms->MaxConfidence = MaxConfidence;
 
 		Ctx.SetRootSignature(G.RootSignature);
 
@@ -467,7 +489,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height));
 		}
 
-		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
+		// Visualised values are written as is
+		const bool IsVisualise = LightingMode == DeferredLightingMode_e::Variance || LightingMode == DeferredLightingMode_e::Confidence;
+		G.TonemapRenderer.AddPass(RGBuilder, IsVisualise ? TonemapMode_e::None : TonemapMode_e::ACES, LitTexture, BackBufferTexture);
 	}
 	else if (IsDistanceFieldView)
 	{
