@@ -5,6 +5,7 @@
 #include "Rendering/DistanceFieldScene.h"
 #include "Rendering/DistanceFieldVisualisePass.h"
 #include "Rendering/GlobalDistanceField.h"
+#include "Rendering/ShadowDenoiser.h"
 
 #include <Render/RenderTypes.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
@@ -119,12 +120,7 @@ public:
 	// Call whenever last frame's view can no longer be reprojected into, e.g. resize or camera change
 	void ResetTemporalHistory();
 
-	// Shadow history weight approaches MaxConfidence at ConfidenceRate per frame while reprojection succeeds.
-	// Higher values are less noisy but ghost longer behind moving shadow casters.
-	float ShadowTemporalMaxConfidence = 0.9f;
-	float ShadowTemporalConfidenceRate = 0.1f;
-	// History is rejected when its view depth differs from the expected depth by more than this fraction
-	float ShadowTemporalDepthTolerance = 0.02f;
+	ShadowDenoiseSettings_s ShadowDenoise;
 
 	DebugViewMode_e DebugViewMode = DebugViewMode_e::Lit;
 
@@ -149,12 +145,7 @@ protected:
 	matrix PrevViewProjection;
 	bool HasPrevView = false;
 
-	// Ping-ponged, one is read as history while the other is written
-	RenderGraphTexturePtr_t ShadowHistoryTextures[2] = {}; // Shadow + confidence
-	RenderGraphTexturePtr_t LinearDepthHistoryTextures[2] = {};
-	uint2 ShadowHistorySize = { 0u, 0u };
-	uint32_t ShadowHistoryReadIndex = 0;
-	bool ShadowHistoryValid = false;
+	ShadowDenoiser_c ShadowDenoiser;
 
 	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
 

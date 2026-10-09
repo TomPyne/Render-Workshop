@@ -26,7 +26,6 @@ static struct SpaceRendererPrivate_s
 	rl::RootSignaturePtr RootSignature;
 	rl::GraphicsPipelineStatePtr DeferredPSO;
 	rl::ComputePipelineStatePtr ShadowPSO;
-	rl::ComputePipelineStatePtr ShadowTemporalPSO;
 	ParticleRenderer_s ParticleRenderer;
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
@@ -117,18 +116,7 @@ void SpaceRenderer_c::Init()
 		ASSERTMSG(G.ShadowPSO.IsValid(), "Failed to create Shadow PSO");
 	}
 
-	// Shadow Temporal PSO
-	{
-		static const Path_s ShadowTemporalCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Shadows/ShadowTemporal.hlsl");
-		rl::ComputePipelineStateDesc PsoDesc = {};
-		PsoDesc.Cs = rl::CreateComputeShader(ShadowTemporalCSPath.ToString().c_str());
-		PsoDesc.RootSignatureOverride = G.RootSignature;
-		PsoDesc.DebugName = L"ShadowTemporal";
-
-		G.ShadowTemporalPSO = rl::CreateComputePipelineState(PsoDesc);
-
-		ASSERTMSG(G.ShadowTemporalPSO.IsValid(), "Failed to create Shadow Temporal PSO");
-	}
+	ShadowDenoiser.Init();
 
 	Clock = {};
 
@@ -371,88 +359,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
 	});
 
-	if (ShadowHistorySize.x != Screen.Width || ShadowHistorySize.y != Screen.Height)
-	{
-		for (uint32_t HistoryIt = 0; HistoryIt < 2; HistoryIt++)
-		{
-			ShadowHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
-			LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Screen.Width, Screen.Height, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"LinearDepthHistory");
-		}
-
-		ShadowHistorySize = uint2(Screen.Width, Screen.Height);
-		ShadowHistoryValid = false;
-	}
-
-	const uint32_t ShadowHistoryWriteIndex = ShadowHistoryReadIndex ^ 1u;
-
-	RenderGraphResourceHandle_t ShadowHistoryTexture = RGBuilder.InjectTexture(ShadowHistoryTextures[ShadowHistoryReadIndex], L"ShadowHistory");
-	RenderGraphResourceHandle_t LinearDepthHistoryTexture = RGBuilder.InjectTexture(LinearDepthHistoryTextures[ShadowHistoryReadIndex], L"LinearDepthHistory");
-	RenderGraphResourceHandle_t AccumulatedShadowTexture = RGBuilder.InjectTexture(ShadowHistoryTextures[ShadowHistoryWriteIndex], L"AccumulatedShadow");
-	RenderGraphResourceHandle_t LinearDepthTexture = RGBuilder.InjectTexture(LinearDepthHistoryTextures[ShadowHistoryWriteIndex], L"LinearDepth");
-
-	const bool UseShadowHistory = ShadowHistoryValid;
-
-	RenderGraphPass_s& ShadowTemporalPass = RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Temporal Pass")
-	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(SceneVelocityTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(ShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(ShadowHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(LinearDepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(AccumulatedShadowTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-	.AccessResource(LinearDepthTexture, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
-	.SetExecuteCallback([=, &InverseViewProjection](RenderGraph_s& RG, GPUContext_s& Ctx)
-	{
-		struct ShadowTemporalUniforms_s
-		{
-			matrix CamToWorld;
-
-			uint2 ViewportSize;
-			float2 InvViewportSize;
-
-			uint32_t SceneDepthTexture;
-			uint32_t VelocityTexture;
-			uint32_t CurrentShadowTexture;
-			uint32_t HistoryShadowTexture;
-
-			uint32_t HistoryLinearDepthTexture;
-			uint32_t OutShadowTexture;
-			uint32_t OutLinearDepthTexture;
-			uint32_t HistoryValid;
-
-			float MaxConfidence;
-			float ConfidenceRate;
-			float DepthTolerance;
-			float __Pad;
-		};
-		static_assert(sizeof(ShadowTemporalUniforms_s) == 128, "Must match Uniforms_s in ShadowTemporal.hlsl");
-
-		ShadowTemporalUniforms_s Uniforms;
-		Uniforms.CamToWorld = InverseViewProjection;
-		Uniforms.ViewportSize = uint2(Screen.Width, Screen.Height);
-		Uniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
-		Uniforms.SceneDepthTexture = RG.GetSRVIndex(SceneDepthTexture);
-		Uniforms.VelocityTexture = RG.GetSRVIndex(SceneVelocityTexture);
-		Uniforms.CurrentShadowTexture = RG.GetSRVIndex(ShadowTexture);
-		Uniforms.HistoryShadowTexture = RG.GetSRVIndex(ShadowHistoryTexture);
-		Uniforms.HistoryLinearDepthTexture = RG.GetSRVIndex(LinearDepthHistoryTexture);
-		Uniforms.OutShadowTexture = RG.GetUAVIndex(AccumulatedShadowTexture);
-		Uniforms.OutLinearDepthTexture = RG.GetUAVIndex(LinearDepthTexture);
-		Uniforms.HistoryValid = UseShadowHistory ? 1u : 0u;
-		Uniforms.MaxConfidence = ShadowTemporalMaxConfidence;
-		Uniforms.ConfidenceRate = ShadowTemporalConfidenceRate;
-		Uniforms.DepthTolerance = ShadowTemporalDepthTolerance;
-		Uniforms.__Pad = 0.0f;
-
-		Ctx.SetRootSignature(G.RootSignature);
-		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
-		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
-
-		Ctx.SetPipelineState(G.ShadowTemporalPSO);
-
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
-
-		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
-	});
+	RenderGraphResourceHandle_t DenoisedShadowTexture = ShadowDenoiser.AddPasses(RGBuilder, ShadowDenoise, ShadowTexture, SceneDepthTexture, SceneVelocityTexture,
+		InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
 	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
 
@@ -474,7 +382,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	.AccessResource(SceneAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(DistanceFieldAOTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(AccumulatedShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(DenoisedShadowTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::DONT_CARE)
 	.SetExecuteCallback([=, &InverseViewProjection](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
@@ -511,7 +419,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
 		Uniforms->SceneEmissiveSpecularTextureIndex = RG.GetSRVIndex(SceneEmissiveSpecularTexture);
 		Uniforms->SceneDepthTextureIndex = RG.GetSRVIndex(SceneDepthTexture);
-		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(AccumulatedShadowTexture);
+		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(DenoisedShadowTexture);
 		Uniforms->SceneAOTextureIndex = RG.GetSRVIndex(SceneAOTexture);
 		Uniforms->DistanceFieldAOTextureIndex = RG.GetSRVIndex(DistanceFieldAOTexture);
 
@@ -574,14 +482,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	PrevViewProjection = ViewProjection;
 
-	ShadowHistoryReadIndex = ShadowHistoryWriteIndex;
-	ShadowHistoryValid = true;
+	ShadowDenoiser.EndFrame();
 }
 
 void SpaceRenderer_c::ResetTemporalHistory()
 {
 	HasPrevView = false;
-	ShadowHistoryValid = false;
+	ShadowDenoiser.ResetHistory();
 }
 
 rl::RootSignature_t SpaceRenderer_c::GetRootSignature()

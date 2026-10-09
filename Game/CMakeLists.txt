@@ -81,6 +81,8 @@ function(create_proj projname rapi)
 		"Public/Rendering/Mesh.h"
 		"Private/Rendering/SpaceRenderer.cpp"
 		"Public/Rendering/SpaceRenderer.h"
+		"Private/Rendering/ShadowDenoiser.cpp"
+		"Public/Rendering/ShadowDenoiser.h"
 		"Private/Rendering/Texture.cpp"
 		"Public/Rendering/Texture.h"
 		"Private/Rendering/Materials/BRDFMaterial.cpp"
