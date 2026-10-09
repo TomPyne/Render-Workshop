@@ -8,6 +8,8 @@
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
+#include <utility>
+
 namespace
 {
 
@@ -23,20 +25,40 @@ rl::RenderFormat GetHistoryRenderFormat(ShadowHistoryFormat_e Format)
 
 constexpr rl::RenderFormat kLinearDepthFormat = rl::RenderFormat::R32_FLOAT;
 
+// Must match the WEIGHT_ defines in ShadowSpatial.hlsl
+constexpr uint32_t kSpatialWeightPlane = 1u << 0;
+constexpr uint32_t kSpatialWeightNormal = 1u << 1;
+constexpr uint32_t kSpatialWeightVariance = 1u << 2;
+
 }
 
 void ShadowDenoiser_c::Init()
 {
-	static const Path_s TemporalCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Shadows/ShadowTemporal.hlsl");
+	{
+		static const Path_s TemporalCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Shadows/ShadowTemporal.hlsl");
 
-	rl::ComputePipelineStateDesc PsoDesc = {};
-	PsoDesc.Cs = rl::CreateComputeShader(TemporalCSPath.ToString().c_str());
-	PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
-	PsoDesc.DebugName = L"ShadowTemporal";
+		rl::ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = rl::CreateComputeShader(TemporalCSPath.ToString().c_str());
+		PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
+		PsoDesc.DebugName = L"ShadowTemporal";
 
-	TemporalPSO = rl::CreateComputePipelineState(PsoDesc);
+		TemporalPSO = rl::CreateComputePipelineState(PsoDesc);
 
-	ASSERTMSG(TemporalPSO.IsValid(), "Failed to create Shadow Temporal PSO");
+		ASSERTMSG(TemporalPSO.IsValid(), "Failed to create Shadow Temporal PSO");
+	}
+
+	{
+		static const Path_s SpatialCSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Shadows/ShadowSpatial.hlsl");
+
+		rl::ComputePipelineStateDesc PsoDesc = {};
+		PsoDesc.Cs = rl::CreateComputeShader(SpatialCSPath.ToString().c_str());
+		PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
+		PsoDesc.DebugName = L"ShadowSpatial";
+
+		SpatialPSO = rl::CreateComputePipelineState(PsoDesc);
+
+		ASSERTMSG(SpatialPSO.IsValid(), "Failed to create Shadow Spatial PSO");
+	}
 }
 
 void ShadowDenoiser_c::ResetHistory()
@@ -146,10 +168,89 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 		Ctx.Dispatch(DivideRoundUp(Size.x, 8u), DivideRoundUp(Size.y, 8u), 1u);
 	});
 
+	// Iterations ping-pong between the temporal output and one scratch texture
+	RenderGraphResourceHandle_t SpatialShadow = ShadowVarianceTexture;
+	if (Settings.SpatialEnabled && Settings.SpatialIterations > 0)
+	{
+		RenderGraphResourceHandle_t SpatialScratch = RGBuilder.CreateTexture(Size.x, Size.y, rl::RenderFormat::R16G16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowSpatial");
+		for (uint32_t Iteration = 0; Iteration < Settings.SpatialIterations; Iteration++)
+		{
+			AddSpatialPass(RGBuilder, Settings, SpatialShadow, SpatialScratch, SceneDepth, SceneNormalRoughness, InvViewProjection, Size, 1u << Iteration);
+			std::swap(SpatialShadow, SpatialScratch);
+		}
+	}
+
 	ShadowDenoiseOutputs_s Outputs;
-	Outputs.Shadow = ShadowVarianceTexture;
+	Outputs.Shadow = SpatialShadow;
 	Outputs.History = AccumulatedShadowTexture;
 	return Outputs;
+}
+
+void ShadowDenoiser_c::AddSpatialPass(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output,
+	RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneNormalRoughness, const matrix& InvViewProjection, uint2 Size, uint32_t StepSize)
+{
+	uint32_t WeightFlags = 0;
+	if (Settings.PlaneWeight)
+		WeightFlags |= kSpatialWeightPlane;
+	if (Settings.NormalWeight)
+		WeightFlags |= kSpatialWeightNormal;
+	if (Settings.VarianceWeight)
+		WeightFlags |= kSpatialWeightVariance;
+
+	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Spatial Pass")
+	.AccessResource(Input, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneNormalRoughness, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(Output, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=, this](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		struct ShadowSpatialUniforms_s
+		{
+			matrix CamToWorld;
+
+			uint2 ViewportSize;
+			float2 InvViewportSize;
+
+			uint32_t InShadowTexture;
+			uint32_t OutShadowTexture;
+			uint32_t SceneDepthTexture;
+			uint32_t SceneNormalTexture;
+
+			uint32_t StepSize;
+			float DepthSigma;
+			float NormalPower;
+			float VarianceSigma;
+
+			uint32_t WeightFlags;
+			float3 __Pad;
+		};
+		static_assert(sizeof(ShadowSpatialUniforms_s) == 128, "Must match Uniforms_s in ShadowSpatial.hlsl");
+
+		ShadowSpatialUniforms_s Uniforms;
+		Uniforms.CamToWorld = InvViewProjection;
+		Uniforms.ViewportSize = Size;
+		Uniforms.InvViewportSize = float2(1.0f / Size.x, 1.0f / Size.y);
+		Uniforms.InShadowTexture = RG.GetSRVIndex(Input);
+		Uniforms.OutShadowTexture = RG.GetUAVIndex(Output);
+		Uniforms.SceneDepthTexture = RG.GetSRVIndex(SceneDepth);
+		Uniforms.SceneNormalTexture = RG.GetSRVIndex(SceneNormalRoughness);
+		Uniforms.StepSize = StepSize;
+		Uniforms.DepthSigma = Settings.DepthSigma;
+		Uniforms.NormalPower = Settings.NormalPower;
+		Uniforms.VarianceSigma = Settings.VarianceSigma;
+		Uniforms.WeightFlags = WeightFlags;
+		Uniforms.__Pad = float3(0.0f, 0.0f, 0.0f);
+
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+
+		Ctx.SetPipelineState(SpatialPSO);
+
+		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+
+		Ctx.Dispatch(DivideRoundUp(Size.x, 8u), DivideRoundUp(Size.y, 8u), 1u);
+	});
 }
 
 void ShadowDenoiser_c::EndFrame()

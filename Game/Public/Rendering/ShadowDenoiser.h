@@ -34,6 +34,19 @@ struct ShadowDenoiseSettings_s
 	// Unorm halves the history memory. Its steps are 1/1023 everywhere, coarser than float's near 1, so a slow blend can stall short of converging.
 	ShadowHistoryFormat_e HistoryFormat = ShadowHistoryFormat_e::RGB10A2Unorm;
 
+	bool SpatialEnabled = true;
+	// Each iteration doubles the tap spacing, 3 covers 29x29 pixels
+	uint32_t SpatialIterations = 3;
+	// Neighbour weights. Each is toggleable to see its effect alone.
+	bool PlaneWeight = true;
+	// Distance from the centre's plane, relative to its view depth, at which a neighbour's weight falls to 1/e
+	float DepthSigma = 0.01f;
+	bool NormalWeight = true;
+	float NormalPower = 64.0f;
+	bool VarianceWeight = true;
+	// Shadow difference, in standard deviations, at which a neighbour's weight falls to 1/e
+	float VarianceSigma = 4.0f;
+
 	// Only applies in the Lighting view mode
 	ShadowVisualise_e Visualise = ShadowVisualise_e::Shadow;
 };
@@ -67,7 +80,11 @@ public:
 	uint64_t GetLinearDepthHistoryMemoryBytes() const;
 
 private:
+	void AddSpatialPass(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output,
+		RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneNormalRoughness, const matrix& InvViewProjection, uint2 Size, uint32_t StepSize);
+
 	rl::ComputePipelineStatePtr TemporalPSO = {};
+	rl::ComputePipelineStatePtr SpatialPSO = {};
 
 	// Ping-ponged, one is read as history while the other is written
 	RenderGraphTexturePtr_t HistoryTextures[2] = {}; // Shadow mean, second moment, confidence

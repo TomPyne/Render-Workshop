@@ -37,6 +37,26 @@ void DrawShadowTemporal(SpaceRenderer_c& Renderer)
 	}
 }
 
+void DrawShadowSpatial(SpaceRenderer_c& Renderer)
+{
+	ShadowDenoiseSettings_s& Settings = Renderer.ShadowDenoise;
+
+	ImGui::Checkbox("Enabled##Spatial", &Settings.SpatialEnabled);
+
+	int32_t Iterations = static_cast<int32_t>(Settings.SpatialIterations);
+	if (ImGui::SliderInt("Iterations", &Iterations, 0, 5))
+	{
+		Settings.SpatialIterations = static_cast<uint32_t>(Iterations);
+	}
+
+	ImGui::Checkbox("Plane weight", &Settings.PlaneWeight);
+	ImGui::SliderFloat("Depth sigma", &Settings.DepthSigma, 0.0005f, 0.1f, "%.4f", ImGuiSliderFlags_Logarithmic);
+	ImGui::Checkbox("Normal weight", &Settings.NormalWeight);
+	ImGui::SliderFloat("Normal power", &Settings.NormalPower, 1.0f, 256.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
+	ImGui::Checkbox("Variance weight", &Settings.VarianceWeight);
+	ImGui::SliderFloat("Variance sigma", &Settings.VarianceSigma, 0.5f, 16.0f, "%.1f");
+}
+
 void DrawVisualise(SpaceRenderer_c& Renderer)
 {
 	static const char* kVisualiseNames[] = { "Shadow", "Variance", "Confidence" };
@@ -66,6 +86,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 	if (Renderer && ImGui::CollapsingHeader("Shadow Temporal", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		DrawShadowTemporal(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Shadow Spatial", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawShadowSpatial(*Renderer);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Visualise", ImGuiTreeNodeFlags_DefaultOpen))
