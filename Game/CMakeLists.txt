@@ -93,6 +93,8 @@ function(create_proj projname rapi)
 		"Public/Tools/DistanceFieldViewer.h"
 		"Private/Tools/GameStats.cpp"
 		"Public/Tools/GameStats.h"
+		"Private/Tools/LightingViewer.cpp"
+		"Public/Tools/LightingViewer.h"
 		"Private/Tools/PerfStats.cpp"
 		"Public/Tools/PerfStats.h"
 		"Public/Utility/SharedPtr.h"

@@ -48,7 +48,7 @@ RenderGraphResourceHandle_t ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RG
 	RenderGraphResourceHandle_t AccumulatedShadowTexture = RGBuilder.InjectTexture(HistoryTextures[HistoryWriteIndex], L"AccumulatedShadow");
 	RenderGraphResourceHandle_t LinearDepthTexture = RGBuilder.InjectTexture(LinearDepthHistoryTextures[HistoryWriteIndex], L"LinearDepth");
 
-	const bool UseHistory = HistoryValid;
+	const bool UseHistory = HistoryValid && Settings.TemporalEnabled;
 
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Temporal Pass")
 	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)

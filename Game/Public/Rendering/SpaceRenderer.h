@@ -126,6 +126,7 @@ public:
 
 	const DistanceFieldScene_c& GetDistanceFieldScene() const { return DistanceFieldScene; }
 	GlobalDistanceField_c& GetGlobalDistanceField() { return GlobalDistanceField; }
+	ShadowDenoiser_c& GetShadowDenoiser() { return ShadowDenoiser; }
 
 	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
 	DistanceFieldAOSettings_s DistanceFieldAO;

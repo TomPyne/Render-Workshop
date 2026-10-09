@@ -22,6 +22,7 @@ const char* GetDebugViewModeName(DebugViewMode_e Mode)
 	case DebugViewMode_e::DistanceFieldAO:	return "Distance Field AO";
 	case DebugViewMode_e::GlobalDistanceFieldSlice:	return "Global Distance Field Slice";
 	case DebugViewMode_e::GlobalDistanceField:		return "Global Distance Field";
+	case DebugViewMode_e::Lighting:	return "Lighting";
 	default:							return "Unknown";
 	}
 }

@@ -35,6 +35,13 @@ static struct SpaceRendererPrivate_s
 	bool Initialized = false;
 } G;
 
+// Must match the LIGHTING_MODE_ defines in Deferred.hlsl
+enum class DeferredLightingMode_e : uint32_t
+{
+	Off = 0,
+	Lighting,
+};
+
 struct SpaceViewUniforms_s
 {
 	matrix ViewProjection;
@@ -375,6 +382,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
+	const DeferredLightingMode_e LightingMode = DebugViewMode == DebugViewMode_e::Lighting ? DeferredLightingMode_e::Lighting : DeferredLightingMode_e::Off;
+
 	RenderGraphPass_s& DeferredPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Deferred Pass")
 	.AccessResource(SceneColorMetallicTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneNormalRoughnessTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -403,8 +412,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t ShadowTextureIndex;
 			uint32_t SceneAOTextureIndex;
 			uint32_t DistanceFieldAOTextureIndex;
+
+			uint32_t LightingMode;
+			float3 __Pad;
 		};
-		static_assert(sizeof(DeferredConstants_s) == 128, "Must match DeferredData_s in Deferred.hlsl");
+		static_assert(sizeof(DeferredConstants_s) == 144, "Must match DeferredData_s in Deferred.hlsl");
 
 		FrameBufferAlloc_s DeferredCBuf;
 		DeferredConstants_s* Uniforms = RG.Alloc<DeferredConstants_s>(DeferredCBuf);
@@ -422,6 +434,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->ShadowTextureIndex = RG.GetSRVIndex(DenoisedShadowTexture);
 		Uniforms->SceneAOTextureIndex = RG.GetSRVIndex(SceneAOTexture);
 		Uniforms->DistanceFieldAOTextureIndex = RG.GetSRVIndex(DistanceFieldAOTexture);
+		Uniforms->LightingMode = static_cast<uint32_t>(LightingMode);
 
 		Ctx.SetRootSignature(G.RootSignature);
 
@@ -447,9 +460,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);
 
-	if (DebugViewMode == DebugViewMode_e::Lit)
+	if (DebugViewMode == DebugViewMode_e::Lit || DebugViewMode == DebugViewMode_e::Lighting)
 	{
-		G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height));
+		if (DebugViewMode == DebugViewMode_e::Lit)
+		{
+			G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height));
+		}
 
 		G.TonemapRenderer.AddPass(RGBuilder, TonemapMode_e::ACES, LitTexture, BackBufferTexture);
 	}

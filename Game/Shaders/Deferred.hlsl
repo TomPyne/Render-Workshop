@@ -4,6 +4,10 @@
 #include "ScreenPassShared.h"
 #include "View.h"
 
+// Must match DeferredLightingMode_e in SpaceRenderer.cpp
+#define LIGHTING_MODE_OFF 0
+#define LIGHTING_MODE_LIGHTING 1
+
 struct DeferredData_s
 {
     float4x4 InvViewProjection;
@@ -21,6 +25,9 @@ struct DeferredData_s
     uint ShadowTextureIndex;
     uint SceneAOTextureIndex;
     uint DistanceFieldAOTextureIndex;
+
+    uint LightingMode;
+    float3 __Pad;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
@@ -88,8 +95,10 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const float DistanceFieldAO = t_tex2d_f1[c_Deferred.DistanceFieldAOTextureIndex].Load(Pixel);
     const float AO = MaterialAO * DistanceFieldAO;
 
-    const float3 Albedo = AlbedoMetallic.rgb;
-    const float Metallic = saturate(AlbedoMetallic.a);
+    // White and non-metallic, so only the light and its shadowing show
+    const bool LightingOnly = c_Deferred.LightingMode == LIGHTING_MODE_LIGHTING;
+    const float3 Albedo = LightingOnly ? 1.0f : AlbedoMetallic.rgb;
+    const float Metallic = LightingOnly ? 0.0f : saturate(AlbedoMetallic.a);
     const float Roughness = saturate(NormalRoughness.a);
     const float Specular = saturate(EmissiveSpecular.a);
     

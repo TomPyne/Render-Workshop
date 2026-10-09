@@ -12,6 +12,7 @@
 #include <Space/Space.h>
 #include <Tools/DistanceFieldViewer.h>
 #include <Tools/GameStats.h>
+#include <Tools/LightingViewer.h>
 #include <Tools/PerfStats.h>
 
 #include <RenderImGui/imgui/imgui.h>
@@ -21,6 +22,7 @@ static struct
 	bool ShowPerfWindow = true;
 	bool ShowGameWindow = true;
 	bool ShowDistanceFieldWindow = false;
+	bool ShowLightingWindow = false;
 } G;
 
 void SunTempleApp_c::RegisterClasses()
@@ -108,6 +110,10 @@ void SunTempleApp_c::ImGuiUpdate()
 		{
 			G.ShowDistanceFieldWindow = !G.ShowDistanceFieldWindow;
 		}
+		if (ImGui::MenuItem("Lighting", nullptr, G.ShowLightingWindow))
+		{
+			G.ShowLightingWindow = !G.ShowLightingWindow;
+		}
 		ImGui::EndMainMenuBar();
 	}
 
@@ -124,5 +130,10 @@ void SunTempleApp_c::ImGuiUpdate()
 	if (G.ShowDistanceFieldWindow)
 	{
 		DistanceFieldViewer::DrawWindow(&G.ShowDistanceFieldWindow, SpaceRenderer.get());
+	}
+
+	if (G.ShowLightingWindow)
+	{
+		LightingViewer::DrawWindow(&G.ShowLightingWindow, SpaceRenderer.get());
 	}
 }

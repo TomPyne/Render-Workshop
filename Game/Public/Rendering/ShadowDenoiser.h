@@ -8,6 +8,8 @@
 
 struct ShadowDenoiseSettings_s
 {
+	// Off passes the raw shadow through. History is still written, with zero confidence, so re-enabling needs no reset.
+	bool TemporalEnabled = true;
 	// History weight approaches MaxConfidence at ConfidenceRate per frame while reprojection succeeds.
 	// Higher values are less noisy but ghost longer behind moving shadow casters.
 	float MaxConfidence = 0.9f;

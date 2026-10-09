@@ -16,6 +16,7 @@ enum class DebugViewMode_e : uint32_t
 	DistanceFieldAO,
 	GlobalDistanceFieldSlice,
 	GlobalDistanceField,
+	Lighting,
 	Count
 };
 
