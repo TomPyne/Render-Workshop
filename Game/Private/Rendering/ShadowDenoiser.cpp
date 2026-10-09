@@ -27,7 +27,8 @@ void ShadowDenoiser_c::ResetHistory()
 }
 
 ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
-	RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, const matrix& InvViewProjection, uint2 Size)
+	RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, RenderGraphResourceHandle_t SceneNormalRoughness,
+	const matrix& InvViewProjection, uint2 Size)
 {
 	if (HistorySize.x != Size.x || HistorySize.y != Size.y)
 	{
@@ -54,6 +55,7 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Shadow Temporal Pass")
 	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(SceneVelocity, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneNormalRoughness, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(RawShadow, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(ShadowHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
 	.AccessResource(LinearDepthHistoryTexture, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
@@ -83,8 +85,12 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 			float ConfidenceRate;
 			float DepthTolerance;
 			uint32_t OutShadowVarianceTexture;
+
+			uint32_t SceneNormalTexture;
+			float MinConfidenceForTemporalVariance;
+			float2 __Pad;
 		};
-		static_assert(sizeof(ShadowTemporalUniforms_s) == 128, "Must match Uniforms_s in ShadowTemporal.hlsl");
+		static_assert(sizeof(ShadowTemporalUniforms_s) == 144, "Must match Uniforms_s in ShadowTemporal.hlsl");
 
 		ShadowTemporalUniforms_s Uniforms;
 		Uniforms.CamToWorld = InvViewProjection;
@@ -102,6 +108,9 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 		Uniforms.ConfidenceRate = Settings.ConfidenceRate;
 		Uniforms.DepthTolerance = Settings.DepthTolerance;
 		Uniforms.OutShadowVarianceTexture = RG.GetUAVIndex(ShadowVarianceTexture);
+		Uniforms.SceneNormalTexture = RG.GetSRVIndex(SceneNormalRoughness);
+		Uniforms.MinConfidenceForTemporalVariance = Settings.MinConfidenceForTemporalVariance;
+		Uniforms.__Pad = float2(0.0f, 0.0f);
 
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);

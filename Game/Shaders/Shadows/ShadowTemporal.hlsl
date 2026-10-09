@@ -21,17 +21,71 @@ struct Uniforms_s
     float ConfidenceRate;
     float DepthTolerance;
     uint OutShadowVarianceTexture;
+
+    uint SceneNormalTexture;
+    float MinConfidenceForTemporalVariance;
+    float2 __Pad;
 };
 
 ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
 
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space0); // Depth, current shadow, linear depth history
-Texture2D<float4> t_tex2d_f4[8192] : register(t1, space1); // Velocity, shadow moments + confidence history
+Texture2D<float4> t_tex2d_f4[8192] : register(t1, space1); // Velocity, normal, shadow moments + confidence history
 RWTexture2D<float> u_tex2d_f1[8192] : register(u0, space0); // Linear depth out
 RWTexture2D<float2> u_tex2d_f2[8192] : register(u0, space1); // Shadow + variance out
 RWTexture2D<float4> u_tex2d_f4[8192] : register(u0, space2); // Shadow moments + confidence history out
 
 SamplerState ClampedSampler : register(s1);
+
+static const int kVarianceRadius = 2;
+// About 25 degrees
+static const float kVarianceMinNormalDot = 0.9f;
+
+float GetLinearDepth(uint2 PixelCoord, float SceneDepth)
+{
+    const float2 UV = (float2(PixelCoord) + 0.5f) * c_Uniforms.InvViewportSize;
+    const float2 ScreenPos = float2(UV.x, 1.0f - UV.y) * 2.0f - 1.0f;
+
+    // The unprojected w is 1 / clip w, and clip w is view depth
+    return 1.0f / dot(c_Uniforms.CamToWorld[3], float4(ScreenPos, SceneDepth, 1.0f));
+}
+
+// Variance of this frame's shadow over neighbours on the same surface, for pixels without enough history
+float EstimateSpatialVariance(uint2 PixelCoord, float CentreLinearDepth, float3 CentreNormal)
+{
+    float Count = 0.0f;
+    float Sum = 0.0f;
+    float SumSq = 0.0f;
+
+    for (int Y = -kVarianceRadius; Y <= kVarianceRadius; Y++)
+    {
+        for (int X = -kVarianceRadius; X <= kVarianceRadius; X++)
+        {
+            const int2 Coord = int2(PixelCoord) + int2(X, Y);
+            if (any(Coord < 0) || any(Coord >= int2(c_Uniforms.ViewportSize)))
+                continue;
+
+            const float Depth = t_tex2d_f1[c_Uniforms.SceneDepthTexture][Coord];
+            if (Depth >= 1.0f)
+                continue;
+
+            if (abs(GetLinearDepth(Coord, Depth) - CentreLinearDepth) > CentreLinearDepth * c_Uniforms.DepthTolerance)
+                continue;
+
+            const float3 Normal = normalize(t_tex2d_f4[c_Uniforms.SceneNormalTexture][Coord].xyz);
+            if (dot(Normal, CentreNormal) < kVarianceMinNormalDot)
+                continue;
+
+            const float Shadow = t_tex2d_f1[c_Uniforms.CurrentShadowTexture][Coord];
+            Count += 1.0f;
+            Sum += Shadow;
+            SumSq += Shadow * Shadow;
+        }
+    }
+
+    const float Mean = Sum / Count;
+    return max(0.0f, SumSq / Count - Mean * Mean);
+}
 
 [NumThreads(8, 8, 1)]
 void main(uint3 DispatchThreadID : SV_DispatchThreadID)
@@ -52,11 +106,7 @@ void main(uint3 DispatchThreadID : SV_DispatchThreadID)
     }
 
     const float2 UV = (float2(PixelCoord) + 0.5f) * c_Uniforms.InvViewportSize;
-    const float2 ScreenPos = float2(UV.x, 1.0f - UV.y) * 2.0f - 1.0f;
-
-    // The unprojected w is 1 / clip w, and clip w is view depth
-    const float4 Unprojected = mul(c_Uniforms.CamToWorld, float4(ScreenPos, SceneDepth, 1.0f));
-    const float LinearDepth = 1.0f / Unprojected.w;
+    const float LinearDepth = GetLinearDepth(PixelCoord, SceneDepth);
 
     const float CurrentShadow = t_tex2d_f1[c_Uniforms.CurrentShadowTexture][PixelCoord];
 
@@ -85,7 +135,12 @@ void main(uint3 DispatchThreadID : SV_DispatchThreadID)
         Result = float3(lerp(Result.xy, History.xy, Confidence), Confidence);
     }
 
-    const float Variance = max(0.0f, Result.y - Result.x * Result.x);
+    float Variance = max(0.0f, Result.y - Result.x * Result.x);
+    if (Result.z < c_Uniforms.MinConfidenceForTemporalVariance)
+    {
+        const float3 Normal = normalize(t_tex2d_f4[c_Uniforms.SceneNormalTexture][PixelCoord].xyz);
+        Variance = EstimateSpatialVariance(PixelCoord, LinearDepth, Normal);
+    }
 
     u_tex2d_f4[c_Uniforms.OutShadowTexture][PixelCoord] = float4(Result, 0.0f);
     u_tex2d_f2[c_Uniforms.OutShadowVarianceTexture][PixelCoord] = float2(Result.x, Variance);

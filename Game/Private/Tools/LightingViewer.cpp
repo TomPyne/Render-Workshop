@@ -17,6 +17,7 @@ void DrawShadowTemporal(SpaceRenderer_c& Renderer)
 	ImGui::SliderFloat("Max confidence", &Settings.MaxConfidence, 0.0f, 0.99f, "%.2f");
 	ImGui::SliderFloat("Confidence rate", &Settings.ConfidenceRate, 0.01f, 1.0f, "%.2f");
 	ImGui::SliderFloat("Depth tolerance", &Settings.DepthTolerance, 0.001f, 0.1f, "%.3f");
+	ImGui::SliderFloat("Min confidence for temporal variance", &Settings.MinConfidenceForTemporalVariance, 0.0f, 0.99f, "%.2f");
 
 	if (ImGui::Button("Reset history"))
 	{

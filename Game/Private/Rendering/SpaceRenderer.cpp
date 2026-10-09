@@ -383,7 +383,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	});
 
 	const ShadowDenoiseOutputs_s DenoisedShadow = ShadowDenoiser.AddPasses(RGBuilder, ShadowDenoise, ShadowTexture, SceneDepthTexture, SceneVelocityTexture,
-		InverseViewProjection, uint2(Screen.Width, Screen.Height));
+		SceneNormalRoughnessTexture, InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
 	const bool IsDistanceFieldView = DebugViewMode == DebugViewMode_e::GlobalDistanceFieldSlice || DebugViewMode == DebugViewMode_e::GlobalDistanceField;
 

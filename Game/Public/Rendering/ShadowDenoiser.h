@@ -23,6 +23,8 @@ struct ShadowDenoiseSettings_s
 	float ConfidenceRate = 0.1f;
 	// History is rejected when its view depth differs from the expected depth by more than this fraction
 	float DepthTolerance = 0.02f;
+	// Below this confidence, variance comes from the current frame's neighbourhood instead of the history moments
+	float MinConfidenceForTemporalVariance = 0.5f;
 
 	// Only applies in the Lighting view mode
 	ShadowVisualise_e Visualise = ShadowVisualise_e::Shadow;
@@ -46,7 +48,8 @@ public:
 	void ResetHistory();
 
 	ShadowDenoiseOutputs_s AddPasses(RenderGraphBuilder_s& RGBuilder, const ShadowDenoiseSettings_s& Settings, RenderGraphResourceHandle_t RawShadow,
-		RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, const matrix& InvViewProjection, uint2 Size);
+		RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, RenderGraphResourceHandle_t SceneNormalRoughness,
+		const matrix& InvViewProjection, uint2 Size);
 
 	// Call after the graph has executed, this frame's output becomes next frame's history
 	void EndFrame();
