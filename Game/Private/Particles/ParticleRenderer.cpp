@@ -1,6 +1,7 @@
 #include "Particles/ParticleRenderer.h"
 
 #include "Assets/MaterialManager.h"
+#include "Rendering/GlobalDistanceField.h"
 #include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
 
@@ -55,11 +56,32 @@ struct ParticleSystemUniforms_s
 
 	uint32_t ParticlesSRV;
 	uint32_t AliveListSRV;
-	uint32_t __Pad[2];
-};
-static_assert(sizeof(ParticleSystemUniforms_s) == 96);
+	ParticleCollisionMode_e CollisionMode;
+	uint32_t __Pad;
 
-static constexpr float MaxParticleDeltaSeconds = 0.5f;
+	float CollisionRadius;
+	float Restitution;
+	float Friction;
+	float RestSpeed;
+};
+static_assert(sizeof(ParticleSystemUniforms_s) == 112);
+
+// Must match ParticleVolumeUniforms_s in Particles/ParticleSimulate.hlsl
+struct ParticleVolumeUniforms_s
+{
+	float3 VolumeMin;
+	float VoxelSize;
+
+	float3 VolumeMax;
+	uint32_t VolumeSRV;
+
+	uint32_t Enabled;
+	uint32_t __Pad[3];
+};
+static_assert(sizeof(ParticleVolumeUniforms_s) == 48);
+
+// Large steps tunnel through thin geometry in the distance field, so hitches slow the simulation down instead
+static constexpr float MaxParticleDeltaSeconds = 1.0f / 30.0f;
 static constexpr uint32_t ParticleSimulateGroupSize = 64u; // Must match numthreads in ParticleSimulate.hlsl
 
 struct ParticleSystemRenderData_s
@@ -187,7 +209,8 @@ void ParticleRenderer_s::CreateRenderData(const ParticleSystemInfo_s& ParticleSy
 }
 
 
-void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize, float DeltaSeconds, uint64_t FrameIndex)
+void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize, float DeltaSeconds, uint64_t FrameIndex,
+	const GlobalDistanceField_c& GlobalDistanceField, RenderGraphResourceHandle_t GlobalVolume)
 {
 	if (ParticleSystems.empty() || !BillboardParticleMaterial || !ResetArgsPSO.IsValid() || !SimulatePSO.IsValid())
 		return;
@@ -257,6 +280,11 @@ void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vec
 		Uniforms.DrawArgsUAV = rl::GetDescriptorIndex(Data.DrawArgsUAV);
 		Uniforms.ParticlesSRV = rl::GetDescriptorIndex(Data.ParticlesSRV);
 		Uniforms.AliveListSRV = rl::GetDescriptorIndex(Data.AliveListSRV);
+		Uniforms.CollisionMode = ParticleSystem->CollisionMode;
+		Uniforms.CollisionRadius = ParticleSystem->CollisionRadius;
+		Uniforms.Restitution = ParticleSystem->Restitution;
+		Uniforms.Friction = ParticleSystem->Friction;
+		Uniforms.RestSpeed = ParticleSystem->RestSpeed;
 
 		Draws.push_back({ Data.Particles, Data.AliveList, Data.DrawArgs, MaxCount, RGBuilder.Alloc(Uniforms) });
 	}
@@ -264,10 +292,20 @@ void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vec
 	if (Draws.empty())
 		return;
 
-	RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Particle Pass")
+	const bool CollisionEnabled = Simulate && GlobalVolume != RenderGraphResourceHandle_t::NONE;
+	const AABB VolumeBounds = GlobalDistanceField.GetVolumeBounds();
+	const float VoxelSize = GlobalDistanceField.GetVoxelSize();
+
+	RenderGraphPass_s& Pass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Particle Pass")
 	.AccessResource(SceneColor, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
-	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD) // Reads depth only, maybe hinting this to RG is an optimization
-	.SetExecuteCallback([this, Draws, Simulate, SceneColor, SceneDepth, ViewUniforms, ScreenSize](RenderGraph_s& RG, GPUContext_s& Ctx)
+	.AccessResource(SceneDepth, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD); // Reads depth only, maybe hinting this to RG is an optimization
+
+	if (CollisionEnabled)
+	{
+		Pass.AccessResource(GlobalVolume, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
+	}
+
+	Pass.SetExecuteCallback([this, Draws, Simulate, CollisionEnabled, VolumeBounds, VoxelSize, GlobalVolume, SceneColor, SceneDepth, ViewUniforms, ScreenSize](RenderGraph_s& RG, GPUContext_s& Ctx)
 	{
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 
@@ -275,6 +313,15 @@ void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vec
 		if (Simulate)
 		{
 			Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+			Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+
+			ParticleVolumeUniforms_s VolumeUniforms = {};
+			VolumeUniforms.VolumeMin = VolumeBounds.mins;
+			VolumeUniforms.VoxelSize = VoxelSize;
+			VolumeUniforms.VolumeMax = VolumeBounds.maxs;
+			VolumeUniforms.VolumeSRV = CollisionEnabled ? RG.GetSRVIndex(GlobalVolume) : 0u;
+			VolumeUniforms.Enabled = CollisionEnabled ? 1u : 0u;
+			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(VolumeUniforms));
 
 			for (const ParticleSystemDraw_s& Draw : Draws)
 			{

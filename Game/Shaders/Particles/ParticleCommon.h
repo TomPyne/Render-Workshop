@@ -45,10 +45,20 @@ struct ParticleSystemUniforms_s
 
     uint ParticlesSRV;
     uint AliveListSRV;
-    uint2 __Pad;
+    uint CollisionMode; // ParticleCollisionMode_e
+    uint __Pad;
+
+    float CollisionRadius;
+    float Restitution;
+    float Friction;
+    float RestSpeed;
 };
 
 ConstantBuffer<ParticleSystemUniforms_s> c_Particles : register(b2);
+
+static const uint kCollisionNone = 0u;
+static const uint kCollisionKill = 1u;
+static const uint kCollisionBounce = 2u;
 
 uint PCGHash(uint Input)
 {

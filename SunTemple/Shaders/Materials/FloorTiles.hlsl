@@ -56,7 +56,7 @@ void main(in uint VertexID : SV_VertexID, out Interpolants_s Output)
     if(c_Material.IsFloorTiles2)
     {
         float2 InUV = c_Material.UseUV2 ? Output.UV1 : Output.UV0;
-        Output.UV2 = (Output.UV0 + c_Material.OffsetTiles) / c_Material.TilesScale;
+        Output.UV2 = (InUV + c_Material.OffsetTiles) / c_Material.TilesScale;
     }
     else
     {

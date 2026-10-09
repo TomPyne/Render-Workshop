@@ -61,7 +61,8 @@ RenderGraphPass_s& RenderGraphPass_s::AccessResource(RenderGraphResourceHandle_t
 	switch (AccessType)
 	{
 		case RenderGraphResourceAccessType_e::SRV:
-			DesiredState = PassType == RenderGraphPassType_e::GRAPHICS ? rl::ResourceTransitionState::PIXEL_SHADER_RESOURCE : rl::ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE;
+			// Graphics passes can read SRVs from vertex shaders and dispatches as well as pixel shaders
+			DesiredState = PassType == RenderGraphPassType_e::GRAPHICS ? rl::ResourceTransitionState::ALL_SHADER_RESOURCE : rl::ResourceTransitionState::NON_PIXEL_SHADER_RESOURCE;
 			break;
 		case RenderGraphResourceAccessType_e::UAV:
 			DesiredState = rl::ResourceTransitionState::UNORDERED_ACCESS;

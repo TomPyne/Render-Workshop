@@ -9,6 +9,15 @@
 #include <string>
 
 struct ParticleSystemRenderData_s;
+class GlobalDistanceField_c;
+
+// Collision against the global distance field, particles outside its volume never collide
+enum class ParticleCollisionMode_e : uint32_t
+{
+	None,
+	Kill,
+	Bounce,
+};
 
 struct ParticleSystemInfo_s
 {
@@ -28,6 +37,12 @@ struct ParticleSystemInfo_s
 	float VelocityMin = 8.0f;
 	float VelocityMax = 16.0f; // rand between min and max in units per second
 
+	ParticleCollisionMode_e CollisionMode = ParticleCollisionMode_e::Bounce;
+	float CollisionRadius = 0.05f;
+	float Restitution = 0.5f; // Fraction of the speed into the surface kept after a bounce
+	float Friction = 0.2f; // Fraction of the speed along the surface lost per bounce
+	float RestSpeed = 0.5f; // Bounces slower than this stop, so resting particles slide instead of jittering
+
 	mutable std::unique_ptr<ParticleSystemRenderData_s> RenderData; // Owned by the renderer, created lazily
 };
 
@@ -35,7 +50,8 @@ struct ParticleRenderer_s
 {
 	void Init();
 
-	void AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize, float DeltaSeconds, uint64_t FrameIndex);
+	void AddPass(RenderGraphBuilder_s& RGBuilder, const std::vector<const ParticleSystemInfo_s*>& ParticleSystems, RenderGraphResourceHandle_t SceneColor, RenderGraphResourceHandle_t SceneDepth, FrameBufferAlloc_s ViewUniforms, uint2 ScreenSize, float DeltaSeconds, uint64_t FrameIndex,
+		const GlobalDistanceField_c& GlobalDistanceField, RenderGraphResourceHandle_t GlobalVolume);
 
 protected:
 

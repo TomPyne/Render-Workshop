@@ -22,8 +22,99 @@ void main()
 
 #ifdef PARTICLE_SIMULATE
 
+#include "../Samplers.h"
+
+// Must match ParticleVolumeUniforms_s in ParticleRenderer.cpp
+struct ParticleVolumeUniforms_s
+{
+    float3 VolumeMin;
+    float VoxelSize;
+
+    float3 VolumeMax;
+    uint VolumeSRV;
+
+    uint Enabled; // No global distance field this frame when 0
+    uint3 __Pad;
+};
+
+ConstantBuffer<ParticleVolumeUniforms_s> c_Volume : register(b0);
+
+Texture3D<float> t_tex3d_f1[8192] : register(t1, space0);
+
 static const float PI = 3.14159265f;
 static const float3 Gravity = float3(0.0f, -9.81f, 0.0f);
+
+bool InsideVolume(float3 WorldPos)
+{
+    return all(WorldPos >= c_Volume.VolumeMin) && all(WorldPos <= c_Volume.VolumeMax);
+}
+
+float SampleGlobal(float3 WorldPos)
+{
+    const float3 UVW = (WorldPos - c_Volume.VolumeMin) / (c_Volume.VolumeMax - c_Volume.VolumeMin);
+    return t_tex3d_f1[c_Volume.VolumeSRV].SampleLevel(SharedClampedSampler, UVW, 0.0f);
+}
+
+// Tetrahedral differences, unnormalized. Zero past the band, where the field is clamped flat.
+float3 SampleGlobalGradient(float3 WorldPos)
+{
+    const float H = 0.5f * c_Volume.VoxelSize;
+    const float2 K = float2(1.0f, -1.0f);
+
+    return K.xyy * SampleGlobal(WorldPos + K.xyy * H)
+         + K.yyx * SampleGlobal(WorldPos + K.yyx * H)
+         + K.yxy * SampleGlobal(WorldPos + K.yxy * H)
+         + K.xxx * SampleGlobal(WorldPos + K.xxx * H);
+}
+
+void Collide(inout Particle_s Particle, float3 PreviousPosition)
+{
+    if (c_Volume.Enabled == 0u || c_Particles.CollisionMode == kCollisionNone || !InsideVolume(Particle.Position))
+        return;
+
+    const float Distance = SampleGlobal(Particle.Position);
+
+    if (Distance >= c_Particles.CollisionRadius)
+        return;
+
+    if (c_Particles.CollisionMode == kCollisionKill)
+    {
+        Particle.Age = Particle.Lifetime;
+        return;
+    }
+
+    const float3 Gradient = SampleGlobalGradient(Particle.Position);
+    const float GradientLengthSq = dot(Gradient, Gradient);
+
+    // Deep inside, no direction to push out along
+    if (GradientLengthSq < 1e-8f)
+    {
+        Particle.Position = PreviousPosition;
+        Particle.Velocity = 0.0f;
+        return;
+    }
+
+    const float3 Normal = Gradient * rsqrt(GradientLengthSq);
+
+    Particle.Position += Normal * (c_Particles.CollisionRadius - Distance);
+
+    const float NormalSpeed = dot(Particle.Velocity, Normal);
+
+    if (NormalSpeed < 0.0f)
+    {
+        const float3 NormalVelocity = NormalSpeed * Normal;
+        const float3 TangentVelocity = Particle.Velocity - NormalVelocity;
+
+        const float BounceSpeed = -NormalSpeed * c_Particles.Restitution;
+
+        Particle.Velocity = TangentVelocity * (1.0f - c_Particles.Friction);
+
+        if (BounceSpeed >= c_Particles.RestSpeed)
+        {
+            Particle.Velocity += Normal * BounceSpeed;
+        }
+    }
+}
 
 float3 SampleConeDirection(float3 Axis, float MaxAngle, inout uint Rng)
 {
@@ -66,9 +157,13 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     }
     else if (Particle.Age < Particle.Lifetime)
     {
+        const float3 PreviousPosition = Particle.Position;
+
         Particle.Velocity += Gravity * c_Particles.DeltaTime;
         Particle.Position += Particle.Velocity * c_Particles.DeltaTime;
         Particle.Age += c_Particles.DeltaTime;
+
+        Collide(Particle, PreviousPosition);
     }
     else
     {
