@@ -19,6 +19,18 @@ void DrawShadowTemporal(SpaceRenderer_c& Renderer)
 	ImGui::SliderFloat("Depth tolerance", &Settings.DepthTolerance, 0.001f, 0.1f, "%.3f");
 	ImGui::SliderFloat("Min confidence for temporal variance", &Settings.MinConfidenceForTemporalVariance, 0.0f, 0.99f, "%.2f");
 
+	static const char* kHistoryFormatNames[] = { "RGBA16 Float", "RGB10A2 Unorm" };
+
+	int32_t HistoryFormat = static_cast<int32_t>(Settings.HistoryFormat);
+	if (ImGui::Combo("History format", &HistoryFormat, kHistoryFormatNames, IM_ARRAYSIZE(kHistoryFormatNames)))
+	{
+		Settings.HistoryFormat = static_cast<ShadowHistoryFormat_e>(HistoryFormat);
+	}
+
+	const ShadowDenoiser_c& Denoiser = Renderer.GetShadowDenoiser();
+	ImGui::Text("Shadow history %.1f MB", Denoiser.GetHistoryMemoryBytes() / 1.0e6);
+	ImGui::Text("Linear depth history %.1f MB", Denoiser.GetLinearDepthHistoryMemoryBytes() / 1.0e6);
+
 	if (ImGui::Button("Reset history"))
 	{
 		Renderer.GetShadowDenoiser().ResetHistory();

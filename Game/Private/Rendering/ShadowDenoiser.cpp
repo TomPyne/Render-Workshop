@@ -3,9 +3,27 @@
 #include "Rendering/SpaceRenderer.h"
 
 #include <Render/Render.h>
+#include <Render/TextureInfo.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
+
+namespace
+{
+
+rl::RenderFormat GetHistoryRenderFormat(ShadowHistoryFormat_e Format)
+{
+	switch (Format)
+	{
+	case ShadowHistoryFormat_e::RGBA16Float:	return rl::RenderFormat::R16G16B16A16_FLOAT;
+	case ShadowHistoryFormat_e::RGB10A2Unorm:	return rl::RenderFormat::R10G10B10A2_UNORM;
+	}
+	return rl::RenderFormat::R16G16B16A16_FLOAT;
+}
+
+constexpr rl::RenderFormat kLinearDepthFormat = rl::RenderFormat::R32_FLOAT;
+
+}
 
 void ShadowDenoiser_c::Init()
 {
@@ -30,15 +48,20 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 	RenderGraphResourceHandle_t SceneDepth, RenderGraphResourceHandle_t SceneVelocity, RenderGraphResourceHandle_t SceneNormalRoughness,
 	const matrix& InvViewProjection, uint2 Size)
 {
-	if (HistorySize.x != Size.x || HistorySize.y != Size.y)
+	const bool SizeChanged = HistorySize.x != Size.x || HistorySize.y != Size.y;
+	if (SizeChanged || HistoryFormat != Settings.HistoryFormat)
 	{
 		for (uint32_t HistoryIt = 0; HistoryIt < 2; HistoryIt++)
 		{
-			HistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
-			LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, rl::RenderFormat::R32_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV, L"LinearDepthHistory");
+			HistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, GetHistoryRenderFormat(Settings.HistoryFormat), RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowHistory");
+			if (SizeChanged)
+			{
+				LinearDepthHistoryTextures[HistoryIt] = CreateRenderGraphTexture(Size.x, Size.y, kLinearDepthFormat, RenderGraphResourceAccessType_e::SRV_UAV, L"LinearDepthHistory");
+			}
 		}
 
 		HistorySize = Size;
+		HistoryFormat = Settings.HistoryFormat;
 		HistoryValid = false;
 	}
 
@@ -133,4 +156,16 @@ void ShadowDenoiser_c::EndFrame()
 {
 	HistoryReadIndex ^= 1u;
 	HistoryValid = true;
+}
+
+uint64_t ShadowDenoiser_c::GetHistoryMemoryBytes() const
+{
+	const uint64_t PixelCount = static_cast<uint64_t>(HistorySize.x) * HistorySize.y;
+	return 2u * PixelCount * rl::BitsPerPixel(GetHistoryRenderFormat(HistoryFormat)) / 8u;
+}
+
+uint64_t ShadowDenoiser_c::GetLinearDepthHistoryMemoryBytes() const
+{
+	const uint64_t PixelCount = static_cast<uint64_t>(HistorySize.x) * HistorySize.y;
+	return 2u * PixelCount * rl::BitsPerPixel(kLinearDepthFormat) / 8u;
 }
