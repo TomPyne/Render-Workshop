@@ -27,6 +27,7 @@ enum class TextureFormat_e
 {
     Unknown = 0,
     RGBA8, // 1
+    RGBA32F, // 2
     Count
 };
 
@@ -36,6 +37,8 @@ constexpr rl::RenderFormat TexToRenderFormat(TextureFormat_e TexFormat)
     {
     case TextureFormat_e::RGBA8:
         return rl::RenderFormat::R8G8B8A8_UNORM;
+    case TextureFormat_e::RGBA32F:
+        return rl::RenderFormat::R32G32B32A32_FLOAT;
     }
 
     ENSUREMSG(false, "[TextureManager::TexFormatRequiredChannels] Unsupported type");
@@ -47,11 +50,23 @@ constexpr int TexFormatRequiredChannels(TextureFormat_e TexFormat, bool HasAlpha
     switch (TexFormat)
     {
     case TextureFormat_e::RGBA8:
+    case TextureFormat_e::RGBA32F:
         return HasAlpha ? 4 : 3;
     }
 
     ENSUREMSG(false, "[TextureManager::TexFormatRequiredChannels] Unsupported type");
     return 0;
+}
+
+constexpr bool IsFloatFormat(TextureFormat_e TexFormat)
+{
+    switch (TexFormat)
+    {
+    case TextureFormat_e::RGBA32F:
+        return true;
+    }
+
+    return false;
 }
 
 std::shared_ptr<Texture_s> RequestErrorTexture()
@@ -170,6 +185,12 @@ bool ParseTextureRequestSTB(const JsonValue_s& Data, TextureLoadRequest_s& OutRe
 
     JsonHelpers::ParseBool(Data, "HasAlpha", OutRequest.HasAlpha);
     JsonHelpers::ParseBool(Data, "GenMips", OutRequest.GenMips);
+
+    if (OutRequest.GenMips && IsFloatFormat(OutRequest.Format))
+    {
+        LOGWARNING("[TextureManager::ParseTextureRequestSTB] Mip generation only supports 8 bit formats : %s", OutRequest.SourcePath.ToString().c_str());
+        return false;
+    }
 
     if (OutRequest.GenMips)
     {
@@ -361,7 +382,9 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     LOGINFO("[TextureManager::BuildTextureSTB] Building texture: %s", Path.ToString().c_str());
 
     int X, Y, Channels;
-    stbi_uc* RawData = stbi_load(Path.ToString().c_str(), &X, &Y, &Channels, 4);
+    void* RawData = IsFloatFormat(Request.Format)
+        ? static_cast<void*>(stbi_loadf(Path.ToString().c_str(), &X, &Y, &Channels, 4))
+        : static_cast<void*>(stbi_load(Path.ToString().c_str(), &X, &Y, &Channels, 4));
 
     if (!RawData)
     {
@@ -391,10 +414,10 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     std::vector<u8> MipChain;
     if (Request.GenMips)
     {
-        MipChain = GenerateMipChain(RawData, Size, MipCount, Request.MipFilter);
+        MipChain = GenerateMipChain(static_cast<const u8*>(RawData), Size, MipCount, Request.MipFilter);
     }
 
-    const u8* TexelData = Request.GenMips ? MipChain.data() : RawData;
+    const u8* TexelData = Request.GenMips ? MipChain.data() : static_cast<const u8*>(RawData);
 
     std::vector<rl::MipData> Mips;
     Mips.reserve(MipCount);
@@ -620,10 +643,16 @@ std::shared_ptr<Texture_s> RequestTexture(const JsonValue_s& Data, bool ErrorTex
     TextureLoadRequest_s Request;
     bool RequestParsed = false;
 
-    if (FileFormat == "png" || FileFormat == "tga")
+    if (FileFormat == "png" || FileFormat == "tga" || FileFormat == "hdr")
     {
         Request.SourceType = TextureSourceType_e::STB;
         RequestParsed = ParseTextureRequestSTB(Data, Request);
+
+        if (RequestParsed && (FileFormat == "hdr") != IsFloatFormat(Request.Format))
+        {
+            LOGWARNING("[TextureManager::RequestTexture] Texture format does not match source file type '%s' : %s", FileFormat.c_str(), Request.SourcePath.ToString().c_str());
+            RequestParsed = false;
+        }
     }
     else if (FileFormat == "dds")
     {

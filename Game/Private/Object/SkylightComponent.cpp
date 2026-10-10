@@ -29,5 +29,5 @@ void SkylightComponent::PreDestroy()
 
 void SkylightComponent::SetEnvironmentMap(const std::shared_ptr<Texture_s>& Texture)
 {
-
+	EnvironmentMap = Texture;
 }
