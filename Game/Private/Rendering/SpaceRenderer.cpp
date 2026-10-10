@@ -6,6 +6,7 @@
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Particles/ParticleRenderer.h"
+#include "RaytracingScene.h"
 #include "Rendering/IRenderable.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/Texture.h"
@@ -14,13 +15,13 @@
 
 #include <Render/Render.h>
 #include <RenderUtils/GPUContext/GPUContext.h>
-#include <RenderUtils/RenderPasses/RaytracingBuildPass.h>
 #include <RenderUtils/RenderPasses/Tonemapping.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 
 #include <SurfMath.h>
 
+// TODO: Move to private pimpl to avoid global/static refs
 static struct SpaceRendererPrivate_s
 {
 	rl::RootSignaturePtr RootSignature;
@@ -32,6 +33,7 @@ static struct SpaceRendererPrivate_s
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
 	DistanceFieldAORenderer_s DistanceFieldAORenderer;
 	BloomRenderer_s BloomRenderer;
+	RaytracingScene_s RaytracingScene;
 	bool Initialized = false;
 } G;
 
@@ -143,14 +145,7 @@ void SpaceRenderer_c::Init()
 
 	Clock = {};
 
-	if (rl::Render_SupportsRaytracing())
-	{
-		RTScene = rl::CreateRaytracingScene();
-	}
-	else
-	{
-		LOGINFO("[SpaceRenderer_c::Init] Raytracing not supported, acceleration structures will not be built");
-	}
+	G.RaytracingScene.Init();
 
 	BlueNoiseTexture = TextureManager::RequestTexture(Path_s(PathDirectory_e::Assets, L"Game", L"Textures/BlueNoise.hp_tex"), false, true);
 
@@ -162,6 +157,17 @@ void SpaceRenderer_c::Init()
 FrameBufferAlloc_s SpatialRenderingCollector_s::Alloc(const void* Data, uint32_t Size)
 {
 	return FrameBuffer.Alloc(Data, Size);
+}
+
+uint32_t SpatialRenderingCollector_s::GetNumBatches() const
+{
+	uint32_t Num = 0;
+	for (uint32_t PassIndex = 0; PassIndex < static_cast<uint32_t>(SpatialShaderPass_e::COUNT); ++PassIndex)
+	{
+		const SpatialRenderingMeshPass_s& Pass = Passes[PassIndex];
+		Num += static_cast<uint32_t>(Pass.Batches.size());
+	}
+	return Num;
 }
 
 void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space_c* Space, rl::CommandListSubmissionGroup& clGroup)
@@ -184,26 +190,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	CollectorFlags_e CollectorFlags = CollectorFlags_e::DISTANCE_FIELD_INSTANCES;
 
-	std::vector<rl::RaytracingGeometry_t> Geometries;
-	bool RaytracingBuildRequired = false;
+	const RaytracingSceneFrameData_s RTFrameData = G.RaytracingScene.PrepareFrame(Space->RenderSceneDirty);
 
-	if (RTScene)
+	if (RTFrameData.RaytracingBuildRequired)
 	{
-		std::vector<Mesh_s*> MeshesToBuild;
-		AssetManager_c::Get().CollectMeshesForRTBuild(MeshesToBuild);
-
-		std::vector<rl::RaytracingGeometry_t> Geometries;
-		Geometries.reserve(MeshesToBuild.size());
-		for (Mesh_s* Mesh : MeshesToBuild)
-		{
-			if (Mesh->RTGeom)
-			{
-				Geometries.push_back(Mesh->RTGeom);
-			}
-		}
-
-		// New geometry has no instances in the current scene, so it always needs a rebuild
-		RaytracingBuildRequired = !Geometries.empty() || Space->RenderSceneDirty;
 		CollectorFlags |= CollectorFlags_e::RAYTRACING_INSTANCES;
 	}
 
@@ -212,46 +202,14 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	for (IRenderable_c* Renderable : Space->RenderableComponents)
 	{
 		Renderable->Render(Collector);
-	}	
-
-	if (RaytracingBuildRequired)
-	{
-		AddRaytracingBuildPass(RGBuilder, RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene"), Geometries, Collector.GetRaytracingInstances());
 	}
 
-	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.MainPass.Batches.size()));
+	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.GetNumBatches()));
 
+	G.RaytracingScene.AddRaytracingBuildPass(RGBuilder, RTFrameData, Collector.GetRaytracingInstances());
 	DistanceFieldScene.Update(Collector.GetDistanceFieldInstances());
 
 	Clock.Tick();
-
-	if (RTScene)
-	{
-		std::vector<Mesh_s*> MeshesToBuild;
-		AssetManager_c::Get().CollectMeshesForRTBuild(MeshesToBuild);
-
-		std::vector<rl::RaytracingGeometry_t> Geometries;
-		Geometries.reserve(MeshesToBuild.size());
-		for (Mesh_s* Mesh : MeshesToBuild)
-		{
-			if (Mesh->RTGeom)
-			{
-				Geometries.push_back(Mesh->RTGeom);
-			}
-		}
-
-		// New geometry has no instances in the current scene, so it always needs a rebuild
-		if (!Geometries.empty() || Space->RenderSceneDirty)
-		{
-			std::vector<rl::RaytracingInstance> Instances;
-			for (IRenderable_c* Renderable : Space->RenderableComponents)
-			{
-				Renderable->CollectRaytracingInstances(Instances);
-			}
-
-			AddRaytracingBuildPass(RGBuilder, RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene"), Geometries, Instances);
-		}
-	}
 
 	Space->RenderSceneDirty = false;
 
@@ -347,7 +305,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniformsBuffer);
 		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
 
-		for (const SpatialRenderingBatch_s& Batch : Collector.MainPass.Batches)
+		for (const SpatialRenderingBatch_s& Batch : Collector.GetBatches(SpatialShaderPass_e::MAIN))
 		{
 			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
@@ -359,7 +317,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		}
 	});
 
-	RenderGraphResourceHandle_t RaytracingSceneResource = RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene");
+	RenderGraphResourceHandle_t RaytracingSceneResource = G.RaytracingScene.GetRTSceneHandle(RGBuilder);
 	RenderGraphResourceHandle_t ShadowTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R8_UNORM, RenderGraphResourceAccessType_e::SRV_UAV, L"ShadowTexture");
 
 	uint32_t BlueNoiseSrvIndex = BlueNoiseTexture && BlueNoiseTexture->IsReady() ? rl::GetDescriptorIndex(BlueNoiseTexture->SRV) : 0;

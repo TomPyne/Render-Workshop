@@ -87,8 +87,9 @@ AssetManager_c& AssetManager_c::Get()
     return *AssetManager;
 }
 
-void AssetManager_c::CollectMeshesForRTBuild(std::vector<Mesh_s*>& MeshesToBuild)
+std::vector<const Mesh_s*> AssetManager_c::CollectMeshesForRTBuild()
 {
+    std::vector<const Mesh_s*> MeshesToBuild;
     MeshesToBuild.reserve(MeshesQueuedForRTBuild.size());
     for (const std::weak_ptr<Mesh_s>& QueuedMesh : MeshesQueuedForRTBuild)
     {
@@ -99,4 +100,5 @@ void AssetManager_c::CollectMeshesForRTBuild(std::vector<Mesh_s*>& MeshesToBuild
     }
 
     MeshesQueuedForRTBuild.clear();
+    return MeshesToBuild;
 }

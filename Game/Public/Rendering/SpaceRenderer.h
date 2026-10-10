@@ -125,6 +125,13 @@ struct SpatialRenderingCollector_s
 	const std::vector<rl::RaytracingInstance>& GetRaytracingInstances() const { return RaytracingInstances; }
 	const std::vector<DistanceFieldInstance_s>& GetDistanceFieldInstances() const { return DistanceFieldInstances; }
 
+	const std::vector<SpatialRenderingBatch_s>& GetBatches(SpatialShaderPass_e Pass) const
+	{
+		return Passes[static_cast<size_t>(Pass)].Batches;
+	}
+
+	uint32_t GetNumBatches() const;
+
 	const uint64_t FrameIndex;
 	const CollectorFlags_e Flags;
 
@@ -179,8 +186,6 @@ protected:
 	bool HasPrevView = false;
 
 	ShadowDenoiser_c ShadowDenoiser;
-
-	rl::RaytracingScenePtr RTScene = {}; // Invalid without raytracing support
 
 	DistanceFieldScene_c DistanceFieldScene;
 	GlobalDistanceField_c GlobalDistanceField;

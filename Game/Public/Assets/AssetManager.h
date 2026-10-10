@@ -29,7 +29,7 @@ public:
 	static AssetManager_c& Get();
 
 	// Consumes internal queue and returns a list of raw pointers to meshes requiring a build
-	void CollectMeshesForRTBuild(std::vector<Mesh_s*>& MeshesToBuild);
+	std::vector<const Mesh_s*> CollectMeshesForRTBuild();
 
 private:
 

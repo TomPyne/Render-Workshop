@@ -11,8 +11,6 @@ set(
     "RenderPasses/BloomRenderPass.h"
     "RenderPasses/DisocclusionRenderPass.cpp"
     "RenderPasses/DisocclusionRenderPass.h"
-    "RenderPasses/RaytracingBuildPass.cpp"
-    "RenderPasses/RaytracingBuildPass.h"
     "RenderPasses/ScreenTracedAmbientOcclusion.cpp"
     "RenderPasses/ScreenTracedAmbientOcclusion.h"
     "RenderPasses/ScreenTracedReflections.cpp"

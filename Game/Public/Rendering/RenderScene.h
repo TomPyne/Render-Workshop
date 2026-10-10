@@ -5,8 +5,8 @@
 struct RenderScene_s
 {
 	// Rendering //////////////////////////////////////////////////////////////////////////////////
-	void RegisterRenderable(IRenderable_c* Renderable);
-	void UnregisterRenderable(IRenderable_c* Renderable);
+	void RegisterRenderable(class IRenderable_c* Renderable);
+	void UnregisterRenderable(class IRenderable_c* Renderable);
 	void DirtyRenderScene();
 
 	// Particles //////////////////////////////////////////////////////////////////////////////////

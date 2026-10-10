@@ -63,7 +63,7 @@ function(create_proj projname rapi)
 		"Public/Rendering/IRenderable.h"
 		"Private/Rendering/Bloom.cpp"
 		"Private/Rendering/Bloom.h"
-		"Private/Rendering/DebugViewPass.cpp"1. 
+		"Private/Rendering/DebugViewPass.cpp"
 		"Private/Rendering/DistanceFieldAOPass.cpp"
 		"Public/Rendering/DistanceFieldAOPass.h"
 		"Private/Rendering/DistanceFieldScene.cpp"
@@ -79,6 +79,8 @@ function(create_proj projname rapi)
 		"Public/Rendering/Materials.h"
 		"Private/Rendering/Mesh.cpp"
 		"Public/Rendering/Mesh.h"
+		"Private/Rendering/RaytracingScene.cpp"
+		"Private/Rendering/RaytracingScene.h"
 		"Private/Rendering/RenderScene.cpp"
 		"Public/Rendering/RenderScene.h"
 		"Private/Rendering/SpaceRenderer.cpp"

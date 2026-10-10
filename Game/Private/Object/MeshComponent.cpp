@@ -107,7 +107,7 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 
 	// TODO RT: For now we only use rays to cast shadows so we can disable shadow casting by removing from the RT scene
 	// but in the future we should use instance masks instead in case we want reflections e.g
-	if (EnumHasFlag(Collector.Flags, CollectorFlags_e::RAYTRACING_INSTANCES) && Mesh->RTGeom)
+	if (HasEnumFlags(Collector.Flags, CollectorFlags_e::RAYTRACING_INSTANCES) && Mesh->RTGeom && CastShadow)
 	{
 		rl::RaytracingInstance& Instance = Collector.AddRaytracingInstance();
 		Instance.Geometry = Mesh->RTGeom;
@@ -117,7 +117,7 @@ void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 		// TODO RT: mirrored instances need TRIANGLE_FRONT_COUNTERCLOCKWISE once rays are traced
 	}
 
-	if (EnumHasFlag(Collector.Flags, CollectorFlags_e::DISTANCE_FIELD_INSTANCES) && Mesh->SDF)
+	if (HasEnumFlags(Collector.Flags, CollectorFlags_e::DISTANCE_FIELD_INSTANCES) && Mesh->SDF)
 	{
 		const SignedDistanceField_s& SDF = *Mesh->SDF;
 		DistanceFieldInstance_s& DFInstance = Collector.AddDistanceFieldInstance();
