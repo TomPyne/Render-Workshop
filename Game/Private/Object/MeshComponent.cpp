@@ -21,7 +21,11 @@ void MeshComponent_c::OnCreate()
 	if (Space_c* Space = GetSpace())
 	{
 		Space->RegisterPhysical(this);
-		Space->RegisterRenderable(this);
+	}
+
+	if (RenderScene_s* RenderScene = GetRenderScene())
+	{
+		RenderScene->RegisterRenderable(this);
 	}
 }
 
@@ -79,17 +83,20 @@ void MeshComponent_c::PreDestroy()
 	if (Space_c* Space = GetSpace())
 	{
 		Space->UnregisterPhysical(this);
-		Space->UnregisterRenderable(this);
 	}
+
+	if (RenderScene_s* RenderScene = GetRenderScene())
+	{
+		RenderScene->UnregisterRenderable(this);
+	}
+
 	Super::PreDestroy();
 }
 
 void MeshComponent_c::OnTransformed()
 {
-	if (Space_c* Space = GetSpace())
-	{
-		Space->DirtyRenderScene();
-	}
+	Super::OnTransformed();
+	DirtyRenderScene();
 }
 
 void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
@@ -151,10 +158,7 @@ void MeshComponent_c::SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh)
 {
 	Mesh = InMesh;
 
-	if (Space_c* Space = GetSpace())
-	{
-		Space->DirtyRenderScene();
-	}
+	DirtyRenderScene();
 }
 
 void MeshComponent_c::SetVisible(bool InVisible)
@@ -164,10 +168,7 @@ void MeshComponent_c::SetVisible(bool InVisible)
 
 	Visible = InVisible;
 
-	if (Space_c* Space = GetSpace())
-	{
-		Space->DirtyRenderScene();
-	}
+	DirtyRenderScene();
 }
 
 void MeshComponent_c::SetCastShadow(bool InCastShadow)
@@ -177,10 +178,7 @@ void MeshComponent_c::SetCastShadow(bool InCastShadow)
 
 	CastShadow = InCastShadow;
 
-	if (Space_c* Space = GetSpace())
-	{
-		Space->DirtyRenderScene();
-	}
+	DirtyRenderScene();
 }
 
 uint32_t MeshComponent_c::GetMaterialCount() const

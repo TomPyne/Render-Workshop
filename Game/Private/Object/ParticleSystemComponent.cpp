@@ -8,13 +8,13 @@ void ParticleSystemComponent_c::OnCreate()
 {
 	Super::OnCreate();
 
-	if (Space_c* Space = GetSpace())
+	if (RenderScene_s* RenderScene = GetRenderScene())
 	{
 		ParticleSystemInfo = new ParticleSystemInfo_s;
 		ParticleSystemInfo->Name = "Test";
 		ParticleSystemInfo->Position = GetWorldPosition();
 		ParticleSystemInfo->Scale = 0.1f;
-		Space->RegisterParticleSystem(ParticleSystemInfo);
+		RenderScene->RegisterParticleSystem(ParticleSystemInfo);
 	}
 
 }
@@ -28,9 +28,9 @@ void ParticleSystemComponent_c::PreDestroy()
 {
 	if (ParticleSystemInfo)
 	{
-		if (Space_c* Space = GetSpace())
+		if (RenderScene_s* RenderScene = GetRenderScene())
 		{
-			Space->UnregisterParticleSystem(ParticleSystemInfo);
+			RenderScene->UnregisterParticleSystem(ParticleSystemInfo);
 		}
 		delete ParticleSystemInfo;
 		ParticleSystemInfo = nullptr;

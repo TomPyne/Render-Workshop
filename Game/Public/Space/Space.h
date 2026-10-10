@@ -2,6 +2,8 @@
 
 #include "Object/Object.h"
 
+#include "Rendering/RenderScene.h"
+
 #include <SurfMath.h>
 
 #include <functional>
@@ -22,8 +24,7 @@ class Space_c : public std::enable_shared_from_this<Space_c>
 {
 public:
 
-	std::vector<std::shared_ptr<Object_c>> Objects;
-	std::vector<std::shared_ptr<Level_c>> Levels;
+	RenderScene_s RenderScene;
 
 	void Update(float Delta);
 
@@ -101,17 +102,10 @@ public:
 	void UnregisterPhysical(IPhysical_c* Physical);
 	void Trace(struct IntersectionCtx_s& Context) const;
 
-	// Rendering //////////////////////////////////////////////////////////////////////////////////
-	void RegisterRenderable(IRenderable_c* Renderable);
-	void UnregisterRenderable(IRenderable_c* Renderable);
-	void DirtyRenderScene();
-
-	// Particles //////////////////////////////////////////////////////////////////////////////////
-	void RegisterParticleSystem(const struct ParticleSystemInfo_s* ParticleSystemInfo);
-	void UnregisterParticleSystem(const struct ParticleSystemInfo_s* ParticleSystemInfo);
-	const std::vector<const ParticleSystemInfo_s*>& GetParticleSystems() const { return ParticleSystems; }
-
 protected:
+
+	std::vector<std::shared_ptr<Object_c>> Objects;
+	std::vector<std::shared_ptr<Level_c>> Levels;
 
 	// Camera
 	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
@@ -122,13 +116,6 @@ protected:
 
 	// Tracing
 	std::vector<IPhysical_c*> PhysicalComponents;
-
-	// Rendering
-	std::vector<IRenderable_c*> RenderableComponents;
-	bool RenderSceneDirty = false;
-
-	// Particles
-	std::vector<const ParticleSystemInfo_s*> ParticleSystems;
 
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
 

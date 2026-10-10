@@ -8,7 +8,7 @@
 #include "Particles/ParticleRenderer.h"
 #include "RaytracingScene.h"
 #include "Rendering/IRenderable.h"
-#include "Rendering/Mesh.h"
+#include "Rendering/RenderScene.h"
 #include "Rendering/Texture.h"
 #include "Space/Space.h"
 #include "Tools/GameStats.h"
@@ -181,25 +181,23 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	GameStats::UpdateCamera(PrimaryCamera);
 
-	matrix ProjectionMatrix = PrimaryCamera->CalculateProjectionMatrix(Screen.Width, Screen.Height);
-	matrix ViewMatrix = PrimaryCamera->CalculateViewMatrix();
-
-	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
-
-	FrameIndex++;
+	RenderScene_s& Scene = Space->RenderScene;
 
 	CollectorFlags_e CollectorFlags = CollectorFlags_e::DISTANCE_FIELD_INSTANCES;
 
-	const RaytracingSceneFrameData_s RTFrameData = G.RaytracingScene.PrepareFrame(Space->RenderSceneDirty);
-
+	const RaytracingSceneFrameData_s RTFrameData = G.RaytracingScene.PrepareFrame(Scene.RenderSceneDirty);
 	if (RTFrameData.RaytracingBuildRequired)
 	{
 		CollectorFlags |= CollectorFlags_e::RAYTRACING_INSTANCES;
 	}
 
+	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
+
+	FrameIndex++;	
+
 	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer(), FrameIndex, CollectorFlags);
 
-	for (IRenderable_c* Renderable : Space->RenderableComponents)
+	for (IRenderable_c* Renderable : Scene.GetRenderables())
 	{
 		Renderable->Render(Collector);
 	}
@@ -211,8 +209,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	Clock.Tick();
 
-	Space->RenderSceneDirty = false;
+	Scene.RenderSceneDirty = false;
 
+	matrix ProjectionMatrix = PrimaryCamera->CalculateProjectionMatrix(Screen.Width, Screen.Height);
+	matrix ViewMatrix = PrimaryCamera->CalculateViewMatrix();
 	const matrix ViewProjection = ViewMatrix * ProjectionMatrix;
 	const matrix InverseViewProjection = InverseMatrix(ViewProjection);
 
@@ -460,7 +460,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
 
-	G.ParticleRenderer.AddPass(RGBuilder, Space->GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
+	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
 		GlobalDistanceField, GlobalVolume);
 
 	RenderGraphResourceHandle_t BackBufferTexture = RGBuilder.RefBackBufferTexture(Screen.RenderView->GetCurrentBackBufferTexture(), Screen.RenderView->GetCurrentBackBufferRTV(), rl::ResourceTransitionState::RENDER_TARGET, Screen.RenderView->Width, Screen.RenderView->Height);

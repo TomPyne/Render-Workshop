@@ -24,7 +24,17 @@ void RenderScene_s::DirtyRenderScene()
 }
 
 void RenderScene_s::RegisterParticleSystem(const ParticleSystemInfo_s* ParticleSystemInfo)
-{}
+{
+	if (ParticleSystemInfo)
+	{
+		ParticleSystems.push_back(ParticleSystemInfo);
+	}
+}
 
-void RenderScene_s::UnregisterParticleSystem(const ParticleSystemInfo_s * ParticleSystemInfo)
-{}
+void RenderScene_s::UnregisterParticleSystem(const ParticleSystemInfo_s* ParticleSystemInfo)
+{
+	if (ParticleSystemInfo)
+	{
+		std::erase(ParticleSystems, ParticleSystemInfo);
+	}
+}

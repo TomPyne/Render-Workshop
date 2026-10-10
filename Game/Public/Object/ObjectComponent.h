@@ -37,6 +37,8 @@ public:
 	inline Object_c* GetOwner() const { return Owner.lock().get();	}
 	
 	class Space_c* GetSpace() const;
+	struct RenderScene_s* GetRenderScene() const;
+	void DirtyRenderScene() const;
 
 private:
 

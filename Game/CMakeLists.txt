@@ -47,6 +47,8 @@ function(create_proj projname rapi)
 		"Public/Object/ObjectComponent.h"
 		"Public/Object/ParticleSystemComponent.h"
 		"Private/Object/ParticleSystemComponent.cpp"
+		"Public/Object/SkylightComponent.h"
+		"Private/Object/SkylightComponent.cpp"
 		"Private/Object/RuntimeMeshComponent.cpp"
 		"Public/Object/RuntimeMeshComponent.h"
 		"Private/Object/SpatialObject.cpp"
