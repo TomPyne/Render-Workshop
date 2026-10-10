@@ -26,8 +26,6 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 
 	// Begin IRenderable_c interface
 	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
-	virtual void CollectRaytracingInstances(std::vector<rl::RaytracingInstance>& OutInstances) override;
-	virtual void CollectDistanceFieldInstances(std::vector<DistanceFieldInstance_s>& OutInstances) override;
 	// End IRenderable_c interface
 
 	// Begin IPhysical interface

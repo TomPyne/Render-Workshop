@@ -46,6 +46,7 @@ set(
     "TextureUtils/DDSTextureLoader.h"
     "TextureUtils/TextureManager.cpp"
     "TextureUtils/TextureManager.h"
+    "Types/Enum.h"
 )
 
 set(

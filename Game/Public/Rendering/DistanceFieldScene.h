@@ -30,6 +30,7 @@ static_assert(sizeof(DistanceFieldInstance_s) == 96, "Must match DistanceFieldIn
 
 // Builds the instance for an SDF with mesh space VolumeBounds placed at WorldMatrix
 DistanceFieldInstance_s MakeDistanceFieldInstance(const matrix& WorldMatrix, const AABB& VolumeBounds, uint32_t SDFTextureIndex, float MaxDistance);
+void MakeDistanceFieldInstance(const matrix& WorldMatrix, const AABB& VolumeBounds, uint32_t SDFTextureIndex, float MaxDistance, DistanceFieldInstance_s& OutInstance);
 
 // GPU copy of the frame's distance field instances
 class DistanceFieldScene_c

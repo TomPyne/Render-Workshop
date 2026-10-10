@@ -8,7 +8,9 @@
 #include "Rendering/ShadowDenoiser.h"
 
 #include <Render/RenderTypes.h>
+#include <Render/Raytracing.h>
 #include <RenderUtils/RenderGraph/RenderGraph.h>
+#include <Shared/Types/Enum.h>
 #include <SurfClock.h>
 
 #include <unordered_map>
@@ -74,16 +76,26 @@ enum class SpatialShader_t : uint32_t
 	INVALID = 0,
 };
 
-enum class SpatialShaderPass_t : uint32_t
+enum class SpatialShaderPass_e : uint32_t
 {
-	INVALID = 0,
+	MAIN = 0,
+	COUNT,
 };
+
+enum class CollectorFlags_e : uint32_t
+{
+	NONE = 0,
+	RAYTRACING_INSTANCES = 1 << 0,
+	DISTANCE_FIELD_INSTANCES = 1 << 1,
+};
+ENUM_FLAGS(CollectorFlags_e);
 
 struct SpatialRenderingCollector_s
 {
-	SpatialRenderingCollector_s(FrameBuffer_s& InFrameBuffer, uint64_t InFrameIndex)
+	SpatialRenderingCollector_s(FrameBuffer_s& InFrameBuffer, uint64_t InFrameIndex, CollectorFlags_e InFlags = CollectorFlags_e::NONE)
 		: FrameIndex(InFrameIndex)
 		, FrameBuffer(InFrameBuffer)
+		, Flags(InFlags)
 	{}
 
 	template<typename T>
@@ -95,13 +107,33 @@ struct SpatialRenderingCollector_s
 
 	FrameBufferAlloc_s Alloc(const void* Data, uint32_t Size);
 
-	SpatialRenderingMeshPass_s MainPass;
+	SpatialRenderingBatch_s& AddBatch(SpatialShaderPass_e Pass)
+	{
+		return Passes[static_cast<size_t>(Pass)].AddBatch();
+	}
 
-	// Lets renderables detect whether they were drawn on the previous frame
+	rl::RaytracingInstance& AddRaytracingInstance()
+	{
+		return RaytracingInstances.emplace_back();
+	}
+
+	DistanceFieldInstance_s& AddDistanceFieldInstance()
+	{
+		return DistanceFieldInstances.emplace_back();
+	}
+
+	const std::vector<rl::RaytracingInstance>& GetRaytracingInstances() const { return RaytracingInstances; }
+	const std::vector<DistanceFieldInstance_s>& GetDistanceFieldInstances() const { return DistanceFieldInstances; }
+
 	const uint64_t FrameIndex;
+	const CollectorFlags_e Flags;
 
 private:
 	FrameBuffer_s& FrameBuffer;
+
+	SpatialRenderingMeshPass_s Passes[static_cast<size_t>(SpatialShaderPass_e::COUNT)];
+	std::vector<rl::RaytracingInstance> RaytracingInstances;
+	std::vector<DistanceFieldInstance_s> DistanceFieldInstances;
 };
 
 struct SpaceRendererScreenInfo_s

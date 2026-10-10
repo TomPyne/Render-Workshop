@@ -70,7 +70,7 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s D
 			if (!rl::IsValid(PSO) || !rl::IsValid(MaterialConstants))
 				continue;
 
-			SpatialRenderingBatch_s& Batch = Collector.MainPass.AddBatch();
+			SpatialRenderingBatch_s& Batch = Collector.AddBatch(SpatialShaderPass_e::MAIN);
 			
 			Batch.IndexBuffer = IndexBuffer;
 			Batch.IndexBufferFormat = rl::RenderFormat::R32_UINT;

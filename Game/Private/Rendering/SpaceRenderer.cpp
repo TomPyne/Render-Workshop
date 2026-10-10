@@ -182,21 +182,46 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	FrameIndex++;
 
-	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer(), FrameIndex);
+	CollectorFlags_e CollectorFlags = CollectorFlags_e::DISTANCE_FIELD_INSTANCES;
+
+	std::vector<rl::RaytracingGeometry_t> Geometries;
+	bool RaytracingBuildRequired = false;
+
+	if (RTScene)
+	{
+		std::vector<Mesh_s*> MeshesToBuild;
+		AssetManager_c::Get().CollectMeshesForRTBuild(MeshesToBuild);
+
+		std::vector<rl::RaytracingGeometry_t> Geometries;
+		Geometries.reserve(MeshesToBuild.size());
+		for (Mesh_s* Mesh : MeshesToBuild)
+		{
+			if (Mesh->RTGeom)
+			{
+				Geometries.push_back(Mesh->RTGeom);
+			}
+		}
+
+		// New geometry has no instances in the current scene, so it always needs a rebuild
+		RaytracingBuildRequired = !Geometries.empty() || Space->RenderSceneDirty;
+		CollectorFlags |= CollectorFlags_e::RAYTRACING_INSTANCES;
+	}
+
+	SpatialRenderingCollector_s Collector(RGBuilder.GetMainFrameBuffer(), FrameIndex, CollectorFlags);
 
 	for (IRenderable_c* Renderable : Space->RenderableComponents)
 	{
 		Renderable->Render(Collector);
+	}	
+
+	if (RaytracingBuildRequired)
+	{
+		AddRaytracingBuildPass(RGBuilder, RGBuilder.ImportRaytracingScene(RTScene, L"RaytracingScene"), Geometries, Collector.GetRaytracingInstances());
 	}
 
 	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.MainPass.Batches.size()));
 
-	DistanceFieldInstances.clear();
-	for (IRenderable_c* Renderable : Space->RenderableComponents)
-	{
-		Renderable->CollectDistanceFieldInstances(DistanceFieldInstances);
-	}
-	DistanceFieldScene.Update(DistanceFieldInstances);
+	DistanceFieldScene.Update(Collector.GetDistanceFieldInstances());
 
 	Clock.Tick();
 

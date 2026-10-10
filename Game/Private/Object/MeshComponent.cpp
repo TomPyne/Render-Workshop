@@ -12,6 +12,7 @@
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
+#include <Shared/Types/Enum.h>
 
 void MeshComponent_c::OnCreate()
 {
@@ -93,43 +94,35 @@ void MeshComponent_c::OnTransformed()
 
 void MeshComponent_c::Render(SpatialRenderingCollector_s& Collector)
 {
-	if (Visible && Mesh)
-	{
-		const matrix& WorldMatrix = GetWorldMatrix();
-		const matrix& PrevWorldMatrix = MotionHistory.Update(WorldMatrix, Collector.FrameIndex, ConsumeMotionReset());
+	if (!Visible || !Mesh)
+		return;
 
-		ObjectUniforms_s Uniforms = {};
-		const bool Mirrored = MakeObjectUniforms(WorldMatrix, PrevWorldMatrix, Uniforms);
+	const matrix& WorldMatrix = GetWorldMatrix();
+	const matrix& PrevWorldMatrix = MotionHistory.Update(WorldMatrix, Collector.FrameIndex, ConsumeMotionReset());
 
-		Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored, OverrideMaterials);
-	}
-}
+	ObjectUniforms_s Uniforms = {};
+	const bool Mirrored = MakeObjectUniforms(WorldMatrix, PrevWorldMatrix, Uniforms);
 
-void MeshComponent_c::CollectRaytracingInstances(std::vector<rl::RaytracingInstance>& OutInstances)
-{
-	// A valid RTGeom was either built on an earlier frame or is being built with this scene
+	Mesh->Render(Collector, Collector.Alloc(Uniforms), Mirrored, OverrideMaterials);
+
 	// TODO RT: For now we only use rays to cast shadows so we can disable shadow casting by removing from the RT scene
 	// but in the future we should use instance masks instead in case we want reflections e.g
-	if (!Visible || !CastShadow || !Mesh || !Mesh->RTGeom)
-		return;
+	if (EnumHasFlag(Collector.Flags, CollectorFlags_e::RAYTRACING_INSTANCES) && Mesh->RTGeom)
+	{
+		rl::RaytracingInstance& Instance = Collector.AddRaytracingInstance();
+		Instance.Geometry = Mesh->RTGeom;
+		// Row vectors, so the instance's column vector 3x4 is the transposed upper 4x3
+		const matrix3x4 Transform = MakeMatrix3x4(TransposeMatrix(WorldMatrix));
+		memcpy(Instance.Transform, Transform.m, sizeof(Instance.Transform));
+		// TODO RT: mirrored instances need TRIANGLE_FRONT_COUNTERCLOCKWISE once rays are traced
+	}
 
-	rl::RaytracingInstance& Instance = OutInstances.emplace_back();
-	Instance.Geometry = Mesh->RTGeom;
-
-	// Row vectors, so the instance's column vector 3x4 is the transposed upper 4x3
-	const matrix3x4 Transform = MakeMatrix3x4(TransposeMatrix(GetWorldMatrix()));
-	memcpy(Instance.Transform, Transform.m, sizeof(Instance.Transform));
-
-	// TODO RT: mirrored instances need TRIANGLE_FRONT_COUNTERCLOCKWISE once rays are traced
-}
-
-void MeshComponent_c::CollectDistanceFieldInstances(std::vector<DistanceFieldInstance_s>& OutInstances)
-{
-	if (!Visible || !Mesh || !Mesh->SDF)
-		return;
-
-	const SignedDistanceField_s& SDF = *Mesh->SDF;
-	OutInstances.push_back(MakeDistanceFieldInstance(GetWorldMatrix(), SDF.VolumeBounds, rl::GetDescriptorIndex(SDF.TextureSRV), SDF.MaxDistance));
+	if (EnumHasFlag(Collector.Flags, CollectorFlags_e::DISTANCE_FIELD_INSTANCES) && Mesh->SDF)
+	{
+		const SignedDistanceField_s& SDF = *Mesh->SDF;
+		DistanceFieldInstance_s& DFInstance = Collector.AddDistanceFieldInstance();
+		MakeDistanceFieldInstance(GetWorldMatrix(), SDF.VolumeBounds, rl::GetDescriptorIndex(SDF.TextureSRV), SDF.MaxDistance, DFInstance);
+	}
 }
 
 void MeshComponent_c::Intersect(IntersectionCtx_s& Context) const
