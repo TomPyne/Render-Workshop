@@ -7,6 +7,8 @@ function(create_proj projname rapi)
 		"Source/SunTempleApp.h"
 		"Source/Components/MoverComponent.cpp"
 		"Source/Components/MoverComponent.h"
+		"Source/Components/RotatorComponent.cpp"
+		"Source/Components/RotatorComponent.h"
 		"Source/Materials/SunTempleMaterials.h"
 		"Source/Materials/SunTempleMaterials.cpp"
 	)

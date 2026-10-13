@@ -17,10 +17,12 @@ public:
 
 protected:
 
+	// Serialized
 	float3 Direction = float3(0.0f, 1.0f, 0.0f);
 	float Distance = 5.0f;
-	float Speed = 1.0f;
+	float Speed = 0.2f;
 
+	// Runtime
 	float3 StartPos = {};
 	float CurrentPhase = 0.0f;
 };

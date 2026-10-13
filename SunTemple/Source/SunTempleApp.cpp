@@ -1,6 +1,7 @@
 #include "SunTempleApp.h"
 
 #include "Components/MoverComponent.h"
+#include "Components/RotatorComponent.h"
 #include "Materials/SunTempleMaterials.h"
 
 #include <Assets/MaterialManager.h>
@@ -34,6 +35,7 @@ void SunTempleApp_c::RegisterClasses()
 
 	// Components
 	Space->RegisterComponentClass<MoverComponent_c>();
+	Space->RegisterComponentClass<RotatorComponent_c>();
 
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<ArchMaterialShader_c>(L"ArchBRDFMaterialShader");
