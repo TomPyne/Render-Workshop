@@ -207,6 +207,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	G.RaytracingScene.AddRaytracingBuildPass(RGBuilder, RTFrameData, Collector.GetRaytracingInstances());
 	DistanceFieldScene.Update(Collector.GetDistanceFieldInstances());
 
+	// TODO: Feed the outputs to the deferred pass once the bake passes exist
+	SkylightRenderer.AddPasses(RGBuilder, Scene.GetSkylight(), Skylight);
+
 	Clock.Tick();
 
 	Scene.RenderSceneDirty = false;

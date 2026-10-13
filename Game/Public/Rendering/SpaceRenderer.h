@@ -6,6 +6,7 @@
 #include "Rendering/DistanceFieldVisualisePass.h"
 #include "Rendering/GlobalDistanceField.h"
 #include "Rendering/ShadowDenoiser.h"
+#include "Rendering/Skylight.h"
 
 #include <Render/RenderTypes.h>
 #include <Render/Raytracing.h>
@@ -159,9 +160,11 @@ public:
 	const DistanceFieldScene_c& GetDistanceFieldScene() const { return DistanceFieldScene; }
 	GlobalDistanceField_c& GetGlobalDistanceField() { return GlobalDistanceField; }
 	ShadowDenoiser_c& GetShadowDenoiser() { return ShadowDenoiser; }
+	SkylightRenderer_c& GetSkylightRenderer() { return SkylightRenderer; }
 
 	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
 	DistanceFieldAOSettings_s DistanceFieldAO;
+	SkylightSettings_s Skylight;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
@@ -179,6 +182,7 @@ protected:
 	bool HasPrevView = false;
 
 	ShadowDenoiser_c ShadowDenoiser;
+	SkylightRenderer_c SkylightRenderer;
 
 	DistanceFieldScene_c DistanceFieldScene;
 	GlobalDistanceField_c GlobalDistanceField;

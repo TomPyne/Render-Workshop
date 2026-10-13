@@ -57,6 +57,37 @@ void DrawShadowSpatial(SpaceRenderer_c& Renderer)
 	ImGui::SliderFloat("Variance sigma", &Settings.VarianceSigma, 0.5f, 16.0f, "%.1f");
 }
 
+const char* GetSkylightStatusName(SkylightStatus_e Status)
+{
+	switch (Status)
+	{
+	case SkylightStatus_e::Disabled:			return "Disabled";
+	case SkylightStatus_e::NoSkylight:			return "No skylight in the scene";
+	case SkylightStatus_e::WaitingForTexture:	return "Waiting for environment map";
+	case SkylightStatus_e::Baked:				return "Baked";
+	}
+	return "Unknown";
+}
+
+void DrawSkylight(SpaceRenderer_c& Renderer)
+{
+	SkylightSettings_s& Settings = Renderer.Skylight;
+	SkylightRenderer_c& SkylightRenderer = Renderer.GetSkylightRenderer();
+
+	ImGui::Text("Status: %s", GetSkylightStatusName(SkylightRenderer.GetStatus()));
+	ImGui::Text("Cubes %.1f MB", SkylightRenderer.GetMemoryBytes() / 1.0e6);
+
+	ImGui::Checkbox("Enabled##Skylight", &Settings.Enabled);
+	ImGui::SliderFloat("Intensity scale", &Settings.IntensityScale, 0.0f, 4.0f, "%.2f");
+	ImGui::SliderFloat("Yaw offset", &Settings.YawOffsetDegrees, -180.0f, 180.0f, "%.0f deg");
+	ImGui::Checkbox("Furnace test", &Settings.FurnaceTest);
+
+	if (ImGui::Button("Rebake"))
+	{
+		SkylightRenderer.RequestRebake();
+	}
+}
+
 void DrawVisualise(SpaceRenderer_c& Renderer)
 {
 	static const char* kVisualiseNames[] = { "Shadow", "Variance", "Confidence" };
@@ -91,6 +122,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 	if (Renderer && ImGui::CollapsingHeader("Shadow Spatial", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		DrawShadowSpatial(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Skylight", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawSkylight(*Renderer);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Visualise", ImGuiTreeNodeFlags_DefaultOpen))

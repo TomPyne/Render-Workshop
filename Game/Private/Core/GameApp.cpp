@@ -10,6 +10,7 @@
 #include "Object/MeshComponent.h"
 #include "Object/ParticleSystemComponent.h"
 #include "Object/RuntimeMeshComponent.h"
+#include "Object/SkylightComponent.h"
 #include "Rendering/Materials.h"
 #include "Rendering/SpaceRenderer.h"
 #include "Game/Private/Rendering/Materials/BRDFMaterial.h"
@@ -111,6 +112,7 @@ void GameApp_c::RegisterClasses()
 	Space->RegisterComponentClass<FlyControllerComponent_c>();
 	Space->RegisterComponentClass<MeshComponent_c>();
 	Space->RegisterComponentClass<ParticleSystemComponent_c>();
+	Space->RegisterComponentClass<SkylightComponent_c>();
 
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");

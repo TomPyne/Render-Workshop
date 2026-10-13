@@ -1,18 +1,40 @@
 #include "Object/SkylightComponent.h"
 
 #include "Assets/TextureManager.h"
+#include "Rendering/RenderScene.h"
 
 #include <Shared/FileUtils/JsonValue.h>
 #include <Shared/FileUtils/PathUtils.h>
 
-void SkylightComponent::OnCreate()
+#include <SurfMath.h>
+
+namespace
 {
-	Super::OnCreate();
+// Shared by all skylights so a replacement at the same address still reads as changed
+uint32_t NextSkylightGeneration = 1;
 }
 
-void SkylightComponent::Deserialize(const JsonValue_s& Data)
+void SkylightComponent_c::OnCreate()
+{
+	Super::OnCreate();
+
+	if (RenderScene_s* RenderScene = GetRenderScene())
+	{
+		Registered = RenderScene->RegisterSkylight(&SkylightInfo);
+	}
+}
+
+void SkylightComponent_c::Deserialize(const JsonValue_s& Data)
 {
 	Super::Deserialize(Data);
+
+	JsonHelpers::ParseFloat(Data, "Intensity", SkylightInfo.Intensity);
+
+	float YawDegrees = 0.0f;
+	if (JsonHelpers::ParseFloat(Data, "YawDegrees", YawDegrees))
+	{
+		SkylightInfo.Yaw = ConvertToRadians(YawDegrees);
+	}
 
 	Path_s EnvironmentMapAssetPath;
 	if (JsonHelpers::ParsePath(Data, "EnvironmentMapAssetPath", EnvironmentMapAssetPath))
@@ -21,13 +43,22 @@ void SkylightComponent::Deserialize(const JsonValue_s& Data)
 	}
 }
 
-void SkylightComponent::PreDestroy()
+void SkylightComponent_c::PreDestroy()
 {
+	if (Registered)
+	{
+		if (RenderScene_s* RenderScene = GetRenderScene())
+		{
+			RenderScene->UnregisterSkylight(&SkylightInfo);
+		}
+		Registered = false;
+	}
 
 	Super::PreDestroy();
 }
 
-void SkylightComponent::SetEnvironmentMap(const std::shared_ptr<Texture_s>& Texture)
+void SkylightComponent_c::SetEnvironmentMap(const std::shared_ptr<Texture_s>& Texture)
 {
-	EnvironmentMap = Texture;
+	SkylightInfo.EnvironmentMap = Texture;
+	SkylightInfo.Generation = NextSkylightGeneration++;
 }

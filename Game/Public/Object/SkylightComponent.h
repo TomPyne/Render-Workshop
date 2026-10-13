@@ -1,10 +1,11 @@
 #pragma once
 
 #include "ObjectComponent.h"
+#include "Rendering/SkylightInfo.h"
 
-class SkylightComponent : public ObjectComponent_c
+class SkylightComponent_c : public ObjectComponent_c
 {
-	OBJECTCOMPONENT_BODY(SkylightComponent, ObjectComponent_c)
+	OBJECTCOMPONENT_BODY(SkylightComponent_c, ObjectComponent_c)
 public:
 
 	// Begin ObjectComponent_c interface
@@ -17,5 +18,6 @@ public:
 
 protected:
 
-	std::shared_ptr<struct Texture_s> EnvironmentMap;
+	SkylightInfo_s SkylightInfo;
+	bool Registered = false;
 };

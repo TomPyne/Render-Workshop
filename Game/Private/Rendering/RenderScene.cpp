@@ -1,5 +1,7 @@
 #include "Rendering/RenderScene.h"
 
+#include <Shared/Logging/Logging.h>
+
 void RenderScene_s::RegisterRenderable(IRenderable_c* Renderable)
 {
 	if (Renderable)
@@ -36,5 +38,27 @@ void RenderScene_s::UnregisterParticleSystem(const ParticleSystemInfo_s* Particl
 	if (ParticleSystemInfo)
 	{
 		std::erase(ParticleSystems, ParticleSystemInfo);
+	}
+}
+bool RenderScene_s::RegisterSkylight(const SkylightInfo_s* SkylightInfo)
+{
+	if (!SkylightInfo)
+		return false;
+
+	if (Skylight)
+	{
+		LOGWARNING("[RenderScene] Only one skylight is supported, ignoring the new one");
+		return false;
+	}
+
+	Skylight = SkylightInfo;
+	return true;
+}
+
+void RenderScene_s::UnregisterSkylight(const SkylightInfo_s* SkylightInfo)
+{
+	if (SkylightInfo && Skylight == SkylightInfo)
+	{
+		Skylight = nullptr;
 	}
 }

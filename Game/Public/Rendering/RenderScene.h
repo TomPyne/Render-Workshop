@@ -24,7 +24,14 @@ struct RenderScene_s
 	void UnregisterParticleSystem(const struct ParticleSystemInfo_s* ParticleSystemInfo);
 	const std::vector<const struct ParticleSystemInfo_s*>& GetParticleSystems() const { return ParticleSystems; }
 
+	// Skylight ///////////////////////////////////////////////////////////////////////////////////
+	// Only one skylight is supported, returns false if another is already registered
+	bool RegisterSkylight(const struct SkylightInfo_s* SkylightInfo);
+	void UnregisterSkylight(const struct SkylightInfo_s* SkylightInfo);
+	const struct SkylightInfo_s* GetSkylight() const { return Skylight; }
+
 private:
 	std::vector<class IRenderable_c*> RenderableComponents;
 	std::vector<const struct ParticleSystemInfo_s*> ParticleSystems;
+	const struct SkylightInfo_s* Skylight = nullptr;
 };
