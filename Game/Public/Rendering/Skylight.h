@@ -28,6 +28,8 @@ struct SkylightOutputs_s
 	RenderGraphResourceHandle_t Prefilter = RenderGraphResourceHandle_t::NONE;
 	float Intensity = 0.0f;
 	float BackgroundMip = 0.0f;
+	// Roughness 1 lands on this prefilter mip
+	float PrefilterMaxMip = 0.0f;
 
 	bool IsValid() const { return Source != RenderGraphResourceHandle_t::NONE; }
 };
@@ -72,10 +74,12 @@ private:
 
 	void AddSourcePasses(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, uint32_t EquirectTextureIndex, float Yaw, bool FurnaceTest);
 	void AddIrradiancePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, RenderGraphResourceHandle_t Irradiance);
+	void AddPrefilterPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, RenderGraphResourceHandle_t Prefilter);
 
 	rl::ComputePipelineStatePtr EquirectToCubePSO = {};
 	rl::ComputePipelineStatePtr CubeDownsamplePSO = {};
 	rl::ComputePipelineStatePtr IrradiancePSO = {};
+	rl::ComputePipelineStatePtr PrefilterPSO = {};
 
 	Cube_s SourceCube;
 	Cube_s IrradianceCube;

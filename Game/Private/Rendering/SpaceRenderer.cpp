@@ -454,13 +454,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->ShadowHistoryTextureIndex = RG.GetSRVIndex(DenoisedShadow.History);
 		Uniforms->MaxConfidence = MaxConfidence;
 
-		// Prefilter is filled in once its bake pass exists
 		Uniforms->SkySourceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Source) : 0u;
 		Uniforms->SkyIrradianceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Irradiance) : 0u;
-		Uniforms->SkyPrefilterTextureIndex = 0u;
+		Uniforms->SkyPrefilterTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Prefilter) : 0u;
 		Uniforms->SkyEnabled = Sky.IsValid() ? 1u : 0u;
 		Uniforms->SkyIntensity = Sky.Intensity;
-		Uniforms->SkyPrefilterMaxMip = 0.0f;
+		Uniforms->SkyPrefilterMaxMip = Sky.PrefilterMaxMip;
 		Uniforms->SkyBackgroundMip = Sky.BackgroundMip;
 
 		Ctx.SetRootSignature(G.RootSignature);
@@ -486,6 +485,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		DeferredPass.AccessResource(Sky.Source, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 		DeferredPass.AccessResource(Sky.Irradiance, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
+		DeferredPass.AccessResource(Sky.Prefilter, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 	}
 
 	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,

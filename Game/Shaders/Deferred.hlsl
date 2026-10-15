@@ -170,11 +170,9 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     float3 Ambient;
     if (c_Deferred.SkyEnabled)
     {
-        TextureCube<float4> SkyIrradiance = t_texcube_f4[c_Deferred.SkyIrradianceTextureIndex];
         const float3 R = reflect(-V, N);
-        const float3 Irradiance = SkyIrradiance.SampleLevel(SharedClampedSampler, N, 0.0f).rgb;
-        // TODO: Temporary stand in until the prefiltered specular cube exists, irradiance is its fully rough limit
-        const float3 SpecularRadiance = SkyIrradiance.SampleLevel(SharedClampedSampler, R, 0.0f).rgb;
+        const float3 Irradiance = t_texcube_f4[c_Deferred.SkyIrradianceTextureIndex].SampleLevel(SharedClampedSampler, N, 0.0f).rgb;
+        const float3 SpecularRadiance = t_texcube_f4[c_Deferred.SkyPrefilterTextureIndex].SampleLevel(SharedClampedSampler, R, Roughness * c_Deferred.SkyPrefilterMaxMip).rgb;
         Ambient = c_Deferred.SkyIntensity * (Irradiance * DiffuseColor * AO + SpecularRadiance * EnvBRDF * SpecularAO);
     }
     else

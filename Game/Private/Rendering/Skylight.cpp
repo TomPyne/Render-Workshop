@@ -22,6 +22,10 @@ constexpr uint32_t kIrradianceSize = 32;
 constexpr uint32_t kIrradianceSourceMip = 4; // 32x32 per face
 constexpr uint32_t kPrefilterSize = 256;
 constexpr uint32_t kPrefilterMipCount = 6; // Down to 8x8, roughness = mip / (count - 1)
+constexpr uint32_t kPrefilterCopyMip = 1; // Source mip with the prefilter's mip 0 size, roughness 0 is a straight copy
+constexpr uint32_t kPrefilterSamples = 256;
+
+static_assert((kSourceSize >> kPrefilterCopyMip) == kPrefilterSize, "Roughness 0 copies a source mip of the same size");
 
 uint64_t GetCubeMemoryBytes(uint32_t Size, uint32_t MipCount)
 {
@@ -43,6 +47,7 @@ void SkylightRenderer_c::Init()
 	static const Path_s EquirectToCubePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/EquirectToCube.hlsl");
 	static const Path_s CubeDownsamplePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/CubeDownsample.hlsl");
 	static const Path_s IrradiancePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/IrradianceConvolve.hlsl");
+	static const Path_s PrefilterPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/PrefilterSpecular.hlsl");
 
 	rl::ComputePipelineStateDesc PsoDesc = {};
 	PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
@@ -61,6 +66,11 @@ void SkylightRenderer_c::Init()
 	PsoDesc.DebugName = L"SkylightIrradiance";
 	IrradiancePSO = rl::CreateComputePipelineState(PsoDesc);
 	ASSERTMSG(IrradiancePSO.IsValid(), "Failed to create Skylight Irradiance PSO");
+
+	PsoDesc.Cs = rl::CreateComputeShader(PrefilterPath.ToString().c_str());
+	PsoDesc.DebugName = L"SkylightPrefilter";
+	PrefilterPSO = rl::CreateComputePipelineState(PsoDesc);
+	ASSERTMSG(PrefilterPSO.IsValid(), "Failed to create Skylight Prefilter PSO");
 }
 
 SkylightRenderer_c::Cube_s SkylightRenderer_c::CreateCube(uint32_t Size, uint32_t MipCount, const wchar_t* Name)
@@ -222,9 +232,66 @@ void SkylightRenderer_c::AddIrradiancePass(RenderGraphBuilder_s& RGBuilder, Rend
 	});
 }
 
+void SkylightRenderer_c::AddPrefilterPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, RenderGraphResourceHandle_t Prefilter)
+{
+	std::vector<uint32_t> MipUAVIndices;
+	MipUAVIndices.reserve(PrefilterCube.MipCount);
+	for (const rl::UnorderedAccessViewPtr& UAV : PrefilterCube.MipUAVs)
+	{
+		MipUAVIndices.push_back(rl::GetDescriptorIndex(UAV));
+	}
+
+	const uint32_t Size = PrefilterCube.Size;
+	const float SourceTexelSolidAngle = 4.0f * K_PI / (6.0f * static_cast<float>(SourceCube.Size * SourceCube.Size));
+	const float SourceMaxMip = static_cast<float>(SourceCube.MipCount - 1);
+	const rl::ComputePipelineState_t PSO = PrefilterPSO;
+
+	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Skylight Prefilter")
+	.AccessResource(Source, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(Prefilter, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+		Ctx.SetPipelineState(PSO);
+
+		const uint32_t SourceSRVIndex = RG.GetSRVIndex(Source);
+
+		// Each mip only reads the source, so they need no barriers between them
+		for (uint32_t MipIt = 0; MipIt < MipUAVIndices.size(); MipIt++)
+		{
+			struct
+			{
+				uint32_t SourceTextureIndex;
+				uint32_t OutputTextureIndex;
+				uint32_t Size;
+				uint32_t SampleCount;
+
+				float Roughness;
+				float SourceTexelSolidAngle;
+				float SourceMaxMip;
+				float CopyMip;
+			} Uniforms = {};
+
+			Uniforms.SourceTextureIndex = SourceSRVIndex;
+			Uniforms.OutputTextureIndex = MipUAVIndices[MipIt];
+			Uniforms.Size = Max(Size >> MipIt, 1u);
+			Uniforms.SampleCount = kPrefilterSamples;
+			Uniforms.Roughness = static_cast<float>(MipIt) / static_cast<float>(MipUAVIndices.size() - 1);
+			Uniforms.SourceTexelSolidAngle = SourceTexelSolidAngle;
+			Uniforms.SourceMaxMip = SourceMaxMip;
+			Uniforms.CopyMip = static_cast<float>(kPrefilterCopyMip);
+
+			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+			Ctx.Dispatch(DivideRoundUp(Uniforms.Size, 8u), DivideRoundUp(Uniforms.Size, 8u), 6u);
+		}
+	});
+}
+
 SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const SkylightInfo_s* Info, const SkylightSettings_s& Settings)
 {
-	if (!Settings.Enabled || !EquirectToCubePSO.IsValid() || !CubeDownsamplePSO.IsValid() || !IrradiancePSO.IsValid())
+	if (!Settings.Enabled || !EquirectToCubePSO.IsValid() || !CubeDownsamplePSO.IsValid() || !IrradiancePSO.IsValid() || !PrefilterPSO.IsValid())
 	{
 		Status = SkylightStatus_e::Disabled;
 		return {};
@@ -262,6 +329,7 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 	Outputs.Prefilter = RGBuilder.InjectTexture(PrefilterCube.Texture, L"SkylightPrefilter");
 	Outputs.Intensity = Info->Intensity * Settings.IntensityScale;
 	Outputs.BackgroundMip = Min(Settings.BackgroundMip, static_cast<float>(SourceCube.MipCount - 1));
+	Outputs.PrefilterMaxMip = static_cast<float>(PrefilterCube.MipCount - 1);
 
 	if (Dirty)
 	{
@@ -269,6 +337,7 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 
 		AddSourcePasses(RGBuilder, Outputs.Source, rl::GetDescriptorIndex(Info->EnvironmentMap->SRV), Yaw, Settings.FurnaceTest);
 		AddIrradiancePass(RGBuilder, Outputs.Source, Outputs.Irradiance);
+		AddPrefilterPass(RGBuilder, Outputs.Source, Outputs.Prefilter);
 
 		Baked = true;
 		BakedGeneration = Info->Generation;
