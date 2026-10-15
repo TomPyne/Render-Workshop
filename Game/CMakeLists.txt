@@ -121,6 +121,7 @@ function(create_proj projname rapi)
 		"Shaders/Skylight/CubeDownsample.hlsl"
 		"Shaders/Skylight/CubeShared.h"
 		"Shaders/Skylight/EquirectToCube.hlsl"
+		"Shaders/Skylight/IrradianceConvolve.hlsl"
 	)
 
 	foreach(source IN LISTS source_list shader_list)

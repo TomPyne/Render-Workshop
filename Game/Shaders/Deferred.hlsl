@@ -165,7 +165,22 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const float3 SpecularBRDF = D_GGX(NoH, A2) * V_SmithGGXCorrelated(NoV, NoL, A2) * F_Schlick(F0, VoH);
     const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightRadiance * NoL * Shadow;
 
-    const float3 Ambient = c_Deferred.AmbientColor * (DiffuseColor * AO + EnvBRDFApprox(F0, Roughness, NoV) * SpecularAO);
+    const float3 EnvBRDF = EnvBRDFApprox(F0, Roughness, NoV);
+
+    float3 Ambient;
+    if (c_Deferred.SkyEnabled)
+    {
+        TextureCube<float4> SkyIrradiance = t_texcube_f4[c_Deferred.SkyIrradianceTextureIndex];
+        const float3 R = reflect(-V, N);
+        const float3 Irradiance = SkyIrradiance.SampleLevel(SharedClampedSampler, N, 0.0f).rgb;
+        // TODO: Temporary stand in until the prefiltered specular cube exists, irradiance is its fully rough limit
+        const float3 SpecularRadiance = SkyIrradiance.SampleLevel(SharedClampedSampler, R, 0.0f).rgb;
+        Ambient = c_Deferred.SkyIntensity * (Irradiance * DiffuseColor * AO + SpecularRadiance * EnvBRDF * SpecularAO);
+    }
+    else
+    {
+        Ambient = c_Deferred.AmbientColor * (DiffuseColor * AO + EnvBRDF * SpecularAO);
+    }
 
     Output = float4(Direct + Ambient + Emissive, 0.0f);
 }

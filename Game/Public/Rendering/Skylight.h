@@ -71,9 +71,11 @@ private:
 	void CreateCubes();
 
 	void AddSourcePasses(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, uint32_t EquirectTextureIndex, float Yaw, bool FurnaceTest);
+	void AddIrradiancePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, RenderGraphResourceHandle_t Irradiance);
 
 	rl::ComputePipelineStatePtr EquirectToCubePSO = {};
 	rl::ComputePipelineStatePtr CubeDownsamplePSO = {};
+	rl::ComputePipelineStatePtr IrradiancePSO = {};
 
 	Cube_s SourceCube;
 	Cube_s IrradianceCube;
