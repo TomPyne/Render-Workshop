@@ -142,6 +142,7 @@ void SpaceRenderer_c::Init()
 	}
 
 	ShadowDenoiser.Init();
+	SkylightRenderer.Init();
 
 	Clock = {};
 
@@ -207,8 +208,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	G.RaytracingScene.AddRaytracingBuildPass(RGBuilder, RTFrameData, Collector.GetRaytracingInstances());
 	DistanceFieldScene.Update(Collector.GetDistanceFieldInstances());
 
-	// TODO: Feed the outputs to the deferred pass once the bake passes exist
-	SkylightRenderer.AddPasses(RGBuilder, Scene.GetSkylight(), Skylight);
+	const SkylightOutputs_s Sky = SkylightRenderer.AddPasses(RGBuilder, Scene.GetSkylight(), Skylight);
 
 	Clock.Tick();
 
@@ -421,8 +421,18 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t ShadowHistoryTextureIndex;
 			float MaxConfidence;
 			float __Pad;
+
+			uint32_t SkySourceTextureIndex;
+			uint32_t SkyIrradianceTextureIndex;
+			uint32_t SkyPrefilterTextureIndex;
+			uint32_t SkyEnabled;
+
+			float SkyIntensity;
+			float SkyPrefilterMaxMip;
+			float SkyBackgroundMip;
+			float __Pad1;
 		};
-		static_assert(sizeof(DeferredConstants_s) == 144, "Must match DeferredData_s in Deferred.hlsl");
+		static_assert(sizeof(DeferredConstants_s) == 176, "Must match DeferredData_s in Deferred.hlsl");
 
 		FrameBufferAlloc_s DeferredCBuf;
 		DeferredConstants_s* Uniforms = RG.Alloc<DeferredConstants_s>(DeferredCBuf);
@@ -444,6 +454,15 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->ShadowHistoryTextureIndex = RG.GetSRVIndex(DenoisedShadow.History);
 		Uniforms->MaxConfidence = MaxConfidence;
 
+		// Irradiance and prefilter are filled in once their bake passes exist
+		Uniforms->SkySourceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Source) : 0u;
+		Uniforms->SkyIrradianceTextureIndex = 0u;
+		Uniforms->SkyPrefilterTextureIndex = 0u;
+		Uniforms->SkyEnabled = Sky.IsValid() ? 1u : 0u;
+		Uniforms->SkyIntensity = Sky.Intensity;
+		Uniforms->SkyPrefilterMaxMip = 0.0f;
+		Uniforms->SkyBackgroundMip = Sky.BackgroundMip;
+
 		Ctx.SetRootSignature(G.RootSignature);
 
 		rl::RenderTargetView_t RTV = RG.GetRTV(LitTexture);
@@ -462,6 +481,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 		Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 	});
+
+	if (Sky.IsValid())
+	{
+		DeferredPass.AccessResource(Sky.Source, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
+	}
 
 	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
 		GlobalDistanceField, GlobalVolume);

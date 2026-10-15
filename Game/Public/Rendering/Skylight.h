@@ -17,6 +17,8 @@ struct SkylightSettings_s
 	float YawOffsetDegrees = 0.0f;
 	// Bakes from a constant 1.0 environment, a white rough non-metal should then light to ~1.0
 	bool FurnaceTest = false;
+	// Source cube mip drawn as the sky, to inspect the chain
+	float BackgroundMip = 0.0f;
 };
 
 struct SkylightOutputs_s
@@ -25,6 +27,7 @@ struct SkylightOutputs_s
 	RenderGraphResourceHandle_t Irradiance = RenderGraphResourceHandle_t::NONE;
 	RenderGraphResourceHandle_t Prefilter = RenderGraphResourceHandle_t::NONE;
 	float Intensity = 0.0f;
+	float BackgroundMip = 0.0f;
 
 	bool IsValid() const { return Source != RenderGraphResourceHandle_t::NONE; }
 };
@@ -42,6 +45,8 @@ enum class SkylightStatus_e : uint32_t
 class SkylightRenderer_c
 {
 public:
+	void Init();
+
 	// Returns invalid outputs until a bake has been recorded, so callers never read an unbaked cube
 	SkylightOutputs_s AddPasses(RenderGraphBuilder_s& RGBuilder, const SkylightInfo_s* Info, const SkylightSettings_s& Settings);
 
@@ -64,6 +69,11 @@ private:
 
 	static Cube_s CreateCube(uint32_t Size, uint32_t MipCount, const wchar_t* Name);
 	void CreateCubes();
+
+	void AddSourcePasses(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, uint32_t EquirectTextureIndex, float Yaw, bool FurnaceTest);
+
+	rl::ComputePipelineStatePtr EquirectToCubePSO = {};
+	rl::ComputePipelineStatePtr CubeDownsamplePSO = {};
 
 	Cube_s SourceCube;
 	Cube_s IrradianceCube;

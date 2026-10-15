@@ -81,6 +81,7 @@ void DrawSkylight(SpaceRenderer_c& Renderer)
 	ImGui::SliderFloat("Intensity scale", &Settings.IntensityScale, 0.0f, 4.0f, "%.2f");
 	ImGui::SliderFloat("Yaw offset", &Settings.YawOffsetDegrees, -180.0f, 180.0f, "%.0f deg");
 	ImGui::Checkbox("Furnace test", &Settings.FurnaceTest);
+	ImGui::SliderFloat("Background mip", &Settings.BackgroundMip, 0.0f, 9.0f, "%.1f");
 
 	if (ImGui::Button("Rebake"))
 	{

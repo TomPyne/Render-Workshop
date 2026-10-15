@@ -32,12 +32,23 @@ struct DeferredData_s
     uint ShadowHistoryTextureIndex;
     float MaxConfidence;
     float __Pad;
+
+    uint SkySourceTextureIndex;
+    uint SkyIrradianceTextureIndex;
+    uint SkyPrefilterTextureIndex;
+    uint SkyEnabled;
+
+    float SkyIntensity;
+    float SkyPrefilterMaxMip;
+    float SkyBackgroundMip;
+    float __Pad1;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
 ConstantBuffer<DeferredData_s> c_Deferred : register(b2);
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space1);
+TextureCube<float4> t_texcube_f4[8192] : register(t1, space2);
 
 static const float PI = 3.14159265f;
 
@@ -104,7 +115,14 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 
     if (Depth >= 1.0f)
     {
-        Output = float4(Emissive, 0.0f);
+        float3 Sky = 0.0f;
+        if (c_Deferred.SkyEnabled)
+        {
+            const float3 ViewDir = normalize(ReconstructWorldPosition(Input.UV, 1.0f) - c_View.CamPos);
+            Sky = c_Deferred.SkyIntensity * t_texcube_f4[c_Deferred.SkySourceTextureIndex].SampleLevel(SharedClampedSampler, ViewDir, c_Deferred.SkyBackgroundMip).rgb;
+        }
+
+        Output = float4(Sky + Emissive, 0.0f);
         return;
     }
 

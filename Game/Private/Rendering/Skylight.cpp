@@ -1,10 +1,13 @@
 #include "Rendering/Skylight.h"
 
 #include "Rendering/SkylightInfo.h"
+#include "Rendering/SpaceRenderer.h"
 #include "Rendering/Texture.h"
 
 #include <Render/Render.h>
 #include <Render/TextureInfo.h>
+#include <RenderUtils/GPUContext/GPUContext.h>
+#include <Shared/FileUtils/PathUtils.h>
 #include <Shared/Logging/Logging.h>
 #include <SurfMath.h>
 
@@ -32,6 +35,25 @@ uint64_t GetCubeMemoryBytes(uint32_t Size, uint32_t MipCount)
 	return Bytes;
 }
 
+}
+
+void SkylightRenderer_c::Init()
+{
+	static const Path_s EquirectToCubePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/EquirectToCube.hlsl");
+	static const Path_s CubeDownsamplePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Skylight/CubeDownsample.hlsl");
+
+	rl::ComputePipelineStateDesc PsoDesc = {};
+	PsoDesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
+
+	PsoDesc.Cs = rl::CreateComputeShader(EquirectToCubePath.ToString().c_str());
+	PsoDesc.DebugName = L"SkylightEquirectToCube";
+	EquirectToCubePSO = rl::CreateComputePipelineState(PsoDesc);
+	ASSERTMSG(EquirectToCubePSO.IsValid(), "Failed to create Skylight EquirectToCube PSO");
+
+	PsoDesc.Cs = rl::CreateComputeShader(CubeDownsamplePath.ToString().c_str());
+	PsoDesc.DebugName = L"SkylightCubeDownsample";
+	CubeDownsamplePSO = rl::CreateComputePipelineState(PsoDesc);
+	ASSERTMSG(CubeDownsamplePSO.IsValid(), "Failed to create Skylight CubeDownsample PSO");
 }
 
 SkylightRenderer_c::Cube_s SkylightRenderer_c::CreateCube(uint32_t Size, uint32_t MipCount, const wchar_t* Name)
@@ -80,9 +102,84 @@ void SkylightRenderer_c::CreateCubes()
 	PrefilterCube = CreateCube(kPrefilterSize, kPrefilterMipCount, L"SkylightPrefilter");
 }
 
+void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, uint32_t EquirectTextureIndex, float Yaw, bool FurnaceTest)
+{
+	// The per-mip UAVs aren't known to the graph, it only tracks the cube's state as a whole
+	std::vector<uint32_t> MipUAVIndices;
+	MipUAVIndices.reserve(SourceCube.MipCount);
+	for (const rl::UnorderedAccessViewPtr& UAV : SourceCube.MipUAVs)
+	{
+		MipUAVIndices.push_back(rl::GetDescriptorIndex(UAV));
+	}
+
+	const uint32_t Size = SourceCube.Size;
+	const rl::ComputePipelineState_t EquirectPSO = EquirectToCubePSO;
+	const rl::ComputePipelineState_t DownsamplePSO = CubeDownsamplePSO;
+	const rl::Texture_t SourceTexture = SourceCube.Texture->Texture;
+
+	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Skylight Equirect To Cube")
+	.AccessResource(Source, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::DONT_CARE)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		struct
+		{
+			uint32_t EquirectTextureIndex;
+			uint32_t OutputTextureIndex;
+			uint32_t Size;
+			float Yaw;
+
+			uint32_t FurnaceTest;
+			float __Pad[3];
+		} Uniforms = {};
+
+		Uniforms.EquirectTextureIndex = EquirectTextureIndex;
+		Uniforms.OutputTextureIndex = MipUAVIndices[0];
+		Uniforms.Size = Size;
+		Uniforms.Yaw = Yaw;
+		Uniforms.FurnaceTest = FurnaceTest ? 1u : 0u;
+
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
+		Ctx.SetPipelineState(EquirectPSO);
+		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.Dispatch(DivideRoundUp(Size, 8u), DivideRoundUp(Size, 8u), 6u);
+	});
+
+	RGBuilder.AddPass(RenderGraphPassType_e::COMPUTE, L"Skylight Source Mips")
+	.AccessResource(Source, RenderGraphResourceAccessType_e::UAV, RenderGraphLoadOp_e::LOAD)
+	.SetExecuteCallback([=](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
+		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
+		Ctx.SetPipelineState(DownsamplePSO);
+
+		for (uint32_t MipIt = 1; MipIt < MipUAVIndices.size(); MipIt++)
+		{
+			struct
+			{
+				uint32_t SourceTextureIndex;
+				uint32_t OutputTextureIndex;
+				uint32_t Size;
+				uint32_t __Pad;
+			} Uniforms = {};
+
+			Uniforms.SourceTextureIndex = MipUAVIndices[MipIt - 1];
+			Uniforms.OutputTextureIndex = MipUAVIndices[MipIt];
+			Uniforms.Size = Max(Size >> MipIt, 1u);
+
+			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+			Ctx.Dispatch(DivideRoundUp(Uniforms.Size, 8u), DivideRoundUp(Uniforms.Size, 8u), 6u);
+
+			// The next mip reads this one
+			Ctx.RWBarrier(SourceTexture);
+		}
+	});
+}
+
 SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder, const SkylightInfo_s* Info, const SkylightSettings_s& Settings)
 {
-	if (!Settings.Enabled)
+	if (!Settings.Enabled || !EquirectToCubePSO.IsValid() || !CubeDownsamplePSO.IsValid())
 	{
 		Status = SkylightStatus_e::Disabled;
 		return {};
@@ -119,10 +216,13 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 	Outputs.Irradiance = RGBuilder.InjectTexture(IrradianceCube.Texture, L"SkylightIrradiance");
 	Outputs.Prefilter = RGBuilder.InjectTexture(PrefilterCube.Texture, L"SkylightPrefilter");
 	Outputs.Intensity = Info->Intensity * Settings.IntensityScale;
+	Outputs.BackgroundMip = Min(Settings.BackgroundMip, static_cast<float>(SourceCube.MipCount - 1));
 
 	if (Dirty)
 	{
 		LOGINFO("[SkylightRenderer] Baking skylight, generation %u, yaw %.1f degrees%s", Info->Generation, ConvertToDegrees(Yaw), Settings.FurnaceTest ? ", furnace test" : "");
+
+		AddSourcePasses(RGBuilder, Outputs.Source, rl::GetDescriptorIndex(Info->EnvironmentMap->SRV), Yaw, Settings.FurnaceTest);
 
 		Baked = true;
 		BakedGeneration = Info->Generation;

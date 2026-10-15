@@ -118,6 +118,9 @@ function(create_proj projname rapi)
 		"Shaders/DistanceFields/DistanceFieldVisualise.hlsl"
 		"Shaders/DistanceFields/GlobalDistanceFieldComposite.hlsl"
 		"Shaders/ShaderDefines.h"
+		"Shaders/Skylight/CubeDownsample.hlsl"
+		"Shaders/Skylight/CubeShared.h"
+		"Shaders/Skylight/EquirectToCube.hlsl"
 	)
 
 	foreach(source IN LISTS source_list shader_list)
