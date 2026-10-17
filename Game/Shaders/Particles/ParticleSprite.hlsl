@@ -53,7 +53,8 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 {
     float4 Color = t_tex2d_f4[c_Material.TextureIndex].Sample(SharedWrappedSampler, Input.TexCoord);
-    Color.rgb *= c_Material.Color * Color.a; // Additive blend ignores alpha
+    // Color is in nits. Additive blend ignores alpha
+    Color.rgb *= c_Material.Color * Color.a * c_View.PreExposure;
 
     Output = Color;
 }

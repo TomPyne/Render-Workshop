@@ -376,6 +376,7 @@ SkyMaterialShader_c::SkyMaterialShader_c()
     ShaderDebugName = L"SkyShader";
 
     ASSIGN_SHADER_PARAM(TextureIndex, SkyTexture);
+    ASSIGN_SHADER_PARAM(float, Luminance);
 }
 
 void SkyMaterialShader_c::Load()

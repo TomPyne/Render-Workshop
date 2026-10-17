@@ -1,7 +1,8 @@
 struct MaterialUniforms_s
 {   
     uint SkyTexture;
-    float3 __Pad;
+    float Luminance;
+    float2 __Pad;
 };
 
 #include "../../../Game/Shaders/MeshMaterial.h"
@@ -35,7 +36,7 @@ Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    float3 Color = t_tex2d_f4[c_Material.SkyTexture].Sample(SharedWrappedSampler, Input.UV0).rgb * 3.0f;
+    float3 Color = t_tex2d_f4[c_Material.SkyTexture].Sample(SharedWrappedSampler, Input.UV0).rgb * c_Material.Luminance;
 
     MaterialOutput_Default(normalize(Input.Normal), Output);
     MaterialOutput_Emissive(Color, Output);

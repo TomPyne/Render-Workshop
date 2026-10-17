@@ -73,7 +73,7 @@ struct SpaceViewUniforms_s
 	float2 Pad0;
 
 	float3 CamRight;
-	float Pad1;
+	float PreExposure;
 
 	float3 CamUp;
 	float Pad2;
@@ -257,6 +257,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	const float3 CamForward = Normalize(PrimaryCamera->GetWorldForward());
 	ViewUniforms.CamRight = Normalize(Cross(float3(0.0f, 1.0f, 0.0f), CamForward));
 	ViewUniforms.CamUp = Cross(CamForward, ViewUniforms.CamRight);
+	ViewUniforms.PreExposure = kPreExposure;
 
 	FrameBufferAlloc_s ViewUniformsBuffer = RGBuilder.Alloc(ViewUniforms);
 
@@ -424,15 +425,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			float MaxConfidence;
 			float __Pad;
 
-			uint32_t SkySourceTextureIndex;
 			uint32_t SkyIrradianceTextureIndex;
 			uint32_t SkyPrefilterTextureIndex;
 			uint32_t SkyEnabled;
-
 			float SkyIntensity;
+
 			float SkyPrefilterMaxMip;
-			float SkyBackgroundMip;
-			float __Pad1;
+			float3 __Pad1;
 		};
 		static_assert(sizeof(DeferredConstants_s) == 176, "Must match DeferredData_s in Deferred.hlsl");
 
@@ -456,13 +455,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->ShadowHistoryTextureIndex = RG.GetSRVIndex(DenoisedShadow.History);
 		Uniforms->MaxConfidence = MaxConfidence;
 
-		Uniforms->SkySourceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Source) : 0u;
 		Uniforms->SkyIrradianceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Irradiance) : 0u;
 		Uniforms->SkyPrefilterTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Prefilter) : 0u;
 		Uniforms->SkyEnabled = Sky.IsValid() ? 1u : 0u;
 		Uniforms->SkyIntensity = Sky.LuminanceScale * kPreExposure;
 		Uniforms->SkyPrefilterMaxMip = Sky.PrefilterMaxMip;
-		Uniforms->SkyBackgroundMip = Sky.BackgroundMip;
 
 		Ctx.SetRootSignature(G.RootSignature);
 
@@ -485,7 +482,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	if (Sky.IsValid())
 	{
-		DeferredPass.AccessResource(Sky.Source, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 		DeferredPass.AccessResource(Sky.Irradiance, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 		DeferredPass.AccessResource(Sky.Prefilter, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 	}

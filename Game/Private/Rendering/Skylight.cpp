@@ -329,7 +329,6 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 	const float BaseLuminanceScale = Settings.FurnaceTest ? 1.0f / kPreExposure : Info->LuminanceScale;
 	Outputs.LuminanceScale = BaseLuminanceScale * Settings.IntensityScale;
 	LuminanceScale = Outputs.LuminanceScale;
-	Outputs.BackgroundMip = Min(Settings.BackgroundMip, static_cast<float>(SourceCube.MipCount - 1));
 	Outputs.PrefilterMaxMip = static_cast<float>(PrefilterCube.MipCount - 1);
 
 	if (Dirty)

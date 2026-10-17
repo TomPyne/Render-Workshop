@@ -17,8 +17,6 @@ struct SkylightSettings_s
 	float YawOffsetDegrees = 0.0f;
 	// Bakes from a constant 1.0 environment, a white rough non-metal should then light to ~1.0
 	bool FurnaceTest = false;
-	// Source cube mip drawn as the sky, to inspect the chain
-	float BackgroundMip = 0.0f;
 };
 
 struct SkylightOutputs_s
@@ -28,7 +26,6 @@ struct SkylightOutputs_s
 	RenderGraphResourceHandle_t Prefilter = RenderGraphResourceHandle_t::NONE;
 	// Nits per unit of the baked cubes
 	float LuminanceScale = 0.0f;
-	float BackgroundMip = 0.0f;
 	// Roughness 1 lands on this prefilter mip
 	float PrefilterMaxMip = 0.0f;
 

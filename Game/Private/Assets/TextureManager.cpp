@@ -31,12 +31,20 @@ enum class TextureFormat_e
     Count
 };
 
-constexpr rl::RenderFormat TexToRenderFormat(TextureFormat_e TexFormat)
+// What the texel values mean. Picks the GPU format and how mips are averaged
+enum class TextureEncoding_e
+{
+    SRGB,   // RGB is sRGB encoded, the GPU decodes it on sampling and mips are averaged in linear space
+    Linear,
+    Normal, // RGB is a [0,1] encoded vector, renormalized after averaging
+};
+
+constexpr rl::RenderFormat TexToRenderFormat(TextureFormat_e TexFormat, TextureEncoding_e Encoding)
 {
     switch (TexFormat)
     {
     case TextureFormat_e::RGBA8:
-        return rl::RenderFormat::R8G8B8A8_UNORM;
+        return Encoding == TextureEncoding_e::SRGB ? rl::RenderFormat::R8G8B8A8_UNORM_SRGB : rl::RenderFormat::R8G8B8A8_UNORM;
     case TextureFormat_e::RGBA32F:
         return rl::RenderFormat::R32G32B32A32_FLOAT;
     }
@@ -81,13 +89,6 @@ enum class TextureSourceType_e
     DDS,
 };
 
-enum class MipFilter_e
-{
-    Color,  // RGB is sRGB encoded and averaged in linear space
-    Linear,
-    Normal, // RGB is a [0,1] encoded vector, renormalized after averaging
-};
-
 struct TextureLoadRequest_s
 {
     Path_s SourcePath;
@@ -98,26 +99,26 @@ struct TextureLoadRequest_s
     TextureFormat_e Format = TextureFormat_e::Unknown;
     bool HasAlpha = false;
     bool GenMips = false;
-    MipFilter_e MipFilter = MipFilter_e::Color;
+    TextureEncoding_e Encoding = TextureEncoding_e::Linear;
 };
 
-bool ParseMipFilter(const std::string& Name, MipFilter_e& OutFilter)
+bool ParseEncoding(const std::string& Name, TextureEncoding_e& OutEncoding)
 {
-    if (Name == "Color")
+    if (Name == "sRGB")
     {
-        OutFilter = MipFilter_e::Color;
+        OutEncoding = TextureEncoding_e::SRGB;
         return true;
     }
 
     if (Name == "Linear")
     {
-        OutFilter = MipFilter_e::Linear;
+        OutEncoding = TextureEncoding_e::Linear;
         return true;
     }
 
     if (Name == "Normal")
     {
-        OutFilter = MipFilter_e::Normal;
+        OutEncoding = TextureEncoding_e::Normal;
         return true;
     }
 
@@ -192,19 +193,25 @@ bool ParseTextureRequestSTB(const JsonValue_s& Data, TextureLoadRequest_s& OutRe
         return false;
     }
 
-    if (OutRequest.GenMips)
+    // Float textures are always linear, 8 bit ones must say what they hold so colour data can't default to linear
+    std::string EncodingName;
+    if (JsonHelpers::ParseString(Data, "Encoding", EncodingName))
     {
-        std::string MipFilterName;
-        if (!ENSUREMSG(JsonHelpers::ParseString(Data, "MipFilter", MipFilterName), "[TextureManager::ParseTextureRequestSTB] Missing MipFilter field"))
+        if (!ParseEncoding(EncodingName, OutRequest.Encoding))
         {
+            LOGWARNING("[TextureManager::ParseTextureRequestSTB] Texture contains an invalid encoding '%s' : %s", EncodingName.c_str(), OutRequest.SourcePath.ToString().c_str());
             return false;
         }
+    }
+    else if (!ENSUREMSG(IsFloatFormat(OutRequest.Format), "[TextureManager::ParseTextureRequestSTB] Missing Encoding field"))
+    {
+        return false;
+    }
 
-        if (!ParseMipFilter(MipFilterName, OutRequest.MipFilter))
-        {
-            LOGWARNING("[TextureManager::ParseTextureRequestSTB] Texture contains an invalid mip filter '%s' : %s", MipFilterName.c_str(), OutRequest.SourcePath.ToString().c_str());
-            return false;
-        }
+    if (IsFloatFormat(OutRequest.Format) && OutRequest.Encoding != TextureEncoding_e::Linear)
+    {
+        LOGWARNING("[TextureManager::ParseTextureRequestSTB] Float textures must use the Linear encoding : %s", OutRequest.SourcePath.ToString().c_str());
+        return false;
     }
 
     return true;
@@ -232,36 +239,36 @@ float3 SafeNormalizeNormal(float3 V)
     return Len > 1e-5f ? V / Len : float3(0.0f, 0.0f, 1.0f);
 }
 
-float4 DecodeTexel(const u8* Texel, MipFilter_e Filter)
+float4 DecodeTexel(const u8* Texel, TextureEncoding_e Encoding)
 {
     const float4 Unorm = float4(Texel[0], Texel[1], Texel[2], Texel[3]) / 255.0f;
 
-    switch (Filter)
+    switch (Encoding)
     {
-    case MipFilter_e::Color:
+    case TextureEncoding_e::SRGB:
         return float4(SRGBToLinear(Unorm.x), SRGBToLinear(Unorm.y), SRGBToLinear(Unorm.z), Unorm.w);
-    case MipFilter_e::Normal:
+    case TextureEncoding_e::Normal:
         return float4(SafeNormalizeNormal(Unorm.xyz * 2.0f - 1.0f), Unorm.w);
-    case MipFilter_e::Linear:
+    case TextureEncoding_e::Linear:
         return Unorm;
     }
 
     return Unorm;
 }
 
-void EncodeTexel(float4 V, MipFilter_e Filter, u8* OutTexel)
+void EncodeTexel(float4 V, TextureEncoding_e Encoding, u8* OutTexel)
 {
     float3 RGB = V.xyz;
 
-    switch (Filter)
+    switch (Encoding)
     {
-    case MipFilter_e::Color:
+    case TextureEncoding_e::SRGB:
         RGB = float3(LinearToSRGB(RGB.x), LinearToSRGB(RGB.y), LinearToSRGB(RGB.z));
         break;
-    case MipFilter_e::Normal:
+    case TextureEncoding_e::Normal:
         RGB = SafeNormalizeNormal(RGB) * 0.5f + 0.5f;
         break;
-    case MipFilter_e::Linear:
+    case TextureEncoding_e::Linear:
         break;
     }
 
@@ -289,7 +296,7 @@ uint2 CalculateMipSize(uint2 Size, u32 Mip)
 // Box filters SrcSize down to DstSize, keeping the unfiltered averages in OutAverages for the next level.
 // An odd source dimension folds its last row or column into the final texel so nothing is dropped
 template<typename FetchFunc>
-void ReduceMip(uint2 SrcSize, uint2 DstSize, MipFilter_e Filter, FetchFunc&& Fetch, std::vector<float4>& OutAverages, u8* OutTexels)
+void ReduceMip(uint2 SrcSize, uint2 DstSize, TextureEncoding_e Encoding, FetchFunc&& Fetch, std::vector<float4>& OutAverages, u8* OutTexels)
 {
     OutAverages.resize(static_cast<size_t>(DstSize.x) * DstSize.y);
 
@@ -316,14 +323,14 @@ void ReduceMip(uint2 SrcSize, uint2 DstSize, MipFilter_e Filter, FetchFunc&& Fet
             const float4 Average = Sum / static_cast<float>((Y1 - Y0) * (X1 - X0));
 
             OutAverages[DstIndex] = Average;
-            EncodeTexel(Average, Filter, OutTexels + DstIndex * 4);
+            EncodeTexel(Average, Encoding, OutTexels + DstIndex * 4);
         }
     }
 }
 
 // Returns every mip packed tightly as RGBA8. Each level averages the previous level's unnormalized values
 // so normals match the average of the source texels beneath them
-std::vector<u8> GenerateMipChain(const u8* Source, uint2 Size, u32 MipCount, MipFilter_e Filter)
+std::vector<u8> GenerateMipChain(const u8* Source, uint2 Size, u32 MipCount, TextureEncoding_e Encoding)
 {
     size_t TotalTexels = 0;
     for (u32 MipIt = 0; MipIt < MipCount; MipIt++)
@@ -336,11 +343,11 @@ std::vector<u8> GenerateMipChain(const u8* Source, uint2 Size, u32 MipCount, Mip
 
     const size_t BaseTexels = static_cast<size_t>(Size.x) * Size.y;
 
-    if (Filter == MipFilter_e::Normal)
+    if (Encoding == TextureEncoding_e::Normal)
     {
         for (size_t TexelIt = 0; TexelIt < BaseTexels; TexelIt++)
         {
-            EncodeTexel(DecodeTexel(Source + TexelIt * 4, Filter), Filter, Data.data() + TexelIt * 4);
+            EncodeTexel(DecodeTexel(Source + TexelIt * 4, Encoding), Encoding, Data.data() + TexelIt * 4);
         }
     }
     else
@@ -360,11 +367,11 @@ std::vector<u8> GenerateMipChain(const u8* Source, uint2 Size, u32 MipCount, Mip
         // The first level decodes straight from the source to avoid a full size float copy of it
         if (MipIt == 1)
         {
-            ReduceMip(SrcSize, DstSize, Filter, [Source, Filter](size_t Index) { return DecodeTexel(Source + Index * 4, Filter); }, Next, Dest);
+            ReduceMip(SrcSize, DstSize, Encoding, [Source, Encoding](size_t Index) { return DecodeTexel(Source + Index * 4, Encoding); }, Next, Dest);
         }
         else
         {
-            ReduceMip(SrcSize, DstSize, Filter, [&Prev](size_t Index) { return Prev[Index]; }, Next, Dest);
+            ReduceMip(SrcSize, DstSize, Encoding, [&Prev](size_t Index) { return Prev[Index]; }, Next, Dest);
         }
 
         std::swap(Prev, Next);
@@ -407,14 +414,14 @@ bool BuildTextureSTB(const TextureLoadRequest_s& Request, Texture_s& OutTexture)
     }
 
     const uint2 Size = uint2(static_cast<u32>(X), static_cast<u32>(Y));
-    const rl::RenderFormat Format = TexToRenderFormat(Request.Format);
+    const rl::RenderFormat Format = TexToRenderFormat(Request.Format, Request.Encoding);
 
     const u32 MipCount = Request.GenMips ? CalculateMipCount(Size) : 1;
 
     std::vector<u8> MipChain;
     if (Request.GenMips)
     {
-        MipChain = GenerateMipChain(static_cast<const u8*>(RawData), Size, MipCount, Request.MipFilter);
+        MipChain = GenerateMipChain(static_cast<const u8*>(RawData), Size, MipCount, Request.Encoding);
     }
 
     const u8* TexelData = Request.GenMips ? MipChain.data() : static_cast<const u8*>(RawData);

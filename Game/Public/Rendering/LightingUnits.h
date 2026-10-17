@@ -4,9 +4,9 @@
 
 #include <cmath>
 
-// Lights are authored in physical units, illuminance in lux and luminance in nits (cd/m^2).
-// The lit scene buffer holds nits * kPreExposure so values sit in a comfortable FP16 range.
-// Emissive, particle colours and the bloom threshold are still authored directly in that scaled space.
+// Lights are authored in physical units, illuminance in lux and luminance in nits (cd/m^2), including emissive
+// materials and particle colours. The lit scene buffer holds nits * kPreExposure so values sit in a comfortable
+// FP16 range; shaders get it as ViewUniforms_s::PreExposure.
 // Fixed, chosen so 100,000 lux of sun matches the look from before physical units
 constexpr float kPreExposure = 2.86e-5f;
 

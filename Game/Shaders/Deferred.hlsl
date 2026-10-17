@@ -33,15 +33,13 @@ struct DeferredData_s
     float MaxConfidence;
     float __Pad;
 
-    uint SkySourceTextureIndex;
     uint SkyIrradianceTextureIndex;
     uint SkyPrefilterTextureIndex;
     uint SkyEnabled;
-
     float SkyIntensity;
+
     float SkyPrefilterMaxMip;
-    float SkyBackgroundMip;
-    float __Pad1;
+    float3 __Pad1;
 };
 
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
@@ -113,16 +111,10 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
     const float4 EmissiveSpecular = t_tex2d_f4[c_Deferred.SceneEmissiveSpecularTextureIndex].Load(Pixel);
     const float3 Emissive = EmissiveSpecular.rgb;
 
+    // The visible sky is whatever the sky dome material emits, the skylight only lights the scene
     if (Depth >= 1.0f)
     {
-        float3 Sky = 0.0f;
-        if (c_Deferred.SkyEnabled)
-        {
-            const float3 ViewDir = normalize(ReconstructWorldPosition(Input.UV, 1.0f) - c_View.CamPos);
-            Sky = c_Deferred.SkyIntensity * t_texcube_f4[c_Deferred.SkySourceTextureIndex].SampleLevel(SharedClampedSampler, ViewDir, c_Deferred.SkyBackgroundMip).rgb;
-        }
-
-        Output = float4(Sky + Emissive, 0.0f);
+        Output = float4(Emissive, 0.0f);
         return;
     }
 

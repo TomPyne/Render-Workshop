@@ -12,7 +12,8 @@ struct ViewUniforms_s
     float2 Pad0;
 
     float3 CamRight;
-    float Pad1;
+    // Nits to scene buffer units, see LightingUnits.h
+    float PreExposure;
 
     float3 CamUp;
     float Pad2;

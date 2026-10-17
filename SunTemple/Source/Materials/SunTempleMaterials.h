@@ -435,7 +435,9 @@ class SkyMaterialShader_c : public MaterialShader_c
     struct Parameters_s
     {
         TextureIndex SkyTexture;
-        float3 __Pad;
+        // Nits per unit of SkyTexture, a clear daytime sky is roughly 3,000-10,000
+        float Luminance = 8000.0f;
+        float2 __Pad;
     };
 
 public:

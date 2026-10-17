@@ -139,7 +139,7 @@ private:
 
 struct SunSettings_s
 {
-	float IlluminanceLux = 100000.0f;
+	float IlluminanceLux = 20000.0f;
 	// Chroma only, normalised to luminance 1 before use so brightness comes from IlluminanceLux
 	float3 Color = float3(1.0f, 0.95f, 0.85f);
 };

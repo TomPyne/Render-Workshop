@@ -65,7 +65,7 @@ RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s
 		DownsampleUniforms.SrcDimRcp = float2(1.0f / static_cast<float>(SrcDim.x), 1.0f / static_cast<float>(SrcDim.y));
 		DownsampleUniforms.Threshold = Threshold;
 		DownsampleUniforms.Knee = Threshold > 0.0f ? 0.5f * Threshold : 0.0f;
-		DownsampleUniforms.KarisExposure = Exposure;
+		DownsampleUniforms.Exposure = Exposure;
 
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 

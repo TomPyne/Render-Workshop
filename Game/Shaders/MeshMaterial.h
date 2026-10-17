@@ -228,9 +228,10 @@ void MaterialOutput_Specular(float Specular, inout PSOutput_s Output)
     Output.EmissiveSpecular.a = Specular;
 }
 
+// Emissive is in nits
 void MaterialOutput_Emissive(float3 Emissive, inout PSOutput_s Output)
 {
-    Output.EmissiveSpecular.rgb = Emissive;
+    Output.EmissiveSpecular.rgb = Emissive * c_View.PreExposure;
 }
 
 void MaterialOutput_AmbientOcclusion(float AO, inout PSOutput_s Output)
