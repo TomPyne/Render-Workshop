@@ -22,7 +22,8 @@ struct TonemapRenderer_s
 	bool Ready = false;
 
 	void Init(rl::RootSignature_t InRootSignaure, uint32_t InCBVRootSlot, uint32_t InCBVSlot, uint32_t InSRVTableRootSigSlot);
-	void AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e Mode, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output);
+	// Exposure multiplies the input before tonemapping, None ignores it
+	void AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e Mode, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output, float Exposure = 1.0f);
 
 	rl::GraphicsPipelineStatePtr NoTonemapPSO = {};
 	rl::GraphicsPipelineStatePtr ACESTonemapPSO = {};

@@ -137,6 +137,13 @@ private:
 	std::vector<DistanceFieldInstance_s> DistanceFieldInstances;
 };
 
+struct SunSettings_s
+{
+	float IlluminanceLux = 100000.0f;
+	// Chroma only, normalised to luminance 1 before use so brightness comes from IlluminanceLux
+	float3 Color = float3(1.0f, 0.95f, 0.85f);
+};
+
 struct SpaceRendererScreenInfo_s
 {
 	uint32_t Width;
@@ -165,6 +172,7 @@ public:
 	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
 	DistanceFieldAOSettings_s DistanceFieldAO;
 	SkylightSettings_s Skylight;
+	SunSettings_s Sun;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();

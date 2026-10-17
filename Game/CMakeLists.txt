@@ -77,6 +77,7 @@ function(create_proj projname rapi)
 		"Public/Rendering/DebugViewPass.h"
 		"Private/Rendering/GameRenderer.cpp"
 		"Public/Rendering/GameRenderer.h"
+		"Public/Rendering/LightingUnits.h"
 		"Private/Rendering/Materials.cpp"
 		"Public/Rendering/Materials.h"
 		"Private/Rendering/Mesh.cpp"

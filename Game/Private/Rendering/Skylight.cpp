@@ -325,7 +325,10 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 	Outputs.Source = RGBuilder.InjectTexture(SourceCube.Texture, L"SkylightSource");
 	Outputs.Irradiance = RGBuilder.InjectTexture(IrradianceCube.Texture, L"SkylightIrradiance");
 	Outputs.Prefilter = RGBuilder.InjectTexture(PrefilterCube.Texture, L"SkylightPrefilter");
-	Outputs.Intensity = Info->Intensity * Settings.IntensityScale;
+	// The furnace source is 1.0 in scene units, not nits, so it skips the skylight's own scale
+	const float BaseLuminanceScale = Settings.FurnaceTest ? 1.0f / kPreExposure : Info->LuminanceScale;
+	Outputs.LuminanceScale = BaseLuminanceScale * Settings.IntensityScale;
+	LuminanceScale = Outputs.LuminanceScale;
 	Outputs.BackgroundMip = Min(Settings.BackgroundMip, static_cast<float>(SourceCube.MipCount - 1));
 	Outputs.PrefilterMaxMip = static_cast<float>(PrefilterCube.MipCount - 1);
 

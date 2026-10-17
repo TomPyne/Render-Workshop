@@ -11,7 +11,7 @@ struct SkylightInfo_s;
 struct SkylightSettings_s
 {
 	bool Enabled = true;
-	// Multiplies the skylight's own intensity
+	// Multiplies the skylight's own luminance scale
 	float IntensityScale = 1.0f;
 	// Added to the skylight's own yaw, changing it rebakes
 	float YawOffsetDegrees = 0.0f;
@@ -26,7 +26,8 @@ struct SkylightOutputs_s
 	RenderGraphResourceHandle_t Source = RenderGraphResourceHandle_t::NONE;
 	RenderGraphResourceHandle_t Irradiance = RenderGraphResourceHandle_t::NONE;
 	RenderGraphResourceHandle_t Prefilter = RenderGraphResourceHandle_t::NONE;
-	float Intensity = 0.0f;
+	// Nits per unit of the baked cubes
+	float LuminanceScale = 0.0f;
 	float BackgroundMip = 0.0f;
 	// Roughness 1 lands on this prefilter mip
 	float PrefilterMaxMip = 0.0f;
@@ -56,6 +57,7 @@ public:
 	void RequestRebake() { RebakeRequested = true; }
 
 	SkylightStatus_e GetStatus() const { return Status; }
+	float GetLuminanceScale() const { return LuminanceScale; }
 
 	// All three cubes, 0 before the first skylight is seen
 	uint64_t GetMemoryBytes() const;
@@ -93,4 +95,5 @@ private:
 
 	bool RebakeRequested = false;
 	SkylightStatus_e Status = SkylightStatus_e::NoSkylight;
+	float LuminanceScale = 0.0f;
 };

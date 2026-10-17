@@ -28,7 +28,7 @@ void SkylightComponent_c::Deserialize(const JsonValue_s& Data)
 {
 	Super::Deserialize(Data);
 
-	JsonHelpers::ParseFloat(Data, "Intensity", SkylightInfo.Intensity);
+	JsonHelpers::ParseFloat(Data, "LuminanceScale", SkylightInfo.LuminanceScale);
 
 	float YawDegrees = 0.0f;
 	if (JsonHelpers::ParseFloat(Data, "YawDegrees", YawDegrees))

@@ -8,6 +8,7 @@
 #include "Particles/ParticleRenderer.h"
 #include "RaytracingScene.h"
 #include "Rendering/IRenderable.h"
+#include "Rendering/LightingUnits.h"
 #include "Rendering/RenderScene.h"
 #include "Rendering/Texture.h"
 #include "Space/Space.h"
@@ -232,9 +233,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 
 	// TODO: Create directional light actor
-	// Irradiance E, currently unitless. Colour is not yet normalised to luminance 1
-	const float3 LightIrradiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
-	const float3 AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
+	const float3 LightIrradiance = NormalizeToUnitLuminance(Sun.Color) * (Sun.IlluminanceLux * kPreExposure);
+	// Nits, the fallback when there is no skylight
+	const float3 AmbientLuminance = float3(0.25f, 0.3f, 0.4f) * (0.3f / kPreExposure);
 	const float SunSoftAngle = 0.02f;
 	const float LightPitch = ConvertToRadians(-18.37f);
 	const float LightYaw = ConvertToRadians(50.0f);
@@ -442,7 +443,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->InvViewProjection = InverseViewProjection;
 		Uniforms->LightDirection = LightDirection;
 		Uniforms->LightIrradiance = LightIrradiance;
-		Uniforms->AmbientColor = AmbientColor;
+		Uniforms->AmbientColor = AmbientLuminance * kPreExposure;
 
 		Uniforms->SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
 		Uniforms->SceneNormalRoughnessTextureIndex = RG.GetSRVIndex(SceneNormalRoughnessTexture);
@@ -459,7 +460,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		Uniforms->SkyIrradianceTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Irradiance) : 0u;
 		Uniforms->SkyPrefilterTextureIndex = Sky.IsValid() ? RG.GetSRVIndex(Sky.Prefilter) : 0u;
 		Uniforms->SkyEnabled = Sky.IsValid() ? 1u : 0u;
-		Uniforms->SkyIntensity = Sky.Intensity;
+		Uniforms->SkyIntensity = Sky.LuminanceScale * kPreExposure;
 		Uniforms->SkyPrefilterMaxMip = Sky.PrefilterMaxMip;
 		Uniforms->SkyBackgroundMip = Sky.BackgroundMip;
 
@@ -503,7 +504,9 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 		// Visualised values are written as is
 		const bool IsVisualise = LightingMode == DeferredLightingMode_e::Variance || LightingMode == DeferredLightingMode_e::Confidence;
-		G.TonemapRenderer.AddPass(RGBuilder, IsVisualise ? TonemapMode_e::None : TonemapMode_e::ACES, LitTexture, BackBufferTexture);
+		// The scene buffer is pre-exposed, so the camera's exposure divides that back out
+		const float Exposure = ExposureFromEV100(PrimaryCamera->ExposureEV100) / kPreExposure;
+		G.TonemapRenderer.AddPass(RGBuilder, IsVisualise ? TonemapMode_e::None : TonemapMode_e::ACES, LitTexture, BackBufferTexture, Exposure);
 	}
 	else if (IsDistanceFieldView)
 	{

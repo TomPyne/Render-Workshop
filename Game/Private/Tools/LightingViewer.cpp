@@ -1,5 +1,6 @@
 #include "Tools/LightingViewer.h"
 
+#include "Object/CameraComponent.h"
 #include "Rendering/SpaceRenderer.h"
 
 #include <RenderImGui/imgui/imgui.h>
@@ -76,6 +77,7 @@ void DrawSkylight(SpaceRenderer_c& Renderer)
 
 	ImGui::Text("Status: %s", GetSkylightStatusName(SkylightRenderer.GetStatus()));
 	ImGui::Text("Cubes %.1f MB", SkylightRenderer.GetMemoryBytes() / 1.0e6);
+	ImGui::Text("Luminance scale %.0f nits per unit", SkylightRenderer.GetLuminanceScale());
 
 	ImGui::Checkbox("Enabled##Skylight", &Settings.Enabled);
 	ImGui::SliderFloat("Intensity scale", &Settings.IntensityScale, 0.0f, 4.0f, "%.2f");
@@ -87,6 +89,19 @@ void DrawSkylight(SpaceRenderer_c& Renderer)
 	{
 		SkylightRenderer.RequestRebake();
 	}
+}
+
+void DrawExposure(CameraComponent_c& Camera)
+{
+	ImGui::SliderFloat("EV100", &Camera.ExposureEV100, -2.0f, 18.0f, "%.2f");
+}
+
+void DrawSun(SpaceRenderer_c& Renderer)
+{
+	SunSettings_s& Settings = Renderer.Sun;
+
+	ImGui::SliderFloat("Illuminance", &Settings.IlluminanceLux, 0.1f, 150000.0f, "%.1f lux", ImGuiSliderFlags_Logarithmic);
+	ImGui::ColorEdit3("Colour", &Settings.Color.x);
 }
 
 void DrawVisualise(SpaceRenderer_c& Renderer)
@@ -107,12 +122,17 @@ void DrawVisualise(SpaceRenderer_c& Renderer)
 
 }
 
-void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
+void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera)
 {
 	if (!ImGui::Begin("Lighting", Open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::End();
 		return;
+	}
+
+	if (Camera && ImGui::CollapsingHeader("Exposure", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawExposure(*Camera);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Shadow Temporal", ImGuiTreeNodeFlags_DefaultOpen))
@@ -123,6 +143,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer)
 	if (Renderer && ImGui::CollapsingHeader("Shadow Spatial", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		DrawShadowSpatial(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Sun", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawSun(*Renderer);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Skylight", ImGuiTreeNodeFlags_DefaultOpen))

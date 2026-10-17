@@ -63,7 +63,7 @@ void TonemapRenderer_s::FullScreenPassVSPS(RenderGraph_s& RG, GPUContext_s& Ctx,
 	Ctx.DrawInstanced(6u, 1u, 0u, 0u);
 }
 
-void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e Mode, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output)
+void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e Mode, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output, float Exposure)
 {
 	if (Mode == TonemapMode_e::None)
 	{
@@ -98,7 +98,7 @@ void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e M
 			} Uniforms;
 
 			Uniforms.InputTexture = RG.GetSRVIndex(Input);
-			Uniforms.ExposureBias = 1.0f;
+			Uniforms.ExposureBias = Exposure;
 
 			FullScreenPassVSPS(RG, Ctx, Output, ACESTonemapPSO, RG.Alloc(Uniforms));
 		});
@@ -119,7 +119,7 @@ void TonemapRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, TonemapMode_e M
 			} Uniforms;
 
 			Uniforms.InputTexture = RG.GetSRVIndex(Input);
-			Uniforms.ExposureBias = 2.0f;
+			Uniforms.ExposureBias = 2.0f * Exposure;
 			Uniforms.WhitePoint = 11.2f;
 
 			FullScreenPassVSPS(RG, Ctx, Output, FilmicTonemapPSO, RG.Alloc(Uniforms));

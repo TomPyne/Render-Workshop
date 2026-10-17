@@ -30,6 +30,8 @@ class CameraComponent_c : public SpatialObjectComponent_c
 	float NearZ = 0.1f;
 	float FarZ = 10'000.0f;
 	float Fov = 45.0f;
+	// Exposure value at ISO 100, a sunny day is about 15
+	float ExposureEV100 = 15.0f;
 
 	bool Enabled = true;
 };
