@@ -497,15 +497,16 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 	if (DebugViewMode == DebugViewMode_e::Lit || DebugViewMode == DebugViewMode_e::Lighting)
 	{
+		// The scene buffer is pre-exposed, so the camera's exposure divides that back out
+		const float Exposure = ExposureFromEV100(PrimaryCamera->ExposureEV100) / kPreExposure;
+
 		if (DebugViewMode == DebugViewMode_e::Lit)
 		{
-			G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height));
+			G.BloomRenderer.AddPass(RGBuilder, LitTexture, uint2(Screen.Width, Screen.Height), Exposure);
 		}
 
 		// Visualised values are written as is
 		const bool IsVisualise = LightingMode == DeferredLightingMode_e::Variance || LightingMode == DeferredLightingMode_e::Confidence;
-		// The scene buffer is pre-exposed, so the camera's exposure divides that back out
-		const float Exposure = ExposureFromEV100(PrimaryCamera->ExposureEV100) / kPreExposure;
 		G.TonemapRenderer.AddPass(RGBuilder, IsVisualise ? TonemapMode_e::None : TonemapMode_e::ACES, LitTexture, BackBufferTexture, Exposure);
 	}
 	else if (IsDistanceFieldView)

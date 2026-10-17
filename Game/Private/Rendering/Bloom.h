@@ -14,9 +14,10 @@ struct BloomRenderer_s
 	bool Ready = false;
 
 	void Init();
-	void AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColor, uint2 ScreenSize);
+	// Exposure is the tonemapper's, so firefly suppression judges brightness as it will be displayed
+	void AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColor, uint2 ScreenSize, float Exposure);
 
 private:
-	RenderGraphResourceHandle_t DownsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Input, uint2 Dim, float Threshold);
+	RenderGraphResourceHandle_t DownsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Input, uint2 Dim, float Threshold, float Exposure);
 	void UpsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Input, RenderGraphResourceHandle_t Output, uint2 Dim);
 };

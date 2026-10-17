@@ -9,7 +9,8 @@ struct Uniforms
 
     float Threshold;
     float Knee;
-    float2 __Pad0;
+    float Exposure;
+    float __Pad0;
 };
 
 ConstantBuffer<Uniforms> c_G : register(b0);
@@ -72,8 +73,6 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     float3 L = BlurSample(float2(UV.x - X, UV.y - Y));
     float3 M = BlurSample(float2(UV.x + X, UV.y - Y));
 
-    // The 13 taps form five overlapping 2x2 boxes: the inner box carries half the weight, the four corner boxes an eighth each.
-    // Summed with plain weights this is identical to the per-tap kernel.
     float3 Boxes[5] =
     {
         (J + K + L + M) * 0.25f,
@@ -89,8 +88,10 @@ void main(uint3 DispatchThreadId : SV_DispatchThreadID)
     [unroll]
     for (uint BoxIt = 0; BoxIt < 5; ++BoxIt)
     {
-        // Karis average: weight each box by 1 / (1 + luma) so a single very bright texel can't dominate the result.
-        BoxWeights[BoxIt] *= 1.0f / (1.0f + RGBToLuminance(Boxes[BoxIt]));
+        if (c_G.Exposure > 0.0f)
+        {
+            BoxWeights[BoxIt] *= 1.0f / (1.0f + RGBToLuminance(Boxes[BoxIt]) * c_G.Exposure);
+        }
         Downsampled += Boxes[BoxIt] * BoxWeights[BoxIt];
         WeightSum += BoxWeights[BoxIt];
     }

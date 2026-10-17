@@ -32,7 +32,7 @@ void BloomRenderer_s::Init()
 	Ready = BloomDownsamplePSO.IsValid() && BloomUpsamplePSO.IsValid() && BloomApplyPSO.IsValid();
 }
 
-RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Input, uint2 Dim, float Threshold)
+RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Input, uint2 Dim, float Threshold, float Exposure)
 {
 	const std::wstring ResourceName = L"BloomDownsampled_" + std::to_wstring(Dim.x) + L"x" + std::to_wstring(Dim.y);
 	RenderGraphResourceHandle_t Output = RGBuilder.CreateTexture(Dim.x, Dim.y, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::UAV | RenderGraphResourceAccessType_e::SRV, ResourceName.c_str());
@@ -54,7 +54,8 @@ RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s
 
 			float Threshold;
 			float Knee;
-			float __Pad0[2];
+			float Exposure;
+			float __Pad0;
 		} DownsampleUniforms;
 
 		DownsampleUniforms.InputTextureIndex = RG.GetSRVIndex(Input);
@@ -64,6 +65,7 @@ RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s
 		DownsampleUniforms.SrcDimRcp = float2(1.0f / static_cast<float>(SrcDim.x), 1.0f / static_cast<float>(SrcDim.y));
 		DownsampleUniforms.Threshold = Threshold;
 		DownsampleUniforms.Knee = Threshold > 0.0f ? 0.5f * Threshold : 0.0f;
+		DownsampleUniforms.KarisExposure = Exposure;
 
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 
@@ -119,7 +121,7 @@ void BloomRenderer_s::UpsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphR
 	});
 }
 
-void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColor, uint2 ScreenSize)
+void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t SceneColor, uint2 ScreenSize, float Exposure)
 {
 	std::vector<uint2> DownsampledDims;
 	DownsampledDims.reserve(16);
@@ -142,8 +144,9 @@ void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResour
 	for (const uint2 DownSampleDim : DownsampledDims)
 	{
 		const bool FirstPass = DownsampledTextures.empty();
-		// No threshold: every pixel scatters a little, as in a real lens, which keeps bloom independent of exposure
-		DownsampledTextures.push_back(DownsamplePass(RGBuilder, FirstPass ? SceneColor : DownsampledTextures.back(), DownSampleDim, 0.0f));
+		// No threshold: every pixel scatters a little, as in a real lens, which keeps bloom independent of exposure.
+		// Fireflies only need suppressing once, at full resolution, later averages would just lose energy
+		DownsampledTextures.push_back(DownsamplePass(RGBuilder, FirstPass ? SceneColor : DownsampledTextures.back(), DownSampleDim, 0.0f, FirstPass ? Exposure : 0.0f));
 	}
 
 	for (int32_t i = static_cast<int32_t>(DownsampledDims.size()) - 1; i >= 1; --i)
