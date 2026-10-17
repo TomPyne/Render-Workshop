@@ -6,6 +6,7 @@
 #include "Input/Input.h"
 #include "Object/CameraComponent.h"
 #include "Object/DebugCameraObject.h"
+#include "Object/DirectionalLightComponent.h"
 #include "Object/FlyControllerComponent.h"
 #include "Object/MeshComponent.h"
 #include "Object/ParticleSystemComponent.h"
@@ -113,6 +114,7 @@ void GameApp_c::RegisterClasses()
 	Space->RegisterComponentClass<MeshComponent_c>();
 	Space->RegisterComponentClass<ParticleSystemComponent_c>();
 	Space->RegisterComponentClass<SkylightComponent_c>();
+	Space->RegisterComponentClass<DirectionalLightComponent_c>();
 
 	// Materials
 	MaterialManager::RegisterMaterialShaderClass<DefaultMaterialShader_c>(L"DefaultMaterialShader");

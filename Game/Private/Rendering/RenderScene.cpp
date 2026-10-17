@@ -62,3 +62,26 @@ void RenderScene_s::UnregisterSkylight(const SkylightInfo_s* SkylightInfo)
 		Skylight = nullptr;
 	}
 }
+
+bool RenderScene_s::RegisterDirectionalLight(DirectionalLightInfo_s* DirectionalLightInfo)
+{
+	if (!DirectionalLightInfo)
+		return false;
+
+	if (DirectionalLight)
+	{
+		LOGWARNING("[RenderScene] Only one directional light is supported, ignoring the new one");
+		return false;
+	}
+
+	DirectionalLight = DirectionalLightInfo;
+	return true;
+}
+
+void RenderScene_s::UnregisterDirectionalLight(const DirectionalLightInfo_s* DirectionalLightInfo)
+{
+	if (DirectionalLightInfo && DirectionalLight == DirectionalLightInfo)
+	{
+		DirectionalLight = nullptr;
+	}
+}

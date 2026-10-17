@@ -8,6 +8,7 @@
 #include "Object/ObjectComponent.h"
 #include "Particles/ParticleRenderer.h"
 #include "RaytracingScene.h"
+#include "Rendering/DirectionalLightInfo.h"
 #include "Rendering/IRenderable.h"
 #include "Rendering/LightingUnits.h"
 #include "Rendering/RenderScene.h"
@@ -235,19 +236,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		HasPrevView = true;
 	}
 
-	// TODO: Create directional light actor
-	const float3 LightIrradiance = NormalizeToUnitLuminance(Sun.Color) * (Sun.IlluminanceLux * kPreExposure);
 	// Nits, the fallback when there is no skylight
 	const float3 AmbientLuminance = float3(0.25f, 0.3f, 0.4f) * (0.3f / kPreExposure);
-	const float SunSoftAngle = 0.02f;
-	const float LightPitch = ConvertToRadians(-18.37f);
-	const float LightYaw = ConvertToRadians(50.0f);
 
-	const float3 LightDirection = -float3(
-		cosf(LightPitch) * sinf(LightYaw),
-		sinf(LightPitch),
-		cosf(LightPitch) * cosf(LightYaw)
-	);
+	const DirectionalLightInfo_s* DirectionalLight = Scene.GetDirectionalLight();
+	const float3 LightIrradiance = DirectionalLight ? NormalizeToUnitLuminance(DirectionalLight->Color) * (DirectionalLight->IlluminanceLux * kPreExposure) : float3(0.0f);
+	const float3 LightDirection = DirectionalLight ? DirectionalLight->Direction : float3(0.0f, 1.0f, 0.0f);
+	const float SunSoftAngle = DirectionalLight ? DirectionalLight->SoftAngle : 0.0f;
 
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewProjection;
@@ -441,7 +436,6 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		FrameBufferAlloc_s DeferredCBuf;
 		DeferredConstants_s* Uniforms = RG.Alloc<DeferredConstants_s>(DeferredCBuf);
 
-		// TODO: replace with a light component
 		Uniforms->InvViewProjection = InverseViewProjection;
 		Uniforms->LightDirection = LightDirection;
 		Uniforms->LightIrradiance = LightIrradiance;

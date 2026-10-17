@@ -1,6 +1,8 @@
 #include "Tools/LightingViewer.h"
 
 #include "Object/CameraComponent.h"
+#include "Rendering/DirectionalLightInfo.h"
+#include "Rendering/RenderScene.h"
 #include "Rendering/SpaceRenderer.h"
 
 #include <RenderImGui/imgui/imgui.h>
@@ -95,12 +97,18 @@ void DrawExposure(CameraComponent_c& Camera)
 	ImGui::SliderFloat("EV100", &Camera.ExposureEV100, -2.0f, 18.0f, "%.2f");
 }
 
-void DrawSun(SpaceRenderer_c& Renderer)
+void DrawSun(RenderScene_s& Scene)
 {
-	SunSettings_s& Settings = Renderer.Sun;
+	DirectionalLightInfo_s* Light = Scene.GetDirectionalLight();
+	if (!Light)
+	{
+		ImGui::TextDisabled("No directional light in the scene");
+		return;
+	}
 
-	ImGui::SliderFloat("Illuminance", &Settings.IlluminanceLux, 0.1f, 150000.0f, "%.1f lux", ImGuiSliderFlags_Logarithmic);
-	ImGui::ColorEdit3("Colour", &Settings.Color.x);
+	ImGui::SliderFloat("Illuminance", &Light->IlluminanceLux, 0.1f, 150000.0f, "%.1f lux", ImGuiSliderFlags_Logarithmic);
+	ImGui::ColorEdit3("Colour", &Light->Color.x);
+	ImGui::SliderAngle("Soft angle", &Light->SoftAngle, 0.0f, 10.0f);
 }
 
 void DrawHeightFog(SpaceRenderer_c& Renderer)
@@ -142,7 +150,7 @@ void DrawVisualise(SpaceRenderer_c& Renderer)
 
 }
 
-void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera)
+void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera, RenderScene_s* Scene)
 {
 	if (!ImGui::Begin("Lighting", Open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -165,9 +173,9 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera
 		DrawShadowSpatial(*Renderer);
 	}
 
-	if (Renderer && ImGui::CollapsingHeader("Sun", ImGuiTreeNodeFlags_DefaultOpen))
+	if (Scene && ImGui::CollapsingHeader("Sun", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		DrawSun(*Renderer);
+		DrawSun(*Scene);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Skylight", ImGuiTreeNodeFlags_DefaultOpen))

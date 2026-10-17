@@ -30,8 +30,16 @@ struct RenderScene_s
 	void UnregisterSkylight(const struct SkylightInfo_s* SkylightInfo);
 	const struct SkylightInfo_s* GetSkylight() const { return Skylight; }
 
+	// Directional light /////////////////////////////////////////////////////////////////////////
+	// Only one directional light is supported, returns false if another is already registered
+	bool RegisterDirectionalLight(struct DirectionalLightInfo_s* DirectionalLightInfo);
+	void UnregisterDirectionalLight(const struct DirectionalLightInfo_s* DirectionalLightInfo);
+	// Mutable so tools can tweak the registered light
+	struct DirectionalLightInfo_s* GetDirectionalLight() const { return DirectionalLight; }
+
 private:
 	std::vector<class IRenderable_c*> RenderableComponents;
 	std::vector<const struct ParticleSystemInfo_s*> ParticleSystems;
 	const struct SkylightInfo_s* Skylight = nullptr;
+	struct DirectionalLightInfo_s* DirectionalLight = nullptr;
 };

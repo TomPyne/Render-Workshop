@@ -136,6 +136,6 @@ void SunTempleApp_c::ImGuiUpdate()
 
 	if (G.ShowLightingWindow)
 	{
-		LightingViewer::DrawWindow(&G.ShowLightingWindow, SpaceRenderer.get(), Space ? Space->GetCamera() : nullptr);
+		LightingViewer::DrawWindow(&G.ShowLightingWindow, SpaceRenderer.get(), Space ? Space->GetCamera() : nullptr, Space ? &Space->RenderScene : nullptr);
 	}
 }
