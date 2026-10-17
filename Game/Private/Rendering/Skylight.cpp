@@ -121,7 +121,6 @@ void SkylightRenderer_c::CreateCubes()
 
 void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, RenderGraphResourceHandle_t Source, uint32_t EquirectTextureIndex, float Yaw, bool FurnaceTest)
 {
-	// The per-mip UAVs aren't known to the graph, it only tracks the cube's state as a whole
 	std::vector<uint32_t> MipUAVIndices;
 	MipUAVIndices.reserve(SourceCube.MipCount);
 	for (const rl::UnorderedAccessViewPtr& UAV : SourceCube.MipUAVs)
@@ -309,7 +308,6 @@ SkylightOutputs_s SkylightRenderer_c::AddPasses(RenderGraphBuilder_s& RGBuilder,
 		return {};
 	}
 
-	// Created on first use so a level without a skylight pays nothing
 	if (!SourceCube.Texture)
 	{
 		CreateCubes();
