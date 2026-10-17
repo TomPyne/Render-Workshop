@@ -17,7 +17,7 @@ struct DeferredData_s
     float3 LightDirection;
     uint SceneColorMetallicTextureIndex;
 
-    float3 LightRadiance;
+    float3 LightIrradiance;
     uint SceneNormalRoughnessTextureIndex;
 
     float3 AmbientColor;
@@ -163,7 +163,7 @@ void main(in Interpolants_s Input, out float4 Output : SV_TARGET)
 
     const float3 DiffuseBRDF = DiffuseColor / PI;
     const float3 SpecularBRDF = D_GGX(NoH, A2) * V_SmithGGXCorrelated(NoV, NoL, A2) * F_Schlick(F0, VoH);
-    const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightRadiance * NoL * Shadow;
+    const float3 Direct = (DiffuseBRDF + SpecularBRDF) * c_Deferred.LightIrradiance * NoL * Shadow;
 
     const float3 EnvBRDF = EnvBRDFApprox(F0, Roughness, NoV);
 

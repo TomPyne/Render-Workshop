@@ -232,7 +232,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 
 	// TODO: Create directional light actor
-	const float3 LightRadiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
+	// Irradiance E, currently unitless. Colour is not yet normalised to luminance 1
+	const float3 LightIrradiance = float3(1.0f, 0.95f, 0.85f) * 3.0f;
 	const float3 AmbientColor = float3(0.25f, 0.3f, 0.4f) * 0.3f;
 	const float SunSoftAngle = 0.02f;
 	const float LightPitch = ConvertToRadians(-18.37f);
@@ -406,7 +407,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			float3 LightDirection;
 			uint32_t SceneColorMetallicTextureIndex;
 
-			float3 LightRadiance;
+			float3 LightIrradiance;
 			uint32_t SceneNormalRoughnessTextureIndex;
 
 			float3 AmbientColor;
@@ -440,7 +441,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		// TODO: replace with a light component
 		Uniforms->InvViewProjection = InverseViewProjection;
 		Uniforms->LightDirection = LightDirection;
-		Uniforms->LightRadiance = LightRadiance;
+		Uniforms->LightIrradiance = LightIrradiance;
 		Uniforms->AmbientColor = AmbientColor;
 
 		Uniforms->SceneColorMetallicTextureIndex = RG.GetSRVIndex(SceneColorMetallicTexture);
