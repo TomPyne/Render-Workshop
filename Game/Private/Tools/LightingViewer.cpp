@@ -103,6 +103,27 @@ void DrawSun(SpaceRenderer_c& Renderer)
 	ImGui::ColorEdit3("Colour", &Settings.Color.x);
 }
 
+void DrawHeightFog(SpaceRenderer_c& Renderer)
+{
+	HeightFogSettings_s& Settings = Renderer.HeightFog;
+
+	ImGui::Checkbox("Enabled##HeightFog", &Settings.Enabled);
+	ImGui::SliderFloat("Density", &Settings.Density, 0.0001f, 1.0f, "%.4f /m", ImGuiSliderFlags_Logarithmic);
+	ImGui::SliderFloat("Height falloff", &Settings.HeightFalloff, 0.0f, 2.0f, "%.3f /m");
+	ImGui::SliderFloat("Base height", &Settings.BaseHeight, -100.0f, 100.0f, "%.1f m");
+	ImGui::SliderFloat("Start distance", &Settings.StartDistance, 0.0f, 500.0f, "%.1f m");
+	ImGui::SliderFloat("Max opacity", &Settings.MaxOpacity, 0.0f, 1.0f, "%.2f");
+	ImGui::SliderFloat("Sky distance", &Settings.SkyDistance, 10.0f, 100000.0f, "%.0f m", ImGuiSliderFlags_Logarithmic);
+	ImGui::ColorEdit3("Albedo", &Settings.Albedo.x);
+	ImGui::SliderFloat("Sun anisotropy", &Settings.SunAnisotropy, -0.95f, 0.95f, "%.2f");
+	ImGui::SliderFloat("Sun scatter scale", &Settings.SunScatterScale, 0.0f, 4.0f, "%.2f");
+
+	if (Renderer.DebugViewMode != DebugViewMode_e::Lit)
+	{
+		ImGui::TextDisabled("Only applies in the Lit view mode");
+	}
+}
+
 void DrawVisualise(SpaceRenderer_c& Renderer)
 {
 	static const char* kVisualiseNames[] = { "Shadow", "Variance", "Confidence" };
@@ -152,6 +173,11 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera
 	if (Renderer && ImGui::CollapsingHeader("Skylight", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		DrawSkylight(*Renderer);
+	}
+
+	if (Renderer && ImGui::CollapsingHeader("Height Fog", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawHeightFog(*Renderer);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Visualise", ImGuiTreeNodeFlags_DefaultOpen))

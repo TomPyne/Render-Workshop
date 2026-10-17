@@ -3,6 +3,7 @@
 #include "Assets/AssetManager.h"
 #include "Assets/TextureManager.h"
 #include "Bloom.h"
+#include "Fog.h"
 #include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Particles/ParticleRenderer.h"
@@ -34,6 +35,7 @@ static struct SpaceRendererPrivate_s
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
 	DistanceFieldAORenderer_s DistanceFieldAORenderer;
 	BloomRenderer_s BloomRenderer;
+	FogRenderer_s FogRenderer;
 	RaytracingScene_s RaytracingScene;
 	bool Initialized = false;
 } G;
@@ -105,6 +107,7 @@ void SpaceRenderer_c::Init()
 	G.DistanceFieldVisualiseRenderer.Init();
 	G.DistanceFieldAORenderer.Init();
 	G.BloomRenderer.Init();
+	G.FogRenderer.Init();
 
 	static const Path_s ScreenPassVSPath = Path_s(PathDirectory_e::Shaders, L"Game", L"ScreenPassVS.hlsl");
 	rl::VertexShader_t ScreenPassVS = rl::CreateVertexShader(ScreenPassVSPath.ToString().c_str());
@@ -484,6 +487,25 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		DeferredPass.AccessResource(Sky.Irradiance, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
 		DeferredPass.AccessResource(Sky.Prefilter, RenderGraphResourceAccessType_e::SRV, RenderGraphLoadOp_e::LOAD);
+	}
+
+	// Before particles, which would otherwise be fogged by the opaque depth behind them
+	if (DebugViewMode == DebugViewMode_e::Lit)
+	{
+		HeightFogInputs_s FogInputs;
+		FogInputs.SceneColor = LitTexture;
+		FogInputs.SceneDepth = SceneDepthTexture;
+		FogInputs.SkyPrefilter = Sky.IsValid() ? Sky.Prefilter : RenderGraphResourceHandle_t::NONE;
+		FogInputs.SkyIntensity = Sky.LuminanceScale * kPreExposure;
+		FogInputs.SkyPrefilterMaxMip = Sky.PrefilterMaxMip;
+		FogInputs.InvViewProjection = InverseViewProjection;
+		FogInputs.CameraPosition = PrimaryCamera->GetWorldPosition();
+		FogInputs.SunDirection = LightDirection;
+		FogInputs.SunIrradiance = LightIrradiance;
+		FogInputs.AmbientLuminance = AmbientLuminance * kPreExposure;
+		FogInputs.ScreenSize = uint2(Screen.Width, Screen.Height);
+
+		G.FogRenderer.AddPass(RGBuilder, HeightFog, FogInputs);
 	}
 
 	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
