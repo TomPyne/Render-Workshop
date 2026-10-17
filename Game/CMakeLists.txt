@@ -80,6 +80,7 @@ function(create_proj projname rapi)
 		"Public/Rendering/DistanceFieldVisualisePass.h"
 		"Private/Rendering/GlobalDistanceField.cpp"
 		"Public/Rendering/GlobalDistanceField.h"
+		"Public/Rendering/CameraInfo.h"
 		"Public/Rendering/DebugViewPass.h"
 		"Public/Rendering/DirectionalLightInfo.h"
 		"Private/Rendering/GameRenderer.cpp"

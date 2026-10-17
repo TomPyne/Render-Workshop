@@ -4,26 +4,68 @@
 #include "Space/Space.h"
 #include "Utility/Transform.h"
 
+#include <Shared/FileUtils/JsonValue.h>
+
 void CameraComponent_c::OnCreate()
 {
 	Super::OnCreate();
 
-	// Register camera component
+	UpdateCameraInfoTransform();
+	UpdateCameraInfoSettings();
+
 	if (Space_c* Space = GetSpace())
 	{
 		Space->PushCameraComponent(this);
 	}
 }
 
+void CameraComponent_c::Deserialize(const JsonValue_s& Data)
+{
+	Super::Deserialize(Data);
+
+	JsonHelpers::ParseFloat(Data, "Fov", Fov);
+	JsonHelpers::ParseFloat(Data, "NearZ", NearZ);
+	JsonHelpers::ParseFloat(Data, "FarZ", FarZ);
+	JsonHelpers::ParseFloat(Data, "ExposureEV100", ExposureEV100);
+}
+
+void CameraComponent_c::Update(float Delta)
+{
+	Super::Update(Delta);
+
+	// The settings are public members, so they are copied every frame rather than on change
+	UpdateCameraInfoSettings();
+}
+
 void CameraComponent_c::PreDestroy()
 {
-	// Unregister
 	if (Space_c* Space = GetSpace())
 	{
 		Space->PopCameraComponent(this);
 	}
 
 	Super::PreDestroy();
+}
+
+void CameraComponent_c::OnTransformed()
+{
+	Super::OnTransformed();
+
+	UpdateCameraInfoTransform();
+}
+
+void CameraComponent_c::UpdateCameraInfoTransform()
+{
+	CameraInfo.Position = GetWorldPosition();
+	CameraInfo.Forward = Normalize(GetWorldForward());
+}
+
+void CameraComponent_c::UpdateCameraInfoSettings()
+{
+	CameraInfo.Fov = Fov;
+	CameraInfo.NearZ = NearZ;
+	CameraInfo.FarZ = FarZ;
+	CameraInfo.ExposureEV100 = ExposureEV100;
 }
 
 matrix CameraComponent_c::CalculateViewMatrix() const

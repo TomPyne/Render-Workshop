@@ -1,6 +1,6 @@
 #include "Tools/GameStats.h"
 
-#include "Object/CameraComponent.h"
+#include "Rendering/CameraInfo.h"
 
 #include <RenderImGui/imgui/imgui.h>
 #include <SurfMath.h>
@@ -16,7 +16,7 @@ struct
 	uint32_t NumPrimitives = 0;
 } G;
 
-void UpdateCamera(CameraComponent_c* Camera)
+void UpdateCamera(const CameraInfo_s* Camera)
 {
 	if (!Camera)
 	{
@@ -25,8 +25,8 @@ void UpdateCamera(CameraComponent_c* Camera)
 	}
 
 	G.HasCamera = true;
-	G.CamPos = Camera->GetWorldPosition();
-	G.CamForward = Camera->GetWorldForward();
+	G.CamPos = Camera->Position;
+	G.CamForward = Camera->Forward;
 }
 
 void UpdatePrimCount(uint32_t PrimCount)

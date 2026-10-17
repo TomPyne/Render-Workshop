@@ -109,7 +109,6 @@ protected:
 
 	// Camera
 	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;
-	bool ActiveCameraChanged = false; // Consumed by the renderer to reset temporal history
 
 	// Controllers
 	std::vector<std::weak_ptr<ControllerComponent_c>> ControllerStack;
@@ -118,6 +117,9 @@ protected:
 	std::vector<IPhysical_c*> PhysicalComponents;
 
 	void LoadLevelInternal(Level_c* InLevel, const std::wstring& LevelPath);
+
+	// Keeps the RenderScene's camera in step with the top of the camera stack
+	void UpdateRenderSceneCamera(const CameraComponent_c* PrevActiveCamera);
 
 private:
 

@@ -132,10 +132,12 @@ void Space_c::UnloadLevel(Level_c* InLevel)
 void Space_c::PushCameraComponent(CameraComponent_c* Camera)
 {
 	if(Camera)
-	{		
+	{
+		const CameraComponent_c* PrevActiveCamera = GetCamera();
 		CameraStack.push_back(SharedFrom(Camera));
-		ActiveCameraChanged = true;
 		LOGINFO("[Space] Camera pushed to stack - %d", CameraStack.size());
+
+		UpdateRenderSceneCamera(PrevActiveCamera);
 	}
 }
 
@@ -156,10 +158,24 @@ void Space_c::PopCameraComponent(CameraComponent_c* Camera)
 			LOGINFO("[Space] Camera popped from stack - %d", CameraStack.size());
 		}
 
-		if (GetCamera() != PrevActiveCamera)
-		{
-			ActiveCameraChanged = true;
-		}
+		UpdateRenderSceneCamera(PrevActiveCamera);
+	}
+}
+
+void Space_c::UpdateRenderSceneCamera(const CameraComponent_c* PrevActiveCamera)
+{
+	const CameraComponent_c* ActiveCamera = GetCamera();
+	if (ActiveCamera == PrevActiveCamera)
+		return;
+
+	if (PrevActiveCamera)
+	{
+		RenderScene.UnregisterCamera(PrevActiveCamera->GetCameraInfo());
+	}
+
+	if (ActiveCamera)
+	{
+		RenderScene.RegisterCamera(ActiveCamera->GetCameraInfo());
 	}
 }
 

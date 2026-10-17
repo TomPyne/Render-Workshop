@@ -63,6 +63,31 @@ void RenderScene_s::UnregisterSkylight(const SkylightInfo_s* SkylightInfo)
 	}
 }
 
+bool RenderScene_s::RegisterCamera(const CameraInfo_s* CameraInfo)
+{
+	if (!CameraInfo)
+		return false;
+
+	if (Camera)
+	{
+		LOGWARNING("[RenderScene] Only one camera is supported, ignoring the new one");
+		return false;
+	}
+
+	Camera = CameraInfo;
+	CameraChanged = true;
+	return true;
+}
+
+void RenderScene_s::UnregisterCamera(const CameraInfo_s* CameraInfo)
+{
+	if (CameraInfo && Camera == CameraInfo)
+	{
+		Camera = nullptr;
+		CameraChanged = true;
+	}
+}
+
 bool RenderScene_s::RegisterDirectionalLight(DirectionalLightInfo_s* DirectionalLightInfo)
 {
 	if (!DirectionalLightInfo)

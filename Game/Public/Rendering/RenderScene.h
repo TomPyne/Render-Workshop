@@ -30,6 +30,14 @@ struct RenderScene_s
 	void UnregisterSkylight(const struct SkylightInfo_s* SkylightInfo);
 	const struct SkylightInfo_s* GetSkylight() const { return Skylight; }
 
+	// Camera /////////////////////////////////////////////////////////////////////////////////////
+	// Only one camera is supported, returns false if another is already registered. The Space registers its active camera
+	bool RegisterCamera(const struct CameraInfo_s* CameraInfo);
+	void UnregisterCamera(const struct CameraInfo_s* CameraInfo);
+	const struct CameraInfo_s* GetCamera() const { return Camera; }
+	// Set when the registered camera changes, consumed by the renderer to reset temporal history
+	bool CameraChanged = false;
+
 	// Directional light /////////////////////////////////////////////////////////////////////////
 	// Only one directional light is supported, returns false if another is already registered
 	bool RegisterDirectionalLight(struct DirectionalLightInfo_s* DirectionalLightInfo);
@@ -48,6 +56,7 @@ private:
 	std::vector<class IRenderable_c*> RenderableComponents;
 	std::vector<const struct ParticleSystemInfo_s*> ParticleSystems;
 	const struct SkylightInfo_s* Skylight = nullptr;
+	const struct CameraInfo_s* Camera = nullptr;
 	struct DirectionalLightInfo_s* DirectionalLight = nullptr;
 	struct HeightFogInfo_s* HeightFog = nullptr;
 };

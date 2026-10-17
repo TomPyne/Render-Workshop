@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-class CameraComponent_c;
+struct CameraInfo_s;
 
 namespace GameStats
 {
-	void UpdateCamera(CameraComponent_c* Camera);
+	void UpdateCamera(const CameraInfo_s* Camera);
 	void UpdatePrimCount(uint32_t PrimCount);
 	
 	void DrawGameStatsWindow(bool* Open);

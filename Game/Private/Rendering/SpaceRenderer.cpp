@@ -4,10 +4,10 @@
 #include "Assets/TextureManager.h"
 #include "Bloom.h"
 #include "Fog.h"
-#include "Object/CameraComponent.h"
 #include "Object/ObjectComponent.h"
 #include "Particles/ParticleRenderer.h"
 #include "RaytracingScene.h"
+#include "Rendering/CameraInfo.h"
 #include "Rendering/DirectionalLightInfo.h"
 #include "Rendering/HeightFogInfo.h"
 #include "Rendering/IRenderable.h"
@@ -182,13 +182,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (!Space)
 		return;
 
-	CameraComponent_c* PrimaryCamera = Space->GetCamera();
+	RenderScene_s& Scene = Space->RenderScene;
+
+	const CameraInfo_s* PrimaryCamera = Scene.GetCamera();
 	if (!PrimaryCamera)
 		return;
 
 	GameStats::UpdateCamera(PrimaryCamera);
-
-	RenderScene_s& Scene = Space->RenderScene;
 
 	CollectorFlags_e CollectorFlags = CollectorFlags_e::DISTANCE_FIELD_INSTANCES;
 
@@ -225,10 +225,10 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	const matrix ViewProjection = ViewMatrix * ProjectionMatrix;
 	const matrix InverseViewProjection = InverseMatrix(ViewProjection);
 
-	if (Space->ActiveCameraChanged)
+	if (Scene.CameraChanged)
 	{
 		ResetTemporalHistory();
-		Space->ActiveCameraChanged = false;
+		Scene.CameraChanged = false;
 	}
 
 	if (!HasPrevView)
@@ -248,12 +248,12 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	SpaceViewUniforms_s ViewUniforms = {};
 	ViewUniforms.ViewProjection = ViewProjection;
 	ViewUniforms.PrevViewProjection = PrevViewProjection;
-	ViewUniforms.CamPos = PrimaryCamera->GetWorldPosition();
+	ViewUniforms.CamPos = PrimaryCamera->Position;
 	ViewUniforms.Time = Clock.GetTotalSeconds();
 	ViewUniforms.InvViewportSize = float2(1.0f / Screen.Width, 1.0f / Screen.Height);
 
-	// Same basis as MakeMatrixLookToLH in CameraComponent_c::CalculateViewMatrix.
-	const float3 CamForward = Normalize(PrimaryCamera->GetWorldForward());
+	// Same basis as MakeMatrixLookAtLH in CameraInfo_s::CalculateViewMatrix.
+	const float3 CamForward = PrimaryCamera->Forward;
 	ViewUniforms.CamRight = Normalize(Cross(float3(0.0f, 1.0f, 0.0f), CamForward));
 	ViewUniforms.CamUp = Cross(CamForward, ViewUniforms.CamRight);
 	ViewUniforms.PreExposure = kPreExposure;
@@ -378,7 +378,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t GlobalVolume = {};
 	if (DistanceFieldScene.GetInstanceCount() > 0 || IsDistanceFieldView)
 	{
-		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->GetWorldPosition(), DistanceFieldScene);
+		GlobalVolume = GlobalDistanceField.AddPasses(RGBuilder, PrimaryCamera->Position, DistanceFieldScene);
 	}
 
 	RenderGraphResourceHandle_t DistanceFieldAOTexture = G.DistanceFieldAORenderer.AddPass(RGBuilder, DistanceFieldAO, GlobalDistanceField, GlobalVolume,
@@ -495,7 +495,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		FogInputs.SkyIntensity = Sky.LuminanceScale * kPreExposure;
 		FogInputs.SkyPrefilterMaxMip = Sky.PrefilterMaxMip;
 		FogInputs.InvViewProjection = InverseViewProjection;
-		FogInputs.CameraPosition = PrimaryCamera->GetWorldPosition();
+		FogInputs.CameraPosition = PrimaryCamera->Position;
 		FogInputs.SunDirection = LightDirection;
 		FogInputs.SunIrradiance = LightIrradiance;
 		FogInputs.AmbientLuminance = AmbientLuminance * kPreExposure;

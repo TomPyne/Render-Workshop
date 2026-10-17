@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/SpatialObjectComponent.h"
+#include "Rendering/CameraInfo.h"
 
 class CameraComponent_c : public SpatialObjectComponent_c
 {
@@ -8,8 +9,14 @@ class CameraComponent_c : public SpatialObjectComponent_c
 
 	// Begin SpatialObjectComponent_c
 	virtual void OnCreate() override;
+	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void Update(float Delta) override;
 	virtual void PreDestroy() override;
+	virtual void OnTransformed() override;
 	// End SpatialObjectComponent_c
+
+	// Registered with the RenderScene by the Space while this is the active camera
+	const CameraInfo_s* GetCameraInfo() const { return &CameraInfo; }
 
 	matrix CalculateViewMatrix() const;
 
@@ -34,4 +41,11 @@ class CameraComponent_c : public SpatialObjectComponent_c
 	float ExposureEV100 = 15.0f;
 
 	bool Enabled = true;
+
+protected:
+
+	void UpdateCameraInfoTransform();
+	void UpdateCameraInfoSettings();
+
+	CameraInfo_s CameraInfo;
 };
