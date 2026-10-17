@@ -85,3 +85,26 @@ void RenderScene_s::UnregisterDirectionalLight(const DirectionalLightInfo_s* Dir
 		DirectionalLight = nullptr;
 	}
 }
+
+bool RenderScene_s::RegisterHeightFog(HeightFogInfo_s* HeightFogInfo)
+{
+	if (!HeightFogInfo)
+		return false;
+
+	if (HeightFog)
+	{
+		LOGWARNING("[RenderScene] Only one height fog is supported, ignoring the new one");
+		return false;
+	}
+
+	HeightFog = HeightFogInfo;
+	return true;
+}
+
+void RenderScene_s::UnregisterHeightFog(const HeightFogInfo_s* HeightFogInfo)
+{
+	if (HeightFogInfo && HeightFog == HeightFogInfo)
+	{
+		HeightFog = nullptr;
+	}
+}

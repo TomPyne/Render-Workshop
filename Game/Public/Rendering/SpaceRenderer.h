@@ -137,25 +137,6 @@ private:
 	std::vector<DistanceFieldInstance_s> DistanceFieldInstances;
 };
 
-struct HeightFogSettings_s
-{
-	bool Enabled = true;
-	// Extinction at BaseHeight, per metre
-	float Density = 0.02f;
-	// Per metre, density halves every ln(2) / HeightFalloff metres above BaseHeight
-	float HeightFalloff = 0.2f;
-	float BaseHeight = 0.0f;
-	float StartDistance = 0.0f;
-	float MaxOpacity = 1.0f;
-	// Metres, the sky is fogged as if it were this far away and geometry beyond it is fogged no further
-	float SkyDistance = 1000.0f;
-	// Scattering over extinction, tints the inscattered light
-	float3 Albedo = float3(1.0f, 1.0f, 1.0f);
-	// Henyey-Greenstein g, 0 is isotropic and positive scatters forwards into a glow around the sun
-	float SunAnisotropy = 0.6f;
-	float SunScatterScale = 1.0f;
-};
-
 struct SpaceRendererScreenInfo_s
 {
 	uint32_t Width;
@@ -184,7 +165,6 @@ public:
 	DistanceFieldVisualiseSettings_s DistanceFieldVisualise;
 	DistanceFieldAOSettings_s DistanceFieldAO;
 	SkylightSettings_s Skylight;
-	HeightFogSettings_s HeightFog;
 
 	static rl::RootSignature_t GetRootSignature();
 	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();

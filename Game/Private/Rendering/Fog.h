@@ -4,7 +4,7 @@
 
 #include <SurfMath.h>
 
-struct HeightFogSettings_s;
+struct HeightFogInfo_s;
 
 struct HeightFogInputs_s
 {
@@ -32,5 +32,5 @@ struct FogRenderer_s
 
 	void Init();
 	// Fogs SceneColor in place, sky pixels are treated as lying at Settings.SkyDistance
-	void AddPass(RenderGraphBuilder_s& RGBuilder, const HeightFogSettings_s& Settings, const HeightFogInputs_s& Inputs);
+	void AddPass(RenderGraphBuilder_s& RGBuilder, const HeightFogInfo_s& Settings, const HeightFogInputs_s& Inputs);
 };

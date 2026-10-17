@@ -2,6 +2,7 @@
 
 #include "Object/CameraComponent.h"
 #include "Rendering/DirectionalLightInfo.h"
+#include "Rendering/HeightFogInfo.h"
 #include "Rendering/RenderScene.h"
 #include "Rendering/SpaceRenderer.h"
 
@@ -111,14 +112,21 @@ void DrawSun(RenderScene_s& Scene)
 	ImGui::SliderAngle("Soft angle", &Light->SoftAngle, 0.0f, 10.0f);
 }
 
-void DrawHeightFog(SpaceRenderer_c& Renderer)
+void DrawHeightFog(SpaceRenderer_c& Renderer, RenderScene_s& Scene)
 {
-	HeightFogSettings_s& Settings = Renderer.HeightFog;
+	HeightFogInfo_s* Fog = Scene.GetHeightFog();
+	if (!Fog)
+	{
+		ImGui::TextDisabled("No height fog in the scene");
+		return;
+	}
+
+	HeightFogInfo_s& Settings = *Fog;
 
 	ImGui::Checkbox("Enabled##HeightFog", &Settings.Enabled);
 	ImGui::SliderFloat("Density", &Settings.Density, 0.0001f, 1.0f, "%.4f /m", ImGuiSliderFlags_Logarithmic);
 	ImGui::SliderFloat("Height falloff", &Settings.HeightFalloff, 0.0f, 2.0f, "%.3f /m");
-	ImGui::SliderFloat("Base height", &Settings.BaseHeight, -100.0f, 100.0f, "%.1f m");
+	ImGui::Text("Base height %.1f m (from the component's position)", Settings.BaseHeight);
 	ImGui::SliderFloat("Start distance", &Settings.StartDistance, 0.0f, 500.0f, "%.1f m");
 	ImGui::SliderFloat("Max opacity", &Settings.MaxOpacity, 0.0f, 1.0f, "%.2f");
 	ImGui::SliderFloat("Sky distance", &Settings.SkyDistance, 10.0f, 100000.0f, "%.0f m", ImGuiSliderFlags_Logarithmic);
@@ -183,9 +191,9 @@ void DrawWindow(bool* Open, SpaceRenderer_c* Renderer, CameraComponent_c* Camera
 		DrawSkylight(*Renderer);
 	}
 
-	if (Renderer && ImGui::CollapsingHeader("Height Fog", ImGuiTreeNodeFlags_DefaultOpen))
+	if (Renderer && Scene && ImGui::CollapsingHeader("Height Fog", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		DrawHeightFog(*Renderer);
+		DrawHeightFog(*Renderer, *Scene);
 	}
 
 	if (Renderer && ImGui::CollapsingHeader("Visualise", ImGuiTreeNodeFlags_DefaultOpen))

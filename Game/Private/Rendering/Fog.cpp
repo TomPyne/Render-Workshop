@@ -1,5 +1,6 @@
 #include "Fog.h"
 
+#include "Rendering/HeightFogInfo.h"
 #include "Rendering/SpaceRenderer.h"
 
 #include <Render/Render.h>
@@ -20,7 +21,7 @@ void FogRenderer_s::Init()
 	Ready = HeightFogPSO.IsValid();
 }
 
-void FogRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const HeightFogSettings_s& Settings, const HeightFogInputs_s& Inputs)
+void FogRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const HeightFogInfo_s& Settings, const HeightFogInputs_s& Inputs)
 {
 	if (!Ready || !Settings.Enabled || Settings.Density <= 0.0f)
 		return;

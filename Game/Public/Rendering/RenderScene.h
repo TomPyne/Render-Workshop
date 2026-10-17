@@ -37,9 +37,17 @@ struct RenderScene_s
 	// Mutable so tools can tweak the registered light
 	struct DirectionalLightInfo_s* GetDirectionalLight() const { return DirectionalLight; }
 
+	// Height fog /////////////////////////////////////////////////////////////////////////////////
+	// Only one height fog is supported, returns false if another is already registered
+	bool RegisterHeightFog(struct HeightFogInfo_s* HeightFogInfo);
+	void UnregisterHeightFog(const struct HeightFogInfo_s* HeightFogInfo);
+	// Mutable so tools can tweak the registered fog
+	struct HeightFogInfo_s* GetHeightFog() const { return HeightFog; }
+
 private:
 	std::vector<class IRenderable_c*> RenderableComponents;
 	std::vector<const struct ParticleSystemInfo_s*> ParticleSystems;
 	const struct SkylightInfo_s* Skylight = nullptr;
 	struct DirectionalLightInfo_s* DirectionalLight = nullptr;
+	struct HeightFogInfo_s* HeightFog = nullptr;
 };

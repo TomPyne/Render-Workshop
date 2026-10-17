@@ -9,6 +9,7 @@
 #include "Particles/ParticleRenderer.h"
 #include "RaytracingScene.h"
 #include "Rendering/DirectionalLightInfo.h"
+#include "Rendering/HeightFogInfo.h"
 #include "Rendering/IRenderable.h"
 #include "Rendering/LightingUnits.h"
 #include "Rendering/RenderScene.h"
@@ -484,7 +485,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	}
 
 	// Before particles, which would otherwise be fogged by the opaque depth behind them
-	if (DebugViewMode == DebugViewMode_e::Lit)
+	const HeightFogInfo_s* HeightFog = Scene.GetHeightFog();
+	if (HeightFog && DebugViewMode == DebugViewMode_e::Lit)
 	{
 		HeightFogInputs_s FogInputs;
 		FogInputs.SceneColor = LitTexture;
@@ -499,7 +501,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		FogInputs.AmbientLuminance = AmbientLuminance * kPreExposure;
 		FogInputs.ScreenSize = uint2(Screen.Width, Screen.Height);
 
-		G.FogRenderer.AddPass(RGBuilder, HeightFog, FogInputs);
+		G.FogRenderer.AddPass(RGBuilder, *HeightFog, FogInputs);
 	}
 
 	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
