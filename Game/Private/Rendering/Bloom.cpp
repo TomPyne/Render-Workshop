@@ -142,7 +142,8 @@ void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResour
 	for (const uint2 DownSampleDim : DownsampledDims)
 	{
 		const bool FirstPass = DownsampledTextures.empty();
-		DownsampledTextures.push_back(DownsamplePass(RGBuilder, FirstPass ? SceneColor : DownsampledTextures.back(), DownSampleDim, FirstPass ? 1.0f : -1.0f));
+		// No threshold: every pixel scatters a little, as in a real lens, which keeps bloom independent of exposure
+		DownsampledTextures.push_back(DownsamplePass(RGBuilder, FirstPass ? SceneColor : DownsampledTextures.back(), DownSampleDim, 0.0f));
 	}
 
 	for (int32_t i = static_cast<int32_t>(DownsampledDims.size()) - 1; i >= 1; --i)
@@ -173,7 +174,7 @@ void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResour
 		BloomApplyUniforms.SceneColorTextureIndex = RG.GetUAVIndex(SceneColor);
 		BloomApplyUniforms.Dim = ScreenSize;
 		BloomApplyUniforms.SrcDimRcp = float2(1.0f / static_cast<float>(ScreenSize.x), 1.0f / static_cast<float>(ScreenSize.y));
-		BloomApplyUniforms.BloomIntensity = 0.1f;
+		BloomApplyUniforms.BloomIntensity = 0.04f;
 
 		Ctx.SetRootSignature(SpaceRenderer_c::GetRootSignature());
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
