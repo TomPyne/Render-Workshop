@@ -1,0 +1,31 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/${presetName}"
+        },
+        {
+            "name": "dx12",
+            "displayName": "Dx12",
+            "inherits": "base",
+            "cacheVariables": { "RENDER_API": "Dx12" }
+        },
+        {
+            "name": "dx11",
+            "displayName": "Dx11",
+            "inherits": "base",
+            "cacheVariables": { "RENDER_API": "Dx11" }
+        }
+    ],
+    "buildPresets": [
+        { "name": "dx12-debug",   "configurePreset": "dx12", "configuration": "Debug" },
+        { "name": "dx12-release", "configurePreset": "dx12", "configuration": "Release" },
+        { "name": "dx11-debug",   "configurePreset": "dx11", "configuration": "Debug" },
+        { "name": "dx11-release", "configurePreset": "dx11", "configuration": "Release" }
+    ]
+}

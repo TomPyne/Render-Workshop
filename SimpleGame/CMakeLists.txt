@@ -1,57 +1,53 @@
-function(create_proj projname rapi)
 
-	set(
-		source_list
-		"Source/${projname}.cpp"
-		"Source/SimpleGameApp.cpp"
-		"Source/SimpleGameApp.h"
-		"Source/Components/FighterControllerComponent.cpp"
-		"Source/Components/FighterControllerComponent.h"
-		"Source/Modes/BuildingMode.cpp"
-		"Source/Modes/BuildingMode.h"
-		"Source/Modes/ColonyMode.cpp"
-		"Source/Modes/ColonyMode.h"
-		"Source/Modes/RoadMode.cpp"
-		"Source/Modes/RoadMode.h"
-		"Source/Objects/BuildingObject.cpp"
-		"Source/Objects/BuildingObject.h"
-		"Source/Objects/RoadObject.cpp"
-		"Source/Objects/RoadObject.h"
-		"Source/Objects/SelectionCursorObject.cpp"
-		"Source/Objects/SelectionCursorObject.h"
-	)
+set(
+	source_list
+	"Source/SimpleGame.cpp"
+	"Source/SimpleGameApp.cpp"
+	"Source/SimpleGameApp.h"
+	"Source/Components/FighterControllerComponent.cpp"
+	"Source/Components/FighterControllerComponent.h"
+	"Source/Modes/BuildingMode.cpp"
+	"Source/Modes/BuildingMode.h"
+	"Source/Modes/ColonyMode.cpp"
+	"Source/Modes/ColonyMode.h"
+	"Source/Modes/RoadMode.cpp"
+	"Source/Modes/RoadMode.h"
+	"Source/Objects/BuildingObject.cpp"
+	"Source/Objects/BuildingObject.h"
+	"Source/Objects/RoadObject.cpp"
+	"Source/Objects/RoadObject.h"
+	"Source/Objects/SelectionCursorObject.cpp"
+	"Source/Objects/SelectionCursorObject.h"
+)
 
-	add_executable(${projname}${rapi} ${source_list})
+add_executable(SimpleGame ${source_list})
 
-	foreach(source IN LISTS source_list)
-		get_filename_component(source_path "${source}" PATH)
-		string(REPLACE "/" "\\" source_path_msvc "${source_path}")
-		source_group("${source_path_msvc}" FILES "${source}")
-	endforeach()
+foreach(source IN LISTS source_list)
+	get_filename_component(source_path "${source}" PATH)
+	string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+	source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
 
-	target_link_libraries(${projname}${rapi} Game${rapi})
-	target_link_libraries(${projname}${rapi} HalfPipe)
-	target_link_libraries(${projname}${rapi} Render${rapi})
-	target_link_libraries(${projname}${rapi} RenderUtils)
-	target_link_libraries(${projname}${rapi} Shared)
+target_link_libraries(SimpleGame Game)
+target_link_libraries(SimpleGame HalfPipe)
+target_link_libraries(SimpleGame Render)
+target_link_libraries(SimpleGame RenderUtils)
+target_link_libraries(SimpleGame Shared)
 
-	set_target_properties(${projname}${rapi}
-						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "${projname}${rapi}_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-	)
+set_render_api_exe_name(SimpleGame)
 
-	target_include_directories(${projname}${rapi}
-	PRIVATE
-	"${PROJECT_SOURCE_DIR}"
-	"${PROJECT_SOURCE_DIR}/Include"	
-	"${PROJECT_SOURCE_DIR}/Render"
-	"${PROJECT_SOURCE_DIR}/RenderImGui"
-	"${PROJECT_SOURCE_DIR}/Shared"
-	"${PROJECT_SOURCE_DIR}/SimpleGame/Source"
-	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
-	)
+set_target_properties(SimpleGame
+					PROPERTIES
+					VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
 
-endfunction()
-
-create_proj(SimpleGame Dx12)
+target_include_directories(SimpleGame
+PRIVATE
+"${PROJECT_SOURCE_DIR}"
+"${PROJECT_SOURCE_DIR}/Include"	
+"${PROJECT_SOURCE_DIR}/Render"
+"${PROJECT_SOURCE_DIR}/RenderImGui"
+"${PROJECT_SOURCE_DIR}/Shared"
+"${PROJECT_SOURCE_DIR}/SimpleGame/Source"
+"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
+)

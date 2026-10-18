@@ -1,26 +1,16 @@
-add_executable(RenderExampleDx11 ${PROJECT_SOURCE_DIR}/RenderExample/RenderExample.cpp)
-add_executable(RenderExampleDx12 ${PROJECT_SOURCE_DIR}/RenderExample/RenderExample.cpp)
+add_executable(RenderExample ${PROJECT_SOURCE_DIR}/RenderExample/RenderExample.cpp)
 
-target_link_libraries(RenderExampleDx11 RenderDx11)
-target_link_libraries(RenderExampleDx12 RenderDx12)
+target_link_libraries(RenderExample Render)
 
-set_target_properties(RenderExampleDx11
+set_render_api_exe_name(RenderExample)
+
+set_target_properties(RenderExample
 						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "RenderExampleDx11_Debug"
 						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/RenderExample"
 )
 
-set_target_properties(RenderExampleDx12
-						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "RenderExampleDx12_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/RenderExample"
-)
-
-target_include_directories(RenderExampleDx11 PRIVATE "${PROJECT_SOURCE_DIR}/Include")
-target_include_directories(RenderExampleDx12 PRIVATE "${PROJECT_SOURCE_DIR}/Include")
-
-target_include_directories(RenderExampleDx11 PRIVATE "${PROJECT_SOURCE_DIR}/Render")
-target_include_directories(RenderExampleDx12 PRIVATE "${PROJECT_SOURCE_DIR}/Render")
+target_include_directories(RenderExample PRIVATE "${PROJECT_SOURCE_DIR}/Include")
+target_include_directories(RenderExample PRIVATE "${PROJECT_SOURCE_DIR}/Render")
 
 set(
 	shader_list
@@ -37,5 +27,4 @@ endforeach()
 # but excluded from the actual VS build step.
 set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
-target_sources(RenderExampleDx11 PRIVATE ${shader_list})
-target_sources(RenderExampleDx12 PRIVATE ${shader_list})
+target_sources(RenderExample PRIVATE ${shader_list})

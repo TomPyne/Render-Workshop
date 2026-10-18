@@ -23,39 +23,35 @@ endforeach()
 # but excluded from the actual VS build step.
 set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
-function(create_compute_seminar_proj rapi)
-	add_executable(ComputeSeminar${rapi} ${PROJECT_SOURCE_DIR}/ComputeSeminar/ComputeSeminar.cpp)
+add_executable(ComputeSeminar ${PROJECT_SOURCE_DIR}/ComputeSeminar/ComputeSeminar.cpp)
 
-	target_link_libraries(ComputeSeminar${rapi} Render${rapi})
-	target_link_libraries(ComputeSeminar${rapi} RenderImGui${rapi})
-	target_link_libraries(ComputeSeminar${rapi} Shared)
+target_link_libraries(ComputeSeminar Render)
+target_link_libraries(ComputeSeminar RenderImGui)
+target_link_libraries(ComputeSeminar Shared)
 
-	set_target_properties(ComputeSeminar${rapi}
-						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "ComputeSeminar${rapi}_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ComputeSeminar"
-	)
+set_render_api_exe_name(ComputeSeminar)
 
-	target_include_directories(ComputeSeminar${rapi}
-		PRIVATE
-		"${PROJECT_SOURCE_DIR}"
-		"${PROJECT_SOURCE_DIR}/Include"
-		"${PROJECT_SOURCE_DIR}/Render"
-		"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
-		"${PROJECT_SOURCE_DIR}/Shared"
-	)
+set_target_properties(ComputeSeminar
+					PROPERTIES
+					VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ComputeSeminar"
+)
 
-	target_sources(ComputeSeminar${rapi}
-		PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.h"
-	)
+target_include_directories(ComputeSeminar
+	PRIVATE
+	"${PROJECT_SOURCE_DIR}"
+	"${PROJECT_SOURCE_DIR}/Include"
+	"${PROJECT_SOURCE_DIR}/Render"
+	"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
+	"${PROJECT_SOURCE_DIR}/Shared"
+)
 
-	target_sources(ComputeSeminar${rapi}
-		PRIVATE
-		${shader_list}
-	)
-endfunction()
+target_sources(ComputeSeminar
+	PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/ComputeSeminarApp.h"
+)
 
-create_compute_seminar_proj(Dx11)
-create_compute_seminar_proj(Dx12)
+target_sources(ComputeSeminar
+	PRIVATE
+	${shader_list}
+)

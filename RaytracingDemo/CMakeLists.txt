@@ -25,45 +25,42 @@ endforeach()
 # but excluded from the actual VS build step.
 set_source_files_properties(${shader_list} PROPERTIES VS_SETTINGS "ExcludedFromBuild=true")
 
-function(create_proj projname rapi)
-	add_executable(${projname}${rapi} ${CMAKE_CURRENT_SOURCE_DIR}/Source/${projname}.cpp)
+add_executable(RaytracingDemo ${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemo.cpp)
 
-	target_link_libraries(${projname}${rapi} HalfPipe)
-	target_link_libraries(${projname}${rapi} Render${rapi})
-	target_link_libraries(${projname}${rapi} RenderImGui${rapi})
-	target_link_libraries(${projname}${rapi} RenderUtils)
-	target_link_libraries(${projname}${rapi} Shared)
+target_link_libraries(RaytracingDemo HalfPipe)
+target_link_libraries(RaytracingDemo Render)
+target_link_libraries(RaytracingDemo RenderImGui)
+target_link_libraries(RaytracingDemo RenderUtils)
+target_link_libraries(RaytracingDemo Shared)
 
-	set_target_properties(${projname}${rapi}
-						PROPERTIES
-						RUNTIME_OUTPUT_NAME_DEBUG "${projname}${rapi}_Debug"
-						VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-	)
+set_render_api_exe_name(RaytracingDemo)
 
-	target_include_directories(${projname}${rapi}
-	PRIVATE
-	"${PROJECT_SOURCE_DIR}"
-	"${PROJECT_SOURCE_DIR}/Include"
-	"${PROJECT_SOURCE_DIR}/Render"
-	"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
-	"${PROJECT_SOURCE_DIR}/Shared"
-	"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
-	)
+set_target_properties(RaytracingDemo
+					PROPERTIES
+					VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
 
-	target_sources(${projname}${rapi}
-	PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.h"
-	)
+target_include_directories(RaytracingDemo
+PRIVATE
+"${PROJECT_SOURCE_DIR}"
+"${PROJECT_SOURCE_DIR}/Include"
+"${PROJECT_SOURCE_DIR}/Render"
+"${PROJECT_SOURCE_DIR}/RenderImgui/imgui"
+"${PROJECT_SOURCE_DIR}/Shared"
+"${PROJECT_SOURCE_DIR}/HalfPipe/Source/Public"
+)
 
-	target_sources(${projname}${rapi}
-	PRIVATE
-	${shader_list}
-	)
-endfunction()
+target_sources(RaytracingDemo
+PRIVATE
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RaytracingDemoApp.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDModel.h"
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/Source/RTDGlobals.h"
+)
 
-create_proj(RaytracingDemo Dx12)
+target_sources(RaytracingDemo
+PRIVATE
+${shader_list}
+)
