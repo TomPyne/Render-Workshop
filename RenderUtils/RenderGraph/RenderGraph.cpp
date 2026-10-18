@@ -32,6 +32,9 @@ static bool ResourceWrites(RenderGraphResourceAccessType_e AccessType, RenderGra
 
 RenderGraphPass_s& RenderGraphPass_s::AccessResource(RenderGraphResourceHandle_t Resource, RenderGraphResourceAccessType_e AccessType, RenderGraphLoadOp_e LoadOp)
 {
+	if (Resource == RenderGraphResourceHandle_t::NONE)
+		return *this;
+
 	if (rl::HasEnumFlags(AccessType, RenderGraphResourceAccessType_e::RTV | RenderGraphResourceAccessType_e::DSV))
 	{
 		ASSERTMSG(LoadOp == RenderGraphLoadOp_e::CLEAR || LoadOp == RenderGraphLoadOp_e::DONT_CARE || LoadOp == RenderGraphLoadOp_e::LOAD, "Unuspported RTV/DSV load access");

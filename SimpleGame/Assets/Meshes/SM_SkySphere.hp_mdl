@@ -1,0 +1,12 @@
+{
+    "Version": 1,
+    "SourceFilePath": "%RAW%/Meshes/SM_SkySphere.glb",
+    "SourceFileType": "glb",
+    "GenerateDistanceField": false,
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "%ASSETS%/Materials/Sky.hp_mtl"
+        }
+    ]
+}

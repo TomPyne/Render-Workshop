@@ -1,6 +1,6 @@
 {
     "Version": 1,
-    "SourceFilePath": "%RAW%/Textures/sunflowers_puresky_4k.exr",
-    "SourceFileType": "exr",
+    "SourceFilePath": "%RAW%/Textures/sunflowers_puresky_4k.hdr",
+    "SourceFileType": "hdr",
     "Format": 2
 }

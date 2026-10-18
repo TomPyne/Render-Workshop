@@ -36,15 +36,13 @@ void SelectionCursorComponent_c::OnConstruct()
 	const Path_s MeshAssetPath = Path_s(PathDirectory_e::Assets, L"Meshes/SelectionCorner.hp_mdl");
 	for (uint32_t It = 0; It < 4; ++It)
 	{
-		MeshComp[It] = GetOwner()->AddComponent<MeshComponent_c>(true);
+		MeshComp[It] = GetOwner()->AddComponent<MeshComponent_c>();
 		MeshComp[It]->SetMesh(MeshManager::RequestMesh(MeshAssetPath));
 		MeshComp[It]->SetVisible(false);
 		MeshComp[It]->SetCollidable(false);
 		MeshComp[It]->SetPosition(Offsets[It]);
 		MeshComp[It]->SetRotation(float3(0.0f, ConvertToRadians(Rotations[It]), 0.0f));
 		MeshComp[It]->SetScale(0.01f);
-
-		MeshComp[It]->OnCreate();
 	}	
 }
 

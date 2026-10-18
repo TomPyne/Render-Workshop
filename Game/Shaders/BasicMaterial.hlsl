@@ -31,6 +31,10 @@ void main(in Interpolants_s Input, out PSOutput_s Output)
     Output.AlbedoMetallic = float4(c_Material.Color, 0.0f);
     Output.NormalRoughness = float4(Input.Normal, 1.0f);
 
+    MaterialOutput_Default(normalize(Input.Normal), Output);
+    MaterialOutput_Albedo(c_Material.Color, Output);
+    MaterialOutput_Metallic(0.0f, Output);
+    MaterialOutput_Roughness(0.8f, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

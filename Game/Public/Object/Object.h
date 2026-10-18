@@ -45,7 +45,6 @@ public:
 
 	void Update(float Delta);
 
-	// Constructs and adds component to object. If Deferred is true, OnCreate must be called manually after params are applied.
 	template<class ComponentType>
 	ComponentType* AddComponent()
 	{
