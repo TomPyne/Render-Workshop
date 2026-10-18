@@ -34,8 +34,8 @@ struct Path_s
 {
 	Path_s() = default;
 	Path_s(const std::wstring& InPath); // Uses Root/DefaultProject, for final projects
-	Path_s(PathDirectory_e Directory, const std::wstring& InPath); // Uses global path project, for final projects
-	Path_s(PathDirectory_e Directory, const std::wstring& Project, const std::wstring& InPath); // Uses specified project, for libraries
+	Path_s(PathDirectory_e InDirectory, std::wstring_view InPath); // Uses global path project, for final projects
+	Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const std::wstring& InPath); // Uses specified project, for libraries
 
 	// Take a macro path and replace macros with correct path, uses default project
 	static Path_s FromTokenised(const std::wstring& InPath);
@@ -55,3 +55,17 @@ private:
 
 	static std::wstring DefaultProjectName;
 };
+
+template<PathDirectory_e Directory>
+struct TypedPath_s : public Path_s
+{
+	TypedPath_s(std::wstring_view InPath)
+		: Path_s(Directory, InPath)
+	{}
+};
+
+using RootPath_s = TypedPath_s<PathDirectory_e::Root>;
+using ProjectPath_s = TypedPath_s<PathDirectory_e::Project>;
+using AssetPath_s = TypedPath_s<PathDirectory_e::Assets>;
+using ShaderPath_s = TypedPath_s<PathDirectory_e::Shaders>;
+using RawPath_s = TypedPath_s<PathDirectory_e::Raw>;

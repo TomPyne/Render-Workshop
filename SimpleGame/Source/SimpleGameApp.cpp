@@ -1,6 +1,7 @@
 #include "SimpleGameApp.h"
 
 #include "Components/FighterControllerComponent.h"
+#include "Materials/SimpleGameMaterials.h"
 #include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/SelectionCursorObject.h"
@@ -71,6 +72,7 @@ void SimpleGameApp_c::RegisterClasses()
 	Space->RegisterComponentClass<FighterControllerComponent_c>();
 
 	// Materials
+	RegisterMaterials();
 }
 
 void SimpleGameApp_c::Load()
@@ -80,11 +82,11 @@ void SimpleGameApp_c::Load()
 	G.ColonyModes[Mode_e::NONE] = nullptr;
 	G.ColonyModes[Mode_e::BUILDING] = std::make_unique<BuildingMode_c>(Space.get());
 
-	Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
+	//Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
 
 	if (Space)
 	{
-		Space->LoadLevel(Path);
+		Space->LoadLevel(AssetPath_s(L"Levels/Lighting.hp_lvl"));
 	}
 }
 

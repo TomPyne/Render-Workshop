@@ -3,6 +3,15 @@
     "Objects": 
     [
         {
+            "Class": "MeshObject",
+            "Name": "SkySphere",
+            "Position": "0, 0, 0",
+            "Rotation": "0, 140, 0",
+            "Scale": "400, 400, 400",
+            "CastShadow": false,
+            "MeshAssetPath": "%ASSETS%/Meshes/SM_SkySphere.hp_mdl"
+        },
+        {
             "Class": "SpatialObject",
             "Name": "Skylight",
             "Components":

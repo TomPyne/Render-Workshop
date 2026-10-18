@@ -6,6 +6,8 @@ set(
 	"Source/SimpleGameApp.h"
 	"Source/Components/FighterControllerComponent.cpp"
 	"Source/Components/FighterControllerComponent.h"
+	"Source/Materials/SimpleGameMaterials.cpp"
+	"Source/Materials/SimpleGameMaterials.h"
 	"Source/Modes/BuildingMode.cpp"
 	"Source/Modes/BuildingMode.h"
 	"Source/Modes/ColonyMode.cpp"

@@ -1,4 +1,8 @@
 {
     "Version": 1,
     "MaterialShaderClass": "SkyMaterialShader",
+    "MaterialParams":
+    [
+        { "Name": "Luminance", "Type": 1, "Value": "32000.0f" },
+    ]
 }
