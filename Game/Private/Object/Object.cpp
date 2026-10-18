@@ -41,9 +41,11 @@ void Object_c::OnCreate()
 {
 	HasBeenCreated = true;
 
-	for (std::shared_ptr<ObjectComponent_c>& Component : Components)
+	// Components added during this loop are created as they are added, so only visit the existing ones.
+	const size_t ComponentCount = Components.size();
+	for (size_t Index = 0; Index < ComponentCount; ++Index)
 	{
-		Component->OnCreate();
+		Components[Index]->OnCreate();
 	}
 }
 

@@ -57,6 +57,11 @@ public:
 
 		NewComponent->OnConstruct();
 
+		if (HasBeenCreated)
+		{
+			NewComponent->OnCreate();
+		}
+
 		return NewComponent.get();
 	}
 
