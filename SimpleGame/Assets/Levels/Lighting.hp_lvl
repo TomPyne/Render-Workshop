@@ -1,0 +1,52 @@
+{
+    "Version": 1,
+    "Objects": 
+    [
+        {
+            "Class": "SpatialObject",
+            "Name": "Skylight",
+            "Components":
+            [
+                {
+                    "Class": "SkylightComponent",
+                    "EnvironmentMapAssetPath": "%ASSETS%/Textures/SkyEnv.hp_tex",
+                    "LuminanceScale": 3500.0,
+                    "YawDegrees": -129
+                }
+            ]
+        },
+        {
+            "Class": "SpatialObject",
+            "Name": "Sun",
+            "Components":
+            [
+                {
+                    "Class": "DirectionalLightComponent",
+                    "Rotation": "18.37, 50, 0",
+                    "IlluminanceLux": 20000.0,
+                    "Color": "1, 0.95, 0.85",
+                    "SoftAngleDegrees": 1.146
+                }
+            ]
+        },
+        {
+            "Class": "SpatialObject",
+            "Name": "HeightFog",
+            "Position": "0, 0, 0",
+            "Components":
+            [
+                {
+                    "Class": "HeightFogComponent",
+                    "Density": 0.001,
+                    "HeightFalloff": 0.05,
+                    "StartDistance": 100.0,
+                    "MaxOpacity": 1.0,
+                    "SkyDistance": 1500.0,
+                    "Albedo": "0.8, 0.9, 1",
+                    "SunAnisotropy": 0.4,
+                    "SunScatterScale": 1.0
+                }
+            ]
+        },
+    ]
+}
