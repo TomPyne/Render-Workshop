@@ -64,13 +64,18 @@ void Mesh_s::Render(SpatialRenderingCollector_s& Collector, FrameBufferAlloc_s D
 					continue;
 			}
 
+			const SpatialShaderPass_e Pass = Material->GetPass();
+			if (Pass == SpatialShaderPass_e::NONE)
+				continue;
+
 			rl::GraphicsPipelineState_t PSO = Material->GetPSO(Mirrored);
 			rl::ConstantBuffer_t MaterialConstants = Material->GetConstantBuffer();
 
 			if (!rl::IsValid(PSO) || !rl::IsValid(MaterialConstants))
 				continue;
 
-			SpatialRenderingBatch_s& Batch = Collector.AddBatch(SpatialShaderPass_e::MAIN);
+
+			SpatialRenderingBatch_s& Batch = Collector.AddBatch(Pass);
 			
 			Batch.IndexBuffer = IndexBuffer;
 			Batch.IndexBufferFormat = rl::RenderFormat::R32_UINT;

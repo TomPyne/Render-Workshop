@@ -17,6 +17,9 @@ public:
 
 	void ToggleDebugCamera(bool Enabled);
 
+	// Bottom of the stacks, so a level without a camera can still be flown around
+	std::shared_ptr<class DebugCameraObject_c> DefaultCamera = nullptr;
+
+	// F8 overlay on top of everything
 	std::shared_ptr<class DebugCameraObject_c> DebugCamera = nullptr;
-	std::shared_ptr<class SelectionCursorObject_c> SelectionCursor = nullptr;
 };

@@ -1,0 +1,97 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "MeshObject",
+            "Name": "Ground",
+            "Position": "0, 0, 0",
+            "Scale": 3.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/Plane.hp_mdl"
+        },
+        {
+            "Class": "SpatialObject",
+            "Name": "GameFlow",
+            "Components": [
+                {
+                    "Class": "HovercraftGymFlowComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "LandingPad",
+            "Position": "0, 0, 0",
+            "Rotation": "0, 0, 0",
+            "MeshAssetPath": "%ASSETS%/Meshes/LandingPad.hp_mdl",
+            "Components": [
+                {
+                    "Class": "LandingPadComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building1",
+            "Position": "4.3, 3, 24.6",
+            "Rotation": "0, 70, 0",
+            "Scale": 3.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building2",
+            "Position": "32.8, 5, 22.9",
+            "Rotation": "0, 25, 0",
+            "Scale": 5.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building3",
+            "Position": "19.7, 2, -3.5",
+            "Rotation": "0, 70, 0",
+            "Scale": 2.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building4",
+            "Position": "27.5, 4, -47.6",
+            "Rotation": "0, 60, 0",
+            "Scale": 4.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building5",
+            "Position": "-10.3, 2.5, -28.2",
+            "Rotation": "0, 50, 0",
+            "Scale": 2.5,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building6",
+            "Position": "-40.8, 5, -19.0",
+            "Rotation": "0, 5, 0",
+            "Scale": 5.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building7",
+            "Position": "-20.7, 2, 7.5",
+            "Rotation": "0, 50, 0",
+            "Scale": 2.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Building8",
+            "Position": "-30.0, 3.5, 52.0",
+            "Rotation": "0, 60, 0",
+            "Scale": 3.5,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        }
+    ]
+}

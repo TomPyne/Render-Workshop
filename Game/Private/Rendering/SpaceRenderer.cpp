@@ -122,7 +122,7 @@ void SpaceRenderer_c::Init()
 		rl::GraphicsPipelineStateDesc PsoDesc = {};
 		PsoDesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
 			.DepthDesc(false)
-			.TargetBlendDesc({ rl::RenderFormat::R11G11B10_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
+			.TargetBlendDesc({ rl::RenderFormat::R16G16B16A16_FLOAT }, { rl::BlendMode::None() }, rl::RenderFormat::UNKNOWN)
 			.VertexShader(ScreenPassVS)
 			.PixelShader(DeferredPS)
 			.RootSignature(G.RootSignature);
@@ -384,7 +384,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	RenderGraphResourceHandle_t DistanceFieldAOTexture = G.DistanceFieldAORenderer.AddPass(RGBuilder, DistanceFieldAO, GlobalDistanceField, GlobalVolume,
 		SceneDepthTexture, SceneNormalRoughnessTexture, InverseViewProjection, uint2(Screen.Width, Screen.Height));
 
-	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R11G11B10_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
+	RenderGraphResourceHandle_t LitTexture = RGBuilder.CreateTexture(Screen.Width, Screen.Height, rl::RenderFormat::R16G16B16A16_FLOAT, RenderGraphResourceAccessType_e::SRV_UAV_RTV,  L"LitTexture");
 
 	const DeferredLightingMode_e LightingMode = GetDeferredLightingMode(DebugViewMode, ShadowDenoise.Visualise);
 	const float MaxConfidence = ShadowDenoise.MaxConfidence;
@@ -504,6 +504,40 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		G.FogRenderer.AddPass(RGBuilder, *HeightFog, FogInputs);
 	}
 
+	RenderGraphPass_s& TranslucentMeshDrawPass = RGBuilder.AddPass(RenderGraphPassType_e::GRAPHICS, L"Translucent Mesh Pass")
+	.AccessResource(LitTexture, RenderGraphResourceAccessType_e::RTV, RenderGraphLoadOp_e::LOAD)
+	.AccessResource(SceneDepthTexture, RenderGraphResourceAccessType_e::DSV, RenderGraphLoadOp_e::LOAD) // Reads only
+	.SetExecuteCallback([=, &Collector](RenderGraph_s& RG, GPUContext_s& Ctx)
+	{
+		Ctx.SetRootSignature(G.RootSignature);
+		rl::RenderTargetView_t SceneRTVs[] =
+		{
+			RG.GetRTV(LitTexture),
+		};
+
+		rl::DepthStencilView_t SceneDSV = RG.GetDSV(SceneDepthTexture);
+		Ctx.SetRenderTargets(SceneRTVs, ARRAYSIZE(SceneRTVs), SceneDSV); // TODO: this should be set by the graph
+
+		rl::Viewport vp{ Screen.Width, Screen.Height };
+		Ctx.SetViewports(&vp, 1);
+		Ctx.SetDefaultScissor(); // Could also be captured by the command context
+
+		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_VIEW_BUF, ViewUniformsBuffer);
+		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE); // Root sig stuff is trickier
+
+		for (const SpatialRenderingBatch_s& Batch : Collector.GetBatches(SpatialShaderPass_e::TRANSLUCENT))
+		{
+			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
+			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
+			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Batch.MeshUniforms);
+			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, Batch.MaterialUniforms);
+
+			Ctx.SetIndexBuffer(Batch.IndexBuffer, Batch.IndexBufferFormat, 0);
+			Ctx.DrawIndexedInstanced(Batch.IndexCount, 1, Batch.IndexOffset, 0, 0);
+		}
+	});
+
+
 	G.ParticleRenderer.AddPass(RGBuilder, Scene.GetParticleSystems(), LitTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height), Clock.GetDeltaSeconds(), FrameIndex,
 		GlobalDistanceField, GlobalVolume);
 
@@ -568,9 +602,9 @@ rl::RootSignature_t SpaceRenderer_c::GetRootSignature()
 	return G.RootSignature;
 }
 
-const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTargetDesc()
+const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTargetDesc(SpatialShaderPass_e Pass)
 {
-	static rl::GraphicsPipelineTargetDesc MaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
+	static rl::GraphicsPipelineTargetDesc OpaqueMaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
 		{ 
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
 			rl::RenderFormat::R16G16B16A16_FLOAT, // Normal + Roughness
@@ -586,7 +620,26 @@ const rl::GraphicsPipelineTargetDesc& SpaceRenderer_c::GetMaterialPipelineTarget
 			rl::BlendMode::None(),
 		}, 
 		GetMaterialPipelineDepthFormat());
-	return MaterialPipelineTargetDesc;
+
+	static rl::GraphicsPipelineTargetDesc TranslucentMaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
+		{
+			rl::RenderFormat::R16G16B16A16_FLOAT, // Albedo + Metallic
+		},
+		{
+			rl::BlendMode::Default(),
+		},
+		GetMaterialPipelineDepthFormat());
+
+	switch (Pass)
+	{
+	case SpatialShaderPass_e::MAIN:
+		return OpaqueMaterialPipelineTargetDesc;
+	case SpatialShaderPass_e::TRANSLUCENT:
+		return TranslucentMaterialPipelineTargetDesc;
+	}
+
+	ASSERT0MSG("[SpaceRenderer_c::GetMaterialPipelineTargetDesc] Invalid shader pass");
+	return OpaqueMaterialPipelineTargetDesc;
 }
 
 const rl::RenderFormat SpaceRenderer_c::GetMaterialPipelineDepthFormat()

@@ -91,7 +91,7 @@ rl::GraphicsPipelineStateDesc MaterialShader_c::MakeDefaultPSODesc(const Path_s&
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc(Pass))
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str(), Macros))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str(), Macros))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
@@ -127,7 +127,7 @@ bool DefaultMaterialShader_c::Compile()
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc(Pass))
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
@@ -162,7 +162,7 @@ bool ErrorMaterialShader_c::Compile()
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
         .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc(Pass))
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
@@ -372,7 +372,10 @@ void MaterialShaderInstance_c::Update()
 
     AssignOverrideTextureParams(ParamData.data(), ParamData.size());
 
-    ConstantBuffer = rl::CreateConstantBuffer(ParamData.data(), ParamData.size());
+    if (!ParamData.empty())
+    {
+        ConstantBuffer = rl::CreateConstantBuffer(ParamData.data(), ParamData.size());
+    }    
 }
 
 bool MaterialShaderInstance_c::IsReady() const
@@ -413,6 +416,14 @@ rl::ConstantBuffer_t MaterialShaderInstance_c::GetConstantBuffer()
         Update();
     }
     return ConstantBuffer;
+}
+
+SpatialShaderPass_e MaterialShaderInstance_c::GetPass() const
+{
+    if (!Parent)
+        return SpatialShaderPass_e::NONE;
+
+    return Parent->GetPass();
 }
 
 void MaterialShaderInstanceDynamic_c::SetValue(const ShaderParam_s* Param, const void* Data, size_t DataSize)

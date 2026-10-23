@@ -3,6 +3,8 @@
 #include <Render/RenderTypes.h>
 #include <Shared/FileUtils/PathUtils.h>
 
+#include "SpaceRenderer.h"
+
 #include <memory>
 #include <unordered_map>
 #include <SurfMath.h>
@@ -67,6 +69,8 @@ public:
 
 	bool IsReady() const;
 
+	SpatialShaderPass_e GetPass() const { return Pass; }
+
 protected:
 
 	// Construct params using struct defaults
@@ -99,6 +103,8 @@ protected:
 	std::wstring ShaderDebugName;
 	Path_s ShaderFilePath;
 
+	SpatialShaderPass_e Pass = SpatialShaderPass_e::MAIN;
+
 	mutable bool Ready = false;
 };
 
@@ -116,14 +122,21 @@ public:
 
 	virtual bool Compile() override;
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
-	virtual uint32_t GetShaderParamBufferSize() const override { return 4u * sizeof(float); }
+	virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
 	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override;
 };
 
 class ErrorMaterialShader_c : public MaterialShader_c
 {
+	struct Parameters_s
+	{
+		float4 Dummy;
+	};
+
 public:
 	virtual bool Compile() override;
+	virtual uint32_t GetShaderParamBufferSize() const override { return static_cast<uint32_t>(sizeof(Parameters_s)); }
+	virtual void GetDefaultParams(std::vector<uint8_t>& OutData) const override { InitDefaultParams<Parameters_s>(OutData); }
 	virtual rl::GraphicsPipelineState_t GetPSO(bool Mirrored) override;
 };
 
@@ -144,6 +157,8 @@ public:
 
 	rl::GraphicsPipelineState_t GetPSO(bool Mirrored);
 	rl::ConstantBuffer_t GetConstantBuffer();
+
+	SpatialShaderPass_e GetPass() const;
 
 protected:
 

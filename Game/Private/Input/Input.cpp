@@ -59,6 +59,7 @@ static KeyCode_e Win_VirtualKeyToKeyCode(WPARAM VirtualKey)
 	case VK_SHIFT: return KeyCode_e::_SHIFT;
 	case VK_MENU: return KeyCode_e::_ALT;
 	case VK_ESCAPE: return KeyCode_e::_ESC;
+	case VK_SPACE: return KeyCode_e::_SPACEBAR;
 	case VK_F1: return KeyCode_e::_F1;
 	case VK_F2: return KeyCode_e::_F2;
 	case VK_F3: return KeyCode_e::_F3;

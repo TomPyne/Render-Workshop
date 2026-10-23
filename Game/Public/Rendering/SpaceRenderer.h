@@ -72,7 +72,9 @@ enum class SpatialShader_t : uint32_t
 
 enum class SpatialShaderPass_e : uint32_t
 {
-	MAIN = 0,
+	NONE = 0,
+	MAIN,
+	TRANSLUCENT,
 	COUNT,
 };
 
@@ -167,7 +169,7 @@ public:
 	SkylightSettings_s Skylight;
 
 	static rl::RootSignature_t GetRootSignature();
-	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc();
+	static const rl::GraphicsPipelineTargetDesc& GetMaterialPipelineTargetDesc(SpatialShaderPass_e Pass);
 	static const rl::RenderFormat GetMaterialPipelineDepthFormat();
 
 protected:

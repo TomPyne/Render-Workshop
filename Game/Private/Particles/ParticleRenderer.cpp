@@ -139,7 +139,7 @@ public:
         const std::string ShaderPath = ShaderFilePath.ToString();
 
         static rl::GraphicsPipelineTargetDesc MaterialPipelineTargetDesc = rl::GraphicsPipelineTargetDesc(
-			{ rl::RenderFormat::R11G11B10_FLOAT },
+			{ rl::RenderFormat::R16G16B16A16_FLOAT },
 			{ rl::BlendMode::Add() },
             SpaceRenderer_c::GetMaterialPipelineDepthFormat());
 

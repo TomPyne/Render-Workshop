@@ -48,9 +48,10 @@ float3 Checkerboard3D(float3 Pos, float3 ColorA, float3 ColorB, float Scale) {
 
 void main(in Interpolants_s Input, out PSOutput_s Output)
 {
-    Output.AlbedoMetallic = float4(Checkerboard3D(Input.WorldPosition, float3(1.0f, 0.04f, 0.68f), float3(0.0f, 0.0f, 0.0f), 10.0f), 0.0f);
-    Output.NormalRoughness = float4(Input.Normal, 1.0f);
-
+    float3 Color = Checkerboard3D(Input.WorldPosition, float3(1.0f, 0.04f, 0.68f), float3(0.0f, 0.0f, 0.0f), 10.0f);
+    MaterialOutput_Default(normalize(Input.Normal), Output);
+    MaterialOutput_Albedo(Color, Output);
+    MaterialOutput_Emissive(Color * 1000000.0f, Output);
     MaterialOutput_Velocity(Input.Position, Input.PrevPosition, Output);
 }
 

@@ -44,6 +44,16 @@ public:
 	// TODO: Defer destruction until end of frame.
 	void DestroyObject(Object_c* Object);
 
+	// Walks every object, so only for rare lookups such as spawning, never per frame.
+	template<class ComponentType>
+	void GetComponentsOfType(std::vector<ComponentType*>& OutComponents) const
+	{
+		for (const std::shared_ptr<Object_c>& Object : Objects)
+		{
+			Object->GetComponents(OutComponents);
+		}
+	}
+
 	// Factory ////////////////////////////////////////////////////////////////////////////////////
 	template<class ObjectType>
 	void RegisterObjectClass()

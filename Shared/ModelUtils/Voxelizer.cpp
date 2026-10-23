@@ -7,6 +7,8 @@
 #include <cfloat>
 #include <cmath>
 
+#pragma optimize("", on)
+
 namespace
 {
 

@@ -6,7 +6,7 @@
 enum class KeyCode_e : uint32_t
 {
 	INVALID, // Deliberately first, so an unmapped key lands in a dead slot rather than on a real key
-	_CTRL, _SHIFT, _ALT, _ESC,
+	_CTRL, _SHIFT, _ALT, _ESC, _SPACEBAR,
 	_A, _B, _C, _D, _E, _F, _G, _H, _I, _J, _K, _L, _M, _N, _O, _P, _Q, _R, _S, _T, _U, _V, _W, _X, _Y, _Z,
 	_1, _2, _3, _4, _5, _6, _7, _8, _9, _0,
 	_F1, _F2, _F3, _F4, _F5, _F6, _F7, _F8, _F9, _F10, _F11, _F12,

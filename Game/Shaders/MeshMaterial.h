@@ -162,6 +162,24 @@ void VS_PosNormalTangentUV0UV1(in uint VertexID, out float4 Position, out float4
 
 #ifdef _PS
 
+#ifndef FORWARD_LIT
+#define FORWARD_LIT 0
+#endif
+
+// TODO MATERIALS: Not truly lit yet since we only support unlit translucents
+#if FORWARD_LIT 
+
+struct PSOutput_s
+{
+    float4 AlbedoAlpha : SV_TARGET0;
+};
+
+void MaterialOutput_Translucent(float4 AlbedoAlpha, inout PSOutput_s Output)
+{
+    Output.AlbedoAlpha = AlbedoAlpha;
+}
+
+#else
 struct PSOutput_s
 {
     float4 AlbedoMetallic : SV_TARGET0;
@@ -238,4 +256,5 @@ void MaterialOutput_AmbientOcclusion(float AO, inout PSOutput_s Output)
 {
     Output.AO = AO;
 }
+#endif // #if FORWARD_LIT
 #endif // #ifdef _PS

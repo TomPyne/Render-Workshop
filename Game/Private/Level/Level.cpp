@@ -165,15 +165,29 @@ void Level_c::Deserialize(const std::wstring& LevelPath)
 
 	LOGINFO("[Level] Deserialized %S, version %d, %zu objects", LevelPath.c_str(), LevelData.Version, LevelData.Objects.size());
 
-	// TODO: Spawn the objects described by LevelData
+	Space_c* Space = GetSpace();
+	if (!Space)
+		return;
 
-	if (Space_c* Space = GetSpace())
+	// Every object is deserialized before any is created, so OnCreate can rely on the rest of the level existing.
+	std::vector<std::shared_ptr<Object_c>> LoadedObjects;
+	LoadedObjects.reserve(LevelData.Objects.size());
+
+	for (LevelData_s::ObjectData_s& Object : LevelData.Objects)
 	{
-		for (LevelData_s::ObjectData_s& Object : LevelData.Objects)
+		JsonValue_s ObjectData(Object.Data);
+		if (std::shared_ptr<Object_c> NewObject = Space->ConstructObjectByName(Object.Class, &ObjectData))
 		{
-			JsonValue_s ObjectData(Object.Data);
-			Space->CreateObjectByName(Object.Class, &ObjectData);
+			LoadedObjects.push_back(NewObject);
 		}
+	}
+
+	Objects.insert(Objects.end(), LoadedObjects.begin(), LoadedObjects.end());
+
+	// OnCreate may spawn objects into the Space, so walk our own list rather than the Space's.
+	for (const std::shared_ptr<Object_c>& Object : LoadedObjects)
+	{
+		Object->OnCreate();
 	}
 }
 

@@ -1,12 +1,8 @@
 #include "SelectionCursorObject.h"
 
 #include <Assets/MeshManager.h>
-#include <Core/GameApp.h>
-#include <Input/Input.h>
-#include <Object/CameraComponent.h>
 #include <Object/MeshComponent.h>
 #include <Shared/FileUtils/PathUtils.h>
-#include <Space/Space.h>
 
 float3 Offsets[4] =
 {
@@ -15,6 +11,9 @@ float3 Offsets[4] =
 	float3(-1.0f, 0.0f, -1.0f),
 	float3(-1.0f, 0.0f, 1.0f),	
 };
+
+// Corner mesh scale per unit of cursor scale, so the corners keep their proportions at any size.
+constexpr float CornerScaleRatio = 0.1f;
 
 void SelectionCursorComponent_c::OnConstruct()
 {
@@ -42,49 +41,24 @@ void SelectionCursorComponent_c::OnConstruct()
 		MeshComp[It]->SetCollidable(false);
 		MeshComp[It]->SetPosition(Offsets[It]);
 		MeshComp[It]->SetRotation(float3(0.0f, ConvertToRadians(Rotations[It]), 0.0f));
-		MeshComp[It]->SetScale(0.01f);
+		MeshComp[It]->SetScale(Scale * CornerScaleRatio);
 	}	
 }
 
-void SelectionCursorComponent_c::Update(float Delta)
-{
-	Super::Update(Delta);
-
-	if (!SpatialOwner)
-		return;
-
-	UnsetHit();
-
-	const Space_c* Space = GetSpace();
-	if (!Space)
-		return;
-
-	if (const CameraComponent_c* Camera = Space->GetCamera())
-	{
-		float3 Start, End;
-		Camera->CalculateRayForScreenPosition(Input::GetMousePosition(), Start, End);
-
-		IntersectionCtx_s Trace = IntersectionCtx_s::CreateLineSegmentTrace(Start, End, true);
-		Space->Trace(Trace);
-
-		if (Trace.HasHit())
-		{
-			const float3 HitPosition = Trace.GetHit().Location;		
-
-			SpatialOwner->SetPosition(HitPosition);
-			SetHit(HitPosition, 0.1f);
-		}
-	}
-}
-
 void SelectionCursorComponent_c::SetHit(float3 Location, float InScale)
-{	
+{
+	if (SpatialOwner)
+	{
+		SpatialOwner->SetPosition(Location);
+	}
+
 	Scale = InScale;
 	for (uint32_t It = 0; It < 4; ++It)
 	{
 		if (MeshComp[It])
 		{
 			MeshComp[It]->SetPosition(Offsets[It] * Scale);
+			MeshComp[It]->SetScale(Scale * CornerScaleRatio);
 			MeshComp[It]->SetVisible(true);
 		}
 	}
@@ -107,5 +81,21 @@ void SelectionCursorObject_c::OnConstruct()
 	Super::OnConstruct();
 
 	CursorComp = AddComponent<SelectionCursorComponent_c>();
+}
+
+void SelectionCursorObject_c::SetHit(float3 Location, float Scale)
+{
+	if (CursorComp)
+	{
+		CursorComp->SetHit(Location, Scale);
+	}
+}
+
+void SelectionCursorObject_c::UnsetHit()
+{
+	if (CursorComp)
+	{
+		CursorComp->UnsetHit();
+	}
 }
 

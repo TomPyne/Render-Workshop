@@ -16,11 +16,19 @@ bool BRDFMaterialShader_c::Compile()
 
     rl::GraphicsPipelineStateDesc PSODesc = {};
     PSODesc.RasterizerDesc(rl::PrimitiveTopologyType::TRIANGLE, rl::FillMode::SOLID, rl::CullMode::BACK)
-        .DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL)
-        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc())
+        .TargetBlendDesc(SpaceRenderer_c::GetMaterialPipelineTargetDesc(SpatialShaderPass_e::MAIN))
         .VertexShader(rl::CreateVertexShader(ShaderPath.c_str()))
         .PixelShader(rl::CreatePixelShader(ShaderPath.c_str()))
         .RootSignature(SpaceRenderer_c::GetRootSignature());
+
+    if (Pass == SpatialShaderPass_e::TRANSLUCENT)
+    {
+        PSODesc.DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL, rl::DepthWriteMask::ZERO);
+    }
+    else
+    {
+        PSODesc.DepthDesc(true, rl::ComparisionFunc::LESS_EQUAL);
+    }
 
     PSODesc.DebugName = L"DefaultBRDFShader";
     PSO = rl::CreateGraphicsPipelineState(PSODesc);

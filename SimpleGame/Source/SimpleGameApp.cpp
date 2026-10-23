@@ -1,9 +1,11 @@
 #include "SimpleGameApp.h"
 
-#include "Components/FighterControllerComponent.h"
+#include "Components/HovercraftControllerComponent.h"
+#include "Components/HovercraftGymFlowComponent.h"
+#include "Components/LandingPadComponent.h"
 #include "Materials/SimpleGameMaterials.h"
-#include "Modes/BuildingMode.h"
 #include "Modes/ColonyMode.h"
+#include "Objects/HovercraftObject.h"
 #include "Objects/SelectionCursorObject.h"
 
 #include <Assets/MaterialManager.h>
@@ -22,7 +24,6 @@ namespace Mode_e
 	enum Type
 	{
 		NONE,
-		BUILDING,
 		COUNT
 	};
 }
@@ -66,10 +67,13 @@ void SimpleGameApp_c::RegisterClasses()
 		return;
 
 	// Objects
+	Space->RegisterObjectClass<HovercraftObject_c>();
 	Space->RegisterObjectClass<SelectionCursorObject_c>();
 
 	// Components
-	Space->RegisterComponentClass<FighterControllerComponent_c>();
+	Space->RegisterComponentClass<HovercraftControllerComponent_c>();
+	Space->RegisterComponentClass<HovercraftGymFlowComponent_c>();
+	Space->RegisterComponentClass<LandingPadComponent_c>();
 
 	// Materials
 	RegisterMaterials();
@@ -80,13 +84,16 @@ void SimpleGameApp_c::Load()
 	GameApp_c::Load();
 
 	G.ColonyModes[Mode_e::NONE] = nullptr;
-	G.ColonyModes[Mode_e::BUILDING] = std::make_unique<BuildingMode_c>(Space.get());
-
-	//Path_s Path = Path_s(PathDirectory_e::Assets, L"Levels/ColonyTest.hp_lvl");
 
 	if (Space)
 	{
+		// Created first so it sits at the bottom of the camera and controller stacks, under anything the level spawns
+		DefaultCamera = Space->CreateObject<DebugCameraObject_c>();
+		DefaultCamera->SetPosition(float3{ 0.0f, 20.0f, -50.0f });
+		DefaultCamera->SetRotation(float3{ ConvertToRadians(20.0f), 0.0f, 0.0f });
+
 		Space->LoadLevel(AssetPath_s(L"Levels/Lighting.hp_lvl"));
+		Space->LoadLevel(AssetPath_s(L"Levels/HovercraftGym.hp_lvl"));
 	}
 }
 
@@ -123,10 +130,6 @@ void SimpleGameApp_c::ImGuiUpdate()
 
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::MenuItem("Building Mode"))
-		{
-			SwitchMode(Mode_e::BUILDING);
-		}
 		if (ImGui::MenuItem("Performance", nullptr, G.ShowPerfWindow))
 		{
 			G.ShowPerfWindow = !G.ShowPerfWindow;

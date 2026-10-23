@@ -544,7 +544,25 @@ class WaveFoamMaterialShader_c : public MaterialShader_c
 {
     struct Parameters_s
     {
+        float3 Color = float3(0.79f);
+        float FadeInBrightness = 2.0f;
 
+        float FadeInFalloff = 3.0f;
+        float OpacityMaster = 1.0f;
+        float DistanceSteadyWave = 1.0f;
+        float ScaleSteadyWave = 1.0f;
+
+        float2 OffsetSteadyWave = float2(0.0f);
+        float SpeedSteadyWave = 1.0f;
+        float Scale = 1.0f;
+
+        float ScaleAspectRatio = 1.0f;
+        float Speed = 1.0f;
+        float2 Offset = float2(0.0f);
+
+        TextureIndex AlbedoTexture;
+        TextureIndex NormalTexture;
+        float2 __Pad;
     };
 
 public:
