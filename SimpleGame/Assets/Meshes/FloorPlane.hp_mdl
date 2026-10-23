@@ -1,2 +1,11 @@
-Model
--src Raw/Meshes/FloorPlane.obj
+{
+    "Version": 1,
+    "SourceFilePath": "%RAW%/Meshes/FloorPlane.obj",
+    "SourceFileType": "obj",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/Default.hp_mtl"
+        }
+    ]
+}

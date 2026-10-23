@@ -81,7 +81,7 @@ void SpatialObjectComponent_c::RotateLocal(quat Delta)
 const matrix& SpatialObjectComponent_c::GetWorldMatrix() const
 {
 	const SpatialObject_c* Owner = GetSpatialOwner();
-	WorldMatrix = Owner ? Transform.GetMatrix() * Owner->GetTransform().GetMatrix() : Transform.GetMatrix();
+	WorldMatrix = Owner ? Transform.GetMatrix() * Owner->GetWorldMatrix() : Transform.GetMatrix();
 	return WorldMatrix;
 }
 
@@ -95,5 +95,5 @@ quat SpatialObjectComponent_c::GetWorldRotation() const
 
 	ENSUREMSG(Owner->GetTransform().IsUniformScale(), "[SpatialObjectComponent_c::GetWorldRotation] Owner has non-uniform scale, the returned rotation does not match GetWorldMatrix.");
 
-	return Mul(Transform.GetRotationQuat(), Owner->GetTransform().GetRotationQuat());
+	return Mul(Transform.GetRotationQuat(), Owner->GetWorldRotation());
 }

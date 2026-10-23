@@ -1,0 +1,23 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "MeshObject",
+            "Name": "OuterCube",
+            "Position": "0, 1, 0",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        },
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "Inner",
+            "Position": "3, 0, 0",
+            "Rotation": "0, 90, 0",
+            "Level": "%ASSETS%/Levels/Test/NestedInner.hp_lvl"
+        },
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "SelfInclude",
+            "Level": "%ASSETS%/Levels/Test/NestedOuter.hp_lvl"
+        }
+    ]
+}

@@ -4,6 +4,7 @@
 #include "Assets/MaterialManager.h"
 #include "Core/WindowsPlatform.h"
 #include "Input/Input.h"
+#include "Level/LevelInstanceObject.h"
 #include "Object/CameraComponent.h"
 #include "Object/DebugCameraObject.h"
 #include "Object/DirectionalLightComponent.h"
@@ -25,6 +26,8 @@
 #include <RenderImGui/Source/Public/imgui_impl_render.h>
 #include <Render/Render.h>
 #include <Shared/Jobs/JobSystem.h>
+
+static CommandLineValue_c<std::string> DefaultLevel("DefaultLevel", "", "Startup level");
 
 GameApp_c* GApp;
 
@@ -108,6 +111,7 @@ void GameApp_c::RegisterClasses()
 	Space->RegisterObjectClass<RuntimeMeshObject_c>();
 	Space->RegisterObjectClass<SpatialObject_c>();
 	Space->RegisterObjectClass<DebugCameraObject_c>();
+	Space->RegisterObjectClass<LevelInstanceObject_c>();
 
 	// Components
 	Space->RegisterComponentClass<CameraComponent_c>();
@@ -133,6 +137,19 @@ void GameApp_c::Load()
 	SpaceRenderer->Init();
 
 	AssetManager->Init();
+
+	DefaultCamera = Space->CreateObject<DebugCameraObject_c>();
+	DefaultCamera->SetPosition(float3{ 0.0f, 20.0f, -50.0f });
+	DefaultCamera->SetRotation(float3{ ConvertToRadians(20.0f), 0.0f, 0.0f });
+
+	if (DefaultLevel.IsSet())
+	{
+		AssetPath_s DefaultLevelPath(DefaultLevel.Get());
+		if (Space)
+		{
+			Space->LoadLevel(DefaultLevelPath);
+		}
+	}
 }
 
 void GameApp_c::PreUpdate()

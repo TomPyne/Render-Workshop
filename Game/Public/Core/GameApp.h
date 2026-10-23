@@ -1,10 +1,12 @@
 #pragma once
 
 #include <Render/RenderTypes.h>
+#include <Shared/CommandLine/CommandLine.h>
+
 #include <SurfClock.h>
 #include <SurfMath.h>
-#include <windef.h>
 
+#include <windef.h>
 #include <memory>
 
 class AssetManager_c;
@@ -53,4 +55,6 @@ protected:
 	SurfClock Clock;
 
 	std::unique_ptr<AssetManager_c> AssetManager;
+
+	std::shared_ptr<class DebugCameraObject_c> DefaultCamera = nullptr;
 };

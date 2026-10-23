@@ -87,13 +87,8 @@ void SimpleGameApp_c::Load()
 
 	if (Space)
 	{
-		// Created first so it sits at the bottom of the camera and controller stacks, under anything the level spawns
-		DefaultCamera = Space->CreateObject<DebugCameraObject_c>();
-		DefaultCamera->SetPosition(float3{ 0.0f, 20.0f, -50.0f });
-		DefaultCamera->SetRotation(float3{ ConvertToRadians(20.0f), 0.0f, 0.0f });
-
-		Space->LoadLevel(AssetPath_s(L"Levels/Lighting.hp_lvl"));
-		Space->LoadLevel(AssetPath_s(L"Levels/HovercraftGym.hp_lvl"));
+		//Space->LoadLevel(AssetPath_s(L"Levels/Lighting.hp_lvl"));
+		//Space->LoadLevel(AssetPath_s(L"Levels/HovercraftGym.hp_lvl"));
 	}
 }
 

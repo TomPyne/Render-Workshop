@@ -1,0 +1,29 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "Lighting",
+            "Level": "%ASSETS%/Levels/Lighting.hp_lvl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Ground",
+            "Scale": 3.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/Plane.hp_mdl"
+        },
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "NestedTestA",
+            "Position": "10, 0, 10",
+            "Level": "%ASSETS%/Levels/Test/NestedOuter.hp_lvl"
+        },
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "NestedTestB",
+            "Position": "-10, 0, 10",
+            "Rotation": "0, 180, 0",
+            "Level": "%ASSETS%/Levels/Test/NestedOuter.hp_lvl"
+        }
+    ]
+}

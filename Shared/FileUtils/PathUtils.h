@@ -35,6 +35,7 @@ struct Path_s
 	Path_s() = default;
 	Path_s(const std::wstring& InPath); // Uses Root/DefaultProject, for final projects
 	Path_s(PathDirectory_e InDirectory, std::wstring_view InPath); // Uses global path project, for final projects
+	Path_s(PathDirectory_e InDirectory, std::string_view InPath); // Uses global path project, for final projects
 	Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const std::wstring& InPath); // Uses specified project, for libraries
 
 	// Take a macro path and replace macros with correct path, uses default project
@@ -60,6 +61,10 @@ template<PathDirectory_e Directory>
 struct TypedPath_s : public Path_s
 {
 	TypedPath_s(std::wstring_view InPath)
+		: Path_s(Directory, InPath)
+	{}
+
+	TypedPath_s(std::string_view InPath)
 		: Path_s(Directory, InPath)
 	{}
 };

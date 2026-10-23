@@ -2,6 +2,6 @@
 
 #include <string>
 
-std::string WideToNarrow(const std::wstring& WideStr);
-std::wstring NarrowToWide(const std::string& NarrowStr);
-std::wstring Replace(const std::wstring& Str, wchar_t Char, wchar_t With);
+std::string WideToNarrow(std::wstring_view WideStr);
+std::wstring NarrowToWide(std::string_view NarrowStr);
+std::wstring Replace(std::wstring_view Str, wchar_t Char, wchar_t With);

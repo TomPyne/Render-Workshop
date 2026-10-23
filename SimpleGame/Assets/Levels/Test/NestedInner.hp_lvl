@@ -1,0 +1,11 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "MeshObject",
+            "Name": "InnerCube",
+            "Position": "0, 1, 3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl"
+        }
+    ]
+}

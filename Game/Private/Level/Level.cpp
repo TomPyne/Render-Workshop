@@ -6,7 +6,9 @@
 #include <Shared/FileUtils/JsonHelpers.h>
 #include <Shared/FileUtils/JsonValue.h>
 
+#include <algorithm>
 #include <fstream>
+#include <unordered_map>
 
 #define LEVEL_VERSION_INITIAL 1
 #define LEVEL_VERSION_CURRENT LEVEL_VERSION_INITIAL
@@ -145,52 +147,113 @@ bool ParseLevel(const Json_t& Root, LevelData_s& Out)
 	return true;
 }
 
-}
-
-void Level_c::Deserialize(const std::wstring& LevelPath)
+struct LoadContext_s
 {
+	// Levels currently being instantiated, outermost first, to catch a level that includes itself
+	std::vector<std::wstring> PathStack;
+
+	// Every object constructed by the load, nested levels included, so they are all created once the whole tree exists
+	std::vector<std::shared_ptr<Object_c>> PendingCreate;
+};
+
+LoadContext_s* ActiveLoad = nullptr;
+
+// Parsed once per path, so a level instanced many times only reads its file once
+std::shared_ptr<const LevelData_s> GetLevelData(const std::wstring& LevelPath)
+{
+	static std::unordered_map<std::wstring, std::shared_ptr<const LevelData_s>> Cache;
+
+	auto It = Cache.find(LevelPath);
+	if (It != Cache.end())
+	{
+		return It->second;
+	}
+
 	Json_t Data;
 	if (!LoadJsonFromFile(LevelPath, Data))
 	{
 		LOGERROR("[Level] Failed to load json from file %S", LevelPath.c_str());
-		return;
+		return nullptr;
 	}
 
-	LevelData_s LevelData;
-	if (!ParseLevel(Data, LevelData))
+	std::shared_ptr<LevelData_s> LevelData = std::make_shared<LevelData_s>();
+	if (!ParseLevel(Data, *LevelData))
 	{
 		LOGERROR("[Level] Failed to deserialize level %S", LevelPath.c_str());
-		return;
+		return nullptr;
 	}
 
-	LOGINFO("[Level] Deserialized %S, version %d, %zu objects", LevelPath.c_str(), LevelData.Version, LevelData.Objects.size());
+	LOGINFO("[Level] Deserialized %S, version %d, %zu objects", LevelPath.c_str(), LevelData->Version, LevelData->Objects.size());
 
+	Cache.emplace(LevelPath, LevelData);
+	return LevelData;
+}
+
+}
+
+void Level_c::Deserialize(const std::wstring& LevelPath, SpatialObject_c* Parent)
+{
 	Space_c* Space = GetSpace();
 	if (!Space)
 		return;
 
-	// Every object is deserialized before any is created, so OnCreate can rely on the rest of the level existing.
-	std::vector<std::shared_ptr<Object_c>> LoadedObjects;
-	LoadedObjects.reserve(LevelData.Objects.size());
-
-	for (LevelData_s::ObjectData_s& Object : LevelData.Objects)
+	LoadContext_s OutermostLoad;
+	const bool IsOutermost = !ActiveLoad;
+	if (IsOutermost)
 	{
-		JsonValue_s ObjectData(Object.Data);
-		if (std::shared_ptr<Object_c> NewObject = Space->ConstructObjectByName(Object.Class, &ObjectData))
+		ActiveLoad = &OutermostLoad;
+	}
+
+	std::shared_ptr<const LevelData_s> LevelData;
+	if (std::ranges::find(ActiveLoad->PathStack, LevelPath) != ActiveLoad->PathStack.end())
+	{
+		LOGERROR("[Level] %S includes itself, skipping the nested instance", LevelPath.c_str());
+	}
+	else
+	{
+		LevelData = GetLevelData(LevelPath);
+	}
+
+	if (LevelData)
+	{
+		ActiveLoad->PathStack.push_back(LevelPath);
+
+		for (const LevelData_s::ObjectData_s& Object : LevelData->Objects)
 		{
-			LoadedObjects.push_back(NewObject);
+			// Constructing a level instance loads its contents into PendingCreate, so reserve this object's slot first to keep parents created before children.
+			const size_t CreateSlot = ActiveLoad->PendingCreate.size();
+
+			JsonValue_s ObjectData(Object.Data);
+			std::shared_ptr<Object_c> NewObject = Space->ConstructObjectByName(Object.Class, &ObjectData);
+			if (!NewObject)
+				continue;
+
+			if (Parent)
+			{
+				if (SpatialObject_c* SpatialObject = dynamic_cast<SpatialObject_c*>(NewObject.get()))
+				{
+					SpatialObject->SetParent(Parent);
+				}
+			}
+
+			Objects.push_back(NewObject);
+			ActiveLoad->PendingCreate.insert(ActiveLoad->PendingCreate.begin() + CreateSlot, NewObject);
+		}
+
+		ActiveLoad->PathStack.pop_back();
+	}
+
+	if (IsOutermost)
+	{
+		ActiveLoad = nullptr;
+
+		// OnCreate may spawn objects into the Space, so walk the load's own list rather than the Space's.
+		for (const std::shared_ptr<Object_c>& Object : OutermostLoad.PendingCreate)
+		{
+			Object->OnCreate();
 		}
 	}
-
-	Objects.insert(Objects.end(), LoadedObjects.begin(), LoadedObjects.end());
-
-	// OnCreate may spawn objects into the Space, so walk our own list rather than the Space's.
-	for (const std::shared_ptr<Object_c>& Object : LoadedObjects)
-	{
-		Object->OnCreate();
-	}
 }
-
 void Level_c::Unload()
 {
 	if (Space_c* Space = GetSpace())

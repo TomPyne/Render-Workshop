@@ -28,6 +28,8 @@ set(
 	"Private/Input/Input.cpp"
 	"Private/Level/Level.cpp"
 	"Public/Level/Level.h"
+	"Private/Level/LevelInstanceObject.cpp"
+	"Public/Level/LevelInstanceObject.h"
 	"Private/Object/CameraComponent.cpp"
 	"Public/Object/CameraComponent.h"
 	"Private/Object/ControllerComponent.cpp"

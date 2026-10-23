@@ -1,2 +1,11 @@
-Model
--src Raw/Meshes/SimpleCube.obj
+{
+    "Version": 1,
+    "SourceFilePath": "%RAW%/Meshes/SimpleCube.obj",
+    "SourceFileType": "obj",
+    "Materials": 
+    [
+        {
+            "MaterialAssetPath": "Game/Assets/Materials/Default.hp_mtl"
+        }
+    ]
+}

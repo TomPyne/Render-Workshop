@@ -75,6 +75,14 @@ Path_s::Path_s(PathDirectory_e InDirectory, std::wstring_view InPath)
 	}
 }
 
+Path_s::Path_s(PathDirectory_e InDirectory, std::string_view InPath)
+{
+	if (ENSUREMSG(!DefaultProjectName.empty(), "[Path_s] Default project name is not set, cannot construct path"))
+	{
+		Path = ConstructPathPrefix(InDirectory, DefaultProjectName) + NarrowToWide(InPath);
+	}
+}
+
 Path_s::Path_s(PathDirectory_e InDirectory, const std::wstring& InProject, const std::wstring& InPath)
 {
 	Path = ConstructPathPrefix(InDirectory, InProject) + InPath;

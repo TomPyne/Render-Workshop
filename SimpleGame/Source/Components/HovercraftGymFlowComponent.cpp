@@ -76,7 +76,7 @@ bool HovercraftGymFlowComponent_c::FindSpawnPad(float3& OutPosition, float& OutY
 	if (!ENSUREMSG(PadObject, "[HovercraftGymFlow] No landing pad on a spatial object in the Space, the hovercraft cannot spawn"))
 		return false;
 
-	OutPosition = PadObject->GetTransform().GetPosition();
-	OutYaw = QuatToEuler(PadObject->GetTransform().GetRotationQuat()).y;
+	OutPosition = PadObject->GetWorldPosition();
+	OutYaw = QuatToEuler(PadObject->GetWorldRotation()).y;
 	return true;
 }

@@ -16,7 +16,8 @@ public:
 
 	virtual ~Level_c() = default;
 
-	virtual void Deserialize(const std::wstring& LevelPath);
+	// Loads the level's objects under Parent, or at the root when null. A load nested inside another joins the outermost one's OnCreate pass.
+	virtual void Deserialize(const std::wstring& LevelPath, SpatialObject_c* Parent = nullptr);
 	virtual void Load() {}
 	virtual void Unload();
 
