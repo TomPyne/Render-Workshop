@@ -1,10 +1,13 @@
 #include "SunTempleApp.h"
 
 #include <Core/WindowsPlatform.h>
+#include <Shared/CommandLine/CommandLine.h>
 #include <Shared/FileUtils/PathUtils.h>
 
-int main()
+int main(int argc, char* argv[])
 {
+	CommandLine_s::Parse(argc, argv);
+
 	Path_s::SetDefaultProject(L"SunTemple");
 
     GApp = new SunTempleApp_c();

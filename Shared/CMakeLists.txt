@@ -6,6 +6,8 @@ set(
     "Camera/Camera.h"
     "Camera/FlyCamera.cpp"
     "Camera/FlyCamera.h"
+    "CommandLine/CommandLine.cpp"
+    "CommandLine/CommandLine.h"
     "FileUtils/FileLoader.cpp"
     "FileUtils/FileLoader.h"
     "FileUtils/FileStream.cpp"
