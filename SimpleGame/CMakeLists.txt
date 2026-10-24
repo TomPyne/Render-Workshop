@@ -10,6 +10,8 @@ set(
 	"Source/AI/NavGrid.h"
 	"Source/AI/NavPathfinder.cpp"
 	"Source/AI/NavPathfinder.h"
+	"Source/AI/SpatialHash.cpp"
+	"Source/AI/SpatialHash.h"
 	"Source/Components/AIGymFlowComponent.cpp"
 	"Source/Components/AIGymFlowComponent.h"
 	"Source/Components/CircleMoverComponent.cpp"

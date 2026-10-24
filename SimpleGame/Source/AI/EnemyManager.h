@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AI/NavPathfinder.h"
+#include "AI/SpatialHash.h"
 
 #include <SurfMath.h>
 
@@ -44,6 +45,13 @@ public:
 	float VelocitySmoothingTime = 0.2f;
 	float MovingSpeedThreshold = 0.1f;
 	float MaxPredictionTime = 3.0f;
+
+	// Centre distance where neighbours start pushing apart. Separation only sells the look, small overlaps are fine.
+	float SeparationRadius = 1.5f;
+	float SeparationWeight = 1.5f;
+	int CorrectionIterations = 2;
+	// Fraction of each pair's overlap resolved per iteration, split between the two
+	float CorrectionStrength = 0.8f;
 
 private:
 	struct Enemy_s
@@ -90,6 +98,12 @@ private:
 	float3 MoveOnGrid(float3 From, float3 Step) const;
 	int GetTouchedVolume(const Enemy_s& Enemy) const;
 
+	void BuildSpatialHash();
+	float3 GetSeparation(size_t Index);
+	void CorrectOverlaps();
+	// Offset normalised, with a fixed per-index fallback when two enemies sit on top of each other
+	static float3 GetPushDirection(float3 Offset, float Distance, size_t Index);
+
 	Space_c* Space = nullptr;
 	const NavGrid_c* Grid = nullptr;
 	NavPathfinder_c Pathfinder;
@@ -100,6 +114,11 @@ private:
 	std::vector<int> GoalVolumes;
 	std::vector<Enemy_s> Enemies;
 	std::vector<size_t> DeadIndices;
+
+	SpatialHash_c SpatialHash;
+	std::vector<size_t> Neighbours;
+	// Per-enemy moves, gathered before any are applied
+	std::vector<float3> Steps;
 
 	// Priority then enemy index, rebuilt each frame
 	std::vector<std::pair<float, size_t>> PathQueue;

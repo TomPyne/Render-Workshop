@@ -72,10 +72,31 @@ void EnemyManager_c::Update(float Delta)
 	UpdateSpawning(Delta);
 	UpdatePathQueue(Delta);
 
-	for (Enemy_s& Enemy : Enemies)
+	// Every direction is gathered before any enemy moves, so the result does not depend on order
+	BuildSpatialHash();
+	Steps.resize(Enemies.size());
+	for (size_t Index = 0; Index < Enemies.size(); ++Index)
 	{
-		const float3 Direction = GetSteerDirection(Enemy);
-		Enemy.Position = MoveOnGrid(Enemy.Position, Direction * (EnemySpeed * Delta));
+		float3 Direction = GetSteerDirection(Enemies[Index]) + GetSeparation(Index) * SeparationWeight;
+
+		// Separation can slow an enemy but never speed it up
+		const float Length = LengthXZ(Direction);
+		if (Length > 1.0f)
+		{
+			Direction = Direction / Length;
+		}
+
+		Steps[Index] = Direction * (EnemySpeed * Delta);
+	}
+
+	for (size_t Index = 0; Index < Enemies.size(); ++Index)
+	{
+		Enemies[Index].Position = MoveOnGrid(Enemies[Index].Position, Steps[Index]);
+	}
+
+	for (int Iteration = 0; Iteration < CorrectionIterations; ++Iteration)
+	{
+		CorrectOverlaps();
 	}
 
 	DeadIndices.clear();
@@ -331,6 +352,12 @@ float3 EnemyManager_c::GetSteerDirection(Enemy_s& Enemy)
 		++Enemy.PathCursor;
 	}
 
+	// Separation can push an enemy past a corner without reaching it, so a visible next waypoint replaces the current one
+	while (Enemy.PathCursor + 1 < Enemy.Path.size() && Grid->HasLineOfSight(Enemy.Position, Enemy.Path[Enemy.PathCursor + 1]))
+	{
+		++Enemy.PathCursor;
+	}
+
 	// A finished path waits in the queue for its next search
 	if (Enemy.PathCursor >= Enemy.Path.size())
 		return float3(0.0f);
@@ -385,4 +412,85 @@ int EnemyManager_c::GetTouchedVolume(const Enemy_s& Enemy) const
 	}
 
 	return -1;
+}
+
+void EnemyManager_c::BuildSpatialHash()
+{
+	SpatialHash.CellSize = Max(SeparationRadius, EnemyRadius * 2.0f);
+	SpatialHash.Reset();
+	for (const Enemy_s& Enemy : Enemies)
+	{
+		SpatialHash.Add(Enemy.Position);
+	}
+	SpatialHash.Finalise();
+}
+
+float3 EnemyManager_c::GetSeparation(size_t Index)
+{
+	const float3 Position = Enemies[Index].Position;
+
+	Neighbours.clear();
+	SpatialHash.Query(Position, SeparationRadius, Neighbours);
+
+	// Falls off linearly to zero at SeparationRadius
+	float3 Separation(0.0f);
+	for (size_t Other : Neighbours)
+	{
+		if (Other == Index)
+			continue;
+
+		const float3 Offset(Position.x - Enemies[Other].Position.x, 0.0f, Position.z - Enemies[Other].Position.z);
+		const float Distance = LengthXZ(Offset);
+		Separation = Separation + GetPushDirection(Offset, Distance, Index) * (1.0f - Distance / SeparationRadius);
+	}
+
+	return Separation;
+}
+
+void EnemyManager_c::CorrectOverlaps()
+{
+	BuildSpatialHash();
+
+	const float ContactDistance = EnemyRadius * 2.0f;
+	Steps.assign(Enemies.size(), float3(0.0f));
+	for (size_t Index = 0; Index < Enemies.size(); ++Index)
+	{
+		const float3 Position = Enemies[Index].Position;
+
+		Neighbours.clear();
+		SpatialHash.Query(Position, ContactDistance, Neighbours);
+
+		for (size_t Other : Neighbours)
+		{
+			if (Other == Index)
+				continue;
+
+			const float3 Offset(Position.x - Enemies[Other].Position.x, 0.0f, Position.z - Enemies[Other].Position.z);
+			const float Distance = LengthXZ(Offset);
+			Steps[Index] = Steps[Index] + GetPushDirection(Offset, Distance, Index) * ((ContactDistance - Distance) * 0.5f * CorrectionStrength);
+		}
+	}
+
+	// Capped, so a dense pile spreads over a few frames instead of jittering
+	for (size_t Index = 0; Index < Enemies.size(); ++Index)
+	{
+		float3 Correction = Steps[Index];
+		const float Length = LengthXZ(Correction);
+		if (Length > EnemyRadius)
+		{
+			Correction = Correction * (EnemyRadius / Length);
+		}
+
+		Enemies[Index].Position = MoveOnGrid(Enemies[Index].Position, Correction);
+	}
+}
+
+float3 EnemyManager_c::GetPushDirection(float3 Offset, float Distance, size_t Index)
+{
+	if (Distance > 1e-4f)
+		return Offset / Distance;
+
+	// Golden angle spacing, so a stack of coincident enemies fans out instead of moving as one
+	const float Angle = static_cast<float>(Index) * 2.39996323f;
+	return float3(std::cos(Angle), 0.0f, std::sin(Angle));
 }
