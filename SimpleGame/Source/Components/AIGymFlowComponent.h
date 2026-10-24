@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AI/EnemyManager.h"
 #include "AI/NavGrid.h"
 #include "Components/GameFlowComponent.h"
 
@@ -10,8 +11,11 @@ class AIGymFlowComponent_c : public GameFlowComponent_c
 
 	// Begin ObjectComponent_c
 	virtual void OnCreate() override;
+	virtual void Update(float Delta) override;
+	virtual void PreDestroy() override;
 	// End ObjectComponent_c
 
 protected:
 	NavGrid_c NavGrid;
+	EnemyManager_c EnemyManager;
 };

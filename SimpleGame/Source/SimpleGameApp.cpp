@@ -10,6 +10,7 @@
 #include "Components/NestComponent.h"
 #include "Materials/SimpleGameMaterials.h"
 #include "Modes/ColonyMode.h"
+#include "Objects/EnemyObject.h"
 #include "Objects/HovercraftObject.h"
 #include "Objects/SelectionCursorObject.h"
 
@@ -72,6 +73,7 @@ void SimpleGameApp_c::RegisterClasses()
 		return;
 
 	// Objects
+	Space->RegisterObjectClass<EnemyObject_c>();
 	Space->RegisterObjectClass<HovercraftObject_c>();
 	Space->RegisterObjectClass<SelectionCursorObject_c>();
 
