@@ -194,21 +194,35 @@ bool NavGrid_c::HasLineOfSight(float3 From, float3 To) const
 	float TMaxX = StepX > 0 ? (Cell.x + 1 - AX) * TDeltaX : (StepX < 0 ? (AX - Cell.x) * TDeltaX : Never);
 	float TMaxZ = StepZ > 0 ? (Cell.y + 1 - AZ) * TDeltaZ : (StepZ < 0 ? (AZ - Cell.y) * TDeltaZ : Never);
 
-	const int Steps = std::abs(End.x - Cell.x) + std::abs(End.y - Cell.y);
-	for (int Step = 0; Step < Steps; ++Step)
+	int Remaining = std::abs(End.x - Cell.x) + std::abs(End.y - Cell.y);
+	while (Remaining > 0)
 	{
 		if (!IsWalkable(Cell))
 			return false;
 
-		if (TMaxX < TMaxZ)
+		if (TMaxX == TMaxZ && StepX != 0 && StepZ != 0)
+		{
+			// Passing exactly through a corner touches both side cells. Diagonals between cell centres always do.
+			if (!IsWalkable(int2(Cell.x + StepX, Cell.y)) || !IsWalkable(int2(Cell.x, Cell.y + StepZ)))
+				return false;
+
+			TMaxX += TDeltaX;
+			TMaxZ += TDeltaZ;
+			Cell.x += StepX;
+			Cell.y += StepZ;
+			Remaining -= 2;
+		}
+		else if (TMaxX < TMaxZ)
 		{
 			TMaxX += TDeltaX;
 			Cell.x += StepX;
+			--Remaining;
 		}
 		else
 		{
 			TMaxZ += TDeltaZ;
 			Cell.y += StepZ;
+			--Remaining;
 		}
 	}
 

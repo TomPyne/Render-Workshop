@@ -6,6 +6,8 @@ set(
 	"Source/SimpleGameApp.h"
 	"Source/AI/NavGrid.cpp"
 	"Source/AI/NavGrid.h"
+	"Source/AI/NavPathfinder.cpp"
+	"Source/AI/NavPathfinder.h"
 	"Source/Components/AIGymFlowComponent.cpp"
 	"Source/Components/AIGymFlowComponent.h"
 	"Source/Components/CircleMoverComponent.cpp"
