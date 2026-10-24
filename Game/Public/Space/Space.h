@@ -41,8 +41,11 @@ public:
 		return NewObject;
 	}
 
-	// TODO: Defer destruction until end of frame.
+	// OnDestroy runs straight away. During Update the object stays in the list, skipped, until the update ends.
 	void DestroyObject(Object_c* Object);
+
+	// Includes objects destroyed during the current update until it ends
+	size_t GetObjectCount() const { return Objects.size(); }
 
 	// Walks every object, so only for rare lookups such as spawning, never per frame.
 	template<class ComponentType>
@@ -116,6 +119,9 @@ protected:
 
 	std::vector<std::shared_ptr<Object_c>> Objects;
 	std::vector<std::shared_ptr<Level_c>> Levels;
+
+	bool Updating = false;
+	bool HasPendingDestroy = false;
 
 	// Camera
 	std::vector<std::weak_ptr<CameraComponent_c>> CameraStack;

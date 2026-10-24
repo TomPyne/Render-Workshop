@@ -12,9 +12,25 @@
 
 void Space_c::Update(float Delta)
 {
-	for (auto& Object : Objects)
+	Updating = true;
+
+	// Indexed over the starting count, as updates may create objects and grow the list. New objects update next frame.
+	const size_t ObjectCount = Objects.size();
+	for (size_t Index = 0; Index < ObjectCount; ++Index)
 	{
-		Object->Update(Delta);
+		Object_c* Object = Objects[Index].get();
+		if (!Object->IsDestroyed())
+		{
+			Object->Update(Delta);
+		}
+	}
+
+	Updating = false;
+
+	if (HasPendingDestroy)
+	{
+		std::erase_if(Objects, [](const std::shared_ptr<Object_c>& Object) { return Object->IsDestroyed(); });
+		HasPendingDestroy = false;
 	}
 }
 
@@ -22,9 +38,18 @@ void Space_c::Update(float Delta)
 
 void Space_c::DestroyObject(Object_c* Object)
 {
-	if (Object)
+	if (!Object || Object->IsDestroyed())
+		return;
+
+	Object->Destroyed = true;
+	Object->OnDestroy();
+
+	if (Updating)
 	{
-		Object->OnDestroy();
+		HasPendingDestroy = true;
+	}
+	else
+	{
 		std::erase(Objects, Object->shared_from_this());
 	}
 }

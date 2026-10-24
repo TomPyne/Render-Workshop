@@ -41,6 +41,8 @@ public:
 	// Called before destructor
 	virtual void OnDestroy();
 
+	bool IsDestroyed() const { return Destroyed; }
+
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
 
 	void Update(float Delta);
@@ -148,10 +150,12 @@ public:
 	}
 
 private:
+	friend class Space_c;
 
 	std::weak_ptr<Space_c> OwningSpace;
 
 	std::string Name;
 
 	bool HasBeenCreated = false;
+	bool Destroyed = false;
 };

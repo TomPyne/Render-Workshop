@@ -60,11 +60,13 @@ void Object_c::OnDestroy()
 
 void Object_c::Update(float Delta)
 {
-	ForEachComponent([Delta](ObjectComponent_c* Component)
+	// A component may add components or destroy its owner, which clears the list, so the size is checked every pass.
+	// The local copy keeps the running component alive if its owner is destroyed under it.
+	for (size_t Index = 0; Index < Components.size() && !Destroyed; ++Index)
 	{
+		const std::shared_ptr<ObjectComponent_c> Component = Components[Index];
 		Component->Update(Delta);
-		return true;
-	});
+	}
 }
 
 void Object_c::AddComponentByName(const std::wstring& ClassName, const JsonValue_s* const Data)
