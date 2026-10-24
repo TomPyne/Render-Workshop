@@ -77,8 +77,7 @@ void EnemyManager_c::Update(float Delta)
 
 		if (Enemy.Target < 0 || !Volumes[Enemy.Target].Valid)
 		{
-			Enemy.Target = ChooseTarget(Enemy.Position);
-			RequestPath(Enemy);
+			ChooseTarget(Enemy);
 		}
 
 		const float3 Direction = GetSteerDirection(Enemy);
@@ -161,47 +160,42 @@ void EnemyManager_c::SpawnEnemy()
 	Enemy.Position = float3(Position.x, 0.0f, Position.z);
 	Enemy.Object = Space->CreateObject<EnemyObject_c>();
 	Enemy.Object->SetScale(EnemyRadius);
-	Enemy.Target = ChooseTarget(Enemy.Position);
-	RequestPath(Enemy);
+	ChooseTarget(Enemy);
 
 	Enemies.push_back(std::move(Enemy));
 	++SpawnedCount;
 }
 
-int EnemyManager_c::ChooseTarget(float3 Position) const
-{
-	int Best = -1;
-	float BestDistance = FLT_MAX;
-
-	for (size_t Index = 0; Index < Volumes.size(); ++Index)
-	{
-		if (!Volumes[Index].Valid)
-			continue;
-
-		const float Distance = LengthXZ(Volumes[Index].Position - Position);
-		if (Distance < BestDistance)
-		{
-			BestDistance = Distance;
-			Best = static_cast<int>(Index);
-		}
-	}
-
-	return Best;
-}
-
-void EnemyManager_c::RequestPath(Enemy_s& Enemy)
+void EnemyManager_c::ChooseTarget(Enemy_s& Enemy)
 {
 	Enemy.Path.clear();
 	Enemy.PathCursor = 0;
+	Enemy.Target = -1;
 
-	if (Enemy.Target < 0 || Enemy.RepathCooldown > 0.0f)
+	if (Enemy.RepathCooldown > 0.0f)
 		return;
 
-	if (!Pathfinder.FindPath(*Grid, Enemy.Position, Volumes[Enemy.Target].Position, Enemy.Path))
+	// Goals grow by the enemy radius, as an enemy dies when its circle touches the footprint
+	Goals.clear();
+	GoalVolumes.clear();
+	for (size_t Index = 0; Index < Volumes.size(); ++Index)
+	{
+		const Volume_s& Volume = Volumes[Index];
+		if (Volume.Valid)
+		{
+			Goals.push_back({ Volume.Position, float2(Volume.HalfExtents.x + EnemyRadius, Volume.HalfExtents.y + EnemyRadius) });
+			GoalVolumes.push_back(static_cast<int>(Index));
+		}
+	}
+
+	int GoalIndex = -1;
+	if (!Pathfinder.FindPath(*Grid, Enemy.Position, Goals, Enemy.Path, GoalIndex))
 	{
 		Enemy.RepathCooldown = RepathRetryDelay;
 		return;
 	}
+
+	Enemy.Target = GoalVolumes[GoalIndex];
 
 	// The first waypoint is the start cell, which the enemy is already in
 	Enemy.PathCursor = Enemy.Path.size() > 1 ? 1 : 0;
@@ -223,8 +217,8 @@ float3 EnemyManager_c::GetSteerDirection(Enemy_s& Enemy)
 
 	if (Enemy.PathCursor >= Enemy.Path.size())
 	{
-		RequestPath(Enemy);
-		if (Enemy.PathCursor >= Enemy.Path.size())
+		ChooseTarget(Enemy);
+		if (Enemy.Target < 0 || Enemy.PathCursor >= Enemy.Path.size())
 			return float3(0.0f);
 	}
 

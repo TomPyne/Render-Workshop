@@ -47,7 +47,7 @@
         {
             "Class": "MeshObject",
             "Name": "NestEast",
-            "Position": "45, 1, 0",
+            "Position": "34, 1, 0",
             "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
             "Components": [
                 {
@@ -71,6 +71,18 @@
             "Class": "MeshObject",
             "Name": "DeathVolumeEast",
             "Position": "20, 0.25, 0",
+            "Scale": "3, 0.25, 3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "DeathVolumeComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "DeathVolumeFarEast",
+            "Position": "45, 0.25, 22",
             "Scale": "3, 0.25, 3",
             "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
             "Components": [

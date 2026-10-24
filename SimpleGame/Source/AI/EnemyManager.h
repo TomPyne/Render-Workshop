@@ -58,9 +58,8 @@ private:
 	void UpdateSpawning(float Delta);
 	void SpawnEnemy();
 
-	// Distance is the only rule for now, so other priorities only have to replace this
-	int ChooseTarget(float3 Position) const;
-	void RequestPath(Enemy_s& Enemy);
+	// Sets the target and its path. Path distance is the only rule for now, so other priorities only have to replace this.
+	void ChooseTarget(Enemy_s& Enemy);
 
 	// The seam between movement and pathing, so a flow field can replace A* without touching the rest
 	float3 GetSteerDirection(Enemy_s& Enemy);
@@ -75,6 +74,8 @@ private:
 
 	std::vector<std::weak_ptr<NestComponent_c>> Nests;
 	std::vector<Volume_s> Volumes;
+	std::vector<NavGoal_s> Goals;
+	std::vector<int> GoalVolumes;
 	std::vector<Enemy_s> Enemies;
 	std::vector<size_t> DeadIndices;
 
