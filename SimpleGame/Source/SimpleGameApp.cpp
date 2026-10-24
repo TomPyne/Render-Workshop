@@ -1,8 +1,13 @@
 #include "SimpleGameApp.h"
 
+#include "Components/AIGymFlowComponent.h"
+#include "Components/CircleMoverComponent.h"
+#include "Components/DeathVolumeComponent.h"
 #include "Components/HovercraftControllerComponent.h"
 #include "Components/HovercraftGymFlowComponent.h"
 #include "Components/LandingPadComponent.h"
+#include "Components/NavObstacleComponent.h"
+#include "Components/NestComponent.h"
 #include "Materials/SimpleGameMaterials.h"
 #include "Modes/ColonyMode.h"
 #include "Objects/HovercraftObject.h"
@@ -71,9 +76,14 @@ void SimpleGameApp_c::RegisterClasses()
 	Space->RegisterObjectClass<SelectionCursorObject_c>();
 
 	// Components
+	Space->RegisterComponentClass<AIGymFlowComponent_c>();
+	Space->RegisterComponentClass<CircleMoverComponent_c>();
+	Space->RegisterComponentClass<DeathVolumeComponent_c>();
 	Space->RegisterComponentClass<HovercraftControllerComponent_c>();
 	Space->RegisterComponentClass<HovercraftGymFlowComponent_c>();
 	Space->RegisterComponentClass<LandingPadComponent_c>();
+	Space->RegisterComponentClass<NavObstacleComponent_c>();
+	Space->RegisterComponentClass<NestComponent_c>();
 
 	// Materials
 	RegisterMaterials();

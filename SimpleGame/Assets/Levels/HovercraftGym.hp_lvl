@@ -2,6 +2,11 @@
     "Version": 1,
     "Objects": [
         {
+            "Class": "LevelInstanceObject",
+            "Name": "Lighting",
+            "Level": "%ASSETS%/Levels/Lighting.hp_lvl"
+        },
+        {
             "Class": "MeshObject",
             "Name": "Ground",
             "Position": "0, 0, 0",

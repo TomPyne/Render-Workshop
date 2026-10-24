@@ -1,0 +1,224 @@
+{
+    "Version": 1,
+    "Objects": [
+        {
+            "Class": "LevelInstanceObject",
+            "Name": "Lighting",
+            "Level": "%ASSETS%/Levels/Lighting.hp_lvl"
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Ground",
+            "Position": "0, 0, 0",
+            "Scale": 3.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/Plane.hp_mdl"
+        },
+        {
+            "Class": "SpatialObject",
+            "Name": "GameFlow",
+            "Components": [
+                {
+                    "Class": "AIGymFlowComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "NestWest",
+            "Position": "-45, 1, 0",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NestComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "NestSouth",
+            "Position": "0, 1, -45",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NestComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "NestEast",
+            "Position": "45, 1, 0",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NestComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "DeathVolumeNorth",
+            "Position": "0, 0.25, 40",
+            "Scale": "3, 0.25, 3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "DeathVolumeComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "DeathVolumeEast",
+            "Position": "20, 0.25, 0",
+            "Scale": "3, 0.25, 3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "DeathVolumeComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "DeathVolumeCentre",
+            "Position": "-4, 0.25, -12",
+            "Scale": "3, 0.25, 3",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "DeathVolumeComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "DeathVolumeCircling",
+            "Position": "-15, 0.25, 10",
+            "Scale": "2, 0.25, 2",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "DeathVolumeComponent"
+                },
+                {
+                    "Class": "CircleMoverComponent",
+                    "Radius": 12.0,
+                    "Period": 20.0
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "WallLeft",
+            "Position": "-12, 2, -25",
+            "Scale": "16, 2, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "WallRight",
+            "Position": "18, 2, -25",
+            "Scale": "10, 2, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "TrapBack",
+            "Position": "28, 2, 0",
+            "Scale": "0.5, 2, 7",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "TrapArmNorth",
+            "Position": "32.5, 2, 6.5",
+            "Scale": "4, 2, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "TrapArmSouth",
+            "Position": "32.5, 2, -6.5",
+            "Scale": "4, 2, 0.5",
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Box1",
+            "Position": "-35, 1.5, -12",
+            "Rotation": "0, 30, 0",
+            "Scale": 1.5,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Box2",
+            "Position": "-38, 1, 15",
+            "Rotation": "0, 45, 0",
+            "Scale": 1.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Box3",
+            "Position": "10, 1.5, 20",
+            "Rotation": "0, 20, 0",
+            "Scale": 1.5,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        },
+        {
+            "Class": "MeshObject",
+            "Name": "Box4",
+            "Position": "-8, 2, 30",
+            "Rotation": "0, 60, 0",
+            "Scale": 2.0,
+            "MeshAssetPath": "%ASSETS%/Meshes/SimpleCube.hp_mdl",
+            "Components": [
+                {
+                    "Class": "NavObstacleComponent"
+                }
+            ]
+        }
+    ]
+}
