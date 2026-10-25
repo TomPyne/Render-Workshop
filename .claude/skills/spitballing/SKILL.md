@@ -1,6 +1,7 @@
 ---
 name: spitballing
 description: Back-and-forth design sessions that turn a rough game idea into a worked-out plan, captured in one living doc per idea under SimpleGame/Docs/Ideas/. Claude asks probing questions, pushes counter-ideas, and writes only agreed decisions into the doc each round, splitting it into gameplay, current implementation, and future/out-of-scope work. Use this whenever the user says "spitball", "rough idea", "what if the game had...", "I've been thinking about a mechanic", wants to riff on or flesh out a feature, enemy, structure, mode, or system for the game, or wants to resume or continue an existing idea doc, even if they don't say "spitballing".
+model: opus
 ---
 
 # Spitballing
