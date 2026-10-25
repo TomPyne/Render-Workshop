@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 #ifdef _CS
 
 static const float FLT_MAX = asfloat(0x7F7FFFFF);
@@ -18,9 +20,9 @@ struct Uniforms_s
     float2 __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_Uniforms);
 
-RaytracingAccelerationStructure t_accel : register(t0, space0);
+RaytracingAccelerationStructure t_accel : register(t0, space1);
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space0); // Depth
 Texture2DArray<float2> t_tex2darr_f2[8192] : register(t1, space1); // BlueNoise
 RWTexture2D<float> u_tex2d_f1[8192] : register(u0, space0); // Shadow Buffer

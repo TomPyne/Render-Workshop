@@ -93,7 +93,7 @@ RenderGraphResourceHandle_t DistanceFieldVisualiseRenderer_s::AddPass(RenderGrap
 
 		Ctx.SetPipelineState(PSO);
 
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 
 		Ctx.Dispatch(DivideRoundUp(OutputSize.x, 8u), DivideRoundUp(OutputSize.y, 8u), 1u);
 	});

@@ -127,6 +127,7 @@ set(
 	"Shaders/DistanceFields/DistanceFieldAO.hlsl"
 	"Shaders/DistanceFields/DistanceFieldVisualise.hlsl"
 	"Shaders/DistanceFields/GlobalDistanceFieldComposite.hlsl"
+	"Shaders/DrawConstants.h"
 	"Shaders/Fog/HeightFog.hlsl"
 	"Shaders/Fog/HeightFogShared.h"
 	"Shaders/ShaderDefines.h"

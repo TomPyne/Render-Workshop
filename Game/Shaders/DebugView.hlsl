@@ -1,6 +1,7 @@
 #ifdef _PS
 
 #include "ScreenPassShared.h"
+#include "DrawConstants.h"
 
 // Must match DebugViewMode_e
 #define DEBUGVIEW_LIT 0
@@ -29,7 +30,7 @@ struct DebugViewUniforms_s
     float3 __Pad;
 };
 
-ConstantBuffer<DebugViewUniforms_s> c_DebugView : register(b0);
+DRAW_CONSTANTS(DebugViewUniforms_s, c_DebugView);
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space1);
 

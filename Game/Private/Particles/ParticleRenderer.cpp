@@ -321,7 +321,7 @@ void ParticleRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const std::vec
 			VolumeUniforms.VolumeMax = VolumeBounds.maxs;
 			VolumeUniforms.VolumeSRV = CollisionEnabled ? RG.GetSRVIndex(GlobalVolume) : 0u;
 			VolumeUniforms.Enabled = CollisionEnabled ? 1u : 0u;
-			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(VolumeUniforms));
+			Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(VolumeUniforms));
 
 			for (const ParticleSystemDraw_s& Draw : Draws)
 			{

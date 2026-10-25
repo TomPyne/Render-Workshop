@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 #ifdef _CS
 
 struct Uniforms_s
@@ -27,7 +29,7 @@ struct Uniforms_s
     float __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_Uniforms);
 
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 Texture3D<float> t_tex3d_f1[8192] : register(t1, space1);

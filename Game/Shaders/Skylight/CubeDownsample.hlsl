@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 struct Uniforms_s
 {
     uint SourceTextureIndex;
@@ -6,7 +8,7 @@ struct Uniforms_s
     uint __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_G : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_G);
 
 RWTexture2DArray<float4> u_tex2darr_f4[8192] : register(u0, space0);
 

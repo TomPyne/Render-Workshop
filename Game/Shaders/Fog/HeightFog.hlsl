@@ -1,5 +1,6 @@
 #include "../Samplers.h"
 #include "HeightFogShared.h"
+#include "../DrawConstants.h"
 
 // Must match HeightFogUniforms_s in Fog.cpp
 struct Uniforms_s
@@ -35,7 +36,7 @@ struct Uniforms_s
     float2 InvScreenSize;
 };
 
-ConstantBuffer<Uniforms_s> c_G : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_G);
 
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 TextureCube<float4> t_texcube_f4[8192] : register(t1, space2);

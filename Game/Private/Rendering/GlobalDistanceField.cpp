@@ -49,10 +49,10 @@ uint32_t FrameStructuredBuffer_c::GetSRVIndex() const
 	return rl::GetDescriptorIndex(SRVs[WriteIndex]);
 }
 
-void GlobalDistanceField_c::Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot)
+void GlobalDistanceField_c::Init(rl::RootSignature_t InRootSignature, uint32_t InDrawConstantsRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot)
 {
 	RootSignature = rl::RootSignaturePtr::Ref(InRootSignature);
-	CBVRootSigSlot = InCBVRootSigSlot;
+	DrawConstantsRootSigSlot = InDrawConstantsRootSigSlot;
 	UAVTableRootSigSlot = InUAVTableRootSigSlot;
 	SRVTableRootSigSlot = InSRVTableRootSigSlot;
 
@@ -153,7 +153,7 @@ RenderGraphResourceHandle_t GlobalDistanceField_c::AddPasses(RenderGraphBuilder_
 
 		Ctx.SetPipelineState(CompositePSO);
 
-		Ctx.SetComputeRootCBV(CBVRootSigSlot, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(DrawConstantsRootSigSlot, RG.Alloc(Uniforms));
 
 		Ctx.Dispatch(DivideRoundUp(Resolution, 4u), DivideRoundUp(Resolution, 4u), DivideRoundUp(Resolution, 4u));
 	});

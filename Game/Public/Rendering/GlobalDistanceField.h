@@ -68,7 +68,7 @@ public:
 	// Voxels per brick along each axis, must match kBrickSize in GlobalDistanceFieldComposite.hlsl
 	static constexpr uint32_t kBrickSize = 8;
 
-	void Init(rl::RootSignature_t InRootSignature, uint32_t InCBVRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot);
+	void Init(rl::RootSignature_t InRootSignature, uint32_t InDrawConstantsRootSigSlot, uint32_t InUAVTableRootSigSlot, uint32_t InSRVTableRootSigSlot);
 
 	// Snaps the volume around CameraPos and adds the passes that fill it from Scene's instances. Returns the volume texture.
 	RenderGraphResourceHandle_t AddPasses(RenderGraphBuilder_s& RGBuilder, const float3& CameraPos, const DistanceFieldScene_c& Scene);
@@ -84,7 +84,7 @@ private:
 	rl::RootSignaturePtr RootSignature = {};
 	rl::ComputePipelineStatePtr CompositePSO = {};
 
-	uint32_t CBVRootSigSlot = 0;
+	uint32_t DrawConstantsRootSigSlot = 0;
 	uint32_t UAVTableRootSigSlot = 0;
 	uint32_t SRVTableRootSigSlot = 0;
 

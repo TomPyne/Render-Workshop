@@ -159,7 +159,7 @@ void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, Render
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 		Ctx.SetPipelineState(EquirectPSO);
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 		Ctx.Dispatch(DivideRoundUp(Size, 8u), DivideRoundUp(Size, 8u), 6u);
 	});
 
@@ -186,7 +186,7 @@ void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, Render
 			Uniforms.OutputTextureIndex = MipUAVIndices[MipIt];
 			Uniforms.Size = Max(Size >> MipIt, 1u);
 
-			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+			Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 			Ctx.Dispatch(DivideRoundUp(Uniforms.Size, 8u), DivideRoundUp(Uniforms.Size, 8u), 6u);
 
 			// The next mip reads this one
@@ -229,7 +229,7 @@ void SkylightRenderer_c::AddIrradiancePass(RenderGraphBuilder_s& RGBuilder, Rend
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 		Ctx.SetPipelineState(PSO);
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 		Ctx.Dispatch(DivideRoundUp(Size, 8u), DivideRoundUp(Size, 8u), 6u);
 	});
 }
@@ -286,7 +286,7 @@ void SkylightRenderer_c::AddPrefilterPass(RenderGraphBuilder_s& RGBuilder, Rende
 			Uniforms.SourceMaxMip = SourceMaxMip;
 			Uniforms.CopyMip = static_cast<float>(kPrefilterCopyMip);
 
-			Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+			Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 			Ctx.Dispatch(DivideRoundUp(Uniforms.Size, 8u), DivideRoundUp(Uniforms.Size, 8u), 6u);
 		}
 	});

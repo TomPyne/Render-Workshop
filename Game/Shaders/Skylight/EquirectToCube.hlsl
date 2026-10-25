@@ -1,5 +1,6 @@
 #include "../Samplers.h"
 #include "CubeShared.h"
+#include "../DrawConstants.h"
 
 struct Uniforms_s
 {
@@ -12,7 +13,7 @@ struct Uniforms_s
     float3 __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_G : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_G);
 
 Texture2D<float4> t_tex2d_f4[8192] : register(t1, space0);
 RWTexture2DArray<float4> u_tex2darr_f4[8192] : register(u0, space0);

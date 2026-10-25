@@ -36,7 +36,6 @@ namespace SpaceRendererCBVRegister
 {
 	enum Value
 	{
-		CBV_DRAWCONSTANTS = 0,
 		CBV_VIEW_BUF = 1,
 		CBV_MODEL_BUF = 2,
 		CBV_MAT_BUF = 3,

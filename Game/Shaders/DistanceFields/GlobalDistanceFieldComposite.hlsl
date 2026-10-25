@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 #ifdef _CS
 
 struct Uniforms_s
@@ -37,7 +39,7 @@ struct DistanceFieldInstance_s
     float DistanceScale;
 };
 
-ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_Uniforms);
 
 StructuredBuffer<DistanceFieldInstance_s> t_sbuf_dfinstance[8192] : register(t1, space0);
 Texture3D<float> t_tex3d_f1[8192] : register(t1, space1);

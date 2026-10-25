@@ -8,8 +8,6 @@
 
 void BloomRenderer_s::Init()
 {
-	rl::ShaderMacros Macros = { { "CBV_SLOT", SpaceRendererCBVRegister::CBV_DRAWCONSTANTS } };
-
 	rl::ComputePipelineStateDesc PSODesc = {};
 	PSODesc.RootSignatureOverride = SpaceRenderer_c::GetRootSignature();
 
@@ -17,15 +15,15 @@ void BloomRenderer_s::Init()
 	static const Path_s UpsamplePath = Path_s(PathDirectory_e::Shaders, L"Game", L"Bloom/BloomUpsample.hlsl");
 	static const Path_s ApplyPath = Path_s(PathDirectory_e::Shaders, L"Game", L"Bloom/BloomApply.hlsl");
 
-	PSODesc.Cs = rl::CreateComputeShader(DownSamplePath.ToString().c_str(), Macros);
+	PSODesc.Cs = rl::CreateComputeShader(DownSamplePath.ToString().c_str());
 	PSODesc.DebugName = L"BloomDownsampleCS";
 	BloomDownsamplePSO = rl::CreateComputePipelineState(PSODesc);
 
-	PSODesc.Cs = rl::CreateComputeShader(UpsamplePath.ToString().c_str(), Macros);
+	PSODesc.Cs = rl::CreateComputeShader(UpsamplePath.ToString().c_str());
 	PSODesc.DebugName = L"BloomUpsampleCS";
 	BloomUpsamplePSO = rl::CreateComputePipelineState(PSODesc);
 
-	PSODesc.Cs = rl::CreateComputeShader(ApplyPath.ToString().c_str(), Macros);
+	PSODesc.Cs = rl::CreateComputeShader(ApplyPath.ToString().c_str());
 	PSODesc.DebugName = L"BloomApplyCS";
 	BloomApplyPSO = rl::CreateComputePipelineState(PSODesc);
 
@@ -75,7 +73,7 @@ RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s
 
 		Ctx.SetPipelineState(BloomDownsamplePSO);
 
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(DownsampleUniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(DownsampleUniforms));
 
 		Ctx.Dispatch(DivideRoundUp(Dim.x, 8u), DivideRoundUp(Dim.y, 8u), 1u);
 	});
@@ -118,7 +116,7 @@ void BloomRenderer_s::UpsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphR
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 		Ctx.SetPipelineState(BloomUpsamplePSO);
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(UpsampleUniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(UpsampleUniforms));
 		Ctx.Dispatch(DivideRoundUp(Dim.x, 8u), DivideRoundUp(Dim.y, 8u), 1u);
 	});
 }
@@ -186,7 +184,7 @@ void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResour
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 		Ctx.SetPipelineState(BloomApplyPSO);
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(BloomApplyUniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(BloomApplyUniforms));
 		Ctx.Dispatch(DivideRoundUp(ScreenSize.x, 8u), DivideRoundUp(ScreenSize.y, 8u), 1u);
 	});
 }

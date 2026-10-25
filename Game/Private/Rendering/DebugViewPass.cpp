@@ -99,7 +99,7 @@ void DebugViewRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, DebugViewMode
 		Ctx.SetViewports(&vp, 1);
 		Ctx.SetDefaultScissor();
 
-		Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetGraphicsRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 		Ctx.SetGraphicsRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 
 		Ctx.SetPipelineState(PSO);

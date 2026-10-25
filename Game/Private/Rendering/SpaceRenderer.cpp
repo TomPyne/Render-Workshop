@@ -89,11 +89,11 @@ void SpaceRenderer_c::Init()
 
 	rl::RootSignatureDesc RootSigDesc = {};
 	RootSigDesc.Slots.resize(SpaceRendererRootSigSlots::RS_COUNT);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_DRAWCONSTANTS, 0);
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_DRAWCONSTANTS] = rl::RootSignatureSlot::SRVSlot(0, 0); // t_DrawConstants in DrawConstants.h
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_VIEW_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_VIEW_BUF, 0);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MODEL_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_MODEL_BUF, 0);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_MAT_BUF] = rl::RootSignatureSlot::CBVSlot(SpaceRendererCBVRegister::CBV_MAT_BUF, 0);
-	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_TLAS] = rl::RootSignatureSlot::SRVSlot(0, 0); // Sticking the TLAS here makes all my other SRVs need to start at t1, SM6.6 allows a workaround with ResourceDescriptorHeap
+	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_TLAS] = rl::RootSignatureSlot::SRVSlot(0, 1); // Sticking the TLAS here makes all my other SRVs need to start at t1, SM6.6 allows a workaround with ResourceDescriptorHeap
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_SRV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(1, 0, rl::RootSignatureDescriptorTableType::SRV);
 	RootSigDesc.Slots[SpaceRendererRootSigSlots::RS_UAV_TABLE] = rl::RootSignatureSlot::DescriptorTableSlot(0, 0, rl::RootSignatureDescriptorTableType::UAV);
 
@@ -318,7 +318,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		for (const SpatialRenderingBatch_s& Batch : Collector.GetBatches(SpatialShaderPass_e::MAIN))
 		{
 			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
-			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
+			Ctx.SetGraphicsRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Batch.MeshUniforms);
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, Batch.MaterialUniforms);
 
@@ -370,7 +370,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 		Ctx.SetPipelineState(G.ShadowPSO);
 
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_TLAS, RG.GetRaytracingScene(RaytracingSceneResource));
 
 		Ctx.Dispatch(DivideRoundUp(Screen.Width, 8u), DivideRoundUp(Screen.Height, 8u), 1u);
@@ -534,7 +534,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 		for (const SpatialRenderingBatch_s& Batch : Collector.GetBatches(SpatialShaderPass_e::TRANSLUCENT))
 		{
 			Ctx.SetPipelineState(Batch.PSO); // TODO: check when PSO has changed in the command list
-			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
+			Ctx.SetGraphicsRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, Batch.DynamicUniforms);
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MODEL_BUF, Batch.MeshUniforms);
 			Ctx.SetGraphicsRootCBV(SpaceRendererRootSigSlots::RS_MAT_BUF, Batch.MaterialUniforms);
 

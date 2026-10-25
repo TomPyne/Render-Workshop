@@ -23,6 +23,7 @@ void main()
 #ifdef PARTICLE_SIMULATE
 
 #include "../Samplers.h"
+#include "../DrawConstants.h"
 
 // Must match ParticleVolumeUniforms_s in ParticleRenderer.cpp
 struct ParticleVolumeUniforms_s
@@ -37,7 +38,7 @@ struct ParticleVolumeUniforms_s
     uint3 __Pad;
 };
 
-ConstantBuffer<ParticleVolumeUniforms_s> c_Volume : register(b0);
+DRAW_CONSTANTS(ParticleVolumeUniforms_s, c_Volume);
 
 Texture3D<float> t_tex3d_f1[8192] : register(t1, space0);
 

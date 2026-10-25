@@ -4,8 +4,9 @@
 
 #include "Model.h"
 #include "View.h"
+#include "DrawConstants.h"
 
-ConstantBuffer<DynamicUniforms_s> c_Dynamic : register(b0);
+DRAW_CONSTANTS(DynamicUniforms_s, c_Dynamic);
 ConstantBuffer<ViewUniforms_s> c_View : register(b1);
 ConstantBuffer<ModelUniforms_s> c_Model : register(b2);
 ConstantBuffer<MaterialUniforms_s> c_Material : register(b3);

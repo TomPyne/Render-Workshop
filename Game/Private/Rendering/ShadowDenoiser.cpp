@@ -163,7 +163,7 @@ ShadowDenoiseOutputs_s ShadowDenoiser_c::AddPasses(RenderGraphBuilder_s& RGBuild
 
 		Ctx.SetPipelineState(TemporalPSO);
 
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 
 		Ctx.Dispatch(DivideRoundUp(Size.x, 8u), DivideRoundUp(Size.y, 8u), 1u);
 	});
@@ -247,7 +247,7 @@ void ShadowDenoiser_c::AddSpatialPass(RenderGraphBuilder_s& RGBuilder, const Sha
 
 		Ctx.SetPipelineState(SpatialPSO);
 
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 
 		Ctx.Dispatch(DivideRoundUp(Size.x, 8u), DivideRoundUp(Size.y, 8u), 1u);
 	});

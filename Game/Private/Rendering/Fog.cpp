@@ -94,7 +94,7 @@ void FogRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, const HeightFogInfo
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_UAV_TABLE);
 		Ctx.SetComputeRootDescriptorTable(SpaceRendererRootSigSlots::RS_SRV_TABLE);
 		Ctx.SetPipelineState(HeightFogPSO);
-		Ctx.SetComputeRootCBV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
+		Ctx.SetComputeRootSRV(SpaceRendererRootSigSlots::RS_DRAWCONSTANTS, RG.Alloc(Uniforms));
 		Ctx.Dispatch(DivideRoundUp(Inputs.ScreenSize.x, 8u), DivideRoundUp(Inputs.ScreenSize.y, 8u), 1u);
 	});
 

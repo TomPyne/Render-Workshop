@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 #ifdef _CS
 
 // Must match DistanceFieldVisualiseMode_e
@@ -33,7 +35,7 @@ struct Uniforms_s
     float2 __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_Uniforms);
 
 Texture3D<float> t_tex3d_f1[8192] : register(t1, space0);
 RWTexture2D<float4> u_tex2d_f4[8192] : register(u0, space0);

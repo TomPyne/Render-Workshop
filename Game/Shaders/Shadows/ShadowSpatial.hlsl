@@ -1,3 +1,5 @@
+#include "../DrawConstants.h"
+
 #ifdef _CS
 
 // Must match the kSpatialWeight constants in ShadowDenoiser.cpp
@@ -26,7 +28,7 @@ struct Uniforms_s
     float3 __Pad;
 };
 
-ConstantBuffer<Uniforms_s> c_Uniforms : register(b0);
+DRAW_CONSTANTS(Uniforms_s, c_Uniforms);
 
 Texture2D<float> t_tex2d_f1[8192] : register(t1, space0); // Depth
 Texture2D<float2> t_tex2d_f2[8192] : register(t1, space1); // Shadow + variance
