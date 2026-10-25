@@ -239,6 +239,8 @@ void GameApp_c::DrawViewModeMenu()
 				SpaceRenderer->DebugViewMode = Mode;
 			}
 		}
+		ImGui::Separator();
+		ImGui::MenuItem("Debug Draw", nullptr, &SpaceRenderer->DebugDraw);
 		ImGui::EndMenu();
 	}
 }

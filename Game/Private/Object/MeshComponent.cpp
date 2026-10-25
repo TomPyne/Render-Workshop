@@ -6,7 +6,7 @@
 #include "Physics/Intersection.h"
 #include "Rendering/DistanceFieldScene.h"
 #include "Rendering/Mesh.h"
-#include "Rendering/SpaceRenderer.h"
+#include "Rendering/SpatialRenderingCollector.h"
 
 #include <Render/Render.h>
 #include <Shared/FileUtils/JsonValue.h>

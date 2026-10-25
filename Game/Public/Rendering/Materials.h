@@ -3,7 +3,7 @@
 #include <Render/RenderTypes.h>
 #include <Shared/FileUtils/PathUtils.h>
 
-#include "SpaceRenderer.h"
+#include "SpatialRenderingCollector.h"
 
 #include <memory>
 #include <unordered_map>

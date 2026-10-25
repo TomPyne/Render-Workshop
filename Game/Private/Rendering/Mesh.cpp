@@ -1,8 +1,8 @@
 #include "Rendering/Mesh.h"
 
 #include "Assets/AssetManager.h"
-#include "Rendering/SpaceRenderer.h"
 #include "Rendering/Materials.h"
+#include "Rendering/SpatialRenderingCollector.h"
 #include <Render/Render.h>
 #include <Shared/Logging/Logging.h>
 

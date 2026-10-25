@@ -1,7 +1,7 @@
 #include "Object/RuntimeMeshComponent.h"
 
-#include "Rendering/SpaceRenderer.h"
 #include "Rendering/Materials.h"
+#include "Rendering/SpatialRenderingCollector.h"
 #include <Render/Render.h>
 
 void RuntimeMeshComponent_c::Render(SpatialRenderingCollector_s& Collector)

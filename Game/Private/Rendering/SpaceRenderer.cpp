@@ -3,6 +3,7 @@
 #include "Assets/AssetManager.h"
 #include "Assets/TextureManager.h"
 #include "Bloom.h"
+#include "DebugDrawPass.h"
 #include "Fog.h"
 #include "Object/ObjectComponent.h"
 #include "Particles/ParticleRenderer.h"
@@ -34,6 +35,7 @@ static struct SpaceRendererPrivate_s
 	ParticleRenderer_s ParticleRenderer;
 	TonemapRenderer_s TonemapRenderer;
 	DebugViewRenderer_s DebugViewRenderer;
+	DebugDrawRenderer_s DebugDrawRenderer;
 	DistanceFieldVisualiseRenderer_s DistanceFieldVisualiseRenderer;
 	DistanceFieldAORenderer_s DistanceFieldAORenderer;
 	BloomRenderer_s BloomRenderer;
@@ -106,6 +108,7 @@ void SpaceRenderer_c::Init()
 	G.ParticleRenderer.Init();
 	G.TonemapRenderer.Init(G.RootSignature, SpaceRendererRootSigSlots::RS_VIEW_BUF, SpaceRendererCBVRegister::CBV_VIEW_BUF, SpaceRendererRootSigSlots::RS_SRV_TABLE);
 	G.DebugViewRenderer.Init();
+	G.DebugDrawRenderer.Init();
 	G.DistanceFieldVisualiseRenderer.Init();
 	G.DistanceFieldAORenderer.Init();
 	G.BloomRenderer.Init();
@@ -161,27 +164,6 @@ void SpaceRenderer_c::Init()
 	G.Initialized = true;
 }
 
-FrameBufferAlloc_s SpatialRenderingCollector_s::Alloc(const void* Data, uint32_t Size)
-{
-	return FrameBuffer.Alloc(Data, Size);
-}
-
-FrameBufferAlloc_s SpatialRenderingCollector_s::AllocData(const void* Data, uint32_t Size)
-{
-	return FrameBuffer.AllocData(Data, Size);
-}
-
-uint32_t SpatialRenderingCollector_s::GetNumBatches() const
-{
-	uint32_t Num = 0;
-	for (uint32_t PassIndex = 0; PassIndex < static_cast<uint32_t>(SpatialShaderPass_e::COUNT); ++PassIndex)
-	{
-		const SpatialRenderingMeshPass_s& Pass = Passes[PassIndex];
-		Num += static_cast<uint32_t>(Pass.Batches.size());
-	}
-	return Num;
-}
-
 void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space_c* Space, rl::CommandListSubmissionGroup& clGroup)
 {
 	if (!Space)
@@ -201,6 +183,11 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	if (RTFrameData.RaytracingBuildRequired)
 	{
 		CollectorFlags |= CollectorFlags_e::RAYTRACING_INSTANCES;
+	}
+
+	if (DebugDraw)
+	{
+		CollectorFlags |= CollectorFlags_e::DEBUG_DRAW;
 	}
 
 	RenderGraphBuilder_s RGBuilder(RenderGraphResourcePool);
@@ -585,6 +572,8 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 
 		G.DebugViewRenderer.AddPass(RGBuilder, DebugViewMode, DebugViewInputs, BackBufferTexture);
 	}
+
+	G.DebugDrawRenderer.AddPass(RGBuilder, Collector, BackBufferTexture, SceneDepthTexture, ViewUniformsBuffer, uint2(Screen.Width, Screen.Height));
 
 	RenderGraph_s Graph = RGBuilder.Build();
 
