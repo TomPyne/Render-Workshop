@@ -37,6 +37,7 @@ struct ObjectUniforms_s
 	float DeterminantSign;
 	float __Pad[3];
 };
+static_assert(sizeof(ObjectUniforms_s) == 208, "Must match DynamicUniforms_s in Model.h");
 
 // Returns true when the transform mirrors, so the caller can select the front-face-culling PSO.
 bool MakeObjectUniforms(const matrix& WorldMatrix, const matrix& PrevWorldMatrix, ObjectUniforms_s& OutUniforms);

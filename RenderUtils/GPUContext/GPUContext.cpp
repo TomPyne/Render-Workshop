@@ -8,14 +8,14 @@
 #include <thread>
 
 template<typename BufferType>
-static BufferType ToRootCBV(BufferType CBV)
+static BufferType ToRootDescriptor(BufferType Buffer)
 {
-	return CBV;
+	return Buffer;
 }
 
-static rl::GPUAddress_t ToRootCBV(const FrameBufferAlloc_s& CBV)
+static rl::GPUAddress_t ToRootDescriptor(const FrameBufferAlloc_s& Buffer)
 {
-	return CBV.Owner->Resolve(CBV);
+	return Buffer.Owner->Resolve(Buffer);
 }
 
 class GPUCommand_c
@@ -164,7 +164,7 @@ public:
 
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetGraphicsRootCBV(RootParameterIndex, ToRootCBV(CBV));
+		CL->SetGraphicsRootCBV(RootParameterIndex, ToRootDescriptor(CBV));
 	}
 };
 
@@ -183,7 +183,24 @@ public:
 
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetComputeRootCBV(RootParameterIndex, ToRootCBV(CBV));
+		CL->SetComputeRootCBV(RootParameterIndex, ToRootDescriptor(CBV));
+	}
+};
+
+template<typename SRVType>
+class GPUCommand_SetGraphicsRootSRV_c : public GPUCommand_c
+{
+	uint32_t RootParameterIndex;
+	SRVType SRV;
+
+public:
+	GPUCommand_SetGraphicsRootSRV_c(uint32_t InRootParameterIndex, SRVType InSRV)
+		: RootParameterIndex(InRootParameterIndex)
+		, SRV(InSRV)
+	{}
+	void Execute(rl::CommandList* CL)
+	{
+		CL->SetGraphicsRootSRV(RootParameterIndex, ToRootDescriptor(SRV));
 	}
 };
 
@@ -200,7 +217,7 @@ public:
 	{}
 	void Execute(rl::CommandList* CL)
 	{
-		CL->SetComputeRootSRV(RootParameterIndex, SRV);
+		CL->SetComputeRootSRV(RootParameterIndex, ToRootDescriptor(SRV));
 	}
 };
 
@@ -765,6 +782,22 @@ void GPUContext_s::SetComputeRootCBV(uint32_t RootParameterIndex, FrameBufferAll
 void GPUContext_s::SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV)
 {
 	AddCommand<GPUCommand_SetComputeRootSRV_c<rl::RaytracingScene_t>>(RootParameterIndex, SRV);
+}
+
+void GPUContext_s::SetGraphicsRootSRV(uint32_t RootParameterIndex, FrameBufferAlloc_s SRV)
+{
+#ifndef NDEBUG
+	ASSERTMSG(std::find(FrameBuffers.begin(), FrameBuffers.end(), SRV.Owner) != FrameBuffers.end(), "FrameBufferAlloc_s bound to a GPUContext that won't upload its FrameBuffer");
+#endif
+	AddCommand<GPUCommand_SetGraphicsRootSRV_c<FrameBufferAlloc_s>>(RootParameterIndex, SRV);
+}
+
+void GPUContext_s::SetComputeRootSRV(uint32_t RootParameterIndex, FrameBufferAlloc_s SRV)
+{
+#ifndef NDEBUG
+	ASSERTMSG(std::find(FrameBuffers.begin(), FrameBuffers.end(), SRV.Owner) != FrameBuffers.end(), "FrameBufferAlloc_s bound to a GPUContext that won't upload its FrameBuffer");
+#endif
+	AddCommand<GPUCommand_SetComputeRootSRV_c<FrameBufferAlloc_s>>(RootParameterIndex, SRV);
 }
 
 void GPUContext_s::SetGraphicsRootValue(uint32_t RootParameterIndex, uint32_t OffsetIn32BitValues, uint32_t Value)

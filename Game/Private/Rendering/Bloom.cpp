@@ -57,6 +57,7 @@ RenderGraphResourceHandle_t BloomRenderer_s::DownsamplePass(RenderGraphBuilder_s
 			float Exposure;
 			float __Pad0;
 		} DownsampleUniforms;
+		static_assert(sizeof(DownsampleUniforms) == 48, "Must match Uniforms in BloomDownsample.hlsl");
 
 		DownsampleUniforms.InputTextureIndex = RG.GetSRVIndex(Input);
 		DownsampleUniforms.OutputTextureIndex = RG.GetUAVIndex(Output);
@@ -104,6 +105,7 @@ void BloomRenderer_s::UpsamplePass(RenderGraphBuilder_s& RGBuilder, RenderGraphR
 			float FilterRadius;
 			float __Pad0[3];
 		} UpsampleUniforms;
+		static_assert(sizeof(UpsampleUniforms) == 48, "Must match Uniforms in BloomUpsample.hlsl");
 
 		UpsampleUniforms.InputTextureIndex = RG.GetSRVIndex(Input);
 		UpsampleUniforms.OutputTextureIndex = RG.GetUAVIndex(Output);
@@ -172,6 +174,7 @@ void BloomRenderer_s::AddPass(RenderGraphBuilder_s& RGBuilder, RenderGraphResour
 			float BloomIntensity;
 			float __Pad0[1];
 		} BloomApplyUniforms;
+		static_assert(sizeof(BloomApplyUniforms) == 32, "Must match Uniforms in BloomApply.hlsl");
 
 		BloomApplyUniforms.BloomTextureIndex = RG.GetSRVIndex(DownsampledTextures[0]);
 		BloomApplyUniforms.SceneColorTextureIndex = RG.GetUAVIndex(SceneColor);

@@ -56,6 +56,8 @@ public:
 	void SetGraphicsRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV);
 	void SetComputeRootCBV(uint32_t RootParameterIndex, FrameBufferAlloc_s CBV);
 	void SetComputeRootSRV(uint32_t RootParameterIndex, rl::RaytracingScene_t SRV);
+	void SetGraphicsRootSRV(uint32_t RootParameterIndex, FrameBufferAlloc_s SRV);
+	void SetComputeRootSRV(uint32_t RootParameterIndex, FrameBufferAlloc_s SRV);
 	void SetGraphicsRootValue(uint32_t RootParameterIndex, uint32_t OffsetIn32BitValues, uint32_t Value);
 	void SetGraphicsRootDescriptorTable(uint32_t RootParameterIndex);
 	void SetComputeRootDescriptorTable(uint32_t RootParameterIndex);

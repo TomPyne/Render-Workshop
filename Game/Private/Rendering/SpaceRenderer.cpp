@@ -166,6 +166,11 @@ FrameBufferAlloc_s SpatialRenderingCollector_s::Alloc(const void* Data, uint32_t
 	return FrameBuffer.Alloc(Data, Size);
 }
 
+FrameBufferAlloc_s SpatialRenderingCollector_s::AllocData(const void* Data, uint32_t Size)
+{
+	return FrameBuffer.AllocData(Data, Size);
+}
+
 uint32_t SpatialRenderingCollector_s::GetNumBatches() const
 {
 	uint32_t Num = 0;
@@ -347,6 +352,7 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 			uint32_t FrameID;
 			float2 __Pad;
 		};
+		static_assert(sizeof(ShadowUniforms_s) == 112, "Must match Uniforms_s in RTShadowsInline.hlsl");
 
 		ShadowUniforms_s Uniforms;
 		Uniforms.CamToWorld = InverseViewProjection;

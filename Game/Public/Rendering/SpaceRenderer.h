@@ -103,6 +103,9 @@ struct SpatialRenderingCollector_s
 
 	FrameBufferAlloc_s Alloc(const void* Data, uint32_t Size);
 
+	// Read in shaders as a ByteAddressBuffer, not limited to the CBV size
+	FrameBufferAlloc_s AllocData(const void* Data, uint32_t Size);
+
 	SpatialRenderingBatch_s& AddBatch(SpatialShaderPass_e Pass)
 	{
 		return Passes[static_cast<size_t>(Pass)].AddBatch();

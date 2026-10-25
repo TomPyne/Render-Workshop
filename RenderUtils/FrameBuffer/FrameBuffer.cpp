@@ -13,8 +13,29 @@ FrameBufferAlloc_s FrameBuffer_s::Alloc(const void* Data, uint32_t Size)
 
 void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
 {
-	ASSERTMSG(!Sealed, "FrameBuffer has already been uploaded");
 	ASSERTMSG(Size > 0u && Size <= MaxAllocSize, "FrameBuffer alloc size must be in (0, 64KB]");
+
+	return AllocInternal(Size, Alignment, OutHandle);
+}
+
+FrameBufferAlloc_s FrameBuffer_s::AllocData(const void* Data, uint32_t Size)
+{
+	FrameBufferAlloc_s Handle;
+	memcpy(AllocDataRaw(Size, Handle), Data, Size);
+
+	return Handle;
+}
+
+void* FrameBuffer_s::AllocDataRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
+{
+	ASSERTMSG(Size > 0u, "FrameBuffer data alloc size must be non zero");
+
+	return AllocInternal(Size, DataAlignment, OutHandle);
+}
+
+void* FrameBuffer_s::AllocInternal(uint32_t Size, uint32_t AllocAlignment, FrameBufferAlloc_s& OutHandle)
+{
+	ASSERTMSG(!Sealed, "FrameBuffer has already been uploaded");
 
 	if (OwnerThread == std::thread::id())
 	{
@@ -22,13 +43,25 @@ void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
 	}
 	ASSERTMSG(std::this_thread::get_id() == OwnerThread, "FrameBuffer allocated from a thread that doesn't own it");
 
-	uint32_t Offset = Pages.empty() ? PageSize : (Pages.back().Used + Alignment - 1u) & ~(Alignment - 1u);
-
-	// Allocations never straddle pages so each page uploads as a single span
-	if (Offset + Size > PageSize)
+	uint32_t Offset = 0u;
+	bool NeedsPage = Pages.empty();
+	if (!NeedsPage)
 	{
+		Offset = (Pages.back().Used + AllocAlignment - 1u) & ~(AllocAlignment - 1u);
+		NeedsPage = Offset + Size > Pages.back().Size;
+	}
+
+	// Allocations never straddle pages so each page uploads as a single span. Page sizes are multiples of PageSize,
+	// which keeps every page base 256 byte aligned for CBV binds.
+	if (NeedsPage)
+	{
+		const uint32_t BaseOffset = Pages.empty() ? 0u : Pages.back().BaseOffset + Pages.back().Size;
+		const uint32_t NewPageSize = Size <= PageSize ? PageSize : (Size + PageSize - 1u) & ~(PageSize - 1u);
+
 		Page_s& NewPage = Pages.emplace_back();
-		NewPage.Memory = std::make_unique_for_overwrite<uint8_t[]>(PageSize);
+		NewPage.Memory = std::make_unique_for_overwrite<uint8_t[]>(NewPageSize);
+		NewPage.BaseOffset = BaseOffset;
+		NewPage.Size = NewPageSize;
 		Offset = 0u;
 	}
 
@@ -36,7 +69,7 @@ void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
 	Page.Used = Offset + Size;
 
 	OutHandle.Owner = this;
-	OutHandle.Offset = static_cast<uint32_t>((Pages.size() - 1u) * PageSize) + Offset;
+	OutHandle.Offset = Page.BaseOffset + Offset;
 	OutHandle.Size = Size;
 
 	return Page.Memory.get() + Offset;
@@ -44,7 +77,7 @@ void* FrameBuffer_s::AllocRaw(uint32_t Size, FrameBufferAlloc_s& OutHandle)
 
 uint32_t FrameBuffer_s::GetUsedSize() const
 {
-	return Pages.empty() ? 0u : static_cast<uint32_t>((Pages.size() - 1u) * PageSize) + Pages.back().Used;
+	return Pages.empty() ? 0u : Pages.back().BaseOffset + Pages.back().Used;
 }
 
 void FrameBuffer_s::GatherUploadSpans(size_t BaseOffset, std::vector<rl::ConstantUploadSpan_s>& OutSpans) const
@@ -54,14 +87,12 @@ void FrameBuffer_s::GatherUploadSpans(size_t BaseOffset, std::vector<rl::Constan
 
 	OutSpans.reserve(OutSpans.size() + Pages.size());
 
-	for (size_t PageIndex = 0; PageIndex < Pages.size(); ++PageIndex)
+	for (const Page_s& Page : Pages)
 	{
-		const Page_s& Page = Pages[PageIndex];
-
 		rl::ConstantUploadSpan_s& Span = OutSpans.emplace_back();
 		Span.Data = Page.Memory.get();
 		Span.Size = Page.Used;
-		Span.DstOffset = BaseOffset + PageIndex * PageSize;
+		Span.DstOffset = BaseOffset + Page.BaseOffset;
 	}
 }
 

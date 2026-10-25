@@ -147,6 +147,7 @@ void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, Render
 			uint32_t FurnaceTest;
 			float __Pad[3];
 		} Uniforms = {};
+		static_assert(sizeof(Uniforms) == 32, "Must match Uniforms_s in EquirectToCube.hlsl");
 
 		Uniforms.EquirectTextureIndex = EquirectTextureIndex;
 		Uniforms.OutputTextureIndex = MipUAVIndices[0];
@@ -179,6 +180,7 @@ void SkylightRenderer_c::AddSourcePasses(RenderGraphBuilder_s& RGBuilder, Render
 				uint32_t Size;
 				uint32_t __Pad;
 			} Uniforms = {};
+			static_assert(sizeof(Uniforms) == 16, "Must match Uniforms_s in CubeDownsample.hlsl");
 
 			Uniforms.SourceTextureIndex = MipUAVIndices[MipIt - 1];
 			Uniforms.OutputTextureIndex = MipUAVIndices[MipIt];
@@ -215,6 +217,7 @@ void SkylightRenderer_c::AddIrradiancePass(RenderGraphBuilder_s& RGBuilder, Rend
 			float SourceMip;
 			float __Pad[3];
 		} Uniforms = {};
+		static_assert(sizeof(Uniforms) == 32, "Must match Uniforms_s in IrradianceConvolve.hlsl");
 
 		Uniforms.SourceTextureIndex = RG.GetSRVIndex(Source);
 		Uniforms.OutputTextureIndex = OutputUAVIndex;
@@ -272,6 +275,7 @@ void SkylightRenderer_c::AddPrefilterPass(RenderGraphBuilder_s& RGBuilder, Rende
 				float SourceMaxMip;
 				float CopyMip;
 			} Uniforms = {};
+			static_assert(sizeof(Uniforms) == 32, "Must match Uniforms_s in PrefilterSpecular.hlsl");
 
 			Uniforms.SourceTextureIndex = SourceSRVIndex;
 			Uniforms.OutputTextureIndex = MipUAVIndices[MipIt];
