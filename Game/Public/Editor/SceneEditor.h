@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Editor/ImGuiPropertyVisitor.h"
+
 #include <memory>
 
 class Object_c;
@@ -20,9 +22,16 @@ public:
 private:
 	void DrawOutliner(Space_c& Space);
 	void DrawOutlinerNode(Object_c& Object);
+	void DrawInspector();
+
+	// Picking in the outliner also opens the inspector
+	void SelectFromOutliner(Object_c* Object);
 
 	std::weak_ptr<Object_c> Selection;
 
+	RotationEditState_s RotationEditState;
+
 	char FilterText[128] = {};
 	bool ShowOutliner = false;
+	bool ShowInspector = false;
 };

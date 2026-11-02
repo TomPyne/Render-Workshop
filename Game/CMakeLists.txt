@@ -14,6 +14,8 @@ set(
 	"Public/Core/GameApp.h"
 	"Private/Core/WindowsPlatform.cpp"
 	"Public/Core/WindowsPlatform.h"
+	"Private/Editor/ImGuiPropertyVisitor.cpp"
+	"Public/Editor/ImGuiPropertyVisitor.h"
 	"Private/Editor/SceneEditor.cpp"
 	"Public/Editor/SceneEditor.h"
 	"Private/Entity/Entity.cpp"

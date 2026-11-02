@@ -29,6 +29,7 @@ void SceneEditor_c::DrawMenu()
 	if (ImGui::BeginMenu("Editor"))
 	{
 		ImGui::MenuItem("Outliner", nullptr, &ShowOutliner);
+		ImGui::MenuItem("Inspector", nullptr, &ShowInspector);
 		ImGui::EndMenu();
 	}
 }
@@ -42,6 +43,11 @@ void SceneEditor_c::DrawWindows(Space_c* Space)
 	{
 		DrawOutliner(*Space);
 	}
+
+	if (ShowInspector)
+	{
+		DrawInspector();
+	}
 }
 
 Object_c* SceneEditor_c::GetSelection() const
@@ -54,6 +60,15 @@ Object_c* SceneEditor_c::GetSelection() const
 void SceneEditor_c::SetSelection(Object_c* Object)
 {
 	Selection = Object ? Object->weak_from_this() : std::weak_ptr<Object_c>();
+}
+
+void SceneEditor_c::SelectFromOutliner(Object_c* Object)
+{
+	SetSelection(Object);
+	if (Object)
+	{
+		ShowInspector = true;
+	}
 }
 
 void SceneEditor_c::DrawOutliner(Space_c& Space)
@@ -78,7 +93,7 @@ void SceneEditor_c::DrawOutliner(Space_c& Space)
 						ImGui::PushID(Object);
 						if (ImGui::Selectable(Label.c_str(), Object == GetSelection()))
 						{
-							SetSelection(Object);
+							SelectFromOutliner(Object);
 						}
 						ImGui::PopID();
 					}
@@ -123,7 +138,7 @@ void SceneEditor_c::DrawOutlinerNode(Object_c& Object)
 	const bool Open = ImGui::TreeNodeEx(&Object, Flags, "%s", GetDisplayName(Object).c_str());
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		SetSelection(&Object);
+		SelectFromOutliner(&Object);
 	}
 
 	if (Open && HasChildren)
@@ -138,4 +153,44 @@ void SceneEditor_c::DrawOutlinerNode(Object_c& Object)
 		}
 		ImGui::TreePop();
 	}
+}
+
+void SceneEditor_c::DrawInspector()
+{
+	ImGui::SetNextWindowSize(ImVec2(420.0f, 560.0f), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Inspector", &ShowInspector))
+	{
+		Object_c* Object = GetSelection();
+		if (!Object)
+		{
+			ImGui::TextDisabled("Nothing selected");
+		}
+		else
+		{
+			ImGuiPropertyVisitor_c Visitor(RotationEditState);
+			ImGui::PushItemWidth(-160.0f);
+
+			ImGui::PushID(Object);
+			if (ImGui::CollapsingHeader(WideToNarrow(Object->ClassName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				Object->VisitProperties(Visitor);
+			}
+
+			// Copied, so a component edit that changes the list cannot invalidate the loop
+			const std::vector<std::shared_ptr<ObjectComponent_c>> Components = Object->Components;
+			for (const std::shared_ptr<ObjectComponent_c>& Component : Components)
+			{
+				ImGui::PushID(Component.get());
+				if (ImGui::CollapsingHeader(WideToNarrow(Component->ClassName()).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					Component->VisitProperties(Visitor);
+				}
+				ImGui::PopID();
+			}
+			ImGui::PopID();
+
+			ImGui::PopItemWidth();
+		}
+	}
+	ImGui::End();
 }
