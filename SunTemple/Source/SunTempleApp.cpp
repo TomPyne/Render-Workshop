@@ -116,8 +116,11 @@ void SunTempleApp_c::ImGuiUpdate()
 		{
 			G.ShowLightingWindow = !G.ShowLightingWindow;
 		}
+		DrawEditorMenu();
 		ImGui::EndMainMenuBar();
 	}
+
+	DrawEditorWindows();
 
 	if (G.ShowPerfWindow)
 	{

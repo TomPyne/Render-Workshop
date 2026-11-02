@@ -1,6 +1,7 @@
 #include "Object/CameraComponent.h"
 
 #include "Core/GameApp.h"
+#include "Object/PropertyVisitor.h"
 #include "Space/Space.h"
 #include "Utility/Transform.h"
 
@@ -19,14 +20,14 @@ void CameraComponent_c::OnCreate()
 	}
 }
 
-void CameraComponent_c::Deserialize(const JsonValue_s& Data)
+void CameraComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	Super::Deserialize(Data);
+	Super::VisitProperties(Visitor);
 
-	JsonHelpers::ParseFloat(Data, "Fov", Fov);
-	JsonHelpers::ParseFloat(Data, "NearZ", NearZ);
-	JsonHelpers::ParseFloat(Data, "FarZ", FarZ);
-	JsonHelpers::ParseFloat(Data, "ExposureEV100", ExposureEV100);
+	Visitor.Float("Fov", Fov, { .Min = 1.0f, .Max = 170.0f });
+	Visitor.Float("NearZ", NearZ, { .Min = 0.001f, .Max = 100.0f, .Speed = 0.01f });
+	Visitor.Float("FarZ", FarZ, { .Speed = 10.0f });
+	Visitor.Float("ExposureEV100", ExposureEV100, { .Min = -10.0f, .Max = 25.0f });
 }
 
 void CameraComponent_c::Update(float Delta)

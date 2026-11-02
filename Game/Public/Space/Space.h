@@ -47,6 +47,19 @@ public:
 	// Includes objects destroyed during the current update until it ends
 	size_t GetObjectCount() const { return Objects.size(); }
 
+	// Skips destroyed objects. Function must not create or destroy objects.
+	template<class Func>
+	void ForEachObject(Func&& Function) const
+	{
+		for (const std::shared_ptr<Object_c>& Object : Objects)
+		{
+			if (!Object->IsDestroyed())
+			{
+				Function(Object.get());
+			}
+		}
+	}
+
 	// Walks every object, so only for rare lookups such as spawning, never per frame.
 	template<class ComponentType>
 	void GetComponentsOfType(std::vector<ComponentType*>& OutComponents) const

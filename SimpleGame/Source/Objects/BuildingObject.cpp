@@ -1,19 +1,18 @@
 #include "BuildingObject.h"
 
-#include <Assets/MeshManager.h>
 #include <Object/MeshComponent.h>
-#include <Shared/FileUtils/JsonValue.h>
-#include <Shared/FileUtils/PathUtils.h>
+#include <Object/PropertyVisitor.h>
 
 void BuildingObject_c::Deserialize(const JsonValue_s& Data)
 {
 	Super::Deserialize(Data);
 
-	Path_s MeshAssetPath;
-	if (MeshComponent && JsonHelpers::ParsePath(Data, "MeshAssetPath", MeshAssetPath))
+	// Level files author the mesh fields on the object as shorthand for its component
+	if (MeshComponent)
 	{
-		MeshComponent->SetMesh(MeshManager::RequestMesh(MeshAssetPath));
-	}	
+		JsonReadVisitor_c Reader(Data);
+		MeshComponent->VisitMeshProperties(Reader);
+	}
 }
 
 void BuildingObject_c::OnConstruct()

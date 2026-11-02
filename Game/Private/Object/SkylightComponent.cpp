@@ -1,6 +1,7 @@
 #include "Object/SkylightComponent.h"
 
 #include "Assets/TextureManager.h"
+#include "Object/PropertyVisitor.h"
 #include "Rendering/RenderScene.h"
 
 #include <Shared/FileUtils/JsonValue.h>
@@ -24,22 +25,16 @@ void SkylightComponent_c::OnCreate()
 	}
 }
 
-void SkylightComponent_c::Deserialize(const JsonValue_s& Data)
+void SkylightComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	Super::Deserialize(Data);
+	Super::VisitProperties(Visitor);
 
-	JsonHelpers::ParseFloat(Data, "LuminanceScale", SkylightInfo.LuminanceScale);
+	Visitor.Float("LuminanceScale", SkylightInfo.LuminanceScale, { .Min = 0.0f, .Max = 100'000.0f, .Speed = 10.0f });
+	Visitor.Angle("YawDegrees", SkylightInfo.Yaw, { .Min = -180.0f, .Max = 180.0f, .Speed = 0.5f });
 
-	float YawDegrees = 0.0f;
-	if (JsonHelpers::ParseFloat(Data, "YawDegrees", YawDegrees))
+	if (Visitor.Path("EnvironmentMapAssetPath", EnvironmentMapAssetPath))
 	{
-		SkylightInfo.Yaw = ConvertToRadians(YawDegrees);
-	}
-
-	Path_s EnvironmentMapAssetPath;
-	if (JsonHelpers::ParsePath(Data, "EnvironmentMapAssetPath", EnvironmentMapAssetPath))
-	{
-		SetEnvironmentMap(TextureManager::RequestTexture(EnvironmentMapAssetPath));
+		SetEnvironmentMap(TextureManager::RequestTexture(Path_s::FromTokenised(EnvironmentMapAssetPath)));
 	}
 }
 

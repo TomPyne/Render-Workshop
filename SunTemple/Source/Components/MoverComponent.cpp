@@ -1,15 +1,15 @@
 #include "MoverComponent.h"
 
+#include <Object/PropertyVisitor.h>
 #include <Object/SpatialObject.h>
-#include <Shared/FileUtils/JsonValue.h>
 
-void MoverComponent_c::Deserialize(const JsonValue_s& Data)
+void MoverComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	Super::Deserialize(Data);
+	Super::VisitProperties(Visitor);
 
-	JsonHelpers::ParseFloat3(Data, "Direction", Direction);
-	JsonHelpers::ParseFloat(Data, "Distance", Distance);
-	JsonHelpers::ParseFloat(Data, "Speed", Speed);
+	Visitor.Float3("Direction", Direction);
+	Visitor.Float("Distance", Distance, { .Min = 0.0f, .Max = 1000.0f });
+	Visitor.Float("Speed", Speed, { .Min = 0.0f, .Max = 100.0f, .Speed = 0.01f });
 }
 
 void MoverComponent_c::OnCreate()

@@ -9,7 +9,6 @@ public:
 
 	// Begin ObjectComponent_c interface
 	virtual void OnCreate() override;
-	virtual void Deserialize(const struct JsonValue_s& Data) override;
 	virtual void PreDestroy() override;
 	// End ObjectComponent_c interface
 

@@ -142,8 +142,11 @@ void SimpleGameApp_c::ImGuiUpdate()
 			G.ShowPerfWindow = !G.ShowPerfWindow;
 		}
 		DrawViewModeMenu();
+		DrawEditorMenu();
 		ImGui::EndMainMenuBar();
 	}
+
+	DrawEditorWindows();
 
 	if (G.ColonyMode)
 	{

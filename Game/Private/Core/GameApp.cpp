@@ -3,6 +3,7 @@
 #include "Assets/AssetManager.h"
 #include "Assets/MaterialManager.h"
 #include "Core/WindowsPlatform.h"
+#include "Editor/SceneEditor.h"
 #include "Input/Input.h"
 #include "Level/LevelInstanceObject.h"
 #include "Object/CameraComponent.h"
@@ -32,6 +33,7 @@ static CommandLineValue_c<std::string> DefaultLevel("DefaultLevel", "", "Startup
 GameApp_c* GApp;
 
 GameApp_c::GameApp_c()
+	: SceneEditor(std::make_unique<SceneEditor_c>())
 {}
 
 GameApp_c::~GameApp_c()
@@ -243,6 +245,16 @@ void GameApp_c::DrawViewModeMenu()
 		ImGui::MenuItem("Debug Draw", nullptr, &SpaceRenderer->DebugDraw);
 		ImGui::EndMenu();
 	}
+}
+
+void GameApp_c::DrawEditorMenu()
+{
+	SceneEditor->DrawMenu();
+}
+
+void GameApp_c::DrawEditorWindows()
+{
+	SceneEditor->DrawWindows(Space.get());
 }
 
 void GameApp_c::Resize(int Width, int Height)

@@ -10,7 +10,7 @@ class RotatorComponent_c : public SpatialObjectComponent_c
 
 public:
 	// Begin ObjectComponent_c interface
-	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	virtual void OnCreate() override;
 	virtual void Update(float Delta) override;
 	// End ObjectComponent_c interface

@@ -36,6 +36,10 @@ public:
 
 	// Call between ImGui::BeginMainMenuBar and ImGui::EndMainMenuBar
 	void DrawViewModeMenu();
+	void DrawEditorMenu();
+
+	// Call after the main menu bar
+	void DrawEditorWindows();
 
 	virtual void Resize(int Width, int Height);
 	virtual LRESULT HandleWindowsMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -57,4 +61,6 @@ protected:
 	std::unique_ptr<AssetManager_c> AssetManager;
 
 	std::shared_ptr<class DebugCameraObject_c> DefaultCamera = nullptr;
+
+	std::unique_ptr<class SceneEditor_c> SceneEditor;
 };

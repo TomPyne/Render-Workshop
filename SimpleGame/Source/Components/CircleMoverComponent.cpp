@@ -1,16 +1,16 @@
 #include "CircleMoverComponent.h"
 
+#include <Object/PropertyVisitor.h>
 #include <Object/SpatialObject.h>
-#include <Shared/FileUtils/JsonValue.h>
 
 #include <cmath>
 
-void CircleMoverComponent_c::Deserialize(const JsonValue_s& Data)
+void CircleMoverComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	Super::Deserialize(Data);
+	Super::VisitProperties(Visitor);
 
-	JsonHelpers::ParseFloat(Data, "Radius", Radius);
-	JsonHelpers::ParseFloat(Data, "Period", Period);
+	Visitor.Float("Radius", Radius, { .Min = 0.0f, .Max = 1000.0f });
+	Visitor.Float("Period", Period, { .Min = 0.1f, .Max = 600.0f });
 }
 
 void CircleMoverComponent_c::OnCreate()

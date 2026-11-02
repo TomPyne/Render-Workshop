@@ -5,6 +5,7 @@
 #include <memory>
 
 class Object_c;
+class PropertyVisitor_c;
 
 struct ObjectComponentArgs_s
 {
@@ -28,7 +29,11 @@ public:
 	virtual std::wstring_view ClassName() const = 0;
 
 	virtual void OnConstruct() {}
-	virtual void Deserialize(const struct JsonValue_s& Data) {}
+	// Override only for structure the visitor can't express, fields go in VisitProperties
+	virtual void Deserialize(const struct JsonValue_s& Data);
+
+	// Shared by level loading and the editor inspector, chain to Super first
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) {}
 	virtual void Load() {}
 	virtual void OnCreate() {}
 	virtual void Update(float Delta) {}

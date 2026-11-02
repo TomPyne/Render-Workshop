@@ -15,7 +15,7 @@ class SpatialObjectComponent_c : public ObjectComponent_c
 	SpatialObjectComponent_c(const ObjectComponentArgs_s& Args);
 
 	// Begin ObjectComponent_c interface
-	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	// End ObjectComponent_c interface
 
 	virtual void OnTransformed() {}

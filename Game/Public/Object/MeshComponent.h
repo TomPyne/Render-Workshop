@@ -17,8 +17,12 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	// Begin ObjectComponent_c interface
 	virtual void OnCreate() override;
 	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	virtual void PreDestroy() override;
 	// End ObjectComponent_c interface
+
+	// The mesh fields without the transform, so MeshObject_c can read them from its own level data
+	void VisitMeshProperties(PropertyVisitor_c& Visitor);
 
 	// Begin SpatialObjectComponent_c interface
 	virtual void OnTransformed() override;
@@ -43,6 +47,7 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 protected:
 
 	std::shared_ptr<struct Mesh_s> Mesh = {};
+	std::wstring MeshAssetPath;
 	bool Visible = true;
 	bool Collidable = true;
 	bool CastShadow = true;

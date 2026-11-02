@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+class PropertyVisitor_c;
 class Space_c;
 struct JsonValue_s;
 
@@ -32,8 +33,11 @@ public:
 	// Set up any class defaults before serialization
 	virtual void OnConstruct() {}
 
-	// Parse serialized data into object
+	// Parse serialized data into object. Override only for structure the visitor can't express, fields go in VisitProperties.
 	virtual void Deserialize(const JsonValue_s& Data);
+
+	// Shared by level loading and the editor inspector, chain to Super first
+	virtual void VisitProperties(PropertyVisitor_c& Visitor);
 
 	// Called after deserialization
 	virtual void OnCreate();
@@ -42,6 +46,9 @@ public:
 	virtual void OnDestroy();
 
 	bool IsDestroyed() const { return Destroyed; }
+
+	const std::string& GetName() const { return Name; }
+	void SetName(std::string_view NewName) { Name = NewName; }
 
 	std::vector<std::shared_ptr<class ObjectComponent_c>> Components;
 

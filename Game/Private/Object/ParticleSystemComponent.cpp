@@ -19,11 +19,6 @@ void ParticleSystemComponent_c::OnCreate()
 
 }
 
-void ParticleSystemComponent_c::Deserialize(const struct JsonValue_s& Data)
-{
-	Super::Deserialize(Data);
-}
-
 void ParticleSystemComponent_c::PreDestroy()
 {
 	if (ParticleSystemInfo)

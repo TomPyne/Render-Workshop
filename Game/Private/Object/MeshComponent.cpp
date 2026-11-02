@@ -2,6 +2,7 @@
 
 #include "Assets/MaterialManager.h"
 #include "Assets/MeshManager.h"
+#include "Object/PropertyVisitor.h"
 #include "Space/Space.h"
 #include "Physics/Intersection.h"
 #include "Rendering/DistanceFieldScene.h"
@@ -31,27 +32,7 @@ void MeshComponent_c::OnCreate()
 
 void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 {
-	SpatialObjectComponent_c::Deserialize(Data);
-
-	Path_s MeshAssetPath;
-	if (JsonHelpers::ParsePath(Data, "MeshAssetPath", MeshAssetPath))
-	{
-		SetMesh(MeshManager::RequestMesh(MeshAssetPath));
-	}
-
-	bool LoadVisible = true;
-	JsonHelpers::ParseBool(Data, "Visible", LoadVisible);
-	if (!LoadVisible)
-	{
-		SetVisible(false);
-	}
-
-	bool LoadCastsShadow = true;
-	JsonHelpers::ParseBool(Data, "CastShadow", LoadCastsShadow);
-	if (!LoadCastsShadow)
-	{
-		SetCastShadow(false);
-	}
+	Super::Deserialize(Data);
 
 	uint32_t CurrentSlot = 0;
 	auto MaterialsIt = Data.Json.find("MaterialOverrides");
@@ -76,6 +57,36 @@ void MeshComponent_c::Deserialize(const JsonValue_s& Data)
 			CurrentSlot = static_cast<uint32_t>(OverrideMaterials.size());
 		}
 	}
+}
+
+void MeshComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
+{
+	Super::VisitProperties(Visitor);
+
+	VisitMeshProperties(Visitor);
+}
+
+void MeshComponent_c::VisitMeshProperties(PropertyVisitor_c& Visitor)
+{
+	if (Visitor.Path("MeshAssetPath", MeshAssetPath))
+	{
+		SetMesh(MeshManager::RequestMesh(Path_s::FromTokenised(MeshAssetPath)));
+	}
+
+	// Copies, as the setters early out when the value is unchanged and would skip dirtying the render scene
+	bool NewVisible = Visible;
+	if (Visitor.Bool("Visible", NewVisible))
+	{
+		SetVisible(NewVisible);
+	}
+
+	bool NewCastShadow = CastShadow;
+	if (Visitor.Bool("CastShadow", NewCastShadow))
+	{
+		SetCastShadow(NewCastShadow);
+	}
+
+	Visitor.Bool("Collidable", Collidable);
 }
 
 void MeshComponent_c::PreDestroy()
@@ -204,28 +215,12 @@ void MeshObject_c::OnConstruct()
 
 void MeshObject_c::Deserialize(const JsonValue_s& Data)
 {
-	SpatialObject_c::Deserialize(Data);
+	Super::Deserialize(Data);
 
+	// Level files author the mesh fields on the object as shorthand for its component
 	if (MeshComponent)
 	{
-		Path_s MeshAssetPath;
-		if (JsonHelpers::ParsePath(Data, "MeshAssetPath", MeshAssetPath))
-		{
-			MeshComponent->SetMesh(MeshManager::RequestMesh(MeshAssetPath));
-		}
-
-		bool LoadVisible = true;
-		JsonHelpers::ParseBool(Data, "Visible", LoadVisible);
-		if (!LoadVisible)
-		{
-			MeshComponent->SetVisible(false);
-		}
-
-		bool LoadCastsShadow = true;
-		JsonHelpers::ParseBool(Data, "CastShadow", LoadCastsShadow);
-		if (!LoadCastsShadow)
-		{
-			MeshComponent->SetCastShadow(false);
-		}
+		JsonReadVisitor_c Reader(Data);
+		MeshComponent->VisitMeshProperties(Reader);
 	}
 }

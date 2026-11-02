@@ -1,15 +1,15 @@
 #include "RotatorComponent.h"
 
+#include <Object/PropertyVisitor.h>
 #include <Object/SpatialObject.h>
-#include <Shared/FileUtils/JsonValue.h>
 
-void RotatorComponent_c::Deserialize(const JsonValue_s& Data)
+void RotatorComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	Super::Deserialize(Data);
+	Super::VisitProperties(Visitor);
 
-	JsonHelpers::ParseFloat3(Data, "PivotOffset", PivotOffset);
-	JsonHelpers::ParseFloat3(Data, "Axis", Axis);
-	JsonHelpers::ParseFloat(Data, "DegreesPerSecond", DegreesPerSecond);
+	Visitor.Float3("PivotOffset", PivotOffset);
+	Visitor.Float3("Axis", Axis);
+	Visitor.Float("DegreesPerSecond", DegreesPerSecond, { .Min = -720.0f, .Max = 720.0f, .Speed = 1.0f });
 }
 
 void RotatorComponent_c::OnCreate()

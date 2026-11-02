@@ -1,11 +1,18 @@
 #include "Object/ObjectComponent.h"
 
 #include "Object/Object.h"
+#include "Object/PropertyVisitor.h"
 #include "Space/Space.h"
 
 ObjectComponent_c::ObjectComponent_c(const ObjectComponentArgs_s& Args)
 	: Owner(Args.Owner)
 {}
+
+void ObjectComponent_c::Deserialize(const JsonValue_s& Data)
+{
+	JsonReadVisitor_c Reader(Data);
+	VisitProperties(Reader);
+}
 
 Space_c* ObjectComponent_c::GetSpace() const
 {

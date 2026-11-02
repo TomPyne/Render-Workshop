@@ -1,5 +1,6 @@
 #include "Object/SpatialObjectComponent.h"
 
+#include "Object/PropertyVisitor.h"
 #include "Object/SpatialObject.h"
 
 #include <Shared/FileUtils/JsonValue.h>
@@ -12,28 +13,14 @@ SpatialObjectComponent_c::SpatialObjectComponent_c(const ObjectComponentArgs_s& 
 	ENSUREMSG(!SpatialOwner.expired(), "Failed to correctly create component for spatial object. Owner is not a SpatialObject_c.");
 }
 
-void SpatialObjectComponent_c::Deserialize(const JsonValue_s& Data)
+void SpatialObjectComponent_c::VisitProperties(PropertyVisitor_c& Visitor)
 {
-	ObjectComponent_c::Deserialize(Data);
-	
-	float3 Position = {};
-	float3 RotationDegrees = {};
-	float3 Scale = float3(1.0f);
-	JsonHelpers::ParseFloat3(Data, "Position", Position);
-	JsonHelpers::ParseFloat3(Data, "Rotation", RotationDegrees);
+	Super::VisitProperties(Visitor);
 
-	float UniformScale = 1.0f;
-	if (JsonHelpers::ParseFloat(Data, "Scale", UniformScale, true))
+	if (VisitTransformProperties(Visitor, Transform) && !Visitor.IsLoading())
 	{
-		Scale = float3(UniformScale);
+		OnTransformed();
 	}
-	else
-	{
-		JsonHelpers::ParseFloat3(Data, "Scale", Scale);
-	}
-
-	// Euler stays the authoring format, in degrees, and converts on load.
-	Transform.Set(Position, ConvertToRadians(RotationDegrees), Scale);
 }
 
 void SpatialObjectComponent_c::SetPosition(const float3& NewPosition) 

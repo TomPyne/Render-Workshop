@@ -9,7 +9,7 @@ class CameraComponent_c : public SpatialObjectComponent_c
 
 	// Begin SpatialObjectComponent_c
 	virtual void OnCreate() override;
-	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	virtual void Update(float Delta) override;
 	virtual void PreDestroy() override;
 	virtual void OnTransformed() override;

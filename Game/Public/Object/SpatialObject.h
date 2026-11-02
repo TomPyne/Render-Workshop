@@ -13,7 +13,7 @@ class SpatialObject_c : public Object_c
 	SpatialObject_c(const ObjectArgs_s& Args);
 
 	// Begin Object_c interface
-	virtual void Deserialize(const JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	virtual void OnDestroy() override;
 	// End Object_c interface
 
@@ -27,6 +27,7 @@ class SpatialObject_c : public Object_c
 	// The local transform is kept, so the object follows its new parent rather than holding its world placement
 	void SetParent(SpatialObject_c* NewParent);
 	SpatialObject_c* GetParent() const { return Parent.lock().get(); }
+	const std::vector<std::weak_ptr<SpatialObject_c>>& GetChildren() const { return Children; }
 
 	// Each setter calls OnTransformed on the spatial components, as their world matrix includes this transform
 	void SetPosition(const float3& NewPosition);

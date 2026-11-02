@@ -10,7 +10,7 @@ class CircleMoverComponent_c : public ObjectComponent_c
 	OBJECTCOMPONENT_BODY(CircleMoverComponent_c, ObjectComponent_c)
 
 	// Begin ObjectComponent_c
-	virtual void Deserialize(const struct JsonValue_s& Data) override;
+	virtual void VisitProperties(PropertyVisitor_c& Visitor) override;
 	virtual void OnCreate() override;
 	virtual void Update(float Delta) override;
 	// End ObjectComponent_c

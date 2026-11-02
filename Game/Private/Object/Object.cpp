@@ -1,4 +1,5 @@
 #include "Object/Object.h"
+#include "Object/PropertyVisitor.h"
 #include "Space/Space.h"
 
 #include <Shared/FileUtils/JsonHelpers.h>
@@ -12,8 +13,6 @@ Object_c::Object_c(const ObjectArgs_s& Args)
 
 void Object_c::Deserialize(const JsonValue_s& Data)
 {
-	JsonHelpers::ParseString(Data, "Name", Name);
-
 	const Json_t& Node = Data.Json;
 	auto ComponentsIt = Node.find("Components");
 	if (ComponentsIt != Node.end())
@@ -35,6 +34,14 @@ void Object_c::Deserialize(const JsonValue_s& Data)
 			LOGWARNING("[Object] Object has a 'Components' field that is not an array");
 		}
 	}
+
+	JsonReadVisitor_c Reader(Data);
+	VisitProperties(Reader);
+}
+
+void Object_c::VisitProperties(PropertyVisitor_c& Visitor)
+{
+	Visitor.String("Name", Name);
 }
 
 void Object_c::OnCreate()
