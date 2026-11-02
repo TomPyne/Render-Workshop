@@ -48,6 +48,9 @@ public:
 
 	AssetManager_c* GetAssetManager() const;
 
+	// Set by -editor
+	bool IsEditorMode() const;
+
 protected:
 	virtual rl::RenderInitParams GetAppRenderParams() const;
 

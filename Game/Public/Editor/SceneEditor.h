@@ -24,6 +24,8 @@ public:
 
 	void DrawWindows(Space_c* Space);
 
+	void OpenDefaultWindows();
+
 	// Null once the selected object is destroyed
 	Object_c* GetSelection() const;
 	void SetSelection(Object_c* Object);

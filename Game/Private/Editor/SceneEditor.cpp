@@ -87,6 +87,12 @@ void SceneEditor_c::DrawMenu()
 	}
 }
 
+void SceneEditor_c::OpenDefaultWindows()
+{
+	ShowOutliner = true;
+	ShowInspector = true;
+}
+
 void SceneEditor_c::DrawWindows(Space_c* Space)
 {
 	if (!Space)

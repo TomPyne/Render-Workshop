@@ -116,7 +116,7 @@ void SimpleGameApp_c::PreUpdate()
 
 void SimpleGameApp_c::Update(float Delta)
 {
-	if (G.ColonyMode)
+	if (G.ColonyMode && !IsEditorMode())
 	{
 		G.ColonyMode->UpdateMode(Delta);
 	}

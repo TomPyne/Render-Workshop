@@ -30,6 +30,7 @@
 #include <Shared/Jobs/JobSystem.h>
 
 static CommandLineValue_c<std::string> DefaultLevel("DefaultLevel", "", "Startup level");
+static CommandLineSwitch_c EditorMode("editor", "Start in editor mode: objects do not tick, outliner and inspector open");
 
 GameApp_c* GApp;
 
@@ -67,6 +68,11 @@ bool GameApp_c::Init()
 	Clock = {};
 
 	AssetManager = std::make_unique<AssetManager_c>();
+
+	if (IsEditorMode())
+	{
+		SceneEditor->OpenDefaultWindows();
+	}
 
 	return true;
 }
@@ -170,10 +176,25 @@ void GameApp_c::PreUpdate()
 
 void GameApp_c::Update(float Delta)
 {
+	if (IsEditorMode())
+	{
+		// Only the default camera ticks, so the scene can still be flown around
+		if (DefaultCamera)
+		{
+			DefaultCamera->Update(Delta);
+		}
+		return;
+	}
+
 	if (Space)
 	{
 		Space->Update(Delta);
 	}
+}
+
+bool GameApp_c::IsEditorMode() const
+{
+	return EditorMode.Get();
 }
 
 void GameApp_c::Render()
