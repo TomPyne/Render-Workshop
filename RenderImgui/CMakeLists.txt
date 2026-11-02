@@ -10,6 +10,8 @@ set(
 	"imgui/imgui_widgets.cpp"
 	"imgui/backends/imgui_impl_win32.cpp"
 	"imgui/backends/imgui_impl_win32.h"
+	"ImGuizmo/ImGuizmo.cpp"
+	"ImGuizmo/ImGuizmo.h"
 	"Source/Public/imgui_impl_render.h"
 	"Source/Private/imgui_impl_render.cpp"
 )

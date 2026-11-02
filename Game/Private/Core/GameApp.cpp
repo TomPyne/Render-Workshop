@@ -24,6 +24,7 @@
 
 #include <RenderImGui/imgui/imgui.h>
 #include <RenderImGui/imgui/backends/imgui_impl_win32.h>
+#include <RenderImGui/ImGuizmo/ImGuizmo.h>
 #include <RenderImGui/Source/Public/imgui_impl_render.h>
 #include <Render/Render.h>
 #include <Shared/Jobs/JobSystem.h>
@@ -229,8 +230,8 @@ void GameApp_c::Render()
 void GameApp_c::ImGuiUpdate()
 {
 	ImGui_ImplWin32_NewFrame();
-
 	ImGui::NewFrame();
+	ImGuizmo::BeginFrame();
 }
 
 void GameApp_c::DrawViewModeMenu()

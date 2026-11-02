@@ -8,6 +8,13 @@
 class Object_c;
 class Space_c;
 
+enum class GizmoOperation_e
+{
+	Translate,
+	Rotate,
+	Scale,
+};
+
 // Drawn as a space renderer overlay for the selection highlight
 class SceneEditor_c : public IRenderable_c
 {
@@ -36,9 +43,16 @@ private:
 	// Selects the mesh under the cursor, or clears the selection on a miss
 	void PickAtCursor(Space_c& Space);
 
+	void DrawGizmo(Space_c& Space);
+	void DrawGizmoToolbar();
+
 	std::weak_ptr<Object_c> Selection;
 
 	RotationEditState_s RotationEditState;
+
+	GizmoOperation_e GizmoOperation = GizmoOperation_e::Translate;
+	bool GizmoLocal = false;
+	bool GizmoSnap = false;
 
 	char FilterText[128] = {};
 	bool ShowOutliner = false;

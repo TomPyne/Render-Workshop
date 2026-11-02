@@ -11,6 +11,7 @@
 #include "Space/Space.h"
 
 #include <RenderImGui/imgui/imgui.h>
+#include <RenderImGui/ImGuizmo/ImGuizmo.h>
 #include <Shared/StringUtils/StringUtils.h>
 
 #include <string>
@@ -30,6 +31,19 @@ namespace
 	}
 
 	const float4 SelectionColor = float4{ 1.0f, 0.6f, 0.1f, 1.0f };
+
+	static_assert(sizeof(matrix) == sizeof(float) * 16, "ImGuizmo reads matrices as 16 contiguous floats");
+
+	ImGuizmo::OPERATION ToImGuizmoOperation(GizmoOperation_e Operation)
+	{
+		switch (Operation)
+		{
+		case GizmoOperation_e::Translate: return ImGuizmo::TRANSLATE;
+		case GizmoOperation_e::Rotate: return ImGuizmo::ROTATE;
+		case GizmoOperation_e::Scale: return ImGuizmo::SCALE;
+		}
+		return ImGuizmo::TRANSLATE;
+	}
 
 	// Corners are transformed individually, so the box stays exact under any parent scale or shear
 	void DrawMeshBounds(SpatialRenderingCollector_s& Collector, const MeshComponent_c& Component)
@@ -80,9 +94,16 @@ void SceneEditor_c::DrawWindows(Space_c* Space)
 
 	// Only while a panel is open, so play without the editor keeps the left mouse button
 	const bool PanelOpen = ShowOutliner || ShowInspector;
-	if (PanelOpen && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse && !Input::IsMouseCaptured())
+	if (PanelOpen)
 	{
-		PickAtCursor(*Space);
+		// First, so a click that starts a gizmo drag is not also taken as a pick
+		DrawGizmo(*Space);
+
+		const bool OverGizmo = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+		if (!OverGizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse && !Input::IsMouseCaptured())
+		{
+			PickAtCursor(*Space);
+		}
 	}
 
 	if (ShowOutliner)
@@ -137,6 +158,87 @@ void SceneEditor_c::PickAtCursor(Space_c& Space)
 	// Only mesh components register as physical, so the hit's owner is the object to select
 	const MeshComponent_c* Hit = dynamic_cast<const MeshComponent_c*>(Trace.GetClosest());
 	SelectAndInspect(Hit ? Hit->GetOwner() : nullptr);
+}
+
+void SceneEditor_c::DrawGizmo(Space_c& Space)
+{
+	SpatialObject_c* Spatial = dynamic_cast<SpatialObject_c*>(GetSelection());
+	const CameraComponent_c* Camera = Space.GetCamera();
+	if (!Spatial || !Camera)
+		return;
+
+	const ImGuiIO& IO = ImGui::GetIO();
+	if (!IO.WantCaptureKeyboard && !Input::IsMouseCaptured())
+	{
+		if (ImGui::IsKeyPressed(ImGuiKey_W, false))
+		{
+			GizmoOperation = GizmoOperation_e::Translate;
+		}
+		else if (ImGui::IsKeyPressed(ImGuiKey_E, false))
+		{
+			GizmoOperation = GizmoOperation_e::Rotate;
+		}
+		else if (ImGui::IsKeyPressed(ImGuiKey_R, false))
+		{
+			GizmoOperation = GizmoOperation_e::Scale;
+		}
+	}
+
+	// The same matrices as the picking ray, so the handles line up with what the renderer draws
+	const matrix View = Camera->CalculateViewMatrix();
+	const matrix Projection = Camera->CalculateProjectionMatrix();
+	matrix World = Spatial->GetWorldMatrix();
+
+	const float TranslateSnap = 0.5f;
+	const float RotateSnapDegrees = 15.0f;
+	const float ScaleSnap = 0.1f;
+	const float SnapValue = GizmoOperation == GizmoOperation_e::Translate ? TranslateSnap : GizmoOperation == GizmoOperation_e::Rotate ? RotateSnapDegrees : ScaleSnap;
+	const float Snap[3] = { SnapValue, SnapValue, SnapValue };
+
+	ImGuizmo::SetRect(0.0f, 0.0f, IO.DisplaySize.x, IO.DisplaySize.y);
+	if (ImGuizmo::Manipulate(&View.m[0][0], &Projection.m[0][0], ToImGuizmoOperation(GizmoOperation), GizmoLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &World.m[0][0], nullptr, GizmoSnap ? Snap : nullptr))
+	{
+		const SpatialObject_c* Parent = Spatial->GetParent();
+		const matrix Local = Parent ? World * InverseMatrix(Parent->GetWorldMatrix()) : World;
+
+		float3 Position, Scale;
+		quat Rotation;
+		if (DecomposeMatrix(Local, Position, Rotation, Scale))
+		{
+			Spatial->SetPosition(Position);
+			Spatial->SetRotation(Rotation);
+			Spatial->SetScale(Scale);
+		}
+	}
+
+	// The gizmo is not an ImGui item, so claim the mouse for it or the game would also see the drag
+	if (ImGuizmo::IsOver() || ImGuizmo::IsUsing())
+	{
+		ImGui::SetNextFrameWantCaptureMouse(true);
+	}
+}
+
+void SceneEditor_c::DrawGizmoToolbar()
+{
+	if (ImGui::RadioButton("Move (W)", GizmoOperation == GizmoOperation_e::Translate))
+	{
+		GizmoOperation = GizmoOperation_e::Translate;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Rotate (E)", GizmoOperation == GizmoOperation_e::Rotate))
+	{
+		GizmoOperation = GizmoOperation_e::Rotate;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Scale (R)", GizmoOperation == GizmoOperation_e::Scale))
+	{
+		GizmoOperation = GizmoOperation_e::Scale;
+	}
+
+	ImGui::Checkbox("Local", &GizmoLocal);
+	ImGui::SameLine();
+	ImGui::Checkbox("Snap", &GizmoSnap);
+	ImGui::Separator();
 }
 
 void SceneEditor_c::SelectAndInspect(Object_c* Object)
@@ -244,6 +346,11 @@ void SceneEditor_c::DrawInspector()
 		}
 		else
 		{
+			if (dynamic_cast<SpatialObject_c*>(Object))
+			{
+				DrawGizmoToolbar();
+			}
+
 			ImGuiPropertyVisitor_c Visitor(RotationEditState);
 			ImGui::PushItemWidth(-160.0f);
 

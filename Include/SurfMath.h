@@ -1311,6 +1311,71 @@ inline quat QuatFromDirection(float3 Forward, float3 Up) noexcept
     return Normalize(quat((F.x + R.z) / S, (F.y + U.z) / S, S * 0.25f, (R.y - U.x) / S));
 }
 
+inline quat QuatFromRotationMatrix(const matrix& M) noexcept
+{
+    const float R00 = M.m[0][0], R01 = M.m[0][1], R02 = M.m[0][2];
+    const float R10 = M.m[1][0], R11 = M.m[1][1], R12 = M.m[1][2];
+    const float R20 = M.m[2][0], R21 = M.m[2][1], R22 = M.m[2][2];
+
+    if (R22 <= 0.0f)
+    {
+        const float Diff10 = R11 - R00;
+        const float OneMinus22 = 1.0f - R22;
+        if (Diff10 <= 0.0f)
+        {
+            const float FourXSq = OneMinus22 - Diff10;
+            const float Inv = 0.5f / sqrtf(FourXSq);
+            return Normalize(quat(FourXSq * Inv, (R01 + R10) * Inv, (R02 + R20) * Inv, (R12 - R21) * Inv));
+        }
+
+        const float FourYSq = OneMinus22 + Diff10;
+        const float Inv = 0.5f / sqrtf(FourYSq);
+        return Normalize(quat((R01 + R10) * Inv, FourYSq * Inv, (R12 + R21) * Inv, (R20 - R02) * Inv));
+    }
+
+    const float Sum10 = R11 + R00;
+    const float OnePlus22 = 1.0f + R22;
+    if (Sum10 <= 0.0f)
+    {
+        const float FourZSq = OnePlus22 - Sum10;
+        const float Inv = 0.5f / sqrtf(FourZSq);
+        return Normalize(quat((R02 + R20) * Inv, (R12 + R21) * Inv, FourZSq * Inv, (R01 - R10) * Inv));
+    }
+
+    const float FourWSq = OnePlus22 + Sum10;
+    const float Inv = 0.5f / sqrtf(FourWSq);
+    return Normalize(quat((R12 - R21) * Inv, (R20 - R02) * Inv, (R01 - R10) * Inv, FourWSq * Inv));
+}
+
+inline bool DecomposeMatrix(const matrix& M, float3& OutPosition, quat& OutRotation, float3& OutScale) noexcept
+{
+    float3 Axes[3] = { M.r[0].xyz, M.r[1].xyz, M.r[2].xyz };
+    OutScale = float3{ Length(Axes[0]), Length(Axes[1]), Length(Axes[2]) };
+    if (OutScale.x < 1e-6f || OutScale.y < 1e-6f || OutScale.z < 1e-6f)
+    {
+        return false;
+    }
+
+    Axes[0] /= OutScale.x;
+    Axes[1] /= OutScale.y;
+    Axes[2] /= OutScale.z;
+
+    if (Dot(Cross(Axes[0], Axes[1]), Axes[2]) < 0.0f)
+    {
+        OutScale.x = -OutScale.x;
+        Axes[0] = -Axes[0];
+    }
+
+    matrix Rotation = MakeMatrixIdentity();
+    Rotation.r[0] = float4(Axes[0], 0.0f);
+    Rotation.r[1] = float4(Axes[1], 0.0f);
+    Rotation.r[2] = float4(Axes[2], 0.0f);
+
+    OutPosition = M.r[3].xyz;
+    OutRotation = QuatFromRotationMatrix(Rotation);
+    return true;
+}
+
 inline quat Slerp(quat A, quat B, float Alpha) noexcept
 {
     float CosOmega = (A.x * B.x) + (A.y * B.y) + (A.z * B.z) + (A.w * B.w);
