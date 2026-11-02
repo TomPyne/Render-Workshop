@@ -5,7 +5,7 @@
 
 enum class KeyCode_e : uint32_t
 {
-	INVALID, // Deliberately first, so an unmapped key lands in a dead slot rather than on a real key
+	INVALID,
 	_CTRL, _SHIFT, _ALT, _ESC, _SPACEBAR,
 	_A, _B, _C, _D, _E, _F, _G, _H, _I, _J, _K, _L, _M, _N, _O, _P, _Q, _R, _S, _T, _U, _V, _W, _X, _Y, _Z,
 	_1, _2, _3, _4, _5, _6, _7, _8, _9, _0,
@@ -23,10 +23,12 @@ namespace Input
 	int2 GetMouseDelta();
 	int2 GetMousePosition();
 
-	// While captured the cursor is hidden and recentred every frame, so mouse
-	// deltas keep accumulating instead of stopping at the window edge.
+	// While captured the cursor is hidden and recentred every frame
 	void SetMouseCaptured(bool Captured);
 	bool IsMouseCaptured();
+
+	void SetUIWantsMouse(bool Wants);
+	void SetUIWantsKeyboard(bool Wants);
 
 	int Win_InputHandler(void* WindowHandle, uint32_t Message, uint64_t wParam, int64_t lParam);
 }

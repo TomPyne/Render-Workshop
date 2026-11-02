@@ -33,6 +33,8 @@ struct InputData
 	float MouseWheelDelta = 0.0f;
 	HWND WindowHandle = nullptr;
 	bool MouseCaptured = false;
+	bool UIWantsMouse = false;
+	bool UIWantsKeyboard = false;
 	POINT RestoreCursorPosition = {};
 };
 InputData g_InputData;
@@ -117,7 +119,11 @@ void Input::NewFrame()
 {
 	for (uint32_t KeyIndex = 0; KeyIndex < (uint32_t)KeyCode_e::MAX; ++KeyIndex)
 	{
-		if (g_InputData.KeyPressedRaw[KeyIndex])
+		if (g_InputData.UIWantsKeyboard)
+		{
+			g_InputData.KeyStates[KeyIndex] = KeyState_e::UNPRESSED;
+		}
+		else if (g_InputData.KeyPressedRaw[KeyIndex])
 		{
 			g_InputData.KeyStates[KeyIndex] = KeyState_e::PRESSED;
 		}
@@ -198,6 +204,21 @@ bool Input::IsMouseCaptured()
 	return g_InputData.MouseCaptured;
 }
 
+void Input::SetUIWantsMouse(bool Wants)
+{
+	g_InputData.UIWantsMouse = Wants;
+}
+
+void Input::SetUIWantsKeyboard(bool Wants)
+{
+	g_InputData.UIWantsKeyboard = Wants;
+}
+
+static bool IsMouseBlockedByUI()
+{
+	return g_InputData.UIWantsMouse && !g_InputData.MouseCaptured;
+}
+
 bool Input::IsKeyDown(KeyCode_e Key)
 {
 	return g_InputData.KeyStates[(uint32_t)Key] > KeyState_e::UNPRESSED;
@@ -210,12 +231,12 @@ bool Input::IsKeyPressed(KeyCode_e Key)
 
 bool Input::IsMouseButtonDown(int Button)
 {
-	return (g_InputData.MouseButtonStates & (1 << Button)) != 0;
+	return !IsMouseBlockedByUI() && (g_InputData.MouseButtonStates & (1 << Button)) != 0;
 }
 
 int2 Input::GetMouseDelta()
 {
-	return g_InputData.MouseDelta;
+	return IsMouseBlockedByUI() ? int2(0) : g_InputData.MouseDelta;
 }
 
 int2 Input::GetMousePosition()

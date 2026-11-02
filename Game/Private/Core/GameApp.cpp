@@ -157,6 +157,12 @@ void GameApp_c::Load()
 void GameApp_c::PreUpdate()
 {
 	Clock.Tick();
+
+	// From last frame's ImGui::NewFrame, as this frame's UI is built after Update
+	const ImGuiIO& IO = ImGui::GetIO();
+	Input::SetUIWantsMouse(IO.WantCaptureMouse);
+	Input::SetUIWantsKeyboard(IO.WantCaptureKeyboard);
+
 	Input::NewFrame();
 }
 
