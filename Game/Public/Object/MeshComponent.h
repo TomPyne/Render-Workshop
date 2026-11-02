@@ -37,6 +37,7 @@ class MeshComponent_c : public SpatialObjectComponent_c, public IRenderable_c, p
 	// End IPhysical interface
 
 	virtual void SetMesh(const std::shared_ptr<struct Mesh_s>& InMesh);
+	const std::shared_ptr<struct Mesh_s>& GetMesh() const { return Mesh; }
 	void SetVisible(bool InVisible);
 	void SetCollidable(bool InCollidable) { Collidable = InCollidable; }
 	void SetCastShadow(bool InCastShadow);

@@ -1,13 +1,15 @@
 #pragma once
 
 #include "Editor/ImGuiPropertyVisitor.h"
+#include "Rendering/IRenderable.h"
 
 #include <memory>
 
 class Object_c;
 class Space_c;
 
-class SceneEditor_c
+// Drawn as a space renderer overlay for the selection highlight
+class SceneEditor_c : public IRenderable_c
 {
 public:
 	// Call between ImGui::BeginMainMenuBar and ImGui::EndMainMenuBar
@@ -19,13 +21,20 @@ public:
 	Object_c* GetSelection() const;
 	void SetSelection(Object_c* Object);
 
+	// Begin IRenderable_c interface
+	virtual void Render(struct SpatialRenderingCollector_s& Collector) override;
+	// End IRenderable_c interface
+
 private:
 	void DrawOutliner(Space_c& Space);
 	void DrawOutlinerNode(Object_c& Object);
 	void DrawInspector();
 
-	// Picking in the outliner also opens the inspector
-	void SelectFromOutliner(Object_c* Object);
+	// Picking in the outliner or the viewport also opens the inspector
+	void SelectAndInspect(Object_c* Object);
+
+	// Selects the mesh under the cursor, or clears the selection on a miss
+	void PickAtCursor(Space_c& Space);
 
 	std::weak_ptr<Object_c> Selection;
 

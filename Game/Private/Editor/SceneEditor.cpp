@@ -1,7 +1,13 @@
 #include "Editor/SceneEditor.h"
 
+#include "Input/Input.h"
+#include "Object/CameraComponent.h"
+#include "Object/MeshComponent.h"
 #include "Object/Object.h"
 #include "Object/SpatialObject.h"
+#include "Physics/IPhysical.h"
+#include "Rendering/DebugDraw.h"
+#include "Rendering/Mesh.h"
 #include "Space/Space.h"
 
 #include <RenderImGui/imgui/imgui.h>
@@ -22,6 +28,39 @@ namespace
 		const SpatialObject_c* Spatial = dynamic_cast<const SpatialObject_c*>(&Object);
 		return !Spatial || !Spatial->GetParent();
 	}
+
+	const float4 SelectionColor = float4{ 1.0f, 0.6f, 0.1f, 1.0f };
+
+	// Corners are transformed individually, so the box stays exact under any parent scale or shear
+	void DrawMeshBounds(SpatialRenderingCollector_s& Collector, const MeshComponent_c& Component)
+	{
+		const Mesh_s* Mesh = Component.GetMesh().get();
+		if (!Mesh || Mesh->Bounds.mins.x > Mesh->Bounds.maxs.x)
+			return;
+
+		const matrix& World = Component.GetWorldMatrix();
+		const float3& Mins = Mesh->Bounds.mins;
+		const float3& Maxs = Mesh->Bounds.maxs;
+
+		float3 Corners[8];
+		for (uint32_t Index = 0; Index < 8; ++Index)
+		{
+			const float3 Local = { (Index & 1) ? Maxs.x : Mins.x, (Index & 2) ? Maxs.y : Mins.y, (Index & 4) ? Maxs.z : Mins.z };
+			Corners[Index] = TransformF3(Local, World);
+		}
+
+		// Each edge joins two corners whose indices differ in one bit
+		for (uint32_t Index = 0; Index < 8; ++Index)
+		{
+			for (uint32_t Bit = 1; Bit < 8; Bit <<= 1)
+			{
+				if (!(Index & Bit))
+				{
+					DebugLine(Collector, Corners[Index], Corners[Index | Bit], SelectionColor, DebugDepthMode_e::OnTop);
+				}
+			}
+		}
+	}
 }
 
 void SceneEditor_c::DrawMenu()
@@ -38,6 +77,13 @@ void SceneEditor_c::DrawWindows(Space_c* Space)
 {
 	if (!Space)
 		return;
+
+	// Only while a panel is open, so play without the editor keeps the left mouse button
+	const bool PanelOpen = ShowOutliner || ShowInspector;
+	if (PanelOpen && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse && !Input::IsMouseCaptured())
+	{
+		PickAtCursor(*Space);
+	}
 
 	if (ShowOutliner)
 	{
@@ -62,7 +108,38 @@ void SceneEditor_c::SetSelection(Object_c* Object)
 	Selection = Object ? Object->weak_from_this() : std::weak_ptr<Object_c>();
 }
 
-void SceneEditor_c::SelectFromOutliner(Object_c* Object)
+void SceneEditor_c::Render(SpatialRenderingCollector_s& Collector)
+{
+	SpatialObject_c* Spatial = dynamic_cast<SpatialObject_c*>(GetSelection());
+	if (!Spatial)
+		return;
+
+	DebugAxes(Collector, Spatial->GetWorldMatrix(), 1.0f, DebugDepthMode_e::OnTop);
+
+	for (const MeshComponent_c* Mesh : Spatial->GetComponents<MeshComponent_c>())
+	{
+		DrawMeshBounds(Collector, *Mesh);
+	}
+}
+
+void SceneEditor_c::PickAtCursor(Space_c& Space)
+{
+	const CameraComponent_c* Camera = Space.GetCamera();
+	if (!Camera)
+		return;
+
+	float3 Start, End;
+	Camera->CalculateRayForScreenPosition(Input::GetMousePosition(), Start, End);
+
+	IntersectionCtx_s Trace = IntersectionCtx_s::CreateLineSegmentTrace(Start, End, true);
+	Space.Trace(Trace);
+
+	// Only mesh components register as physical, so the hit's owner is the object to select
+	const MeshComponent_c* Hit = dynamic_cast<const MeshComponent_c*>(Trace.GetClosest());
+	SelectAndInspect(Hit ? Hit->GetOwner() : nullptr);
+}
+
+void SceneEditor_c::SelectAndInspect(Object_c* Object)
 {
 	SetSelection(Object);
 	if (Object)
@@ -93,7 +170,7 @@ void SceneEditor_c::DrawOutliner(Space_c& Space)
 						ImGui::PushID(Object);
 						if (ImGui::Selectable(Label.c_str(), Object == GetSelection()))
 						{
-							SelectFromOutliner(Object);
+							SelectAndInspect(Object);
 						}
 						ImGui::PopID();
 					}
@@ -138,7 +215,7 @@ void SceneEditor_c::DrawOutlinerNode(Object_c& Object)
 	const bool Open = ImGui::TreeNodeEx(&Object, Flags, "%s", GetDisplayName(Object).c_str());
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		SelectFromOutliner(&Object);
+		SelectAndInspect(&Object);
 	}
 
 	if (Open && HasChildren)

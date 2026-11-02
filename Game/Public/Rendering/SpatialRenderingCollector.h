@@ -90,7 +90,10 @@ struct SpatialRenderingCollector_s
 		return DistanceFieldInstances.emplace_back();
 	}
 
-	bool IsDebugDrawEnabled() const { return HasEnumFlags(Flags, CollectorFlags_e::DEBUG_DRAW); }
+	bool IsDebugDrawEnabled() const { return ForceDebugDraw || HasEnumFlags(Flags, CollectorFlags_e::DEBUG_DRAW); }
+
+	// Set by the space renderer around overlays, which draw regardless of the debug draw toggle
+	bool ForceDebugDraw = false;
 
 	// Color is packed RGBA8, see PackDebugColor
 	void AddDebugLine(const float3& A, const float3& B, uint32_t Color, DebugDepthMode_e Mode = DebugDepthMode_e::DepthTested);

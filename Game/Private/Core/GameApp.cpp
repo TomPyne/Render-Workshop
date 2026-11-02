@@ -137,6 +137,7 @@ void GameApp_c::Load()
 
 	SpaceRenderer = CreateSpaceRenderer();
 	SpaceRenderer->Init();
+	SpaceRenderer->RegisterOverlay(SceneEditor.get());
 
 	AssetManager->Init();
 

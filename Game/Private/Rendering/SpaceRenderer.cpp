@@ -164,6 +164,19 @@ void SpaceRenderer_c::Init()
 	G.Initialized = true;
 }
 
+void SpaceRenderer_c::RegisterOverlay(IRenderable_c* Overlay)
+{
+	if (Overlay && std::find(Overlays.begin(), Overlays.end(), Overlay) == Overlays.end())
+	{
+		Overlays.push_back(Overlay);
+	}
+}
+
+void SpaceRenderer_c::UnregisterOverlay(IRenderable_c* Overlay)
+{
+	std::erase(Overlays, Overlay);
+}
+
 void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space_c* Space, rl::CommandListSubmissionGroup& clGroup)
 {
 	if (!Space)
@@ -200,6 +213,13 @@ void SpaceRenderer_c::RenderSpace(const SpaceRendererScreenInfo_s& Screen, Space
 	{
 		Renderable->Render(Collector);
 	}
+
+	Collector.ForceDebugDraw = true;
+	for (IRenderable_c* Overlay : Overlays)
+	{
+		Overlay->Render(Collector);
+	}
+	Collector.ForceDebugDraw = false;
 
 	GameStats::UpdatePrimCount(static_cast<uint32_t>(Collector.GetNumBatches()));
 

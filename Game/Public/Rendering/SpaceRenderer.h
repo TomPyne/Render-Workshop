@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <vector>
 
+class IRenderable_c;
+
 namespace SpaceRendererRootSigSlots
 {
 	enum Value
@@ -64,6 +66,10 @@ public:
 	// Gates debug lines and shapes submitted through the collector
 	bool DebugDraw = true;
 
+	// Rendered after the scene's renderables with debug draw forced on, e.g. editor selection highlights
+	void RegisterOverlay(IRenderable_c* Overlay);
+	void UnregisterOverlay(IRenderable_c* Overlay);
+
 	const DistanceFieldScene_c& GetDistanceFieldScene() const { return DistanceFieldScene; }
 	GlobalDistanceField_c& GetGlobalDistanceField() { return GlobalDistanceField; }
 	ShadowDenoiser_c& GetShadowDenoiser() { return ShadowDenoiser; }
@@ -96,4 +102,6 @@ protected:
 	std::vector<DistanceFieldInstance_s> DistanceFieldInstances;
 
 	std::shared_ptr<struct Texture_s> BlueNoiseTexture;
+
+	std::vector<IRenderable_c*> Overlays;
 };
